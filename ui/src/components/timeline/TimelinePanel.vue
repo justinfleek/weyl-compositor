@@ -313,7 +313,7 @@ const playheadPercent = computed(() => {
 const playheadLeftPx = computed(() => {
   const trackOffset = dynamicTrackOffset.value || 236;
   const trackWidthValue = trackWidth.value || 600;
-  const framePercent = store.currentFrame / Math.max(1, store.frameCount - 1);
+  const framePercent = store.currentFrame / Math.max(1, store.frameCount);
   return trackOffset + (framePercent * trackWidthValue);
 });
 
@@ -673,7 +673,7 @@ function handlePlayheadDrag(event: MouseEvent) {
   const rect = rulerTrackRef.value.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * (store.frameCount - 1));
+  const frame = Math.round(progress * store.frameCount);
   store.setFrame(frame);
 
   // Update trackWidth to keep display in sync with actual measurement

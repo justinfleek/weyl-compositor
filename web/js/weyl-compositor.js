@@ -21917,7 +21917,7 @@ const h5 = {
     });
     Me(() => e.currentFrame / e.frameCount * l.value), Me(() => e.currentFrame / e.frameCount * 100);
     const S = Me(() => {
-      const q = c.value || 236, V = l.value || 600, de = e.currentFrame / Math.max(1, e.frameCount - 1);
+      const q = c.value || 236, V = l.value || 600, de = e.currentFrame / Math.max(1, e.frameCount);
       return q + de * V;
     }), _ = Me(() => e.currentFrame / (e.frameCount - 1) * 100), O = Me(() => {
       const q = b.start / e.frameCount * 100, V = (b.end + 1) / e.frameCount * 100;
@@ -22079,7 +22079,7 @@ const h5 = {
     }
     function Ce(q) {
       if (!s.value) return;
-      const V = s.value.getBoundingClientRect(), de = q.clientX - V.left, ze = Math.max(0, Math.min(1, de / V.width)), He = Math.round(ze * (e.frameCount - 1));
+      const V = s.value.getBoundingClientRect(), de = q.clientX - V.left, ze = Math.max(0, Math.min(1, de / V.width)), He = Math.round(ze * e.frameCount);
       if (e.setFrame(He), l.value = V.width, n.value) {
         const nt = n.value.getBoundingClientRect();
         c.value = V.left - nt.left;
@@ -22237,7 +22237,7 @@ const h5 = {
           ])) : De("", !0)
         ])
       ]),
-      V[33] || (V[33] = ki('<div class="column-headers" data-v-2199e239><div class="layer-columns-header" data-v-2199e239><span class="col-header col-label" title="Label Color" data-v-2199e239>Label</span><span class="col-header col-av" title="Visibility" data-v-2199e239>👁</span><span class="col-header col-solo" title="Solo" data-v-2199e239>⚡</span><span class="col-header col-lock" title="Lock" data-v-2199e239>🔒</span><span class="col-header col-name" data-v-2199e239>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-2199e239>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-2199e239>Switches</span></div><div class="track-header" data-v-2199e239></div></div>', 1)),
+      V[33] || (V[33] = ki('<div class="column-headers" data-v-0c2a53a8><div class="layer-columns-header" data-v-0c2a53a8><span class="col-header col-label" title="Label Color" data-v-0c2a53a8>Label</span><span class="col-header col-av" title="Visibility" data-v-0c2a53a8>👁</span><span class="col-header col-solo" title="Solo" data-v-0c2a53a8>⚡</span><span class="col-header col-lock" title="Lock" data-v-0c2a53a8>🔒</span><span class="col-header col-name" data-v-0c2a53a8>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-0c2a53a8>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-0c2a53a8>Switches</span></div><div class="track-header" data-v-0c2a53a8></div></div>', 1)),
       d("div", {
         class: "timeline-content",
         ref_key: "timelineContentRef",
@@ -22428,7 +22428,7 @@ const h5 = {
       ])) : De("", !0)
     ]));
   }
-}), Uu = /* @__PURE__ */ Ot(yO, [["__scopeId", "data-v-2199e239"]]), bO = { class: "graph-editor" }, _O = { class: "graph-header" }, xO = { class: "mode-toggle" }, wO = { class: "preset-buttons" }, SO = ["onClick", "title"], CO = { class: "toolbar" }, kO = { class: "graph-content" }, TO = { class: "property-list" }, OO = { class: "property-list-header" }, MO = ["title"], EO = ["onClick"], PO = ["onClick"], DO = { class: "property-name" }, AO = {
+}), Uu = /* @__PURE__ */ Ot(yO, [["__scopeId", "data-v-0c2a53a8"]]), bO = { class: "graph-editor" }, _O = { class: "graph-header" }, xO = { class: "mode-toggle" }, wO = { class: "preset-buttons" }, SO = ["onClick", "title"], CO = { class: "toolbar" }, kO = { class: "graph-content" }, TO = { class: "property-list" }, OO = { class: "property-list-header" }, MO = ["title"], EO = ["onClick"], PO = ["onClick"], DO = { class: "property-name" }, AO = {
   key: 0,
   class: "keyframe-count"
 }, FO = {
