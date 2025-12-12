@@ -124,16 +124,6 @@
             <span v-if="mark.major" class="mark-label">{{ formatTimecode(mark.frame) }}</span>
           </div>
 
-          <!-- Playhead (inside ruler-track for correct positioning) -->
-          <div
-            class="playhead-in-ruler"
-            :style="{ left: `${playheadPercent}%` }"
-          >
-            <div
-              class="playhead-head"
-              @mousedown.stop="startPlayheadDrag"
-            />
-          </div>
         </div>
       </div>
 
@@ -165,6 +155,18 @@
         </div>
       </div>
 
+      <!-- Playhead - spans entire timeline content area -->
+      <div
+        class="playhead-container"
+        ref="playheadContainerRef"
+        :style="{ left: `${playheadLeftPx}px` }"
+      >
+        <div
+          class="playhead-head"
+          @mousedown.stop="startPlayheadDrag"
+        />
+        <div class="playhead-line" />
+      </div>
     </div>
 
     <!-- Timeline scrubber / mini-timeline -->
@@ -250,6 +252,7 @@ const store = useCompositorStore();
 const timelineContentRef = ref<HTMLDivElement | null>(null);
 const rulerTrackRef = ref<HTMLDivElement | null>(null);
 const layerTracksRef = ref<HTMLDivElement | null>(null);
+const playheadContainerRef = ref<HTMLDivElement | null>(null);
 const showAddLayerMenu = ref(false);
 
 // Track dimensions - dynamically calculated
@@ -305,6 +308,14 @@ const playheadPosition = computed(() => {
 
 const playheadPercent = computed(() => {
   return (store.currentFrame / store.frameCount) * 100;
+});
+
+const playheadLeftPx = computed(() => {
+  // Sidebar is fixed at 220px, playhead positioned relative to track start
+  const sidebarWidth = 220;
+  const trackWidthValue = trackWidth.value || 600;
+  const framePercent = store.currentFrame / Math.max(1, store.frameCount);
+  return sidebarWidth + (framePercent * trackWidthValue);
 });
 
 const scrubProgress = computed(() => {
@@ -970,6 +981,7 @@ watch(() => store.frameCount, (newCount) => {
   position: sticky;
   top: 0;
   z-index: 5;
+  overflow: visible;
 }
 
 .ruler-sidebar {
@@ -982,6 +994,7 @@ watch(() => store.frameCount, (newCount) => {
 .ruler-track {
   flex: 1;
   position: relative;
+  overflow: visible;
 }
 
 .work-area {
@@ -1066,36 +1079,6 @@ watch(() => store.frameCount, (newCount) => {
 .empty-state .hint {
   font-size: 11px;
   margin-top: 4px;
-}
-
-.playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.playhead-head {
-  position: absolute;
-  top: 0;
-  left: -5px;
-  width: 10px;
-  height: 10px;
-  background: #ff4444;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  pointer-events: auto;
-  cursor: ew-resize;
-}
-
-.playhead-line {
-  position: absolute;
-  top: 10px;
-  bottom: 0;
-  left: 0;
-  width: 1px;
-  background: #ff4444;
 }
 
 .timeline-scrubber {
@@ -1279,34 +1262,36 @@ watch(() => store.frameCount, (newCount) => {
   font-weight: bold;
 }
 
-.playhead-in-ruler {
+/* Playhead - positioned absolutely within timeline-content */
+.playhead-container {
   position: absolute;
   top: 0;
-  bottom: -1000px; /* Extend down through layer tracks */
+  bottom: 0;
   width: 1px;
+  z-index: 100;
   pointer-events: none;
-  z-index: 10;
 }
 
-.playhead-in-ruler .playhead-head {
+.playhead-container .playhead-head {
   position: absolute;
   top: 0;
   left: -5px;
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   background: #ff4444;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  pointer-events: auto;
   cursor: ew-resize;
+  pointer-events: auto;
+  z-index: 101;
 }
 
-.playhead-in-ruler::after {
-  content: '';
+.playhead-container .playhead-line {
   position: absolute;
-  top: 10px;
+  top: 11px;
+  bottom: 0;
   left: 0;
   width: 1px;
-  height: 100%;
   background: #ff4444;
+  pointer-events: none;
 }
 </style>
