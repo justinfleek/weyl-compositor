@@ -1,9 +1,16 @@
 <template>
   <div class="property-track-row">
     <div class="property-info">
-      <!-- STOPWATCH BUTTON - Fixed position on left -->
       <button
         class="stopwatch-btn"
+        :class="{ active: property.animated }"
+        @click.stop="toggleAnimation"
+        title="Enable/disable animation"
+      >
+        {{ property.animated ? '⏱' : '○' }}
+      </button>
+      <button
+        class="keyframe-btn"
         :class="{ active: hasKeyframeAtCurrentFrame }"
         @click.stop="toggleKeyframe"
         :title="hasKeyframeAtCurrentFrame ? 'Remove Keyframe' : 'Add Keyframe'"
@@ -19,14 +26,24 @@
             @change="updateVectorX"
             class="value-input"
             step="1"
+            title="X"
           />
-          <span class="value-separator">,</span>
           <input
             type="number"
             :value="property.value.y"
             @change="updateVectorY"
             class="value-input"
             step="1"
+            title="Y"
+          />
+          <input
+            v-if="hasZValue"
+            type="number"
+            :value="property.value.z || 0"
+            @change="updateVectorZ"
+            class="value-input"
+            step="1"
+            title="Z"
           />
         </template>
         <template v-else>
@@ -40,20 +57,17 @@
         </template>
       </div>
     </div>
-    <div class="property-keyframes">
-      <!-- Existing keyframe diamonds - these show WHERE keyframes are on timeline -->
+    <div class="property-keyframes" ref="keyframeTrackRef">
       <div
         v-for="kf in property.keyframes"
         :key="kf.id"
         class="keyframe-diamond"
         :class="{ selected: selectedKeyframeIds.includes(kf.id) }"
         :style="{ left: `${(kf.frame / frameCount) * 100}%` }"
+        @mousedown.stop="startKeyframeDrag(kf, $event)"
         @click.stop="selectKeyframe(kf.id, $event)"
-        @dblclick.stop="editKeyframe(kf)"
         :title="`Frame ${kf.frame}: ${JSON.stringify(kf.value)}`"
       >◆</div>
-
-      <!-- Playhead position indicator (vertical line showing current frame) -->
       <div
         class="playhead-marker"
         :style="{ left: `${(currentFrame / frameCount) * 100}%` }"
@@ -63,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import type { AnimatableProperty } from '@/types/project';
 
@@ -82,6 +96,7 @@ const emit = defineEmits<{
 
 const store = useCompositorStore();
 const currentFrame = computed(() => store.currentFrame);
+const keyframeTrackRef = ref<HTMLDivElement | null>(null);
 
 const hasKeyframeAtCurrentFrame = computed(() => {
   return props.property.keyframes?.some(kf => kf.frame === currentFrame.value) ?? false;
@@ -92,12 +107,35 @@ const isVectorValue = computed(() => {
   return typeof val === 'object' && val !== null && 'x' in val && 'y' in val;
 });
 
+const hasZValue = computed(() => {
+  return props.name === 'Position' || props.name === 'Scale';
+});
+
+function selectKeyframe(id: string, event: MouseEvent) {
+  emit('selectKeyframe', id, event.shiftKey);
+}
+
+function toggleAnimation() {
+  store.setPropertyAnimated(props.layerId, props.propertyPath, !props.property.animated);
+}
+
+function toggleKeyframe() {
+  const frame = currentFrame.value;
+  const existingKf = props.property.keyframes?.find(kf => kf.frame === frame);
+
+  if (existingKf) {
+    store.removeKeyframe(props.layerId, props.propertyPath, existingKf.id);
+  } else {
+    store.addKeyframe(props.layerId, props.propertyPath, props.property.value);
+  }
+}
+
 function updateVectorX(event: Event) {
   const input = event.target as HTMLInputElement;
   const newX = parseFloat(input.value);
   if (!isNaN(newX)) {
     const newValue = { ...props.property.value, x: newX };
-    updatePropertyValue(newValue);
+    store.setPropertyValue(props.layerId, props.propertyPath, newValue);
   }
 }
 
@@ -106,7 +144,16 @@ function updateVectorY(event: Event) {
   const newY = parseFloat(input.value);
   if (!isNaN(newY)) {
     const newValue = { ...props.property.value, y: newY };
-    updatePropertyValue(newValue);
+    store.setPropertyValue(props.layerId, props.propertyPath, newValue);
+  }
+}
+
+function updateVectorZ(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const newZ = parseFloat(input.value);
+  if (!isNaN(newZ)) {
+    const newValue = { ...props.property.value, z: newZ };
+    store.setPropertyValue(props.layerId, props.propertyPath, newValue);
   }
 }
 
@@ -114,54 +161,43 @@ function updateScalarValue(event: Event) {
   const input = event.target as HTMLInputElement;
   const newValue = parseFloat(input.value);
   if (!isNaN(newValue)) {
-    updatePropertyValue(newValue);
+    store.setPropertyValue(props.layerId, props.propertyPath, newValue);
   }
 }
 
-function updatePropertyValue(newValue: any) {
-  // Update the property value in the store
-  const layer = store.layers.find(l => l.id === props.layerId);
-  if (!layer) return;
+// Keyframe dragging
+let draggingKeyframe: { id: string; startFrame: number } | null = null;
 
-  if (props.propertyPath === 'opacity') {
-    layer.opacity.value = newValue;
-  } else if (props.propertyPath.startsWith('transform.')) {
-    const propName = props.propertyPath.split('.')[1];
-    (layer.transform as any)[propName].value = newValue;
-  }
+function startKeyframeDrag(kf: any, event: MouseEvent) {
+  draggingKeyframe = { id: kf.id, startFrame: kf.frame };
+  document.addEventListener('mousemove', handleKeyframeDrag);
+  document.addEventListener('mouseup', stopKeyframeDrag);
+  event.preventDefault();
 }
 
-function selectKeyframe(id: string, event: MouseEvent) {
-  emit('selectKeyframe', id, event.shiftKey);
+function handleKeyframeDrag(event: MouseEvent) {
+  if (!draggingKeyframe || !keyframeTrackRef.value) return;
+
+  const rect = keyframeTrackRef.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const newFrame = Math.round((x / rect.width) * props.frameCount);
+  const clampedFrame = Math.max(0, Math.min(props.frameCount - 1, newFrame));
+
+  store.moveKeyframe(props.layerId, props.propertyPath, draggingKeyframe.id, clampedFrame);
 }
 
-function editKeyframe(kf: any) {
-  // TODO: Open graph editor or value editor
-  console.log('Edit keyframe:', kf);
-}
-
-function toggleKeyframe() {
-  const frame = currentFrame.value;
-  const existingKf = props.property.keyframes?.find(kf => kf.frame === frame);
-
-  console.log('[PropertyTrack] toggleKeyframe called for layer:', props.layerId, 'property:', props.propertyPath, 'frame:', frame, 'existing:', existingKf?.id);
-
-  if (existingKf) {
-    console.log('[PropertyTrack] Removing keyframe:', existingKf.id);
-    store.removeKeyframe(props.layerId, props.propertyPath, existingKf.id);
-  } else {
-    // Note: store.addKeyframe uses store.currentFrame internally, so we don't pass frame
-    console.log('[PropertyTrack] Adding keyframe at frame', frame, 'with value:', props.property.value);
-    store.addKeyframe(props.layerId, props.propertyPath, props.property.value);
-  }
+function stopKeyframeDrag() {
+  draggingKeyframe = null;
+  document.removeEventListener('mousemove', handleKeyframeDrag);
+  document.removeEventListener('mouseup', stopKeyframeDrag);
 }
 </script>
 
 <style scoped>
 .property-track-row {
   display: flex;
-  height: 22px;
-  background: #222;
+  height: 32px;
+  background: #252525;
   border-bottom: 1px solid #1a1a1a;
 }
 
@@ -170,87 +206,96 @@ function toggleKeyframe() {
   align-items: center;
   width: 236px;
   min-width: 236px;
-  padding-left: 32px; /* 16px (twirl-down width) + 16px indent */
-  gap: 6px;
-  background: #1e1e1e;
+  padding-left: 24px;
+  gap: 8px;
+  background: #222;
   border-right: 1px solid #333;
   box-sizing: border-box;
 }
 
-.stopwatch-btn {
-  width: 16px;
-  height: 16px;
+.stopwatch-btn,
+.keyframe-btn {
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: transparent;
   color: #555;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border-radius: 3px;
 }
 
-.stopwatch-btn:hover {
-  color: #999;
+.stopwatch-btn:hover,
+.keyframe-btn:hover {
+  background: #333;
+  color: #aaa;
 }
 
 .stopwatch-btn.active {
+  color: #4a90d9;
+}
+
+.keyframe-btn.active {
   color: #f5c542;
 }
 
 .property-name {
   font-size: 11px;
-  color: #888;
-  min-width: 55px;
+  color: #999;
+  min-width: 60px;
 }
 
 .property-value-inputs {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   margin-left: auto;
-  padding-right: 4px;
+  padding-right: 8px;
 }
 
 .value-input {
-  width: 45px;
-  padding: 1px 4px;
-  border: 1px solid #333;
+  width: 50px;
+  padding: 4px 6px;
+  border: 1px solid #444;
   background: #1a1a1a;
   color: #7c9cff;
   font-family: monospace;
-  font-size: 10px;
-  border-radius: 2px;
+  font-size: 11px;
+  border-radius: 3px;
   text-align: right;
 }
 
 .value-input:focus {
   outline: none;
   border-color: #7c9cff;
+  background: #222;
 }
 
-.value-separator {
-  color: #555;
-  font-size: 10px;
+.value-input:hover {
+  border-color: #555;
 }
 
 .property-keyframes {
   position: relative;
   flex: 1;
-  background: #1a1a1a;
+  background: #1e1e1e;
 }
 
 .keyframe-diamond {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 9px;
+  font-size: 12px;
   color: #f5c542;
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
   z-index: 2;
+  padding: 4px;
 }
 
 .keyframe-diamond:hover {
@@ -260,6 +305,10 @@ function toggleKeyframe() {
 
 .keyframe-diamond.selected {
   color: #ff9500;
+}
+
+.keyframe-diamond:active {
+  cursor: grabbing;
 }
 
 .playhead-marker {

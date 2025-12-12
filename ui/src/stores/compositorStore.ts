@@ -738,6 +738,123 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Set a property's value (for direct editing in timeline)
+     */
+    setPropertyValue(layerId: string, propertyPath: string, value: any): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return;
+
+      // Find the property
+      let property: AnimatableProperty<any> | undefined;
+
+      if (propertyPath === 'position' || propertyPath === 'transform.position') {
+        property = layer.transform.position;
+      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
+        property = layer.transform.scale;
+      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
+        property = layer.transform.rotation;
+      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
+        property = layer.transform.anchorPoint;
+      } else if (propertyPath === 'opacity') {
+        property = layer.opacity;
+      } else {
+        property = layer.properties.find(p => p.name === propertyPath);
+      }
+
+      if (!property) return;
+
+      property.value = value;
+
+      // If animated and at a keyframe, update that keyframe's value too
+      if (property.animated && property.keyframes.length > 0) {
+        const existingKf = property.keyframes.find(kf => kf.frame === this.project.currentFrame);
+        if (existingKf) {
+          existingKf.value = value;
+        }
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Set a property's animated state
+     */
+    setPropertyAnimated(layerId: string, propertyPath: string, animated: boolean): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return;
+
+      let property: AnimatableProperty<any> | undefined;
+
+      if (propertyPath === 'position' || propertyPath === 'transform.position') {
+        property = layer.transform.position;
+      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
+        property = layer.transform.scale;
+      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
+        property = layer.transform.rotation;
+      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
+        property = layer.transform.anchorPoint;
+      } else if (propertyPath === 'opacity') {
+        property = layer.opacity;
+      } else {
+        property = layer.properties.find(p => p.name === propertyPath);
+      }
+
+      if (!property) return;
+
+      property.animated = animated;
+
+      // If enabling animation and no keyframes, add one at current frame
+      if (animated && property.keyframes.length === 0) {
+        this.addKeyframe(layerId, propertyPath, property.value);
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Move a keyframe to a new frame
+     */
+    moveKeyframe(layerId: string, propertyPath: string, keyframeId: string, newFrame: number): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return;
+
+      let property: AnimatableProperty<any> | undefined;
+
+      if (propertyPath === 'position' || propertyPath === 'transform.position') {
+        property = layer.transform.position;
+      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
+        property = layer.transform.scale;
+      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
+        property = layer.transform.rotation;
+      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
+        property = layer.transform.anchorPoint;
+      } else if (propertyPath === 'opacity') {
+        property = layer.opacity;
+      } else {
+        property = layer.properties.find(p => p.name === propertyPath);
+      }
+
+      if (!property) return;
+
+      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
+      if (!keyframe) return;
+
+      // Check if there's already a keyframe at the target frame
+      const existingAtTarget = property.keyframes.find(kf => kf.frame === newFrame && kf.id !== keyframeId);
+      if (existingAtTarget) {
+        // Remove the existing keyframe at target
+        property.keyframes = property.keyframes.filter(kf => kf.id !== existingAtTarget.id);
+      }
+
+      keyframe.frame = newFrame;
+
+      // Re-sort keyframes by frame
+      property.keyframes.sort((a, b) => a.frame - b.frame);
+
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
      * Create a text layer with proper data structure
      */
     createTextLayer(text: string = 'Text'): Layer {
