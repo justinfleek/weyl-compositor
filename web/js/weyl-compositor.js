@@ -25049,18 +25049,18 @@ const Bs = new m4(), g4 = { class: "export-dialog" }, v4 = { class: "dialog-head
                             ])
                           ]),
                           d("div", oM, [
-                            a.value === "composition" ? (U(), yt(qC, {
+                            a.value === "composition" ? (U(), yt(p5, {
                               key: 0,
+                              ref_key: "canvasRef",
+                              ref: v
+                            }, null, 512)) : (U(), yt(qC, {
+                              key: 1,
                               camera: b.value,
                               viewportState: y.value,
                               viewOptions: g.value,
                               compWidth: k.value,
                               compHeight: w.value
-                            }, null, 8, ["camera", "viewportState", "viewOptions", "compWidth", "compHeight"])) : (U(), yt(p5, {
-                              key: 1,
-                              ref_key: "canvasRef",
-                              ref: v
-                            }, null, 512))
+                            }, null, 8, ["camera", "viewportState", "viewOptions", "compWidth", "compHeight"]))
                           ])
                         ])
                       ]),
@@ -25173,7 +25173,7 @@ const Bs = new m4(), g4 = { class: "export-dialog" }, v4 = { class: "dialog-head
       })) : Fe("", !0)
     ]));
   }
-}), SM = /* @__PURE__ */ Ot(wM, [["__scopeId", "data-v-a1da50c8"]]), CM = /* @__PURE__ */ wt({
+}), SM = /* @__PURE__ */ Ot(wM, [["__scopeId", "data-v-1c3dba5b"]]), CM = /* @__PURE__ */ wt({
   __name: "App",
   setup(i) {
     return (e, n) => (U(), yt(SM));

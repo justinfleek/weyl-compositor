@@ -172,15 +172,15 @@
                   </div>
                 </div>
                 <div class="viewport-content">
+                  <CompositionCanvas v-if="viewportTab === 'composition'" ref="canvasRef" />
                   <ViewportRenderer
-                    v-if="viewportTab === 'composition'"
+                    v-else
                     :camera="activeCamera"
                     :viewportState="viewportState"
                     :viewOptions="viewOptions"
                     :compWidth="compWidth"
                     :compHeight="compHeight"
                   />
-                  <CompositionCanvas v-else ref="canvasRef" />
                 </div>
               </div>
             </Pane>
