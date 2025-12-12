@@ -21574,7 +21574,7 @@ const h5 = { class: "zoom-controls" }, d5 = { class: "zoom-level" }, f5 = {
       ], 512)
     ], 6));
   }
-}), I5 = /* @__PURE__ */ Mt(F5, [["__scopeId", "data-v-883ef979"]]), L5 = { class: "timeline-panel" }, R5 = { class: "timeline-header" }, z5 = { class: "header-left" }, j5 = { class: "timeline-info" }, B5 = { class: "header-center" }, V5 = { class: "playback-controls" }, $5 = { class: "icon" }, W5 = ["title"], N5 = { class: "icon" }, U5 = { class: "header-right" }, H5 = {
+}), I5 = /* @__PURE__ */ Mt(F5, [["__scopeId", "data-v-cf39f7ea"]]), L5 = { class: "timeline-panel" }, R5 = { class: "timeline-header" }, z5 = { class: "header-left" }, j5 = { class: "timeline-info" }, B5 = { class: "header-center" }, V5 = { class: "playback-controls" }, $5 = { class: "icon" }, W5 = ["title"], N5 = { class: "icon" }, U5 = { class: "header-right" }, H5 = {
   key: 0,
   class: "add-layer-menu"
 }, X5 = { class: "time-ruler" }, Y5 = ["onClick", "onDblclick", "title"], G5 = {

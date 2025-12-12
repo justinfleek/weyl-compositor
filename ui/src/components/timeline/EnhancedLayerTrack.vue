@@ -755,7 +755,7 @@ function stopDrag() {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 6px;
+  width: 10px;
   cursor: ew-resize;
   background: transparent;
 }
