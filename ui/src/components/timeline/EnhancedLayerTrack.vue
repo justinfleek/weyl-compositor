@@ -9,7 +9,7 @@
       'dimmed-by-solo': isDimmedBySolo
     }"
     @click="selectLayer"
-    :style="{ '--label-color': layer.labelColor || '#7c9cff' }"
+    :style="{ '--label-color': effectiveLabelColor }"
   >
     <!-- Layer info sidebar -->
     <div class="layer-info">
@@ -237,6 +237,23 @@ const emit = defineEmits<{
 
 const store = useCompositorStore();
 
+// Layer type colors - distinct colors for each layer type
+const LAYER_TYPE_COLORS: Record<string, string> = {
+  spline: '#4ecdc4',      // Teal
+  text: '#ffc107',        // Yellow/Gold
+  solid: '#7c9cff',       // Blue
+  null: '#ff9800',        // Orange
+  camera: '#e91e63',      // Pink
+  light: '#ffeb3b',       // Bright Yellow
+  audio: '#9c27b0',       // Purple
+  video: '#2196f3',       // Light Blue
+  image: '#8bc34a',       // Green
+  shape: '#00bcd4',       // Cyan
+  adjustment: '#607d8b',  // Blue Grey
+  particles: '#ff5722',   // Deep Orange
+  depthflow: '#673ab7',   // Deep Purple
+};
+
 const trackAreaRef = ref<HTMLDivElement | null>(null);
 const renameInput = ref<HTMLInputElement | null>(null);
 const showLabelPicker = ref(false);
@@ -253,6 +270,11 @@ const labelColors = [
 // Selection state
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
 const selectedKeyframeIds = computed(() => store.selectedKeyframeIds);
+
+// Get the effective label color (user-set > type default > fallback)
+const effectiveLabelColor = computed(() => {
+  return props.layer.labelColor || LAYER_TYPE_COLORS[props.layer.type] || '#7c9cff';
+});
 const isSoloed = computed(() => props.soloedLayerIds.includes(props.layer.id));
 const isDimmedBySolo = computed(() =>
   props.soloedLayerIds.length > 0 && !isSoloed.value
