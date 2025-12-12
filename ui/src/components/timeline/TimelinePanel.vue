@@ -311,16 +311,10 @@ const playheadPercent = computed(() => {
 });
 
 const playheadLeftPx = computed(() => {
-  // Use dynamicTrackOffset (calculated from actual DOM positions) + frame position within track
   const trackOffset = dynamicTrackOffset.value || 236;
   const trackWidthValue = trackWidth.value || 600;
-  const framePercent = store.currentFrame / Math.max(1, store.frameCount);
-  const result = trackOffset + (framePercent * trackWidthValue);
-  // Debug: log occasionally to see values
-  if (store.currentFrame === 0 || store.currentFrame === store.frameCount - 1) {
-    console.log('[TimelinePanel] playheadLeftPx: frame:', store.currentFrame, 'frameCount:', store.frameCount, 'trackOffset:', trackOffset, 'trackWidth:', trackWidthValue, 'result:', result);
-  }
-  return result;
+  const framePercent = store.currentFrame / Math.max(1, store.frameCount - 1);
+  return trackOffset + (framePercent * trackWidthValue);
 });
 
 const scrubProgress = computed(() => {
@@ -674,13 +668,13 @@ function startPlayheadDrag(event: MouseEvent) {
 }
 
 function handlePlayheadDrag(event: MouseEvent) {
-  if (!isPlayheadDragging || !playheadDragRect) return;
+  if (!rulerTrackRef.value) return;
 
-  // Use the rect captured at drag start for consistent tracking
-  const x = event.clientX - playheadDragRect.left;
-  const progress = Math.max(0, Math.min(1, x / playheadDragRect.width));
-  const frame = Math.round(progress * store.frameCount);
-  store.setFrame(Math.min(frame, store.frameCount - 1));
+  const rect = rulerTrackRef.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const progress = Math.max(0, Math.min(1, x / trackWidth.value));
+  const frame = Math.round(progress * (store.frameCount - 1));
+  store.setFrame(frame);
 }
 
 function stopPlayheadDrag() {
