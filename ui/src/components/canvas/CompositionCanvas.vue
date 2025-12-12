@@ -19,7 +19,20 @@
     <!-- Zoom controls -->
     <div class="zoom-controls">
       <button @click="zoomIn" title="Zoom In">+</button>
-      <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
+      <select
+        class="zoom-select"
+        :value="Math.round(zoom * 100)"
+        @change="setZoomFromSelect"
+        title="Select zoom level"
+      >
+        <option value="25">25%</option>
+        <option value="50">50%</option>
+        <option value="75">75%</option>
+        <option value="100">100%</option>
+        <option value="150">150%</option>
+        <option value="200">200%</option>
+        <option value="400">400%</option>
+      </select>
       <button @click="zoomOut" title="Zoom Out">-</button>
       <button @click="fitToView" title="Fit to View">Fit</button>
     </div>
@@ -1008,6 +1021,17 @@ function zoomOut() {
   zoom.value = newZoom;
 }
 
+function setZoomFromSelect(event: Event) {
+  const canvas = fabricCanvas.value;
+  if (!canvas) return;
+
+  const select = event.target as HTMLSelectElement;
+  const newZoom = parseInt(select.value, 10) / 100;
+  canvas.setZoom(newZoom);
+  zoom.value = newZoom;
+  canvas.requestRenderAll();
+}
+
 function fitToView() {
   const canvas = fabricCanvas.value;
   const container = containerRef.value;
@@ -1518,10 +1542,24 @@ defineExpose({
   background: #4a4a4a;
 }
 
-.zoom-level {
-  min-width: 40px;
+.zoom-select {
+  min-width: 60px;
+  padding: 2px 4px;
+  background: #3a3a3a;
+  border: none;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 12px;
+  cursor: pointer;
   text-align: center;
-  font-variant-numeric: tabular-nums;
+}
+
+.zoom-select:hover {
+  background: #4a4a4a;
+}
+
+.zoom-select:focus {
+  outline: 1px solid #7c9cff;
 }
 
 .overlay-controls {
