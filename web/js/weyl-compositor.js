@@ -21079,7 +21079,7 @@ const h5 = {
           pathLayerId: Ce.pathLayerId,
           pathOffset: Ce.pathOffset || 0,
           selectable: !ke.locked
-        }), Fe.layerId = ke.id, h.value.set(ke.id, Fe), I.add(Fe), I.bringObjectToFront(Fe)), Fe.set({
+        }), Fe.layerId = ke.id, h.value.set(ke.id, Fe), I.add(Fe), Fe.setText(Fe.textContent), I.bringObjectToFront(Fe)), Fe.set({
           left: Pt,
           top: dt,
           originX: "center",
@@ -21457,7 +21457,7 @@ const h5 = {
       ])])) : De("", !0)
     ], 512));
   }
-}), p5 = /* @__PURE__ */ Tt(f5, [["__scopeId", "data-v-17f942d6"]]), m5 = { class: "property-track-row" }, g5 = { class: "property-info" }, v5 = ["title"], y5 = { class: "property-name" }, b5 = { class: "property-value" }, _5 = ["onClick", "onDblclick", "title"], x5 = /* @__PURE__ */ wt({
+}), p5 = /* @__PURE__ */ Tt(f5, [["__scopeId", "data-v-9f201cff"]]), m5 = { class: "property-track-row" }, g5 = { class: "property-info" }, v5 = ["title"], y5 = { class: "property-name" }, b5 = { class: "property-value" }, _5 = ["onClick", "onDblclick", "title"], x5 = /* @__PURE__ */ wt({
   __name: "PropertyTrack",
   props: {
     layerId: {},

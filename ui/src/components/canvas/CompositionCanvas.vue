@@ -900,6 +900,8 @@ function renderTextLayers() {
 
       textObjects.value.set(layer.id, textObj);
       canvas.add(textObj as unknown as FabricObject);
+      // Force re-layout now that object is on canvas
+      textObj.setText(textObj.textContent);
       canvas.bringObjectToFront(textObj as unknown as FabricObject);
     } else {
       // Update existing text object
