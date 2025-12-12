@@ -13,7 +13,7 @@
       <span class="property-name">{{ name }}</span>
       <span class="property-value">{{ formattedValue }}</span>
     </div>
-    <div class="property-keyframes" :style="{ width: trackWidth + 'px' }">
+    <div class="property-keyframes">
       <!-- Existing keyframe diamonds - these show WHERE keyframes are on timeline -->
       <div
         v-for="kf in property.keyframes"
@@ -45,7 +45,6 @@ const props = defineProps<{
   propertyPath: string;
   name: string;
   property: AnimatableProperty<any>;
-  trackWidth: number;
   frameCount: number;
   selectedKeyframeIds: string[];
 }>();

@@ -237,7 +237,6 @@
         :propertyPath="prop.path"
         :name="prop.name"
         :property="prop.property"
-        :trackWidth="600"
         :frameCount="frameCount"
         :selectedKeyframeIds="selectedKeyframeIds"
         @selectKeyframe="(id, add) => $emit('selectKeyframe', id, add)"

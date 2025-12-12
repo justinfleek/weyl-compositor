@@ -311,11 +311,16 @@ const playheadPercent = computed(() => {
 });
 
 const playheadLeftPx = computed(() => {
-  // Sidebar is fixed at 236px (16px twirl-down + 220px layer-info), playhead positioned relative to track start
-  const sidebarWidth = 236;
+  // Use dynamicTrackOffset (calculated from actual DOM positions) + frame position within track
+  const trackOffset = dynamicTrackOffset.value || 236;
   const trackWidthValue = trackWidth.value || 600;
   const framePercent = store.currentFrame / Math.max(1, store.frameCount);
-  return sidebarWidth + (framePercent * trackWidthValue);
+  const result = trackOffset + (framePercent * trackWidthValue);
+  // Debug: log occasionally to see values
+  if (store.currentFrame === 0 || store.currentFrame === store.frameCount - 1) {
+    console.log('[TimelinePanel] playheadLeftPx: frame:', store.currentFrame, 'frameCount:', store.frameCount, 'trackOffset:', trackOffset, 'trackWidth:', trackWidthValue, 'result:', result);
+  }
+  return result;
 });
 
 const scrubProgress = computed(() => {
@@ -371,13 +376,20 @@ function updateTrackWidth() {
   if (rulerTrackRef.value) {
     // Use getBoundingClientRect().width for consistency with drag handlers
     const rect = rulerTrackRef.value.getBoundingClientRect();
+
+    // Also check offsetWidth for comparison
+    const offsetW = rulerTrackRef.value.offsetWidth;
+    const clientW = rulerTrackRef.value.clientWidth;
+
+    console.log('[TimelinePanel] updateTrackWidth: rect.width:', rect.width, 'offsetWidth:', offsetW, 'clientWidth:', clientW);
+
     trackWidth.value = rect.width;
 
     // Calculate the real offset from the timeline content to the ruler track
     if (timelineContentRef.value) {
       const contentRect = timelineContentRef.value.getBoundingClientRect();
       dynamicTrackOffset.value = rect.left - contentRect.left;
-      console.log('[TimelinePanel] updateTrackWidth: trackWidth:', trackWidth.value, 'dynamicTrackOffset:', dynamicTrackOffset.value);
+      console.log('[TimelinePanel] updateTrackWidth: dynamicTrackOffset:', dynamicTrackOffset.value, 'rect.left:', rect.left, 'contentRect.left:', contentRect.left);
     }
   }
 }
@@ -653,6 +665,7 @@ function startPlayheadDrag(event: MouseEvent) {
   isPlayheadDragging = true;
   // Capture rect ONCE at drag start - don't recalculate during drag
   playheadDragRect = rulerTrackRef.value.getBoundingClientRect();
+  console.log('[TimelinePanel] startPlayheadDrag: rect.width=', playheadDragRect.width, 'rect.left=', playheadDragRect.left, 'trackWidth.value=', trackWidth.value);
 
   document.addEventListener('mousemove', handlePlayheadDrag);
   document.addEventListener('mouseup', stopPlayheadDrag);
@@ -980,7 +993,8 @@ watch(() => store.frameCount, (newCount) => {
 .timeline-content {
   flex: 1;
   position: relative;
-  overflow: auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling that could affect track width */
+  overflow-y: auto;
   min-height: 0;
 }
 
@@ -993,6 +1007,8 @@ watch(() => store.frameCount, (newCount) => {
   top: 0;
   z-index: 5;
   overflow: visible;
+  /* Prevent ruler from expanding with scrollable content */
+  min-width: 0;
 }
 
 .ruler-sidebar {
@@ -1006,6 +1022,8 @@ watch(() => store.frameCount, (newCount) => {
   flex: 1;
   position: relative;
   overflow: visible;
+  /* Prevent track from expanding beyond available space */
+  min-width: 0;
 }
 
 .work-area {
