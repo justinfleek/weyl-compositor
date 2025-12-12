@@ -96,6 +96,9 @@ export class AnimatedText extends Group {
         evented: false
       });
 
+      // CRITICAL: Force Fabric to calculate text dimensions BEFORE layout
+      letter.initDimensions();
+      letter.setCoords();
       this._letterObjects.push(letter);
       this.add(letter);
     }

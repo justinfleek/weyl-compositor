@@ -19369,7 +19369,7 @@ const fi = class fi extends Ps {
         selectable: !1,
         evented: !1
       });
-      this._letterObjects.push(n), this.add(n);
+      n.initDimensions(), n.setCoords(), this._letterObjects.push(n), this.add(n);
     }
     this._layoutLettersHorizontal(), this.setCoords();
   }
