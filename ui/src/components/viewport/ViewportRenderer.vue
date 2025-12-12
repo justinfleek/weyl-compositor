@@ -200,10 +200,14 @@ function updateViewType(index: number, viewType: ViewType) {
 }
 
 function setLayout(newLayout: ViewLayout) {
+  // Default views for 4-view layout: active-camera, top, front, right
+  const defaultFourViews: ViewType[] = ['active-camera', 'top', 'front', 'right'];
+
   // Ensure we have enough views
   let newViews = [...viewportState.value.views];
   while (newViews.length < 4) {
-    newViews.push('front');
+    // Fill with appropriate defaults from our 4-view preset
+    newViews.push(defaultFourViews[newViews.length] || 'front');
   }
 
   store.updateViewportState({
