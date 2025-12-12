@@ -774,8 +774,8 @@ function renderNullLayers() {
     // Default position is center of composition
     const centerX = (store.width || 1920) / 2;
     const centerY = (store.height || 1080) / 2;
-    const posX = position.x || centerX;
-    const posY = position.y || centerY;
+    const posX = (position.x !== undefined && position.x !== null) ? position.x : centerX;
+    const posY = (position.y !== undefined && position.y !== null) ? position.y : centerY;
 
     // Crosshair size
     const crosshairSize = 40;
@@ -878,8 +878,8 @@ function renderTextLayers() {
     // Default position is center of composition
     const centerX = (store.width || 1920) / 2;
     const centerY = (store.height || 1080) / 2;
-    const posX = position.x || centerX;
-    const posY = position.y || centerY;
+    const posX = (position.x !== undefined && position.x !== null) ? position.x : centerX;
+    const posY = (position.y !== undefined && position.y !== null) ? position.y : centerY;
 
     if (!textObj) {
       // Create new AnimatedText
