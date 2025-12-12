@@ -573,22 +573,41 @@ Canvas handlers for select/text/hand/zoom tools still need implementation.
 |----------|----------|--------|-------|
 | loadAudioFile(file) | audioFeatures.ts | [x] Working | Uses AudioContext |
 | loadAudioFromUrl(url) | audioFeatures.ts | [x] Working | XHR download |
-| store.loadAudio(file) | compositorStore.ts | [ ] Broken | **Blocks main thread** |
+| store.loadAudio(file) | compositorStore.ts | [x] Working | **FIXED** - Uses Web Worker |
 
-### 8.2 Audio Analysis Functions
+### 8.2 Audio Analysis (Web Worker - FIXED)
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| audioWorker.ts | [x] Working | **NEW** - Background thread analysis |
+| audioWorkerClient.ts | [x] Working | **NEW** - Main thread interface |
+| Cooley-Tukey FFT | [x] Working | **NEW** - O(n log n) instead of O(n²) |
+| Progress reporting | [x] Working | **NEW** - Phase + percentage |
+| Cancellation support | [x] Working | **NEW** - cancelAnalysis() |
+
+### 8.3 Store Audio State (NEW)
+
+| State | Type | Purpose |
+|-------|------|---------|
+| audioLoadingState | 'idle'/'decoding'/'analyzing'/'complete'/'error' | Current status |
+| audioLoadingProgress | number (0-1) | Progress percentage |
+| audioLoadingPhase | string | Human-readable phase |
+| audioLoadingError | string \| null | Error message if failed |
+
+### 8.4 Audio Analysis Functions
 
 | Function | Status | Notes |
 |----------|--------|-------|
 | extractAmplitudeEnvelope() | [x] Working | Peak amplitude per frame |
 | extractRMSEnergy() | [x] Working | RMS per frame |
-| extractFrequencyBands() | [ ] Slow | **Custom DFT is O(n²)** |
-| extractSpectralCentroid() | [ ] Slow | **Same FFT issue** |
+| extractFrequencyBands() | [x] Working | **FIXED** - Uses fast FFT |
+| extractSpectralCentroid() | [x] Working | **FIXED** - Uses fast FFT |
 | detectOnsets() | [x] Working | Spectral flux |
 | detectBPM() | [x] Working | Autocorrelation |
 | detectPeaks() | [x] Working | Local maxima |
-| analyzeAudio() | [ ] Broken | **Blocks UI for 5-30s** |
+| analyzeAudio() (worker) | [x] Working | **FIXED** - Non-blocking |
 
-### 8.3 Audio UI Components
+### 8.5 Audio UI Components
 
 | Component | Feature | Status | Notes |
 |-----------|---------|--------|-------|
@@ -604,17 +623,15 @@ Canvas handlers for select/text/hand/zoom tools still need implementation.
 | | Peak markers | [x] Working | From peakData |
 | | Seek on click | [x] Working | Updates frame |
 
-### 8.4 Performance Issues
+### 8.6 Remaining Audio Issues
 
-| Issue | Severity | Location |
-|-------|----------|----------|
-| Main thread blocking | **Critical** | store.loadAudio() |
-| Custom DFT O(n²) | **Critical** | simpleFFT() |
-| No Web Worker | **Critical** | All analysis |
-| No progress indicator | High | During analysis |
-| Frame-by-frame FFT | High | extractFrequencyBands() |
+| Issue | Severity | Notes |
+|-------|----------|-------|
+| No loading indicator UI | Medium | Store has state, UI needs to display it |
+| Volume/mute not connected | Medium | UI exists but not wired |
+| Beat detection simulated | Medium | Panel shows fake values |
 
-### 8.5 Missing Audio Features
+### 8.7 Missing Audio Features
 
 - [ ] Web Audio playback integration
 - [ ] Volume control connected

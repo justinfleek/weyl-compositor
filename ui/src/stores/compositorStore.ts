@@ -21,7 +21,8 @@ import type {
 import type { Camera3D, ViewportState, ViewOptions } from '@/types/camera';
 import { createDefaultCamera, createDefaultViewportState, createDefaultViewOptions } from '@/types/camera';
 import type { AudioAnalysis, PeakData, PeakDetectionConfig } from '@/services/audioFeatures';
-import { loadAudioFile, analyzeAudio, getFeatureAtFrame, detectPeaks, isBeatAtFrame } from '@/services/audioFeatures';
+import { getFeatureAtFrame, detectPeaks, isBeatAtFrame } from '@/services/audioFeatures';
+import { loadAndAnalyzeAudio, cancelAnalysis } from '@/services/audioWorkerClient';
 import { createEmptyProject, createDefaultTransform, createAnimatableProperty } from '@/types/project';
 import { interpolateProperty } from '@/services/interpolation';
 import type { AudioMapping, TargetParameter } from '@/services/audioReactiveMapping';
@@ -65,6 +66,12 @@ interface CompositorState {
   audioAnalysis: AudioAnalysis | null;
   audioFile: File | null;
 
+  // Audio loading state (for Web Worker progress)
+  audioLoadingState: 'idle' | 'decoding' | 'analyzing' | 'complete' | 'error';
+  audioLoadingProgress: number;  // 0-1
+  audioLoadingPhase: string;     // Human-readable phase name
+  audioLoadingError: string | null;
+
   // Audio-particle mappings (legacy)
   audioMappings: Map<string, AudioParticleMapping[]>;
 
@@ -100,6 +107,10 @@ export const useCompositorStore = defineStore('compositor', {
     audioBuffer: null,
     audioAnalysis: null,
     audioFile: null,
+    audioLoadingState: 'idle',
+    audioLoadingProgress: 0,
+    audioLoadingPhase: '',
+    audioLoadingError: null,
     audioMappings: new Map(),
     peakData: null,
     audioReactiveMappings: [],
@@ -1041,13 +1052,41 @@ export const useCompositorStore = defineStore('compositor', {
     // ============================================================
 
     /**
-     * Load audio file for analysis
+     * Load audio file using Web Worker (non-blocking)
      */
     async loadAudio(file: File): Promise<void> {
+      // Reset state
+      this.audioFile = file;
+      this.audioBuffer = null;
+      this.audioAnalysis = null;
+      this.audioLoadingState = 'decoding';
+      this.audioLoadingProgress = 0;
+      this.audioLoadingPhase = 'Preparing...';
+      this.audioLoadingError = null;
+
       try {
-        this.audioFile = file;
-        this.audioBuffer = await loadAudioFile(file);
-        this.audioAnalysis = await analyzeAudio(this.audioBuffer, this.project.composition.fps);
+        const result = await loadAndAnalyzeAudio(
+          file,
+          this.project.composition.fps,
+          {
+            onProgress: (progress) => {
+              // Update loading state based on phase
+              if (progress.phase === 'decoding') {
+                this.audioLoadingState = 'decoding';
+              } else {
+                this.audioLoadingState = 'analyzing';
+              }
+              this.audioLoadingProgress = progress.progress;
+              this.audioLoadingPhase = progress.message;
+            }
+          }
+        );
+
+        this.audioBuffer = result.buffer;
+        this.audioAnalysis = result.analysis;
+        this.audioLoadingState = 'complete';
+        this.audioLoadingProgress = 1;
+        this.audioLoadingPhase = 'Complete';
 
         // Initialize the audio reactive mapper
         this.initializeAudioReactiveMapper();
@@ -1063,13 +1102,27 @@ export const useCompositorStore = defineStore('compositor', {
         this.audioBuffer = null;
         this.audioAnalysis = null;
         this.audioReactiveMapper = null;
+        this.audioLoadingState = 'error';
+        this.audioLoadingError = (error as Error).message;
       }
+    },
+
+    /**
+     * Cancel ongoing audio analysis
+     */
+    cancelAudioLoad(): void {
+      cancelAnalysis();
+      this.audioLoadingState = 'idle';
+      this.audioLoadingProgress = 0;
+      this.audioLoadingPhase = '';
+      this.audioLoadingError = null;
     },
 
     /**
      * Clear loaded audio
      */
     clearAudio(): void {
+      this.cancelAudioLoad();
       this.audioFile = null;
       this.audioBuffer = null;
       this.audioAnalysis = null;
