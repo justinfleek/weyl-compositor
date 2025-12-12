@@ -186,6 +186,14 @@ onMounted(() => {
   // Watch for null layers
   watch(() => store.layers, renderNullLayers, { deep: true, immediate: true });
 
+  // Watch for frame changes to update animated properties
+  watch(() => store.currentFrame, () => {
+    renderSplineLayers();
+    renderTextLayers();
+    renderSolidLayers();
+    renderNullLayers();
+  });
+
   // Watch for particle layers
   watch(() => store.layers, syncParticleSystems, { deep: true, immediate: true });
 
@@ -589,12 +597,66 @@ async function loadDepthMap(depthData: string | null) {
   }
 }
 
-// Helper to get the current value from an AnimatableProperty
-// For now, just return the base value - keyframe interpolation can be added later
-function getAnimatedValue<T>(prop: { value: T; animated?: boolean; keyframes?: any[] } | undefined, defaultValue: T): T {
+// Helper to get the current value from an AnimatableProperty with keyframe interpolation
+function getAnimatedValue<T>(prop: { value: T; animated?: boolean; keyframes?: Array<{ frame: number; value: T }> } | undefined, defaultValue: T): T {
   if (!prop) return defaultValue;
-  // TODO: If prop.animated && prop.keyframes.length > 0, interpolate based on store.currentFrame
-  return prop.value ?? defaultValue;
+
+  // If not animated or no keyframes, return static value
+  if (!prop.animated || !prop.keyframes || prop.keyframes.length === 0) {
+    return prop.value ?? defaultValue;
+  }
+
+  const currentFrame = store.currentFrame;
+  const keyframes = prop.keyframes;
+
+  // Sort keyframes by frame
+  const sorted = [...keyframes].sort((a, b) => a.frame - b.frame);
+
+  // Before first keyframe
+  if (currentFrame <= sorted[0].frame) {
+    return sorted[0].value;
+  }
+
+  // After last keyframe
+  if (currentFrame >= sorted[sorted.length - 1].frame) {
+    return sorted[sorted.length - 1].value;
+  }
+
+  // Find surrounding keyframes
+  let prevKf = sorted[0];
+  let nextKf = sorted[1];
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    if (currentFrame >= sorted[i].frame && currentFrame <= sorted[i + 1].frame) {
+      prevKf = sorted[i];
+      nextKf = sorted[i + 1];
+      break;
+    }
+  }
+
+  // Calculate interpolation factor (0-1)
+  const frameDiff = nextKf.frame - prevKf.frame;
+  const t = frameDiff > 0 ? (currentFrame - prevKf.frame) / frameDiff : 0;
+
+  // Interpolate based on value type
+  const prevVal = prevKf.value;
+  const nextVal = nextKf.value;
+
+  if (typeof prevVal === 'number' && typeof nextVal === 'number') {
+    return (prevVal + (nextVal - prevVal) * t) as T;
+  }
+
+  if (typeof prevVal === 'object' && prevVal !== null && 'x' in prevVal && 'y' in prevVal) {
+    const prev = prevVal as { x: number; y: number };
+    const next = nextVal as { x: number; y: number };
+    return {
+      x: prev.x + (next.x - prev.x) * t,
+      y: prev.y + (next.y - prev.y) * t
+    } as T;
+  }
+
+  // Fallback for non-interpolatable types
+  return prevVal;
 }
 
 // Render spline layers from store
