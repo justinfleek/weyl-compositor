@@ -672,9 +672,16 @@ function handlePlayheadDrag(event: MouseEvent) {
 
   const rect = rulerTrackRef.value.getBoundingClientRect();
   const x = event.clientX - rect.left;
-  const progress = Math.max(0, Math.min(1, x / trackWidth.value));
+  const progress = Math.max(0, Math.min(1, x / rect.width));
   const frame = Math.round(progress * (store.frameCount - 1));
   store.setFrame(frame);
+
+  // Update trackWidth to keep display in sync with actual measurement
+  trackWidth.value = rect.width;
+  if (timelineContentRef.value) {
+    const contentRect = timelineContentRef.value.getBoundingClientRect();
+    dynamicTrackOffset.value = rect.left - contentRect.left;
+  }
 }
 
 function stopPlayheadDrag() {
