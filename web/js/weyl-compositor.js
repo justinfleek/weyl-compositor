@@ -22067,13 +22067,13 @@ const h5 = {
     }
     function B(te) {
       if (!s.value) return;
-      const N = s.value.getBoundingClientRect(), re = te.clientX - N.left, Ce = Math.max(0, Math.min(1, re / N.width)), ze = Math.round(Ce * (e.frameCount - 1));
-      console.log("[TimelinePanel] rulerScrubClick: setting frame to", ze), e.setFrame(ze);
+      const N = s.value.getBoundingClientRect(), re = te.clientX - N.left, Ce = Math.max(0, Math.min(1, re / N.width)), ze = Math.round(Ce * e.frameCount);
+      l.value = N.width, console.log("[TimelinePanel] rulerScrubClick: setting frame to", ze), e.setFrame(Math.min(ze, e.frameCount - 1));
     }
     function q(te) {
       if (!L || !s.value) return;
-      const N = s.value.getBoundingClientRect(), re = te.clientX - N.left, Ce = Math.max(0, Math.min(1, re / N.width)), ze = Math.round(Ce * (e.frameCount - 1));
-      e.setFrame(ze);
+      const N = s.value.getBoundingClientRect(), re = te.clientX - N.left, Ce = Math.max(0, Math.min(1, re / N.width)), ze = Math.round(Ce * e.frameCount);
+      l.value = N.width, e.setFrame(Math.min(ze, e.frameCount - 1));
     }
     function ve() {
       L = !1, document.removeEventListener("mousemove", q), document.removeEventListener("mouseup", ve);
@@ -22084,22 +22084,22 @@ const h5 = {
     }
     function Oe(te) {
       if (!Y || !s.value) return;
-      const N = s.value.getBoundingClientRect(), re = te.clientX - N.left, Ce = Math.max(0, Math.min(1, re / N.width)), ze = Math.round(Ce * (e.frameCount - 1));
-      e.setFrame(ze);
+      const N = s.value.getBoundingClientRect(), re = te.clientX - N.left, Ce = Math.max(0, Math.min(1, re / N.width)), ze = Math.round(Ce * e.frameCount);
+      l.value = N.width, e.setFrame(Math.min(ze, e.frameCount - 1));
     }
     function ke() {
       Y = !1, document.removeEventListener("mousemove", Oe), document.removeEventListener("mouseup", ke);
     }
     function X(te) {
-      const re = te.currentTarget.getBoundingClientRect(), Ce = te.clientX - re.left, ze = Math.max(0, Math.min(1, Ce / re.width)), Ze = Math.round(ze * (e.frameCount - 1));
-      e.setFrame(Ze);
+      const re = te.currentTarget.getBoundingClientRect(), Ce = te.clientX - re.left, ze = Math.max(0, Math.min(1, Ce / re.width)), Ze = Math.round(ze * e.frameCount);
+      e.setFrame(Math.min(Ze, e.frameCount - 1));
     }
     function oe(te) {
       if (!j) return;
       const N = document.querySelector(".scrubber-track");
       if (!N) return;
-      const re = N.getBoundingClientRect(), Ce = te.clientX - re.left, ze = Math.max(0, Math.min(1, Ce / re.width)), Ze = Math.round(ze * (e.frameCount - 1));
-      e.setFrame(Ze);
+      const re = N.getBoundingClientRect(), Ce = te.clientX - re.left, ze = Math.max(0, Math.min(1, Ce / re.width)), Ze = Math.round(ze * e.frameCount);
+      e.setFrame(Math.min(Ze, e.frameCount - 1));
     }
     function ye() {
       j = !1, document.removeEventListener("mousemove", oe), document.removeEventListener("mouseup", ye);
@@ -22239,7 +22239,7 @@ const h5 = {
           ])) : De("", !0)
         ])
       ]),
-      N[33] || (N[33] = ki('<div class="column-headers" data-v-2a18796c><div class="layer-columns-header" data-v-2a18796c><span class="col-header col-label" title="Label Color" data-v-2a18796c>Label</span><span class="col-header col-av" title="Visibility" data-v-2a18796c>👁</span><span class="col-header col-solo" title="Solo" data-v-2a18796c>⚡</span><span class="col-header col-lock" title="Lock" data-v-2a18796c>🔒</span><span class="col-header col-name" data-v-2a18796c>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-2a18796c>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-2a18796c>Switches</span></div><div class="track-header" data-v-2a18796c></div></div>', 1)),
+      N[33] || (N[33] = ki('<div class="column-headers" data-v-af365c76><div class="layer-columns-header" data-v-af365c76><span class="col-header col-label" title="Label Color" data-v-af365c76>Label</span><span class="col-header col-av" title="Visibility" data-v-af365c76>👁</span><span class="col-header col-solo" title="Solo" data-v-af365c76>⚡</span><span class="col-header col-lock" title="Lock" data-v-af365c76>🔒</span><span class="col-header col-name" data-v-af365c76>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-af365c76>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-af365c76>Switches</span></div><div class="track-header" data-v-af365c76></div></div>', 1)),
       d("div", {
         class: "timeline-content",
         ref_key: "timelineContentRef",
@@ -22430,7 +22430,7 @@ const h5 = {
       ])) : De("", !0)
     ]));
   }
-}), Uu = /* @__PURE__ */ Ot(vO, [["__scopeId", "data-v-2a18796c"]]), yO = { class: "graph-editor" }, bO = { class: "graph-header" }, xO = { class: "mode-toggle" }, _O = { class: "preset-buttons" }, wO = ["onClick", "title"], SO = { class: "toolbar" }, CO = { class: "graph-content" }, kO = { class: "property-list" }, TO = { class: "property-list-header" }, OO = ["title"], MO = ["onClick"], EO = ["onClick"], PO = { class: "property-name" }, DO = {
+}), Uu = /* @__PURE__ */ Ot(vO, [["__scopeId", "data-v-af365c76"]]), yO = { class: "graph-editor" }, bO = { class: "graph-header" }, xO = { class: "mode-toggle" }, _O = { class: "preset-buttons" }, wO = ["onClick", "title"], SO = { class: "toolbar" }, CO = { class: "graph-content" }, kO = { class: "property-list" }, TO = { class: "property-list-header" }, OO = ["title"], MO = ["onClick"], EO = ["onClick"], PO = { class: "property-name" }, DO = {
   key: 0,
   class: "keyframe-count"
 }, AO = {

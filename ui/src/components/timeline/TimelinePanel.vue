@@ -618,9 +618,11 @@ function rulerScrubClick(event: MouseEvent) {
   const rect = rulerTrackRef.value.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * (store.frameCount - 1));
+  const frame = Math.round(progress * store.frameCount);
+  // Update trackWidth to match getBoundingClientRect for consistency
+  trackWidth.value = rect.width;
   console.log('[TimelinePanel] rulerScrubClick: setting frame to', frame);
-  store.setFrame(frame);
+  store.setFrame(Math.min(frame, store.frameCount - 1));
 }
 
 function handleRulerScrub(event: MouseEvent) {
@@ -629,8 +631,10 @@ function handleRulerScrub(event: MouseEvent) {
   const rect = rulerTrackRef.value.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * (store.frameCount - 1));
-  store.setFrame(frame);
+  const frame = Math.round(progress * store.frameCount);
+  // Update trackWidth to match getBoundingClientRect for consistency
+  trackWidth.value = rect.width;
+  store.setFrame(Math.min(frame, store.frameCount - 1));
 }
 
 function stopRulerScrub() {
@@ -656,8 +660,10 @@ function handlePlayheadDrag(event: MouseEvent) {
   const rect = rulerTrackRef.value.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * (store.frameCount - 1));
-  store.setFrame(frame);
+  const frame = Math.round(progress * store.frameCount);
+  // Update trackWidth to match getBoundingClientRect for consistency
+  trackWidth.value = rect.width;
+  store.setFrame(Math.min(frame, store.frameCount - 1));
 }
 
 function stopPlayheadDrag() {
@@ -671,8 +677,8 @@ function scrubClick(event: MouseEvent) {
   const rect = target.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * (store.frameCount - 1));
-  store.setFrame(frame);
+  const frame = Math.round(progress * store.frameCount);
+  store.setFrame(Math.min(frame, store.frameCount - 1));
 }
 
 function handleScrub(event: MouseEvent) {
@@ -684,8 +690,8 @@ function handleScrub(event: MouseEvent) {
   const rect = scrubberTrack.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * (store.frameCount - 1));
-  store.setFrame(frame);
+  const frame = Math.round(progress * store.frameCount);
+  store.setFrame(Math.min(frame, store.frameCount - 1));
 }
 
 function stopScrub() {
