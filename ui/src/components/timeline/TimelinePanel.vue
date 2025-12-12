@@ -237,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import type { Layer } from '@/types/project';
 import EnhancedLayerTrack from './EnhancedLayerTrack.vue';
@@ -251,7 +251,7 @@ const showAddLayerMenu = ref(false);
 
 // Track dimensions
 const trackOffset = 220; // Width of layer info sidebar (increased for switches)
-const trackWidth = ref(600);
+const trackWidth = ref(0);
 
 // Search filter
 const searchFilter = ref('');
@@ -693,6 +693,8 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 onMounted(() => {
+  // CRITICAL: Set initial track width immediately
+  nextTick(() => updateTrackWidth());
   updateTrackWidth();
   window.addEventListener('resize', updateTrackWidth);
   document.addEventListener('click', handleClickOutside);

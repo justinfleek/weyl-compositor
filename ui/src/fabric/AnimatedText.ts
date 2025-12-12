@@ -77,11 +77,9 @@ export class AnimatedText extends Group {
    * Create individual letter objects for per-character animation
    */
   private _createLetterObjects(): void {
-    // Remove existing letter objects completely
     this.removeAll();
     this._letterObjects = [];
 
-    // Create new letter objects for each character in the text
     for (const char of this.textContent) {
       const letter = new FabricText(char, {
         fontFamily: this.fontFamily,
@@ -96,25 +94,22 @@ export class AnimatedText extends Group {
         evented: false
       });
 
-      // Force Fabric to calculate text dimensions
       letter.initDimensions();
       letter.setCoords();
       this._letterObjects.push(letter);
       this.add(letter);
     }
 
-    // Layout and update group bounds
     this._layoutLettersHorizontal();
   }
 
   /**
-   * Layout letters horizontally (default, no path)
+   * Layout letters horizontally and update group bounds
    */
   private _layoutLettersHorizontal(): void {
     let x = 0;
 
     for (const letter of this._letterObjects) {
-      // Use fontSize as fallback if width not calculated
       const letterWidth = letter.width || (this.fontSize * 0.6);
       letter.set({
         left: x + letterWidth / 2,
@@ -124,11 +119,10 @@ export class AnimatedText extends Group {
       x += letterWidth + this.letterSpacing;
     }
 
-    // Update group dimensions to prevent clipping
-    this.set({ 
-      width: x || 100, 
-      height: this.fontSize * 1.2 
-    });
+    // Update group dimensions
+    const totalWidth = x || 100;
+    const totalHeight = this.fontSize * 1.2;
+    this.set({ width: totalWidth, height: totalHeight });
     this.setCoords();
   }
 
@@ -146,14 +140,8 @@ export class AnimatedText extends Group {
 
     for (const letter of this._letterObjects) {
       const charWidth = letter.width || (this.fontSize * 0.6);
-
-      // Clamp distance to valid range
       const clampedDistance = Math.max(0, Math.min(currentDistance, totalLength));
-
-      // Get position at current arc length
       const { point, tangent } = arcLengthParam.getPointAtDistance(clampedDistance);
-
-      // Calculate rotation from tangent
       const angle = Math.atan2(tangent.y, tangent.x) * (180 / Math.PI);
 
       letter.set({
@@ -172,23 +160,15 @@ export class AnimatedText extends Group {
     this.dirty = true;
   }
 
-  /**
-   * Update text content
-   */
   setText(text: string): void {
     this.textContent = text;
     this._createLetterObjects();
     this.dirty = true;
-
-    // Force canvas to re-render
     if (this.canvas) {
       this.canvas.requestRenderAll();
     }
   }
 
-  /**
-   * Update font properties
-   */
   setFont(family: string, size: number, weight?: string): void {
     this.fontFamily = family;
     this.fontSize = size;
@@ -196,9 +176,6 @@ export class AnimatedText extends Group {
     this._createLetterObjects();
   }
 
-  /**
-   * Update fill color
-   */
   setFillColor(color: string): void {
     this.textFill = color;
     for (const letter of this._letterObjects) {
@@ -207,35 +184,22 @@ export class AnimatedText extends Group {
     this.dirty = true;
   }
 
-  /**
-   * Update stroke
-   */
   setStroke(color: string, width: number): void {
     this.textStroke = color;
     this.textStrokeWidth = width;
     for (const letter of this._letterObjects) {
-      letter.set({
-        stroke: color,
-        strokeWidth: width
-      });
+      letter.set({ stroke: color, strokeWidth: width });
     }
     this.dirty = true;
   }
 
-  /**
-   * Update letter spacing
-   */
   setLetterSpacing(spacing: number): void {
     this.letterSpacing = spacing;
-    // Re-layout based on whether we're on a path
     if (!this.pathLayerId) {
       this._layoutLettersHorizontal();
     }
   }
 
-  /**
-   * Get total text width (for horizontal layout)
-   */
   getTextWidth(): number {
     let width = 0;
     for (const letter of this._letterObjects) {
@@ -244,9 +208,6 @@ export class AnimatedText extends Group {
     return Math.max(0, width - this.letterSpacing);
   }
 
-  /**
-   * Get text data for serialization
-   */
   getTextData(): TextData {
     return {
       text: this.textContent,
@@ -266,9 +227,6 @@ export class AnimatedText extends Group {
     };
   }
 
-  /**
-   * Get serializable data
-   */
   getSerializableData(): Record<string, any> {
     return {
       textContent: this.textContent,
@@ -284,9 +242,6 @@ export class AnimatedText extends Group {
     };
   }
 
-  /**
-   * Deserialization from JSON
-   */
   static fromObject(object: Record<string, any>): Promise<AnimatedText> {
     return Promise.resolve(new AnimatedText({
       text: object.textContent,
@@ -303,7 +258,5 @@ export class AnimatedText extends Group {
   }
 }
 
-// CRITICAL: Register class for serialization
 classRegistry.setClass(AnimatedText);
-
 export default AnimatedText;
