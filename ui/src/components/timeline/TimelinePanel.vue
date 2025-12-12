@@ -437,7 +437,12 @@ function selectKeyframe(keyframeId: string) {
 }
 
 function addLayer(type: string) {
-  store.createLayer(type as any);
+  if (type === 'camera') {
+    // Use createCameraLayer for cameras (handles Camera3D creation + auto-select)
+    store.createCameraLayer();
+  } else {
+    store.createLayer(type as any);
+  }
   showAddLayerMenu.value = false;
 }
 

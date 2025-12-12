@@ -6394,8 +6394,8 @@ const Pm = [
         this.project.composition.height
       );
       s.name = n, this.cameras.set(e, s), this.activeCameraId || (this.activeCameraId = e);
-      const o = {
-        id: `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      const r = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, o = {
+        id: r,
         name: n,
         type: "camera",
         visible: !0,
@@ -6414,7 +6414,7 @@ const Pm = [
           isActiveCamera: !this.activeCameraId || this.activeCameraId === e
         }
       };
-      return this.project.layers.unshift(o), this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString(), this.pushHistory(), { camera: s, layer: o };
+      return this.project.layers.unshift(o), this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString(), this.pushHistory(), this.selectLayer(r), { camera: s, layer: o };
     },
     /**
      * Get a camera by ID
@@ -21665,7 +21665,7 @@ const h5 = { class: "zoom-controls" }, d5 = { class: "zoom-level" }, f5 = {
       j >= 0 ? e.selectedKeyframeIds.splice(j, 1) : e.selectedKeyframeIds.push(R);
     }
     function ue(R) {
-      e.createLayer(R), o.value = !1;
+      R === "camera" ? e.createCameraLayer() : e.createLayer(R), o.value = !1;
     }
     function Ce(R, j) {
       e.updateLayer(R, { parentId: j });
@@ -21885,7 +21885,7 @@ const h5 = { class: "zoom-controls" }, d5 = { class: "zoom-level" }, f5 = {
           ])) : Ee("", !0)
         ])
       ]),
-      j[33] || (j[33] = Ci('<div class="column-headers" data-v-50323020><div class="layer-columns-header" data-v-50323020><span class="col-header col-label" title="Label Color" data-v-50323020>Label</span><span class="col-header col-av" title="Visibility" data-v-50323020>👁</span><span class="col-header col-solo" title="Solo" data-v-50323020>⚡</span><span class="col-header col-lock" title="Lock" data-v-50323020>🔒</span><span class="col-header col-name" data-v-50323020>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-50323020>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-50323020>Switches</span></div><div class="track-header" data-v-50323020></div></div>', 1)),
+      j[33] || (j[33] = Ci('<div class="column-headers" data-v-ce47b98e><div class="layer-columns-header" data-v-ce47b98e><span class="col-header col-label" title="Label Color" data-v-ce47b98e>Label</span><span class="col-header col-av" title="Visibility" data-v-ce47b98e>👁</span><span class="col-header col-solo" title="Solo" data-v-ce47b98e>⚡</span><span class="col-header col-lock" title="Lock" data-v-ce47b98e>🔒</span><span class="col-header col-name" data-v-ce47b98e>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-ce47b98e>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-ce47b98e>Switches</span></div><div class="track-header" data-v-ce47b98e></div></div>', 1)),
       d("div", {
         class: "timeline-content",
         ref_key: "timelineContentRef",
@@ -22067,7 +22067,7 @@ const h5 = { class: "zoom-controls" }, d5 = { class: "zoom-level" }, f5 = {
       ])) : Ee("", !0)
     ]));
   }
-}), Nu = /* @__PURE__ */ Mt(uO, [["__scopeId", "data-v-50323020"]]), hO = { class: "graph-editor" }, dO = { class: "graph-header" }, fO = { class: "mode-toggle" }, pO = { class: "preset-buttons" }, gO = ["onClick", "title"], mO = { class: "toolbar" }, vO = { class: "graph-content" }, yO = { class: "property-list" }, bO = { class: "property-list-header" }, _O = ["title"], xO = ["onClick"], wO = ["onClick"], SO = { class: "property-name" }, CO = {
+}), Nu = /* @__PURE__ */ Mt(uO, [["__scopeId", "data-v-ce47b98e"]]), hO = { class: "graph-editor" }, dO = { class: "graph-header" }, fO = { class: "mode-toggle" }, pO = { class: "preset-buttons" }, gO = ["onClick", "title"], mO = { class: "toolbar" }, vO = { class: "graph-content" }, yO = { class: "property-list" }, bO = { class: "property-list-header" }, _O = ["title"], xO = ["onClick"], wO = ["onClick"], SO = { class: "property-name" }, CO = {
   key: 0,
   class: "keyframe-count"
 }, kO = {
@@ -22846,7 +22846,7 @@ const h5 = { class: "zoom-controls" }, d5 = { class: "zoom-level" }, f5 = {
 function Hi(i) {
   return i < 0 ? -fn(-i, 1 / 3) : fn(i, 1 / 3);
 }
-const gf = Math.PI, uo = 2 * gf, _s = gf / 2, QO = 1e-6, Za = Number.MAX_SAFE_INTEGER || 9007199254740991, Ja = Number.MIN_SAFE_INTEGER || -9007199254740991, eM = { x: 0, y: 0, z: 0 }, Ie = {
+const gf = Math.PI, uo = 2 * gf, _s = gf / 2, QO = 1e-6, Za = Number.MAX_SAFE_INTEGER || 9007199254740991, Ja = Number.MIN_SAFE_INTEGER || -9007199254740991, e4 = { x: 0, y: 0, z: 0 }, Ie = {
   // Legendre-Gauss abscissae with n=24 (x_i values, defined at i=n as the roots of the nth order Legendre polynomial Pn(x))
   Tvalues: [
     -0.06405689286260563,
@@ -22926,7 +22926,7 @@ const gf = Math.PI, uo = 2 * gf, _s = gf / 2, QO = 1e-6, Za = Number.MAX_SAFE_IN
     }
     if (s < 4) {
       let l = r * r, c = i * i, u, h, f, p = 0;
-      s === 2 ? (o = [o[0], o[1], o[2], eM], u = l, h = r * i * 2, f = c) : s === 3 && (u = l * r, h = l * i * 3, f = r * c * 3, p = i * c);
+      s === 2 ? (o = [o[0], o[1], o[2], e4], u = l, h = r * i * 2, f = c) : s === 3 && (u = l * r, h = l * i * 3, f = r * c * 3, p = i * c);
       const g = {
         x: u * o[0].x + h * o[1].x + f * o[2].x + p * o[3].x,
         y: u * o[0].y + h * o[1].y + f * o[2].y + p * o[3].y,
@@ -23298,7 +23298,7 @@ class ar {
     }), new ar(n);
   }
 }
-const { abs: Xi, min: Uu, max: Hu, cos: tM, sin: nM, acos: sM, sqrt: Yi } = Math, iM = Math.PI;
+const { abs: Xi, min: Uu, max: Hu, cos: t4, sin: n4, acos: s4, sqrt: Yi } = Math, i4 = Math.PI;
 let mf = class xt {
   constructor(e) {
     let n = e && e.forEach ? e : Array.from(arguments).slice(), s = !1;
@@ -23589,7 +23589,7 @@ let mf = class xt {
     }
     const e = this.normal(0), n = this.normal(1);
     let s = e.x * n.x + e.y * n.y;
-    return this._3d && (s += e.z * n.z), Xi(sM(s)) < iM / 3;
+    return this._3d && (s += e.z * n.z), Xi(s4(s)) < i4 / 3;
   }
   reduce() {
     let e, n = 0, s = 0, r = 0.01, o, a = [], l = [], c = this.extrema().values;
@@ -23757,8 +23757,8 @@ let mf = class xt {
           if (r >= 1) {
             if (u.interval.end = _ = 1, h = u, r > 1) {
               let m = {
-                x: u.x + u.r * tM(u.e),
-                y: u.y + u.r * nM(u.e)
+                x: u.x + u.r * t4(u.e),
+                y: u.y + u.r * n4(u.e)
               };
               u.e += Ie.angle({ x: u.x, y: u.y }, m, this.get(1));
             }
@@ -23775,11 +23775,11 @@ let mf = class xt {
     return n;
   }
 };
-const rM = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const r4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   Bezier: mf
-}, Symbol.toStringTag, { value: "Module" })), Xu = rM;
-class oM {
+}, Symbol.toStringTag, { value: "Module" })), Xu = r4;
+class o4 {
   /**
    * @param curve - Bezier.js curve instance
    * @param resolution - Number of samples for LUT (higher = more accurate)
@@ -23854,7 +23854,7 @@ class oM {
     return n;
   }
 }
-function aM(i) {
+function a4(i) {
   if (!i || i.length < 2)
     return null;
   let e = null;
@@ -23892,7 +23892,7 @@ function aM(i) {
   }
   return null;
 }
-class lM {
+class l4 {
   constructor() {
     We(this, "offscreenCanvas", null);
     We(this, "ctx", null);
@@ -23997,9 +23997,9 @@ class lM {
     if (!(h != null && h.controlPoints) || h.controlPoints.length < 2) return;
     const f = this.buildPathCommands(h);
     if (!f || f.length < 2) return;
-    const p = aM(f);
+    const p = a4(f);
     if (!p) return;
-    const g = new oM(p), v = n.properties.find((b) => b.name === "pathOffset"), _ = v ? Os(v, o) : s.pathOffset, y = g.totalLength;
+    const g = new o4(p), v = n.properties.find((b) => b.name === "pathOffset"), _ = v ? Os(v, o) : s.pathOffset, y = g.totalLength;
     let m = _ * y;
     const w = 4 * Math.min(l, c);
     for (const b of s.text) {
@@ -24058,7 +24058,7 @@ class lM {
    * Download frames as ZIP
    */
   async downloadAsZip(e, n = "matte_sequence", s) {
-    const r = (await Promise.resolve().then(() => M4)).default, o = new r();
+    const r = (await Promise.resolve().then(() => MM)).default, o = new r();
     e.forEach((u, h) => {
       const f = `${n}_${String(h).padStart(4, "0")}.png`;
       o.file(f, u);
@@ -24125,16 +24125,16 @@ class lM {
     this.offscreenCanvas = null, this.ctx = null, this.particleSystems.clear();
   }
 }
-const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-header" }, hM = { class: "dialog-content" }, dM = { class: "form-group" }, fM = { class: "resolution-presets" }, pM = ["onClick"], gM = { class: "custom-resolution" }, mM = { class: "dimension-input" }, vM = { class: "dimension-input" }, yM = {
+const Bs = new l4(), c4 = { class: "export-dialog" }, u4 = { class: "dialog-header" }, h4 = { class: "dialog-content" }, d4 = { class: "form-group" }, f4 = { class: "resolution-presets" }, p4 = ["onClick"], g4 = { class: "custom-resolution" }, m4 = { class: "dimension-input" }, v4 = { class: "dimension-input" }, y4 = {
   key: 0,
   class: "dimension-warning"
-}, bM = { class: "form-group" }, _M = { class: "matte-mode-options" }, xM = { class: "form-group" }, wM = { class: "preview-container" }, SM = ["src"], CM = {
+}, b4 = { class: "form-group" }, _4 = { class: "matte-mode-options" }, x4 = { class: "form-group" }, w4 = { class: "preview-container" }, S4 = ["src"], C4 = {
   key: 1,
   class: "preview-placeholder"
-}, kM = {
+}, k4 = {
   key: 0,
   class: "progress-section"
-}, TM = { class: "progress-bar" }, OM = { class: "progress-text" }, MM = { class: "dialog-footer" }, EM = { class: "export-info" }, PM = ["disabled"], DM = ["disabled"], AM = /* @__PURE__ */ Ct({
+}, T4 = { class: "progress-bar" }, O4 = { class: "progress-text" }, M4 = { class: "dialog-footer" }, E4 = { class: "export-info" }, P4 = ["disabled"], D4 = ["disabled"], A4 = /* @__PURE__ */ Ct({
   __name: "ExportDialog",
   emits: ["close", "exported"],
   setup(i, { emit: e }) {
@@ -24221,8 +24221,8 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
       class: "export-dialog-overlay",
       onClick: x[6] || (x[6] = Xe((S) => n("close"), ["self"]))
     }, [
-      d("div", cM, [
-        d("div", uM, [
+      d("div", c4, [
+        d("div", u4, [
           x[8] || (x[8] = d("h3", null, "Export Matte Sequence", -1)),
           d("button", {
             class: "close-btn",
@@ -24231,18 +24231,18 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
             d("i", { class: "pi pi-times" }, null, -1)
           ])])
         ]),
-        d("div", hM, [
-          d("div", dM, [
+        d("div", h4, [
+          d("div", d4, [
             x[13] || (x[13] = d("label", null, "Resolution", -1)),
-            d("div", fM, [
+            d("div", f4, [
               (U(!0), Z(Be, null, He(Ve(r), (S) => (U(), Z("button", {
                 key: S.label,
                 class: Pe(["preset-btn", { active: o.value === S.label }]),
                 onClick: (M) => y(S)
-              }, pe(S.label), 11, pM))), 128))
+              }, pe(S.label), 11, p4))), 128))
             ]),
-            d("div", gM, [
-              d("div", mM, [
+            d("div", g4, [
+              d("div", m4, [
                 x[9] || (x[9] = d("label", null, "Width", -1)),
                 Ze(d("input", {
                   "onUpdate:modelValue": x[1] || (x[1] = (S) => a.value = S),
@@ -24260,7 +24260,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                 ])
               ]),
               x[11] || (x[11] = d("span", { class: "dimension-x" }, "×", -1)),
-              d("div", vM, [
+              d("div", v4, [
                 x[10] || (x[10] = d("label", null, "Height", -1)),
                 Ze(d("input", {
                   "onUpdate:modelValue": x[2] || (x[2] = (S) => l.value = S),
@@ -24278,14 +24278,14 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                 ])
               ])
             ]),
-            c.value ? (U(), Z("p", yM, [
+            c.value ? (U(), Z("p", y4, [
               x[12] || (x[12] = d("i", { class: "pi pi-info-circle" }, null, -1)),
               it(" " + pe(c.value), 1)
             ])) : Ee("", !0)
           ]),
-          d("div", bM, [
+          d("div", b4, [
             x[16] || (x[16] = d("label", null, "Matte Mode", -1)),
-            d("div", _M, [
+            d("div", _4, [
               d("button", {
                 class: Pe(["mode-btn", { active: u.value === "exclude_text" }]),
                 onClick: x[3] || (x[3] = (S) => u.value = "exclude_text")
@@ -24304,15 +24304,15 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
               ])], 2)
             ])
           ]),
-          d("div", xM, [
+          d("div", x4, [
             x[18] || (x[18] = d("label", null, "Preview (Frame 0)", -1)),
-            d("div", wM, [
+            d("div", w4, [
               h.value ? (U(), Z("img", {
                 key: 0,
                 src: h.value,
                 alt: "Matte preview",
                 class: "preview-image"
-              }, null, 8, SM)) : (U(), Z("div", CM, [...x[17] || (x[17] = [
+              }, null, 8, S4)) : (U(), Z("div", C4, [...x[17] || (x[17] = [
                 d("i", { class: "pi pi-image" }, null, -1),
                 d("span", null, "Generating preview...", -1)
               ])]))
@@ -24323,25 +24323,25 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
               it(" Black = Exclude from generation ")
             ], -1))
           ]),
-          f.value ? (U(), Z("div", kM, [
-            d("div", TM, [
+          f.value ? (U(), Z("div", k4, [
+            d("div", T4, [
               d("div", {
                 class: "progress-fill",
                 style: ut({ width: `${p.value}%` })
               }, null, 4)
             ]),
-            d("p", OM, pe(g.value), 1)
+            d("p", O4, pe(g.value), 1)
           ])) : Ee("", !0)
         ]),
-        d("div", MM, [
-          d("div", EM, [
+        d("div", M4, [
+          d("div", E4, [
             d("span", null, pe(Ve(s).frameCount) + " frames @ " + pe(v.value) + "×" + pe(_.value), 1)
           ]),
           d("button", {
             class: "cancel-btn",
             onClick: x[5] || (x[5] = (S) => n("close")),
             disabled: f.value
-          }, " Cancel ", 8, PM),
+          }, " Cancel ", 8, P4),
           d("button", {
             class: "export-btn",
             onClick: b,
@@ -24349,18 +24349,18 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
           }, [
             x[20] || (x[20] = d("i", { class: "pi pi-download" }, null, -1)),
             it(" " + pe(f.value ? "Exporting..." : "Export ZIP"), 1)
-          ], 8, DM)
+          ], 8, D4)
         ])
       ])
     ]));
   }
-}), FM = /* @__PURE__ */ Mt(AM, [["__scopeId", "data-v-34eee532"]]), IM = { class: "workspace-layout" }, LM = { class: "toolbar" }, RM = { class: "tool-group" }, zM = { class: "tool-group" }, jM = ["title"], BM = { class: "icon" }, VM = { class: "timecode-display" }, $M = { class: "tool-group" }, WM = { class: "tool-group" }, NM = ["disabled"], UM = ["disabled"], HM = { class: "workspace-content" }, XM = { class: "panel left-panel" }, YM = { class: "panel-tabs" }, GM = { class: "panel-content" }, KM = { class: "panel viewport-panel" }, qM = { class: "viewport-header" }, ZM = { class: "viewport-tabs" }, JM = { class: "viewport-controls" }, QM = { class: "viewport-content" }, e4 = { class: "panel timeline-panel" }, t4 = { class: "panel graph-editor-panel" }, n4 = {
+}), F4 = /* @__PURE__ */ Mt(A4, [["__scopeId", "data-v-34eee532"]]), I4 = { class: "workspace-layout" }, L4 = { class: "toolbar" }, R4 = { class: "tool-group" }, z4 = { class: "tool-group" }, j4 = ["title"], B4 = { class: "icon" }, V4 = { class: "timecode-display" }, $4 = { class: "tool-group" }, W4 = { class: "tool-group" }, N4 = ["disabled"], U4 = ["disabled"], H4 = { class: "workspace-content" }, X4 = { class: "panel left-panel" }, Y4 = { class: "panel-tabs" }, G4 = { class: "panel-content" }, K4 = { class: "panel viewport-panel" }, q4 = { class: "viewport-header" }, Z4 = { class: "viewport-tabs" }, J4 = { class: "viewport-controls" }, Q4 = { class: "viewport-content" }, eM = { class: "panel timeline-panel" }, tM = { class: "panel graph-editor-panel" }, nM = {
   key: 1,
   class: "panel timeline-panel"
-}, s4 = { class: "panel right-panel" }, i4 = { class: "panel-tabs" }, r4 = { class: "panel-content" }, o4 = { class: "status-bar" }, a4 = { class: "status-left" }, l4 = { class: "status-item" }, c4 = { class: "status-item" }, u4 = { class: "status-center" }, h4 = {
+}, sM = { class: "panel right-panel" }, iM = { class: "panel-tabs" }, rM = { class: "panel-content" }, oM = { class: "status-bar" }, aM = { class: "status-left" }, lM = { class: "status-item" }, cM = { class: "status-item" }, uM = { class: "status-center" }, hM = {
   key: 0,
   class: "render-progress"
-}, d4 = { class: "status-right" }, f4 = { class: "status-item" }, p4 = { class: "status-item" }, g4 = /* @__PURE__ */ Ct({
+}, dM = { class: "status-right" }, fM = { class: "status-item" }, pM = { class: "status-item" }, gM = /* @__PURE__ */ Ct({
   __name: "WorkspaceLayout",
   setup(i) {
     const e = Ht(), n = Me({
@@ -24471,9 +24471,9 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
       g.value = xe.tier, window.addEventListener("keydown", Ce), ee = window.setInterval(Y, 1e3);
     }), Dn(() => {
       window.removeEventListener("keydown", Ce), clearInterval(ee);
-    }), (xe, q) => (U(), Z("div", IM, [
-      d("div", LM, [
-        d("div", RM, [
+    }), (xe, q) => (U(), Z("div", I4, [
+      d("div", L4, [
+        d("div", R4, [
           d("button", {
             class: Pe({ active: n.value === "select" }),
             onClick: q[0] || (q[0] = (ve) => n.value = "select"),
@@ -24511,7 +24511,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
           ])], 2)
         ]),
         q[33] || (q[33] = d("div", { class: "divider" }, null, -1)),
-        d("div", zM, [
+        d("div", z4, [
           d("button", {
             onClick: A,
             title: "Go to Start (Home)"
@@ -24528,8 +24528,8 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
             onClick: de,
             title: p.value ? "Pause (Space)" : "Play (Space)"
           }, [
-            d("span", BM, pe(p.value ? "⏸" : "▶"), 1)
-          ], 8, jM),
+            d("span", B4, pe(p.value ? "⏸" : "▶"), 1)
+          ], 8, j4),
           d("button", {
             onClick: T,
             title: "Step Forward"
@@ -24543,9 +24543,9 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
             d("span", { class: "icon" }, "⏭", -1)
           ])])
         ]),
-        d("div", VM, pe(M.value), 1),
+        d("div", V4, pe(M.value), 1),
         q[34] || (q[34] = d("div", { class: "divider" }, null, -1)),
-        d("div", $M, [
+        d("div", $4, [
           Ze(d("select", {
             "onUpdate:modelValue": q[5] || (q[5] = (ve) => s.value = ve),
             class: "workspace-selector"
@@ -24559,7 +24559,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
           ])
         ]),
         q[35] || (q[35] = d("div", { class: "spacer" }, null, -1)),
-        d("div", WM, [
+        d("div", W4, [
           d("span", {
             class: Pe(["gpu-badge", g.value])
           }, pe(g.value.toUpperCase()), 3),
@@ -24569,14 +24569,14 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
             title: "Undo (Ctrl+Z)"
           }, [...q[30] || (q[30] = [
             d("span", { class: "icon" }, "↩", -1)
-          ])], 8, NM),
+          ])], 8, N4),
           d("button", {
             onClick: z,
             disabled: !he.value,
             title: "Redo (Ctrl+Shift+Z)"
           }, [...q[31] || (q[31] = [
             d("span", { class: "icon" }, "↪", -1)
-          ])], 8, UM),
+          ])], 8, U4),
           d("button", {
             onClick: q[6] || (q[6] = (ve) => f.value = !0),
             title: "Export"
@@ -24586,7 +24586,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
           ])])
         ])
       ]),
-      d("div", HM, [
+      d("div", H4, [
         je(Ve(Ia), { class: "default-theme horizontal-split" }, {
           default: bn(() => [
             je(Ve(js), {
@@ -24595,8 +24595,8 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
               "max-size": 25
             }, {
               default: bn(() => [
-                d("div", XM, [
-                  d("div", YM, [
+                d("div", X4, [
+                  d("div", Y4, [
                     d("button", {
                       class: Pe({ active: r.value === "project" }),
                       onClick: q[7] || (q[7] = (ve) => r.value = "project")
@@ -24606,7 +24606,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                       onClick: q[8] || (q[8] = (ve) => r.value = "effects")
                     }, " Effects ", 2)
                   ]),
-                  d("div", GM, [
+                  d("div", G4, [
                     r.value === "project" ? (U(), yt(sv, { key: 0 })) : r.value === "effects" ? (U(), yt(Rv, { key: 1 })) : Ee("", !0)
                   ])
                 ])
@@ -24628,9 +24628,9 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                       "min-size": 20
                     }, {
                       default: bn(() => [
-                        d("div", KM, [
-                          d("div", qM, [
-                            d("div", ZM, [
+                        d("div", K4, [
+                          d("div", q4, [
+                            d("div", Z4, [
                               d("button", {
                                 class: Pe({ active: a.value === "composition" }),
                                 onClick: q[9] || (q[9] = (ve) => a.value = "composition")
@@ -24644,7 +24644,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                                 onClick: q[11] || (q[11] = (ve) => a.value = "footage")
                               }, " Footage ", 2)
                             ]),
-                            d("div", JM, [
+                            d("div", J4, [
                               Ze(d("select", {
                                 "onUpdate:modelValue": q[12] || (q[12] = (ve) => l.value = ve),
                                 class: "zoom-select"
@@ -24673,7 +24673,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                               ])], 2)
                             ])
                           ]),
-                          d("div", QM, [
+                          d("div", Q4, [
                             a.value === "composition" ? (U(), yt(qC, {
                               key: 0,
                               camera: _.value,
@@ -24707,7 +24707,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                               "min-size": 20
                             }, {
                               default: bn(() => [
-                                d("div", e4, [
+                                d("div", eM, [
                                   je(Nu)
                                 ])
                               ]),
@@ -24718,7 +24718,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                               "min-size": 20
                             }, {
                               default: bn(() => [
-                                d("div", t4, [
+                                d("div", tM, [
                                   je(ZO, {
                                     onClose: q[15] || (q[15] = (ve) => h.value = !1)
                                   })
@@ -24728,7 +24728,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                             })
                           ]),
                           _: 1
-                        })) : (U(), Z("div", n4, [
+                        })) : (U(), Z("div", nM, [
                           je(Nu)
                         ]))
                       ]),
@@ -24746,8 +24746,8 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
               "max-size": 30
             }, {
               default: bn(() => [
-                d("div", s4, [
-                  d("div", i4, [
+                d("div", sM, [
+                  d("div", iM, [
                     d("button", {
                       class: Pe({ active: o.value === "properties" }),
                       onClick: q[16] || (q[16] = (ve) => o.value = "properties")
@@ -24761,7 +24761,7 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
                       onClick: q[18] || (q[18] = (ve) => o.value = "audio")
                     }, " Audio ", 2)
                   ]),
-                  d("div", r4, [
+                  d("div", rM, [
                     o.value === "properties" ? (U(), yt(kw, { key: 0 })) : o.value === "camera" ? (U(), yt(WS, {
                       key: 1,
                       camera: _.value,
@@ -24776,32 +24776,32 @@ const Bs = new lM(), cM = { class: "export-dialog" }, uM = { class: "dialog-head
           _: 1
         })
       ]),
-      d("div", o4, [
-        d("div", a4, [
-          d("span", l4, pe(D.value), 1),
+      d("div", oM, [
+        d("div", aM, [
+          d("span", lM, pe(D.value), 1),
           q[39] || (q[39] = d("span", { class: "status-divider" }, "|", -1)),
-          d("span", c4, pe(V.value), 1)
+          d("span", cM, pe(V.value), 1)
         ]),
-        d("div", u4, [
-          S.value > 0 ? (U(), Z("span", h4, " Rendering: " + pe(Math.round(S.value * 100)) + "% ", 1)) : Ee("", !0)
+        d("div", uM, [
+          S.value > 0 ? (U(), Z("span", hM, " Rendering: " + pe(Math.round(S.value * 100)) + "% ", 1)) : Ee("", !0)
         ]),
-        d("div", d4, [
-          d("span", f4, pe(x.value), 1),
+        d("div", dM, [
+          d("span", fM, pe(x.value), 1),
           q[40] || (q[40] = d("span", { class: "status-divider" }, "|", -1)),
-          d("span", p4, pe(k.value) + " fps", 1)
+          d("span", pM, pe(k.value) + " fps", 1)
         ])
       ]),
-      f.value ? (U(), yt(FM, {
+      f.value ? (U(), yt(F4, {
         key: 0,
         onClose: q[19] || (q[19] = (ve) => f.value = !1),
         onExported: ue
       })) : Ee("", !0)
     ]));
   }
-}), m4 = /* @__PURE__ */ Mt(g4, [["__scopeId", "data-v-a7b6388b"]]), v4 = /* @__PURE__ */ Ct({
+}), mM = /* @__PURE__ */ Mt(gM, [["__scopeId", "data-v-a7b6388b"]]), vM = /* @__PURE__ */ Ct({
   __name: "App",
   setup(i) {
-    return (e, n) => (U(), yt(m4));
+    return (e, n) => (U(), yt(mM));
   }
 }), vf = [
   512,
@@ -25323,11 +25323,11 @@ function bf(i) {
     n.next = { r: 0, g: 0, b: 0, a: 0, next: null }, n = n.next;
   return n.next = e, e;
 }
-function y4(i, e, n) {
+function yM(i, e, n) {
   const s = i.data, r = i.width, o = i.height;
-  e = Math.max(0, Math.min(255, Math.round(e))), n = Math.max(0, Math.min(255, Math.round(n))), !(e === 0 && n === 0) && (e > 0 && b4(s, r, o, e), n > 0 && _4(s, r, o, n));
+  e = Math.max(0, Math.min(255, Math.round(e))), n = Math.max(0, Math.min(255, Math.round(n))), !(e === 0 && n === 0) && (e > 0 && bM(s, r, o, e), n > 0 && _M(s, r, o, n));
 }
-function b4(i, e, n, s) {
+function bM(i, e, n, s) {
   const r = s + s + 1, o = e - 1, a = vf[s], l = yf[s], c = bf(r);
   for (let u = 0; u < n; u++) {
     let h = 0, f = 0, p = 0, g = 0, v = 0, _ = 0, y = 0, m = 0, w = 0, b = 0, k = 0, x = 0;
@@ -25357,7 +25357,7 @@ function b4(i, e, n, s) {
     }
   }
 }
-function _4(i, e, n, s) {
+function _M(i, e, n, s) {
   const r = s + s + 1, o = n - 1, a = vf[s], l = yf[s], c = bf(r);
   for (let u = 0; u < e; u++) {
     let h = 0, f = 0, p = 0, g = 0, v = 0, _ = 0, y = 0, m = 0, w = 0, b = 0, k = 0, x = 0, S = c, M = c;
@@ -25385,7 +25385,7 @@ function _4(i, e, n, s) {
     }
   }
 }
-function x4(i, e) {
+function xM(i, e) {
   const n = e.blurriness ?? 10, s = e.blur_dimensions ?? "both";
   if (n <= 0)
     return i;
@@ -25403,28 +25403,28 @@ function x4(i, e) {
       a = n, l = n;
       break;
   }
-  return y4(o, a, l), r.ctx.putImageData(o, 0, 0), r;
+  return yM(o, a, l), r.ctx.putImageData(o, 0, 0), r;
 }
-function w4() {
-  o5("gaussian-blur", x4);
+function wM() {
+  o5("gaussian-blur", xM);
 }
-function S4() {
-  w4();
+function SM() {
+  wM();
 }
 let _f = null;
 function Yu(i) {
   let e = null;
   if (typeof i == "string" ? e = document.getElementById(i) || document.querySelector(i) : i instanceof HTMLElement ? e = i : e = document.getElementById("weyl-compositor-root") || document.getElementById("app"), !e) return null;
-  S4();
-  const n = Qg(v4);
-  return n.use(nm()), n.mount(e), _f = n, C4(), n;
+  SM();
+  const n = Qg(vM);
+  return n.use(nm()), n.mount(e), _f = n, CM(), n;
 }
-function C4() {
+function CM() {
   window.addEventListener("weyl:inputs-ready", (i) => {
     window.dispatchEvent(new CustomEvent("weyl:load-project-inputs", { detail: i.detail }));
   });
 }
-async function P4(i, e) {
+async function PM(i, e) {
   var n, s;
   return ((s = (n = window.WeylCompositor) == null ? void 0 : n.sendOutput) == null ? void 0 : s.call(n, i, e)) ?? !1;
 }
@@ -25432,7 +25432,7 @@ document.readyState === "loading" ? document.addEventListener("DOMContentLoaded"
   _f || Yu();
 }, 0);
 var ho = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {};
-function k4(i) {
+function kM(i) {
   return i && i.__esModule && Object.prototype.hasOwnProperty.call(i, "default") ? i.default : i;
 }
 function fo(i) {
@@ -27751,12 +27751,12 @@ var xf = { exports: {} };
     }, {}] }, {}, [10])(10);
   });
 })(xf);
-var T4 = xf.exports;
-const O4 = /* @__PURE__ */ k4(T4), M4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+var TM = xf.exports;
+const OM = /* @__PURE__ */ kM(TM), MM = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  default: O4
+  default: OM
 }, Symbol.toStringTag, { value: "Module" }));
 export {
   Yu as mountApp,
-  P4 as sendToComfyUI
+  PM as sendToComfyUI
 };

@@ -960,6 +960,9 @@ export const useCompositorStore = defineStore('compositor', {
       this.project.meta.modified = new Date().toISOString();
       this.pushHistory();
 
+      // Auto-select the new camera layer
+      this.selectLayer(layerId);
+
       return { camera, layer };
     },
 
