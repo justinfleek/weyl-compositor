@@ -6052,7 +6052,7 @@ const Pm = [
       this.project.currentFrame = 0;
     },
     goToEnd() {
-      this.project.currentFrame = this.project.composition.frameCount - 1;
+      this.project.currentFrame = this.project.composition.frameCount;
     },
     /**
      * Tool selection

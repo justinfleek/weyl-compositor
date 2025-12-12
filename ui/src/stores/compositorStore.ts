@@ -390,7 +390,8 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     goToEnd(): void {
-      this.project.currentFrame = this.project.composition.frameCount - 1;
+      // frameCount is the last frame index (not count), so use directly
+      this.project.currentFrame = this.project.composition.frameCount;
     },
 
     /**
