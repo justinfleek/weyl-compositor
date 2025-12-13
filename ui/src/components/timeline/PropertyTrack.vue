@@ -37,7 +37,6 @@
             title="Y"
           />
           <input
-            v-if="hasZValue"
             type="number"
             :value="property.value.z || 0"
             @change="updateVectorZ"
@@ -105,10 +104,6 @@ const hasKeyframeAtCurrentFrame = computed(() => {
 const isVectorValue = computed(() => {
   const val = props.property.value;
   return typeof val === 'object' && val !== null && 'x' in val && 'y' in val;
-});
-
-const hasZValue = computed(() => {
-  return props.name === 'Position' || props.name === 'Scale';
 });
 
 function selectKeyframe(id: string, event: MouseEvent) {

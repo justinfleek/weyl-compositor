@@ -677,7 +677,7 @@ function renderSplineLayers() {
     const position = getAnimatedValue(layer.transform?.position, { x: 0, y: 0 });
     const scale = getAnimatedValue(layer.transform?.scale, { x: 1, y: 1 });
     const rotation = getAnimatedValue(layer.transform?.rotation, 0);
-    const opacity = getAnimatedValue(layer.opacity, 1);
+    const opacity = getAnimatedValue(layer.opacity, 100) / 100;
 
     if (!splineObj) {
       // Create new SplinePath
@@ -750,7 +750,7 @@ function renderSolidLayers() {
     const position = getAnimatedValue(layer.transform?.position, { x: 0, y: 0 });
     const scale = getAnimatedValue(layer.transform?.scale, { x: 1, y: 1 });
     const rotation = getAnimatedValue(layer.transform?.rotation, 0);
-    const opacity = getAnimatedValue(layer.opacity, 1);
+    const opacity = getAnimatedValue(layer.opacity, 100) / 100;
 
     // Get solid color from layer data or use default
     const solidData = layer.data as { color?: string } | null;
@@ -831,7 +831,7 @@ function renderNullLayers() {
     const position = getAnimatedValue(layer.transform?.position, { x: 0, y: 0 });
     const scale = getAnimatedValue(layer.transform?.scale, { x: 1, y: 1 });
     const rotation = getAnimatedValue(layer.transform?.rotation, 0);
-    const opacity = getAnimatedValue(layer.opacity, 1);
+    const opacity = getAnimatedValue(layer.opacity, 100) / 100;
 
     // Default position is center of composition
     const centerX = (store.width || 1920) / 2;
@@ -935,7 +935,7 @@ function renderTextLayers() {
     const scale = getAnimatedValue(layer.transform?.scale, { x: 1, y: 1 });
     const rotation = getAnimatedValue(layer.transform?.rotation, 0);
     const anchor = layer.transform?.anchor ?? { x: 0, y: 0 };
-    const opacity = getAnimatedValue(layer.opacity, 1);
+    const opacity = getAnimatedValue(layer.opacity, 100) / 100;
 
     // Default position is center of composition
     const centerX = (store.width || 1920) / 2;
