@@ -61,13 +61,22 @@
         v-for="kf in property.keyframes"
         :key="kf.id"
         class="keyframe-diamond"
-        :class="{ selected: selectedKeyframeIds.includes(kf.id) }"
+        :class="[
+          { selected: selectedKeyframeIds.includes(kf.id) },
+          `easing-${getEasingCategory(kf.interpolation)}`
+        ]"
         :style="{ left: `${(kf.frame / frameCount) * 100}%` }"
         @mousedown.stop="startKeyframeDrag(kf, $event)"
         @click.stop="selectKeyframe(kf.id, $event)"
+        @dblclick.stop="showEasingMenu(kf, $event)"
         @contextmenu.prevent="showEasingMenu(kf, $event)"
-        :title="`Frame ${kf.frame}: ${JSON.stringify(kf.value)} (${kf.interpolation || 'linear'})`"
-      >◆</div>
+        :title="`Frame ${kf.frame}: ${formatValue(kf.value)}\nEasing: ${kf.interpolation || 'linear'}\n(Double-click or right-click to change easing)`"
+      >
+        <span class="kf-icon">◆</span>
+        <span v-if="kf.interpolation && kf.interpolation !== 'linear'" class="easing-badge">
+          {{ getEasingBadge(kf.interpolation) }}
+        </span>
+      </div>
       <div
         class="playhead-marker"
         :style="{ left: `${(currentFrame / frameCount) * 100}%` }"
@@ -303,12 +312,45 @@ function formatEasingName(name: EasingName): string {
   if (name.startsWith('easeOut')) return 'Out';
   return name;
 }
+
+function getEasingCategory(interpolation: string | undefined): string {
+  if (!interpolation || interpolation === 'linear') return 'linear';
+  if (interpolation === 'hold') return 'hold';
+  if (interpolation === 'bezier') return 'bezier';
+  if (interpolation.includes('Elastic')) return 'elastic';
+  if (interpolation.includes('Bounce')) return 'bounce';
+  if (interpolation.includes('Back')) return 'back';
+  return 'ease';
+}
+
+function getEasingBadge(interpolation: string | undefined): string {
+  if (!interpolation || interpolation === 'linear') return '';
+  if (interpolation === 'hold') return '▬';
+  if (interpolation === 'bezier') return '~';
+  if (interpolation.includes('InOut')) return '⟷';
+  if (interpolation.includes('Out')) return '⟶';
+  if (interpolation.includes('In')) return '⟵';
+  return '~';
+}
+
+function formatValue(value: any): string {
+  if (typeof value === 'number') {
+    return value.toFixed(1);
+  }
+  if (typeof value === 'object' && value !== null) {
+    if ('x' in value && 'y' in value) {
+      const z = 'z' in value ? `, ${(value.z as number).toFixed(0)}` : '';
+      return `(${(value.x as number).toFixed(0)}, ${(value.y as number).toFixed(0)}${z})`;
+    }
+  }
+  return String(value);
+}
 </script>
 
 <style scoped>
 .property-track-row {
   display: flex;
-  height: 32px;
+  height: 36px;
   background: #252525;
   border-bottom: 1px solid #1a1a1a;
 }
@@ -327,25 +369,26 @@ function formatEasingName(name: EasingName): string {
 
 .stopwatch-btn,
 .keyframe-btn {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
   background: transparent;
-  color: #555;
+  color: #666;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 3px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
 }
 
 .stopwatch-btn:hover,
 .keyframe-btn:hover {
-  background: #333;
-  color: #aaa;
+  background: #3a3a3a;
+  color: #ccc;
 }
 
 .stopwatch-btn.active {
@@ -357,9 +400,10 @@ function formatEasingName(name: EasingName): string {
 }
 
 .property-name {
-  font-size: 11px;
-  color: #999;
-  min-width: 60px;
+  font-size: 12px;
+  color: #aaa;
+  min-width: 70px;
+  font-weight: 400;
 }
 
 .property-value-inputs {
@@ -371,15 +415,16 @@ function formatEasingName(name: EasingName): string {
 }
 
 .value-input {
-  width: 50px;
-  padding: 4px 6px;
-  border: 1px solid #444;
+  width: 54px;
+  padding: 5px 6px;
+  border: 1px solid #3a3a3a;
   background: #1a1a1a;
   color: #7c9cff;
-  font-family: monospace;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
   font-size: 11px;
-  border-radius: 3px;
+  border-radius: 4px;
   text-align: right;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .value-input:focus {
@@ -402,25 +447,82 @@ function formatEasingName(name: EasingName): string {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 12px;
+  font-size: 14px;
   color: #f5c542;
   cursor: grab;
   user-select: none;
   z-index: 2;
-  padding: 4px;
+  padding: 6px;
+  transition: transform 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
 }
 
 .keyframe-diamond:hover {
   color: #ffdd77;
-  transform: translate(-50%, -50%) scale(1.3);
+  transform: translate(-50%, -50%) scale(1.4);
+  text-shadow: 0 0 8px rgba(245, 197, 66, 0.5);
 }
 
 .keyframe-diamond.selected {
-  color: #ff9500;
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(124, 156, 255, 0.6);
 }
 
 .keyframe-diamond:active {
   cursor: grabbing;
+}
+
+/* Keyframe icon and badge */
+.kf-icon {
+  display: block;
+}
+
+.easing-badge {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0 2px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.keyframe-diamond:hover .easing-badge {
+  opacity: 1;
+}
+
+/* Easing category colors */
+.keyframe-diamond.easing-linear {
+  color: #f5c542;
+}
+
+.keyframe-diamond.easing-hold {
+  color: #888;
+}
+
+.keyframe-diamond.easing-bezier {
+  color: #4ecdc4;
+}
+
+.keyframe-diamond.easing-ease {
+  color: #7c9cff;
+}
+
+.keyframe-diamond.easing-elastic {
+  color: #ff6b9d;
+}
+
+.keyframe-diamond.easing-bounce {
+  color: #96ceb4;
+}
+
+.keyframe-diamond.easing-back {
+  color: #ffa726;
 }
 
 .playhead-marker {
@@ -437,12 +539,12 @@ function formatEasingName(name: EasingName): string {
 .easing-menu {
   position: absolute;
   z-index: 100;
-  background: #2a2a2a;
+  background: #2d2d2d;
   border: 1px solid #444;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  min-width: 180px;
-  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  min-width: 220px;
+  max-height: 360px;
   overflow-y: auto;
 }
 
@@ -450,11 +552,13 @@ function formatEasingName(name: EasingName): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  border-bottom: 1px solid #444;
-  font-size: 11px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #3a3a3a;
+  font-size: 12px;
   font-weight: 600;
-  color: #ccc;
+  color: #e0e0e0;
+  background: #333;
+  border-radius: 8px 8px 0 0;
 }
 
 .close-btn {
@@ -471,11 +575,11 @@ function formatEasingName(name: EasingName): string {
 }
 
 .easing-menu-content {
-  padding: 6px;
+  padding: 8px;
 }
 
 .easing-group {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .easing-group:last-child {
@@ -484,36 +588,40 @@ function formatEasingName(name: EasingName): string {
 
 .easing-group-name {
   font-size: 10px;
-  color: #777;
-  padding: 2px 4px;
+  color: #888;
+  padding: 4px 6px 2px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 500;
 }
 
 .easing-options {
   display: flex;
-  gap: 2px;
+  gap: 3px;
 }
 
 .easing-option {
   flex: 1;
-  padding: 4px 6px;
+  padding: 6px 8px;
   border: none;
-  background: #333;
-  color: #aaa;
-  font-size: 10px;
-  border-radius: 3px;
+  background: #383838;
+  color: #bbb;
+  font-size: 11px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.1s;
+  transition: all 0.15s ease;
+  font-weight: 500;
 }
 
 .easing-option:hover {
-  background: #444;
+  background: #484848;
   color: #fff;
+  transform: translateY(-1px);
 }
 
 .easing-option.active {
   background: #4a90d9;
   color: #fff;
+  box-shadow: 0 2px 6px rgba(74, 144, 217, 0.3);
 }
 </style>

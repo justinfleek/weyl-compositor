@@ -814,7 +814,7 @@ watch(() => store.frameCount, (newCount) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 12px;
+  padding: 8px 12px;
   background: #252525;
   border-bottom: 1px solid #333;
   gap: 12px;
@@ -847,19 +847,21 @@ watch(() => store.frameCount, (newCount) => {
 }
 
 .playback-controls button {
-  width: 28px;
-  height: 24px;
-  border: 1px solid #444;
-  background: #2a2a2a;
-  color: #888;
-  border-radius: 3px;
+  width: 32px;
+  height: 28px;
+  border: 1px solid #3a3a3a;
+  background: #2d2d2d;
+  color: #999;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
+  transition: all 0.15s ease;
 }
 
 .playback-controls button:hover {
-  background: #333;
+  background: #3a3a3a;
   color: #fff;
+  border-color: #4a4a4a;
 }
 
 .playback-controls button.active {
@@ -869,14 +871,15 @@ watch(() => store.frameCount, (newCount) => {
 }
 
 .loop-btn {
-  width: 28px;
-  height: 24px;
-  border: 1px solid #444;
-  background: #2a2a2a;
-  color: #888;
-  border-radius: 3px;
+  width: 32px;
+  height: 28px;
+  border: 1px solid #3a3a3a;
+  background: #2d2d2d;
+  color: #999;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 9px;
+  font-size: 10px;
+  transition: all 0.15s ease;
 }
 
 .loop-btn.active {
@@ -1003,8 +1006,8 @@ watch(() => store.frameCount, (newCount) => {
   display: flex;
   width: 100%;
   max-width: 100%;
-  height: 24px;
-  background: #222;
+  height: 28px;
+  background: #252525;
   border-bottom: 1px solid #333;
   position: sticky;
   top: 0;
@@ -1307,23 +1310,30 @@ watch(() => store.frameCount, (newCount) => {
 .playhead-container .playhead-head {
   position: absolute;
   top: 0;
-  left: -5px;
-  width: 11px;
-  height: 11px;
+  left: -6px;
+  width: 13px;
+  height: 13px;
   background: #ff4444;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   cursor: ew-resize;
   pointer-events: auto;
   z-index: 101;
+  transition: transform 0.1s ease;
+}
+
+.playhead-container .playhead-head:hover {
+  transform: scale(1.15);
+  filter: brightness(1.1);
 }
 
 .playhead-container .playhead-line {
   position: absolute;
-  top: 11px;
+  top: 13px;
   bottom: 0;
   left: 0;
   width: 1px;
   background: #ff4444;
   pointer-events: none;
+  box-shadow: 0 0 4px rgba(255, 68, 68, 0.3);
 }
 </style>

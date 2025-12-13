@@ -589,10 +589,10 @@ function stopDrag() {
 <style scoped>
 .enhanced-layer-track {
   display: flex;
-  height: 28px;
+  height: 36px;
   border-bottom: 1px solid #2a2a2a;
   background: #1e1e1e;
-  transition: background 0.1s;
+  transition: background 0.15s ease;
 }
 
 .enhanced-layer-track:hover {
@@ -616,24 +616,25 @@ function stopDrag() {
 }
 
 .layer-info {
-  width: 220px;
-  min-width: 220px;
-  max-width: 220px;
+  width: 236px;
+  min-width: 236px;
+  max-width: 236px;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 4px;
+  gap: 4px;
+  padding: 0 8px;
   border-right: 1px solid #333;
   background: #222;
 }
 
 .label-color {
-  width: 14px;
-  height: 20px;
+  width: 6px;
+  height: 28px;
   background: var(--label-color);
   border-radius: 2px;
   cursor: pointer;
   position: relative;
+  flex-shrink: 0;
 }
 
 .label-picker {
@@ -667,21 +668,24 @@ function stopDrag() {
 }
 
 .icon-btn {
-  width: 16px;
-  height: 20px;
+  width: 22px;
+  height: 24px;
   padding: 0;
   border: none;
   background: transparent;
-  color: #555;
+  color: #666;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 11px;
+  border-radius: 3px;
+  transition: all 0.1s ease;
 }
 
 .icon-btn:hover {
-  color: #aaa;
+  color: #ccc;
+  background: #333;
 }
 
 .icon-btn.active {
@@ -706,21 +710,23 @@ function stopDrag() {
 }
 
 .layer-type-icon {
-  font-size: 9px;
-  color: #666;
+  font-size: 10px;
+  color: #888;
   background: #333;
-  padding: 2px 4px;
-  border-radius: 2px;
+  padding: 3px 5px;
+  border-radius: 3px;
   font-family: monospace;
+  flex-shrink: 0;
 }
 
 .layer-name {
   flex: 1;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #e0e0e0;
+  font-weight: 400;
 }
 
 .rename-input {
@@ -848,23 +854,26 @@ function stopDrag() {
 .keyframe-diamond {
   position: absolute;
   top: 50%;
-  width: 8px;
-  height: 8px;
-  background: #ffc107;
+  width: 10px;
+  height: 10px;
+  background: #f5c542;
   transform: translate(-50%, -50%) rotate(45deg);
   cursor: pointer;
   z-index: 2;
-  transition: transform 0.1s, background 0.1s;
-  border: 1px solid transparent;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .keyframe-diamond:hover {
-  transform: translate(-50%, -50%) rotate(45deg) scale(1.2);
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.3);
+  box-shadow: 0 2px 6px rgba(245, 197, 66, 0.4);
 }
 
 .keyframe-diamond.selected {
   background: #ffffff;
   border-color: #7c9cff;
+  box-shadow: 0 0 0 2px rgba(124, 156, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .keyframe-diamond.hold {
