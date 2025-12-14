@@ -183,20 +183,24 @@ const isResizing = ref(false);
 const filteredLayers = computed(() => store.layers || []);
 const totalTrackWidth = computed(() => {
   const contentWidth = (store.frameCount + 50) * pixelsPerFrame.value;
-  // Ensure it fills the viewport at minimum
+  // CRITICAL FIX: Always be at least the size of the viewport
   if (trackViewportRef.value) {
     return Math.max(trackViewportRef.value.clientWidth, contentWidth);
   }
-  return contentWidth;
+  // Fallback estimate when ref not yet available
+  return Math.max(window.innerWidth - sidebarWidth.value - 50, contentWidth);
 });
 const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
 
 // Grid layout style for sidebar rows (consistent column widths)
+// Columns: Arrow | Color | ID | Vis | Lock | 3D | Name | Mode | Parent
 const sidebarGridStyle = computed(() => ({
   display: 'grid',
-  gridTemplateColumns: '20px 16px 24px 24px 24px 1fr 70px 80px',
+  gridTemplateColumns: '20px 20px 30px 24px 24px 24px 1fr 60px 60px',
   alignItems: 'center',
-  height: '28px'
+  height: '28px',
+  width: '100%',
+  boxSizing: 'border-box'
 }));
 
 // Ruler Marks

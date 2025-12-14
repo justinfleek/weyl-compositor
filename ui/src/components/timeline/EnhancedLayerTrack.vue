@@ -164,9 +164,15 @@ const groupedProperties = computed(() => {
     transformProps.push({ path: 'transform.anchorPoint', name: 'Anchor Point', property: t.anchorPoint });
   }
 
-  // Position
+  // Position (2D: X,Y  3D: X,Y,Z)
   if (t.position) {
     transformProps.push({ path: 'transform.position', name: 'Position', property: t.position });
+  }
+
+  // Position Z (3D only)
+  if (props.layer.threeD && t.position?.z !== undefined) {
+    // Position Z is separate in AE for 3D layers
+    transformProps.push({ path: 'transform.position.z', name: 'Position Z', property: { value: t.position.z || 0, animated: false, keyframes: [] } });
   }
 
   // Scale
@@ -176,6 +182,7 @@ const groupedProperties = computed(() => {
 
   // Rotation logic (2D vs 3D)
   if (props.layer.threeD) {
+    // 3D mode: show Orientation and X/Y/Z Rotations
     if (t.orientation) {
       transformProps.push({ path: 'transform.orientation', name: 'Orientation', property: t.orientation });
     }
@@ -189,6 +196,7 @@ const groupedProperties = computed(() => {
       transformProps.push({ path: 'transform.rotationZ', name: 'Z Rotation', property: t.rotationZ });
     }
   } else {
+    // 2D mode: show standard Rotation
     if (t.rotation) {
       transformProps.push({ path: 'transform.rotation', name: 'Rotation', property: t.rotation });
     }
@@ -387,76 +395,169 @@ watch(() => props.isExpandedExternal, v => localExpanded.value = v);
 
 /* SIDEBAR LAYOUT */
 .sidebar-row {
+  display: grid;
+  /* Fixed column widths matching AE layout: Arrow | Color | ID | Vis | Lock | 3D | Name | Mode | Parent */
+  grid-template-columns: 20px 20px 30px 24px 24px 24px 1fr 60px 60px;
+  align-items: center;
   border-bottom: 1px solid #2a2a2a;
   background: #1e1e1e;
   color: #ccc;
-  font-size: 13px;
-  min-height: 28px;
-  /* Support both flex and grid layout */
-  display: grid;
-  align-items: center;
+  font-size: 11px;
+  height: 28px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .sidebar-row.selected { background: #333; color: #fff; }
 
-/* Arrow column FIRST */
-.arrow-col { width: 20px; text-align: center; cursor: pointer; font-size: 9px; color: #888; flex-shrink: 0; }
+/* Arrow column */
+.arrow-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  cursor: pointer;
+  font-size: 9px;
+  color: #888;
+}
 .arrow-col:hover { color: #fff; }
 
-.label-box { width: 12px; height: 12px; margin: 0 4px; border-radius: 2px; cursor: pointer; border: 1px solid #000; flex-shrink: 0; }
-.layer-id { width: 24px; text-align: center; font-size: 10px; color: #666; flex-shrink: 0; }
-.icon-col { width: 24px; text-align: center; cursor: pointer; color: #aaa; font-size: 12px; flex-shrink: 0; }
+/* Color label box */
+.label-box {
+  width: 14px;
+  height: 14px;
+  margin: 0 auto;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1px solid #000;
+}
+
+/* Layer ID */
+.layer-id {
+  text-align: center;
+  font-size: 10px;
+  color: #666;
+}
+
+/* Icon columns */
+.icon-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 12px;
+}
 .icon-col .dim { color: #444; }
 .icon-col:hover { color: #fff; }
 .icon-col.cube-icon { color: #555; }
 .icon-col.cube-icon.active { color: #4a90d9; }
 .icon-col.cube-icon:hover { color: #fff; }
 
-.layer-name-col { flex: 1; display: flex; align-items: center; padding: 0 5px; overflow: hidden; min-width: 100px; }
-.type-icon { font-size: 10px; margin-right: 6px; }
-.name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
-.rename-input { background: #000; border: 1px solid #4a90d9; color: #fff; width: 100%; font-size: 13px; padding: 2px; }
+/* Layer name column */
+.layer-name-col {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  overflow: hidden;
+  min-width: 0; /* Allow shrinking */
+}
+.type-icon { font-size: 10px; margin-right: 6px; flex-shrink: 0; }
+.name-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+.rename-input {
+  background: #000;
+  border: 1px solid #4a90d9;
+  color: #fff;
+  width: 100%;
+  font-size: 11px;
+  padding: 2px 4px;
+  box-sizing: border-box;
+}
 
-/* Columns */
-.col-mode, .col-parent { border-left: 1px solid #333; padding: 0 4px; height: 100%; display: flex; align-items: center; flex-shrink: 0; }
-.col-mode { width: 70px; }
-.col-parent { width: 80px; gap: 4px; }
+/* Mode and Parent columns */
+.col-mode, .col-parent {
+  border-left: 1px solid #333;
+  padding: 0 4px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
 
 .mini-select {
-  width: 100%; background: transparent; border: none; color: #aaa;
-  font-size: 11px; -webkit-appearance: none; cursor: pointer;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 10px;
+  -webkit-appearance: none;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mini-select:hover { color: #fff; }
-.pickwhip-icon { font-family: serif; font-weight: bold; color: #666; cursor: crosshair; }
+.pickwhip-icon {
+  font-family: serif;
+  font-weight: bold;
+  color: #666;
+  cursor: crosshair;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
 
-.children-container { display: flex; flex-direction: column; }
+/* Children container for expanded properties */
+.children-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #151515; /* Slightly darker for nested items */
+}
 
 /* Property Group Sections */
-.property-group-section { display: flex; flex-direction: column; }
-.group-properties { display: flex; flex-direction: column; padding-left: 12px; }
+.property-group-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.group-properties {
+  display: flex;
+  flex-direction: column;
+  padding-left: 12px;
+  background: #171717;
+}
 
 /* Group Header Styles (Sidebar) */
 .sidebar-row.group-header {
-  background: #252525;
+  background: #222;
   border-bottom: 1px solid #2a2a2a;
   cursor: pointer;
-  padding-left: 4px;
+  height: 24px;
 }
 .sidebar-row.group-header:hover { background: #2a2a2a; }
 .group-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: #888;
-  padding-left: 8px;
-  grid-column: span 7;
+  color: #777;
+  padding-left: 4px;
+  grid-column: 2 / -1; /* Span from color column to end */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Group Header Styles (Track) */
 .group-header-track {
-  background: #252525;
+  background: #222;
   cursor: pointer;
   display: flex;
   align-items: center;
   padding-left: 8px;
+  height: 24px;
 }
 .group-header-track:hover { background: #2a2a2a; }
 .group-label-track {
@@ -467,12 +568,44 @@ watch(() => props.isExpandedExternal, v => localExpanded.value = v);
 
 /* TRACK LAYOUT */
 .track-row-container { width: 100%; }
-.track-row { height: 28px; border-bottom: 1px solid #333; position: relative; background: #191919; }
-.duration-bar { position: absolute; height: 18px; top: 5px; border-radius: 2px; cursor: move; }
-.bar-fill { width: 100%; height: 100%; border: 1px solid rgba(0,0,0,0.4); border-radius: 2px; }
-.trim-handle { position: absolute; top: 0; bottom: 0; width: 6px; cursor: ew-resize; background: rgba(255,255,255,0.1); }
+.track-row {
+  height: 28px;
+  border-bottom: 1px solid #333;
+  position: relative;
+  background: #191919;
+  box-sizing: border-box;
+}
+.duration-bar {
+  position: absolute;
+  height: 18px;
+  top: 5px;
+  border-radius: 2px;
+  cursor: move;
+}
+.bar-fill {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(0,0,0,0.4);
+  border-radius: 2px;
+}
+.trim-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  background: rgba(255,255,255,0.1);
+}
 .trim-handle:hover { background: rgba(255,255,255,0.3); }
 .trim-in { left: 0; border-radius: 2px 0 0 2px; }
 .trim-out { right: 0; border-radius: 0 2px 2px 0; }
-.keyframe-marker { position: absolute; top: 10px; font-size: 8px; color: #ebcb8b; transform: translateX(-50%); z-index: 5; pointer-events: none; }
+.keyframe-marker {
+  position: absolute;
+  top: 10px;
+  font-size: 8px;
+  color: #ebcb8b;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+}
 </style>
