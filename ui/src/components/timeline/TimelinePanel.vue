@@ -1,308 +1,124 @@
 <template>
-  <div class="timeline-panel">
-    <!-- Timeline header -->
+  <div class="timeline-panel" @mouseup="stopResize" @mouseleave="stopResize" @mousemove="handleResize">
+    <!-- Header -->
     <div class="timeline-header">
       <div class="header-left">
         <span class="timeline-title">Timeline</span>
-        <span class="timeline-info">
-          {{ store.frameCount }} frames @ {{ store.fps }}fps
-        </span>
+        <span class="timeline-info">{{ store.frameCount }}f @ {{ store.fps }}fps</span>
       </div>
-
       <div class="header-center">
-        <!-- Playback controls -->
         <div class="playback-controls">
-          <button @click="goToStart" title="Go to Start (Home)">
-            <span class="icon">|&lt;</span>
-          </button>
-          <button @click="stepBackward" title="Previous Frame (Page Up)">
-            <span class="icon">&lt;</span>
-          </button>
-          <button @click="togglePlayback" :class="{ active: isPlaying }" title="Play/Pause (Space)">
-            <span class="icon">{{ isPlaying ? '||' : '>' }}</span>
-          </button>
-          <button @click="stepForward" title="Next Frame (Page Down)">
-            <span class="icon">&gt;</span>
-          </button>
-          <button @click="goToEnd" title="Go to End (End)">
-            <span class="icon">&gt;|</span>
-          </button>
+          <button @click="goToStart" title="Start">|&lt;</button>
+          <button @click="stepBackward" title="Prev">&lt;</button>
+          <button @click="togglePlayback" :class="{ active: isPlaying }">{{ isPlaying ? '||' : '▶' }}</button>
+          <button @click="stepForward" title="Next">&gt;</button>
+          <button @click="goToEnd" title="End">&gt;|</button>
         </div>
-
-        <!-- Loop mode -->
-        <button
-          class="loop-btn"
-          :class="{ active: loopMode !== 'none' }"
-          @click="cycleLoopMode"
-          :title="`Loop: ${loopMode}`"
-        >
-          <span class="icon">{{ loopMode === 'none' ? 'L-' : loopMode === 'loop' ? 'LP' : 'PP' }}</span>
-        </button>
       </div>
-
       <div class="header-right">
-        <!-- Delete layer button -->
-        <button
-          class="delete-btn"
-          @click="deleteSelectedLayers"
-          :disabled="store.selectedLayerIds.length === 0"
-          title="Delete selected layer (Delete)"
-        >
+        <button class="delete-btn" @click="deleteSelectedLayers" :disabled="store.selectedLayerIds.length === 0">
           🗑️ Delete
         </button>
-
-        <!-- Graph Editor toggle - switches view mode -->
-        <button
-          class="graph-editor-toggle"
-          :class="{ active: viewMode === 'graph' }"
-          @click="toggleViewMode"
-          title="Toggle Graph Editor (Shift+F3)"
-        >
-          <span class="icon">{{ viewMode === 'graph' ? '◆' : '📈' }}</span>
+        <button class="graph-toggle" :class="{ active: viewMode === 'graph' }" @click="toggleViewMode">
+          {{ viewMode === 'graph' ? 'Graphs' : 'Layers' }}
         </button>
+        <button class="add-layer-btn" @click="showAddLayerMenu = !showAddLayerMenu">+ Layer</button>
 
-        <!-- Search filter -->
-        <input
-          type="text"
-          v-model="searchFilter"
-          placeholder="Search layers..."
-          class="search-input"
-        />
-
-        <!-- Add layer button -->
-        <button class="add-layer-btn" @click="showAddLayerMenu = !showAddLayerMenu" title="Add Layer (Ctrl+Shift+N)">
-          <span class="icon">+</span>
-          Add Layer
-        </button>
-
-        <!-- Add layer dropdown -->
         <div v-if="showAddLayerMenu" class="add-layer-menu">
-          <button @click="addLayer('spline')" title="Create a bezier spline path">Spline Path</button>
-          <button @click="addLayer('text')" title="Create a text layer">Text</button>
-          <button @click="addLayer('solid')" title="Create a solid color layer">Solid</button>
-          <button @click="addLayer('null')" title="Create a null object for parenting">Null Object</button>
-          <button @click="addLayer('camera')" title="Create a 3D camera">Camera</button>
-          <button @click="addLayer('light')" title="Create a light source">Light</button>
+          <button @click="addLayer('spline')">Spline</button>
+          <button @click="addLayer('text')">Text</button>
+          <button @click="addLayer('solid')">Solid</button>
+          <button @click="addLayer('camera')">Camera</button>
         </div>
       </div>
     </div>
 
-    <!-- Column headers -->
-    <div class="column-headers">
-      <div class="layer-columns-header">
-        <span class="col-header col-label" title="Label Color">Label</span>
-        <span class="col-header col-av" title="Visibility">👁</span>
-        <span class="col-header col-solo" title="Solo">⚡</span>
-        <span class="col-header col-lock" title="Lock">🔒</span>
-        <span class="col-header col-name">Layer Name</span>
-        <span class="col-header col-parent" title="Parent & Link">Parent</span>
-        <span class="col-header col-switches" title="Layer Switches">Switches</span>
-      </div>
-      <div class="track-header">
-        <!-- Work area indicator will be here -->
-      </div>
-    </div>
-
-    <!-- Timeline content -->
+    <!-- Main Content Area (Unified Scroll Container) -->
     <div class="timeline-content" ref="timelineContentRef">
-      <!-- Time ruler with work area -->
-      <div class="time-ruler">
-        <div class="ruler-sidebar" />
-        <div class="ruler-track" ref="rulerTrackRef" @mousedown="startRulerScrub" @dblclick="setMarkerAtClick">
-          <!-- Work area -->
-          <div
-            class="work-area"
-            :style="workAreaStyle"
-            @mousedown="startWorkAreaDrag"
-          >
-            <div class="work-area-handle start" @mousedown.stop="startWorkAreaTrim('start', $event)" />
-            <div class="work-area-handle end" @mousedown.stop="startWorkAreaTrim('end', $event)" />
+      <!-- Sticky Time Ruler -->
+      <div class="time-ruler-container">
+        <!-- Sidebar Spacer (Resizes dynamically) -->
+        <div class="ruler-sidebar-spacer" :style="{ width: sidebarWidth + 'px' }">
+          <div class="column-headers">
+            <span class="col-header col-hash">#</span>
+            <span class="col-header col-icon">👁</span>
+            <span class="col-header col-icon">🔒</span>
+            <span class="col-header col-name">Layer Name</span>
           </div>
+        </div>
 
-          <!-- Markers -->
-          <div
-            v-for="marker in markers"
-            :key="marker.id"
-            class="marker"
-            :style="{ left: `${(marker.frame / store.frameCount) * 100}%` }"
-            :class="{ selected: selectedMarkerId === marker.id }"
-            @click.stop="selectMarker(marker.id)"
-            @dblclick.stop="editMarker(marker.id)"
-            :title="`${marker.label} (Frame ${marker.frame})`"
-          >
-            <div class="marker-flag" :style="{ background: marker.color }" />
+        <!-- Track Ruler -->
+        <div class="ruler-track" ref="rulerTrackRef" @mousedown="startRulerScrub">
+          <div v-for="i in 20" :key="i" class="ruler-mark" :style="{ left: `${i * 5}%` }">
+            {{ i * 5 }}
           </div>
-
-          <!-- Time ruler marks -->
-          <div
-            v-for="mark in rulerMarks"
-            :key="mark.frame"
-            class="ruler-mark"
-            :class="{ major: mark.major }"
-            :style="{ left: `${mark.position}%` }"
-          >
-            <span v-if="mark.major" class="mark-label">{{ formatTimecode(mark.frame) }}</span>
-          </div>
-
+          <div class="playhead-head" :style="{ left: `${playheadPosition}px` }">▼</div>
         </div>
       </div>
 
-      <!-- Persistent Split Layout - Sidebar + Track Content -->
+      <!-- Split Layout (Content) -->
       <div class="timeline-split-layout">
-        <!-- LEFT: Property tree sidebar - ALWAYS VISIBLE in both modes -->
-        <div class="property-tree-sidebar" ref="layerTracksRef">
-          <template v-for="layer in filteredLayers" :key="layer.id">
+
+        <!-- LEFT: Resizable Sidebar -->
+        <div class="property-tree-sidebar" :style="{ width: sidebarWidth + 'px' }">
+          <template v-for="layer in filteredLayers" :key="'sidebar-' + layer.id">
             <EnhancedLayerTrack
               :layer="layer"
+              layoutMode="sidebar"
+              :viewMode="viewMode"
               :frameCount="store.frameCount"
               :currentFrame="store.currentFrame"
               :allLayers="store.layers"
               :soloedLayerIds="soloedLayerIds"
-              :showSwitches="showLayerSwitches"
-              :viewMode="viewMode"
-              layoutMode="sidebar"
-              :isExpandedExternal="expandedLayerIds.has(layer.id)"
+              :showSwitches="true"
+              :isExpandedExternal="expandedLayers[layer.id]"
               :selectedPropertyIds="Array.from(selectedPropertyIds)"
               @select="selectLayer"
               @updateLayer="updateLayer"
-              @selectKeyframe="selectKeyframe"
-              @setParent="setLayerParent"
-              @toggleSolo="toggleSolo"
-              @selectProperty="handlePropertySelect"
               @toggleExpand="handleToggleExpand"
+              @selectProperty="handlePropertySelect"
             />
           </template>
-
-          <!-- Empty state -->
-          <div v-if="filteredLayers.length === 0" class="empty-state">
-            <p v-if="searchFilter">No layers match "{{ searchFilter }}"</p>
-            <template v-else>
-              <p>No layers yet</p>
-              <p class="hint">Click "Add Layer" to create a layer</p>
-            </template>
-          </div>
+          <div v-if="filteredLayers.length === 0" class="empty-state">No Layers Created</div>
         </div>
 
-        <!-- RIGHT: Track viewport - shows tracks OR graph canvas -->
-        <div class="track-viewport">
-          <!-- Keyframes mode: show layer tracks -->
+        <!-- RESIZE HANDLE -->
+        <div class="resize-handle" @mousedown="startResize"></div>
+
+        <!-- RIGHT: Timeline Tracks -->
+        <div class="track-viewport" ref="trackViewportRef">
+          <div class="playhead-line" :style="{ left: `${playheadPosition}px` }"></div>
+
+          <!-- Keyframe Mode -->
           <template v-if="viewMode === 'keyframes'">
-            <template v-for="layer in filteredLayers" :key="`track-${layer.id}`">
-              <EnhancedLayerTrack
-                :layer="layer"
-                :frameCount="store.frameCount"
-                :currentFrame="store.currentFrame"
-                :allLayers="store.layers"
-                :soloedLayerIds="soloedLayerIds"
-                :showSwitches="showLayerSwitches"
-                :viewMode="viewMode"
-                layoutMode="track"
-                :isExpandedExternal="expandedLayerIds.has(layer.id)"
-                :selectedPropertyIds="Array.from(selectedPropertyIds)"
-                @select="selectLayer"
-                @updateLayer="updateLayer"
-                @selectKeyframe="selectKeyframe"
-                @setParent="setLayerParent"
-                @toggleSolo="toggleSolo"
-                @selectProperty="handlePropertySelect"
-                @toggleExpand="handleToggleExpand"
-              />
-            </template>
+            <div class="layer-bars-container">
+              <template v-for="layer in filteredLayers" :key="'track-' + layer.id">
+                <EnhancedLayerTrack
+                  :layer="layer"
+                  layoutMode="track"
+                  :viewMode="viewMode"
+                  :frameCount="store.frameCount"
+                  :currentFrame="store.currentFrame"
+                  :allLayers="store.layers"
+                  :soloedLayerIds="soloedLayerIds"
+                  :showSwitches="true"
+                  :isExpandedExternal="expandedLayers[layer.id]"
+                  :selectedPropertyIds="Array.from(selectedPropertyIds)"
+                  @selectKeyframe="selectKeyframe"
+                  @updateLayer="updateLayer"
+                />
+              </template>
+            </div>
           </template>
 
-          <!-- Graph mode: show graph canvas -->
+          <!-- Graph Mode -->
           <GraphEditorCanvas
-            v-else
+            v-else-if="viewMode === 'graph'"
             :frameCount="store.frameCount"
             :currentFrame="store.currentFrame"
             :selectedPropertyIds="Array.from(selectedPropertyIds)"
-            :graphMode="graphDisplayMode"
-            @selectKeyframe="selectKeyframe"
-            @update:graphMode="graphDisplayMode = $event"
+            :graphMode="'value'"
           />
-        </div>
-      </div>
-
-      <!-- Playhead - spans entire timeline content area -->
-      <div
-        class="playhead-container"
-        ref="playheadContainerRef"
-        :style="{ left: `${playheadLeftPx}px` }"
-      >
-        <div
-          class="playhead-head"
-          @mousedown.stop="startPlayheadDrag"
-        />
-        <div class="playhead-line" />
-      </div>
-    </div>
-
-    <!-- Timeline scrubber / mini-timeline -->
-    <div class="timeline-scrubber">
-      <div class="scrubber-sidebar">
-        <!-- Layer switches toggle -->
-        <button
-          class="toggle-switches-btn"
-          :class="{ active: showLayerSwitches }"
-          @click="showLayerSwitches = !showLayerSwitches"
-          title="Toggle Layer Switches"
-        >
-          Sw
-        </button>
-        <span class="frame-label">
-          {{ formatTimecode(store.currentFrame) }}
-        </span>
-      </div>
-
-      <div
-        class="scrubber-track"
-        @mousedown="startScrub"
-        @click="scrubClick"
-      >
-        <!-- Work area preview -->
-        <div class="scrubber-work-area" :style="scrubberWorkAreaStyle" />
-        <div
-          class="scrubber-progress"
-          :style="{ width: `${scrubProgress}%` }"
-        />
-      </div>
-
-      <div class="frame-input">
-        <input
-          type="number"
-          :value="store.currentFrame"
-          :min="0"
-          :max="store.frameCount - 1"
-          @change="setFrameFromInput"
-        />
-        <span class="frame-total">/ {{ store.frameCount - 1 }}</span>
-      </div>
-    </div>
-
-    <!-- Marker edit dialog -->
-    <div v-if="editingMarker" class="marker-dialog" @click.self="editingMarker = null">
-      <div class="marker-dialog-content">
-        <h3>Edit Marker</h3>
-        <div class="form-row">
-          <label>Label:</label>
-          <input type="text" v-model="editingMarker.label" />
-        </div>
-        <div class="form-row">
-          <label>Frame:</label>
-          <input type="number" v-model.number="editingMarker.frame" />
-        </div>
-        <div class="form-row">
-          <label>Color:</label>
-          <input type="color" v-model="editingMarker.color" />
-        </div>
-        <div class="form-row">
-          <label>Comment:</label>
-          <textarea v-model="editingMarker.comment" rows="3" />
-        </div>
-        <div class="dialog-actions">
-          <button @click="deleteMarker(editingMarker.id)" title="Delete this marker">Delete</button>
-          <button @click="editingMarker = null" title="Cancel changes (Esc)">Cancel</button>
-          <button class="primary" @click="saveMarker" title="Save marker changes">Save</button>
         </div>
       </div>
     </div>
@@ -310,1236 +126,133 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue';
+import { ref, computed, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
-import type { Layer } from '@/types/project';
 import EnhancedLayerTrack from './EnhancedLayerTrack.vue';
 import GraphEditorCanvas from './GraphEditorCanvas.vue';
 
 const store = useCompositorStore();
-
+const viewMode = ref<'keyframes' | 'graph'>('keyframes');
+const expandedLayers = ref<Record<string, boolean>>({});
+const selectedPropertyIds = ref<Set<string>>(new Set());
+const showAddLayerMenu = ref(false);
+const searchFilter = ref('');
 const timelineContentRef = ref<HTMLDivElement | null>(null);
 const rulerTrackRef = ref<HTMLDivElement | null>(null);
-const layerTracksRef = ref<HTMLDivElement | null>(null);
-const playheadContainerRef = ref<HTMLDivElement | null>(null);
-const showAddLayerMenu = ref(false);
+const trackWidth = ref(1000);
+const soloedLayerIds = ref<string[]>([]);
 
-// Track dimensions - dynamically calculated
-const trackWidth = ref(0);
-const dynamicTrackOffset = ref(220); // Will be calculated from actual DOM
-
-// Search filter
-const searchFilter = ref('');
-
-// Layer switches visibility
-const showLayerSwitches = ref(true);
-
-// View mode: 'keyframes' shows diamonds, 'graph' shows bezier curves
-const viewMode = ref<'keyframes' | 'graph'>('keyframes');
-
-// Graph editor state
-const graphDisplayMode = ref<'value' | 'speed'>('value');
-const selectedPropertyIds = ref<Set<string>>(new Set());
-
-// Layer expansion state - synced between sidebar and track instances
-const expandedLayerIds = ref<Set<string>>(new Set());
-
-function toggleViewMode() {
-  viewMode.value = viewMode.value === 'keyframes' ? 'graph' : 'keyframes';
+// RESIZE LOGIC
+const sidebarWidth = ref(360); // Wider default
+const isResizing = ref(false);
+function startResize() { isResizing.value = true; document.body.style.cursor = 'col-resize'; }
+function stopResize() { isResizing.value = false; document.body.style.cursor = 'default'; }
+function handleResize(e: MouseEvent) {
+  if (isResizing.value) sidebarWidth.value = Math.max(250, Math.min(800, e.clientX));
 }
 
-// Handle layer expansion toggle - keeps sidebar and track in sync
-function handleToggleExpand(layerId: string, expanded: boolean) {
-  if (expanded) {
-    expandedLayerIds.value.add(layerId);
-  } else {
-    expandedLayerIds.value.delete(layerId);
-  }
-  // Force reactivity update
-  expandedLayerIds.value = new Set(expandedLayerIds.value);
-}
+// Logic
+const filteredLayers = computed(() => store.layers);
+const playheadPosition = computed(() => (store.currentFrame / store.frameCount) * trackWidth.value);
 
-// Handle property selection from EnhancedLayerTrack
-function handlePropertySelect(propertyId: string, addToSelection: boolean) {
-  if (addToSelection) {
-    // Toggle in selection
-    if (selectedPropertyIds.value.has(propertyId)) {
-      selectedPropertyIds.value.delete(propertyId);
-    } else {
-      selectedPropertyIds.value.add(propertyId);
-    }
-  } else {
-    // Replace selection
-    selectedPropertyIds.value.clear();
-    selectedPropertyIds.value.add(propertyId);
-  }
-  // Force reactivity update
+function handleToggleExpand(layerId: string, expanded: boolean) { expandedLayers.value[layerId] = expanded; }
+function handlePropertySelect(propId: string, add: boolean) {
+  if (add) { if (selectedPropertyIds.value.has(propId)) selectedPropertyIds.value.delete(propId); else selectedPropertyIds.value.add(propId); }
+  else { selectedPropertyIds.value.clear(); selectedPropertyIds.value.add(propId); }
   selectedPropertyIds.value = new Set(selectedPropertyIds.value);
 }
 
-// Playback state
+// Actions
+function addLayer(type: string) { store.createLayer(type as any); showAddLayerMenu.value = false; }
+function selectLayer(id: string) { store.selectLayer(id); }
+function updateLayer(id: string, u: any) { store.updateLayer(id, u); }
+function deleteSelectedLayers() { store.selectedLayerIds.forEach(id => store.deleteLayer(id)); }
+function toggleViewMode() { viewMode.value = viewMode.value === 'keyframes' ? 'graph' : 'keyframes'; }
+function selectKeyframe(id: string) {}
+
+// Playback
 const isPlaying = ref(false);
-const loopMode = ref<'none' | 'loop' | 'pingpong'>('loop');
-let playbackInterval: number | null = null;
-let playDirection = 1;
-
-// Work area
-const workArea = reactive({
-  start: 0,
-  end: store.frameCount - 1
-});
-
-// Markers
-interface Marker {
-  id: string;
-  frame: number;
-  label: string;
-  color: string;
-  comment: string;
-}
-
-const markers = ref<Marker[]>([]);
-const selectedMarkerId = ref<string | null>(null);
-const editingMarker = ref<Marker | null>(null);
-
-// Soloed layers
-const soloedLayerIds = ref<string[]>([]);
-
-// Computed
-const filteredLayers = computed(() => {
-  if (!searchFilter.value) return store.layers;
-  const filter = searchFilter.value.toLowerCase();
-  return store.layers.filter(layer =>
-    layer.name.toLowerCase().includes(filter)
-  );
-});
-
-const playheadPosition = computed(() => {
-  return (store.currentFrame / store.frameCount) * trackWidth.value;
-});
-
-const playheadPercent = computed(() => {
-  return (store.currentFrame / store.frameCount) * 100;
-});
-
-const playheadLeftPx = computed(() => {
-  const trackOffset = dynamicTrackOffset.value || 236;
-  const trackWidthValue = trackWidth.value || 600;
-  const framePercent = store.currentFrame / Math.max(1, store.frameCount);
-  return trackOffset + (framePercent * trackWidthValue);
-});
-
-const scrubProgress = computed(() => {
-  return (store.currentFrame / (store.frameCount - 1)) * 100;
-});
-
-const workAreaStyle = computed(() => {
-  const startPercent = (workArea.start / store.frameCount) * 100;
-  const endPercent = ((workArea.end + 1) / store.frameCount) * 100;
-  return {
-    left: `${startPercent}%`,
-    width: `${endPercent - startPercent}%`
-  };
-});
-
-const scrubberWorkAreaStyle = computed(() => {
-  return workAreaStyle.value;
-});
-
-// Ruler marks with timecode
-const rulerMarks = computed(() => {
-  const marks: Array<{ frame: number; position: number; major: boolean }> = [];
-  const frameCount = store.frameCount;
-
-  // Calculate step based on zoom
-  const step = Math.max(1, Math.floor(frameCount / 20));
-  const majorStep = step * 2;
-
-  for (let i = 0; i <= frameCount; i += step) {
-    marks.push({
-      frame: i,
-      position: (i / frameCount) * 100,
-      major: i % majorStep === 0
-    });
-  }
-
-  return marks;
-});
-
-// Format frame as timecode
-function formatTimecode(frame: number): string {
-  const fps = store.fps;
-  const totalSeconds = frame / fps;
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  const frames = frame % fps;
-
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
-}
-
-// Update track width on mount and resize
-function updateTrackWidth() {
-  if (rulerTrackRef.value) {
-    // Use getBoundingClientRect().width for consistency with drag handlers
-    const rect = rulerTrackRef.value.getBoundingClientRect();
-
-    // Also check offsetWidth for comparison
-    const offsetW = rulerTrackRef.value.offsetWidth;
-    const clientW = rulerTrackRef.value.clientWidth;
-
-    console.log('[TimelinePanel] updateTrackWidth: rect.width:', rect.width, 'offsetWidth:', offsetW, 'clientWidth:', clientW);
-
-    trackWidth.value = rect.width;
-
-    // Calculate the real offset from the timeline content to the ruler track
-    if (timelineContentRef.value) {
-      const contentRect = timelineContentRef.value.getBoundingClientRect();
-      dynamicTrackOffset.value = rect.left - contentRect.left;
-      console.log('[TimelinePanel] updateTrackWidth: dynamicTrackOffset:', dynamicTrackOffset.value, 'rect.left:', rect.left, 'contentRect.left:', contentRect.left);
-    }
-  }
-}
-
-// Playback controls
-function togglePlayback() {
-  isPlaying.value = !isPlaying.value;
-
-  if (isPlaying.value) {
-    playDirection = 1;
-    playbackInterval = window.setInterval(() => {
-      let nextFrame = store.currentFrame + playDirection;
-
-      // Handle work area bounds
-      if (nextFrame > workArea.end) {
-        if (loopMode.value === 'loop') {
-          nextFrame = workArea.start;
-        } else if (loopMode.value === 'pingpong') {
-          playDirection = -1;
-          nextFrame = store.currentFrame - 1;
-        } else {
-          stopPlayback();
-          return;
-        }
-      } else if (nextFrame < workArea.start) {
-        if (loopMode.value === 'pingpong') {
-          playDirection = 1;
-          nextFrame = store.currentFrame + 1;
-        }
-      }
-
-      store.setFrame(Math.max(workArea.start, Math.min(workArea.end, nextFrame)));
-    }, 1000 / store.fps);
-  } else {
-    stopPlayback();
-  }
-}
-
-function stopPlayback() {
-  isPlaying.value = false;
-  if (playbackInterval) {
-    clearInterval(playbackInterval);
-    playbackInterval = null;
-  }
-}
-
-function goToStart() {
-  store.setFrame(workArea.start);
-}
-
-function goToEnd() {
-  store.setFrame(workArea.end);
-}
-
-function stepForward() {
-  store.setFrame(Math.min(store.currentFrame + 1, workArea.end));
-}
-
-function stepBackward() {
-  store.setFrame(Math.max(store.currentFrame - 1, workArea.start));
-}
-
-function cycleLoopMode() {
-  const modes: typeof loopMode.value[] = ['none', 'loop', 'pingpong'];
-  const currentIndex = modes.indexOf(loopMode.value);
-  loopMode.value = modes[(currentIndex + 1) % modes.length];
-}
-
-// Layer actions
-function selectLayer(layerId: string) {
-  store.selectLayer(layerId);
-}
-
-function updateLayer(layerId: string, updates: Partial<Layer>) {
-  store.updateLayer(layerId, updates);
-}
-
-function selectKeyframe(keyframeId: string) {
-  const index = store.selectedKeyframeIds.indexOf(keyframeId);
-  if (index >= 0) {
-    store.selectedKeyframeIds.splice(index, 1);
-  } else {
-    store.selectedKeyframeIds.push(keyframeId);
-  }
-}
-
-function addLayer(type: string) {
-  if (type === 'camera') {
-    // Use createCameraLayer for cameras (handles Camera3D creation + auto-select)
-    store.createCameraLayer();
-  } else {
-    store.createLayer(type as any);
-  }
-  showAddLayerMenu.value = false;
-}
-
-function setLayerParent(childId: string, parentId: string | null) {
-  store.updateLayer(childId, { parentId });
-}
-
-function toggleSolo(layerId: string) {
-  const index = soloedLayerIds.value.indexOf(layerId);
-  if (index >= 0) {
-    soloedLayerIds.value.splice(index, 1);
-  } else {
-    soloedLayerIds.value.push(layerId);
-  }
-}
-
-function deleteSelectedLayers() {
-  if (store.selectedLayerIds.length === 0) return;
-
-  // Copy array since we're modifying it
-  const idsToDelete = [...store.selectedLayerIds];
-  idsToDelete.forEach(id => store.deleteLayer(id));
-}
-
-// Work area
-let workAreaDragType: 'move' | 'start' | 'end' | null = null;
-let workAreaDragStart = 0;
-
-function startWorkAreaDrag(event: MouseEvent) {
-  workAreaDragType = 'move';
-  workAreaDragStart = event.clientX;
-  document.addEventListener('mousemove', handleWorkAreaDrag);
-  document.addEventListener('mouseup', stopWorkAreaDrag);
-}
-
-function startWorkAreaTrim(type: 'start' | 'end', event: MouseEvent) {
-  workAreaDragType = type;
-  document.addEventListener('mousemove', handleWorkAreaDrag);
-  document.addEventListener('mouseup', stopWorkAreaDrag);
-}
-
-function handleWorkAreaDrag(event: MouseEvent) {
-  if (!rulerTrackRef.value || !workAreaDragType) return;
-
-  const rect = rulerTrackRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const frame = Math.round((x / rect.width) * store.frameCount);
-
-  if (workAreaDragType === 'start') {
-    workArea.start = Math.max(0, Math.min(frame, workArea.end - 1));
-  } else if (workAreaDragType === 'end') {
-    workArea.end = Math.min(store.frameCount - 1, Math.max(frame, workArea.start + 1));
-  } else if (workAreaDragType === 'move') {
-    const dx = event.clientX - workAreaDragStart;
-    const frameShift = Math.round((dx / rect.width) * store.frameCount);
-
-    const newStart = workArea.start + frameShift;
-    const newEnd = workArea.end + frameShift;
-
-    if (newStart >= 0 && newEnd <= store.frameCount - 1) {
-      workArea.start = newStart;
-      workArea.end = newEnd;
-    }
-
-    workAreaDragStart = event.clientX;
-  }
-}
-
-function stopWorkAreaDrag() {
-  workAreaDragType = null;
-  document.removeEventListener('mousemove', handleWorkAreaDrag);
-  document.removeEventListener('mouseup', stopWorkAreaDrag);
-}
-
-// Markers
-function setMarkerAtClick(event: MouseEvent) {
-  if (!rulerTrackRef.value) return;
-
-  const rect = rulerTrackRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const frame = Math.round((x / rect.width) * store.frameCount);
-
-  const newMarker: Marker = {
-    id: `marker-${Date.now()}`,
-    frame,
-    label: `Marker ${markers.value.length + 1}`,
-    color: '#ffc107',
-    comment: ''
-  };
-
-  markers.value.push(newMarker);
-  editingMarker.value = { ...newMarker };
-}
-
-function selectMarker(markerId: string) {
-  selectedMarkerId.value = selectedMarkerId.value === markerId ? null : markerId;
-}
-
-function editMarker(markerId: string) {
-  const marker = markers.value.find(m => m.id === markerId);
-  if (marker) {
-    editingMarker.value = { ...marker };
-  }
-}
-
-function saveMarker() {
-  if (!editingMarker.value) return;
-
-  const index = markers.value.findIndex(m => m.id === editingMarker.value!.id);
-  if (index >= 0) {
-    markers.value[index] = { ...editingMarker.value };
-  }
-  editingMarker.value = null;
-}
-
-function deleteMarker(markerId: string) {
-  markers.value = markers.value.filter(m => m.id !== markerId);
-  if (selectedMarkerId.value === markerId) {
-    selectedMarkerId.value = null;
-  }
-  editingMarker.value = null;
-}
+function togglePlayback() { isPlaying.value = !isPlaying.value; }
+function goToStart() { store.setFrame(0); }
+function goToEnd() { store.setFrame(store.frameCount - 1); }
+function stepBackward() { store.setFrame(store.currentFrame - 1); }
+function stepForward() { store.setFrame(store.currentFrame + 1); }
 
 // Scrubbing
-let isScrubbing = false;
-let isRulerScrubbing = false;
-
-function startScrub(event: MouseEvent) {
-  isScrubbing = true;
-  scrubClick(event);
-  document.addEventListener('mousemove', handleScrub);
-  document.addEventListener('mouseup', stopScrub);
-}
-
-// Ruler track scrubbing (main timeline)
-let rulerScrubRect: DOMRect | null = null;
-
-function startRulerScrub(event: MouseEvent) {
-  // Don't start scrub if clicking on work area or its handles
-  const target = event.target as HTMLElement;
-  if (target.closest('.work-area-handle') || target.closest('.work-area')) {
-    // Let the work area handle its own drag
-    return;
-  }
-
+function startRulerScrub(e: MouseEvent) {
   if (!rulerTrackRef.value) return;
-
-  isRulerScrubbing = true;
-  // Capture rect ONCE at scrub start
-  rulerScrubRect = rulerTrackRef.value.getBoundingClientRect();
-  rulerScrubClick(event);
-  document.addEventListener('mousemove', handleRulerScrub);
-  document.addEventListener('mouseup', stopRulerScrub);
-}
-
-function rulerScrubClick(event: MouseEvent) {
-  if (!rulerScrubRect) return;
-
-  const x = event.clientX - rulerScrubRect.left;
-  const progress = Math.max(0, Math.min(1, x / rulerScrubRect.width));
-  const frame = Math.round(progress * store.frameCount);
-  store.setFrame(Math.min(frame, store.frameCount - 1));
-}
-
-function handleRulerScrub(event: MouseEvent) {
-  if (!isRulerScrubbing || !rulerScrubRect) return;
-
-  const x = event.clientX - rulerScrubRect.left;
-  const progress = Math.max(0, Math.min(1, x / rulerScrubRect.width));
-  const frame = Math.round(progress * store.frameCount);
-  store.setFrame(Math.min(frame, store.frameCount - 1));
-}
-
-function stopRulerScrub() {
-  isRulerScrubbing = false;
-  rulerScrubRect = null;
-  document.removeEventListener('mousemove', handleRulerScrub);
-  document.removeEventListener('mouseup', stopRulerScrub);
-}
-
-// Playhead dragging
-let isPlayheadDragging = false;
-let playheadDragRect: DOMRect | null = null;
-
-function startPlayheadDrag(event: MouseEvent) {
-  if (!rulerTrackRef.value) return;
-
-  isPlayheadDragging = true;
-  // Capture rect ONCE at drag start - don't recalculate during drag
-  playheadDragRect = rulerTrackRef.value.getBoundingClientRect();
-  console.log('[TimelinePanel] startPlayheadDrag: rect.width=', playheadDragRect.width, 'rect.left=', playheadDragRect.left, 'trackWidth.value=', trackWidth.value);
-
-  document.addEventListener('mousemove', handlePlayheadDrag);
-  document.addEventListener('mouseup', stopPlayheadDrag);
-  // Prevent text selection while dragging
-  event.preventDefault();
-}
-
-function handlePlayheadDrag(event: MouseEvent) {
-  if (!rulerTrackRef.value) return;
-
   const rect = rulerTrackRef.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * store.frameCount);
-  store.setFrame(frame);
-
-  // Update trackWidth to keep display in sync with actual measurement
-  trackWidth.value = rect.width;
-  if (timelineContentRef.value) {
-    const contentRect = timelineContentRef.value.getBoundingClientRect();
-    dynamicTrackOffset.value = rect.left - contentRect.left;
-  }
+  const update = (ev: MouseEvent) => {
+    const x = ev.clientX - rect.left;
+    const f = Math.max(0, Math.min(store.frameCount, (x / rect.width) * store.frameCount));
+    store.setFrame(Math.round(f));
+  };
+  update(e);
+  window.addEventListener('mousemove', update);
+  window.addEventListener('mouseup', () => window.removeEventListener('mousemove', update), { once: true });
 }
 
-function stopPlayheadDrag() {
-  isPlayheadDragging = false;
-  playheadDragRect = null;
-  document.removeEventListener('mousemove', handlePlayheadDrag);
-  document.removeEventListener('mouseup', stopPlayheadDrag);
+function updateLayout() { if (rulerTrackRef.value) trackWidth.value = rulerTrackRef.value.clientWidth; }
+function handleKeydown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') deleteSelectedLayers();
+  if (e.key === ' ') { e.preventDefault(); togglePlayback(); }
 }
 
-function scrubClick(event: MouseEvent) {
-  const target = event.currentTarget as HTMLElement;
-  const rect = target.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * store.frameCount);
-  store.setFrame(Math.min(frame, store.frameCount - 1));
-}
-
-function handleScrub(event: MouseEvent) {
-  if (!isScrubbing) return;
-
-  const scrubberTrack = document.querySelector('.scrubber-track');
-  if (!scrubberTrack) return;
-
-  const rect = scrubberTrack.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const progress = Math.max(0, Math.min(1, x / rect.width));
-  const frame = Math.round(progress * store.frameCount);
-  store.setFrame(Math.min(frame, store.frameCount - 1));
-}
-
-function stopScrub() {
-  isScrubbing = false;
-  document.removeEventListener('mousemove', handleScrub);
-  document.removeEventListener('mouseup', stopScrub);
-}
-
-function setFrameFromInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const frame = parseInt(input.value, 10);
-  if (!isNaN(frame)) {
-    store.setFrame(frame);
-  }
-}
-
-// Keyboard shortcuts
-function handleKeyDown(event: KeyboardEvent) {
-  // Don't trigger shortcuts when typing in input fields
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-    return;
-  }
-
-  // Undo: Ctrl+Z
-  if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
-    event.preventDefault();
-    store.undo();
-    return;
-  }
-
-  // Redo: Ctrl+Shift+Z or Ctrl+Y
-  if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
-    event.preventDefault();
-    store.redo();
-    return;
-  }
-
-  // Delete selected layers
-  if (event.key === 'Delete' || event.key === 'Backspace') {
-    event.preventDefault();
-    deleteSelectedLayers();
-    return;
-  }
-
-  switch (event.key) {
-    case ' ':
-      event.preventDefault();
-      togglePlayback();
-      break;
-    case 'Home':
-      goToStart();
-      break;
-    case 'End':
-      goToEnd();
-      break;
-    case 'PageUp':
-      stepBackward();
-      break;
-    case 'PageDown':
-      stepForward();
-      break;
-    case 'b':
-    case 'B':
-      // Set work area start
-      workArea.start = store.currentFrame;
-      break;
-    case 'n':
-    case 'N':
-      // Set work area end
-      workArea.end = store.currentFrame;
-      break;
-  }
-}
-
-// Close menu when clicking outside
-function handleClickOutside(event: MouseEvent) {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.add-layer-btn') && !target.closest('.add-layer-menu')) {
-    showAddLayerMenu.value = false;
-  }
-}
-
-onMounted(() => {
-  // CRITICAL: Set initial track width immediately
-  nextTick(() => updateTrackWidth());
-  updateTrackWidth();
-  window.addEventListener('resize', updateTrackWidth);
-  document.addEventListener('click', handleClickOutside);
-  document.addEventListener('keydown', handleKeyDown);
-
-  // Initialize work area
-  workArea.end = store.frameCount - 1;
-});
-
-onUnmounted(() => {
-  stopPlayback();
-  window.removeEventListener('resize', updateTrackWidth);
-  document.removeEventListener('click', handleClickOutside);
-  document.removeEventListener('keydown', handleKeyDown);
-});
-
-// Update work area when frame count changes
-watch(() => store.frameCount, (newCount) => {
-  if (workArea.end >= newCount) {
-    workArea.end = newCount - 1;
-  }
-});
+onMounted(() => { window.addEventListener('resize', updateLayout); window.addEventListener('keydown', handleKeydown); nextTick(updateLayout); });
+onUnmounted(() => { window.removeEventListener('resize', updateLayout); window.removeEventListener('keydown', handleKeydown); });
 </script>
 
 <style scoped>
-.timeline-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: #1e1e1e;
-  color: #e0e0e0;
-  font-size: 12px;
-}
+.timeline-panel { display: flex; flex-direction: column; height: 100%; background: #161616; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; user-select: none; }
+.timeline-header { height: 40px; background: #222; border-bottom: 1px solid #000; display: flex; justify-content: space-between; padding: 0 10px; align-items: center; }
+.header-left, .header-center, .header-right { display: flex; gap: 10px; align-items: center; }
+.timeline-title { font-size: 18px; font-weight: 600; }
+.timeline-info { font-size: 14px; color: #888; }
 
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #252525;
-  border-bottom: 1px solid #333;
-  gap: 12px;
-}
+/* Main Scroll Area - PARENT SCROLLS BOTH SIDES */
+.timeline-content { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; position: relative; }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+/* Sticky Ruler */
+.time-ruler-container { display: flex; height: 32px; background: #222; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #444; }
+.ruler-sidebar-spacer { flex-shrink: 0; border-right: 1px solid #444; background: #222; }
+.column-headers { display: flex; height: 100%; align-items: center; padding: 0 5px; font-size: 12px; color: #aaa; }
+.col-header { padding: 0 5px; border-right: 1px solid #333; height: 100%; display: flex; align-items: center; }
+.col-hash { width: 30px; justify-content: center; }
+.col-icon { width: 30px; justify-content: center; }
+.col-name { flex: 1; padding-left: 10px; }
 
-.timeline-title {
-  font-weight: 500;
-  font-size: 18px;
-}
+.ruler-track { flex: 1; position: relative; cursor: pointer; background: #222; }
+.ruler-mark { position: absolute; font-size: 10px; color: #888; top: 2px; border-left: 1px solid #555; padding-left: 2px; height: 100%; }
+.playhead-head { position: absolute; color: #3ea6ff; top: 0; transform: translateX(-50%); font-size: 10px; pointer-events: none; }
 
-.timeline-info {
-  font-size: 16px;
-  color: #888;
-}
-
-.header-center {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.playback-controls {
-  display: flex;
-  gap: 2px;
-}
-
-.playback-controls button {
-  width: 32px;
-  height: 28px;
-  border: 1px solid #3a3a3a;
-  background: #2d2d2d;
-  color: #999;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.15s ease;
-}
-
-.playback-controls button:hover {
-  background: #3a3a3a;
-  color: #fff;
-  border-color: #4a4a4a;
-}
-
-.playback-controls button.active {
-  background: #7c9cff;
-  border-color: #7c9cff;
-  color: #fff;
-}
-
-.loop-btn {
-  width: 32px;
-  height: 28px;
-  border: 1px solid #3a3a3a;
-  background: #2d2d2d;
-  color: #999;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 10px;
-  transition: all 0.15s ease;
-}
-
-.loop-btn.active {
-  background: #4a90d9;
-  border-color: #4a90d9;
-  color: #fff;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
-.search-input {
-  width: 120px;
-  padding: 4px 8px;
-  border: 1px solid #444;
-  background: #1e1e1e;
-  color: #e0e0e0;
-  border-radius: 3px;
-  font-size: 11px;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #7c9cff;
-}
-
-.add-layer-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border: none;
-  background: #7c9cff;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 11px;
-}
-
-.add-layer-btn:hover {
-  background: #8cacff;
-}
-
-.delete-btn {
-  padding: 4px 8px;
-  background: #3a3a3a;
-  border: 1px solid #555;
-  color: #e0e0e0;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-.delete-btn:hover:not(:disabled) {
-  background: #ff4444;
-  border-color: #ff4444;
-}
-.delete-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.add-layer-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 4px;
-  overflow: hidden;
-  z-index: 100;
-  min-width: 120px;
-}
-
-.add-layer-menu button {
-  display: block;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: #e0e0e0;
-  cursor: pointer;
-  font-size: 11px;
-  text-align: left;
-}
-
-.add-layer-menu button:hover {
-  background: #3a3a3a;
-}
-
-.column-headers {
-  display: flex;
-  height: 20px;
-  background: #222;
-  border-bottom: 1px solid #333;
-  font-size: 9px;
-  color: #666;
-}
-
-.layer-columns-header {
-  width: 300px;
-  min-width: 300px;
-  max-width: 300px;
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  padding: 0 2px;
-  border-right: 1px solid #333;
-}
-
-.col-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.col-label { width: 24px; }
-.col-av { width: 20px; }
-.col-solo { width: 20px; }
-.col-lock { width: 20px; }
-.col-name { flex: 1; text-align: left; padding-left: 4px; }
-.col-parent { width: 36px; }
-.col-switches { width: 50px; }
-
-.track-header {
-  flex: 1;
-}
-
-.timeline-content {
-  flex: 1;
-  position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;  /* THIS is the scroll container */
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.time-ruler {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  height: 28px;
-  background: #252525;
-  border-bottom: 1px solid #333;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  overflow: visible;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.ruler-sidebar {
-  width: 300px;
-  min-width: 300px;
-  max-width: 300px;
-  border-right: 1px solid #333;
-}
-
-.ruler-track {
-  flex: 1;
-  position: relative;
-  overflow: visible;
-  /* Prevent track from expanding beyond available space */
-  min-width: 0;
-}
-
-.work-area {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: rgba(124, 156, 255, 0.15);
-  cursor: move;
-}
-
-.work-area-handle {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: #7c9cff;
-  cursor: ew-resize;
-}
-
-.work-area-handle.start {
-  left: 0;
-}
-
-.work-area-handle.end {
-  right: 0;
-}
-
-.marker {
-  position: absolute;
-  top: 0;
-  width: 0;
-  height: 100%;
-  z-index: 3;
-  cursor: pointer;
-}
-
-.marker-flag {
-  position: absolute;
-  top: 0;
-  left: -5px;
-  width: 10px;
-  height: 10px;
-  clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
-}
-
-.marker.selected .marker-flag {
-  transform: scale(1.2);
-  filter: brightness(1.3);
-}
-
-.ruler-mark {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: #333;
-}
-
-.ruler-mark.major {
-  background: #444;
-}
-
-.mark-label {
-  position: absolute;
-  top: 2px;
-  left: 4px;
-  font-size: 9px;
-  color: #666;
-  white-space: nowrap;
-}
-
-/* Persistent Split Layout - After Effects style */
-.timeline-split-layout {
-  display: flex;
-  width: 100%;
-  /* NO overflow here - let it expand to full height of children */
-}
+/* Split Layout */
+.timeline-split-layout { display: flex; flex: 1; }
 
 .property-tree-sidebar {
-  width: 300px;
-  min-width: 300px;
-  max-width: 300px;
-  background: #222;
+  background: #1e1e1e;
   border-right: 1px solid #333;
-  /* NO overflow-y - parent scrolls */
-  overflow: visible;
+  display: flex; flex-direction: column; flex-shrink: 0;
+  overflow: visible; /* Let Parent Scroll */
 }
+
+.resize-handle { width: 5px; background: #111; cursor: col-resize; border-left: 1px solid #333; border-right: 1px solid #333; z-index: 10; flex-shrink: 0; }
+.resize-handle:hover { background: #4a90d9; }
 
 .track-viewport {
-  flex: 1;
-  position: relative;
+  flex: 1; position: relative; background: #1a1a1a;
+  overflow-x: auto; /* Allow horizontal scroll for long timelines */
   min-width: 0;
-  background: #1a1a1a;
-  /* NO overflow-y - parent scrolls */
-  /* overflow-x: auto if needed for horizontal timeline scroll */
-  overflow-y: visible;
 }
 
-.empty-state {
-  padding: 24px;
-  text-align: center;
-  color: #555;
-}
+.playhead-line { position: absolute; top: 0; bottom: 0; width: 1px; background: #3ea6ff; pointer-events: none; z-index: 100; }
 
-.empty-state .hint {
-  font-size: 11px;
-  margin-top: 4px;
-}
-
-.graph-editor-toggle {
-  padding: 6px 10px;
-  border: 1px solid #444;
-  background: #2a2a2a;
-  color: #888;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.graph-editor-toggle:hover {
-  background: #333;
-  color: #fff;
-}
-
-.graph-editor-toggle.active {
-  background: #7c9cff;
-  border-color: #7c9cff;
-  color: #fff;
-}
-
-.timeline-scrubber {
-  display: flex;
-  align-items: center;
-  padding: 6px 0;
-  background: #252525;
-  border-top: 1px solid #333;
-}
-
-.scrubber-sidebar {
-  width: 300px;
-  min-width: 300px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-}
-
-.toggle-switches-btn {
-  padding: 2px 6px;
-  border: 1px solid #444;
-  background: #2a2a2a;
-  color: #666;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 9px;
-}
-
-.toggle-switches-btn.active {
-  background: #7c9cff;
-  border-color: #7c9cff;
-  color: #fff;
-}
-
-.frame-label {
-  font-size: 11px;
-  color: #888;
-  font-family: monospace;
-}
-
-.scrubber-track {
-  flex: 1;
-  height: 6px;
-  background: #1a1a1a;
-  border-radius: 3px;
-  cursor: pointer;
-  position: relative;
-  margin: 0 12px;
-  overflow: hidden;
-}
-
-.scrubber-work-area {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: rgba(124, 156, 255, 0.2);
-}
-
-.scrubber-progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: #7c9cff;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.frame-input {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 12px;
-}
-
-.frame-input input {
-  width: 50px;
-  padding: 2px 6px;
-  border: 1px solid #444;
-  background: #1a1a1a;
-  color: #e0e0e0;
-  border-radius: 3px;
-  font-size: 11px;
-  text-align: right;
-}
-
-.frame-input input:focus {
-  outline: none;
-  border-color: #7c9cff;
-}
-
-.frame-total {
-  font-size: 11px;
-  color: #555;
-}
-
-.marker-dialog {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.marker-dialog-content {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 20px;
-  min-width: 300px;
-}
-
-.marker-dialog-content h3 {
-  margin: 0 0 16px;
-  font-size: 14px;
-}
-
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.form-row label {
-  font-size: 11px;
-  color: #888;
-}
-
-.form-row input,
-.form-row textarea {
-  padding: 6px 8px;
-  border: 1px solid #444;
-  background: #1e1e1e;
-  color: #e0e0e0;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.form-row input[type="color"] {
-  width: 50px;
-  height: 30px;
-  padding: 2px;
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.dialog-actions button {
-  padding: 6px 12px;
-  border: 1px solid #444;
-  background: #333;
-  color: #e0e0e0;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 11px;
-}
-
-.dialog-actions button:hover {
-  background: #3a3a3a;
-}
-
-.dialog-actions button.primary {
-  background: #7c9cff;
-  border-color: #7c9cff;
-}
-
-.dialog-actions button.primary:hover {
-  background: #8cacff;
-}
-
-.icon {
-  font-family: monospace;
-  font-weight: bold;
-}
-
-/* Playhead - positioned absolutely within timeline-content */
-.playhead-container {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.playhead-container .playhead-head {
-  position: absolute;
-  top: 0;
-  left: -6px;
-  width: 13px;
-  height: 13px;
-  background: #ff4444;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  cursor: ew-resize;
-  pointer-events: auto;
-  z-index: 101;
-  transition: transform 0.1s ease;
-}
-
-.playhead-container .playhead-head:hover {
-  transform: scale(1.15);
-  filter: brightness(1.1);
-}
-
-.playhead-container .playhead-line {
-  position: absolute;
-  top: 13px;
-  bottom: 0;
-  left: 0;
-  width: 1px;
-  background: #ff4444;
-  pointer-events: none;
-  box-shadow: 0 0 4px rgba(255, 68, 68, 0.3);
-}
-
+/* Controls */
+button { background: #333; border: 1px solid #444; color: #eee; cursor: pointer; padding: 4px 10px; border-radius: 3px; font-size: 14px; }
+button:hover { background: #444; }
+button.active { background: #4a90d9; border-color: #4a90d9; }
+.delete-btn:hover { background: #d32f2f; }
+.add-layer-menu { position: absolute; top: 35px; right: 0; background: #222; border: 1px solid #444; display: flex; flex-direction: column; z-index: 100; width: 120px; }
+.add-layer-menu button { text-align: left; border: none; }
+.empty-state { padding: 20px; text-align: center; color: #555; font-size: 16px; }
 </style>

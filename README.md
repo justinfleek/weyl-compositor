@@ -12,6 +12,8 @@ pip install -r weyl-compositor/requirements.txt
 
 Restart ComfyUI.
 
+**No build step required** - pre-built files are included.
+
 ## Usage
 
 Click the video icon in the sidebar, or add the **Weyl Motion Compositor** node to your workflow.
@@ -23,15 +25,21 @@ Click the video icon in the sidebar, or add the **Weyl Motion Compositor** node 
 3. Create your motion graphics
 4. Export back to ComfyUI for video generation
 
-## Shortcuts
+## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| V | Select |
-| P | Pen |
-| T | Text |
-| H | Hand |
-| Space+drag | Pan |
+| **Ctrl+Z** | Undo |
+| **Ctrl+Shift+Z** or **Ctrl+Y** | Redo |
+| **Delete** or **Backspace** | Delete selected layer(s) |
+| **Space** | Play/Pause |
+| **Home** | Go to start |
+| **End** | Go to end |
+| V | Select tool |
+| P | Pen tool |
+| T | Text tool |
+| H | Hand tool |
+| Space+drag | Pan canvas |
 
 ## Development
 
