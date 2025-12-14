@@ -1,31 +1,61 @@
 <template>
-  <div class="track-wrapper">
+  <div class="track-wrapper" v-if="layer">
 
-    <!-- ================== SIDEBAR MODE ================== -->
-    <!-- Renders Layer Name, Icons, and Controls -->
+    <!-- SIDEBAR MODE -->
     <div v-if="layoutMode === 'sidebar'" class="sidebar-row" :class="{ selected: isSelected }">
       <div class="row-content" @click="selectLayer">
-        <!-- Color Strip -->
-        <div class="label-strip" :style="{ background: layer.labelColor || '#999' }"></div>
+        <!-- 1. Color Strip (Button) -->
+        <div class="label-box" @click.stop="toggleColorPicker" :style="{ background: layer.labelColor || '#999' }"></div>
 
-        <!-- Expand Arrow -->
-        <div class="arrow-container" @click.stop="toggleExpand">
+        <!-- 2. ID -->
+        <div class="layer-id">1</div>
+
+        <!-- 3. Icons -->
+        <div class="icon-col" @click.stop="toggleVis">
+          <span v-if="layer.visible">👁</span><span v-else class="dim">●</span>
+        </div>
+        <div class="icon-col" @click.stop="toggleLock">
+          <span v-if="layer.locked">🔒</span><span v-else class="dim">🔓</span>
+        </div>
+
+        <!-- 4. Twirl Arrow -->
+        <div class="arrow-col" @click.stop="toggleExpand">
           <span class="arrow">{{ isExpanded ? '▼' : '▶' }}</span>
         </div>
 
-        <!-- ID -->
-        <div class="layer-id">1</div>
-
-        <!-- Controls -->
-        <button class="icon-btn" @click.stop="toggleVis">{{ layer.visible ? '👁' : '•' }}</button>
-        <button class="icon-btn" @click.stop="toggleLock">{{ layer.locked ? '🔒' : '🔓' }}</button>
-        <button class="icon-btn" @click.stop="toggleSolo" :class="{active: isSoloed}">●</button>
-
-        <!-- Name -->
-        <div class="layer-name-box" @dblclick.stop="startRename">
-          <span class="type-icon">{{ getLayerIcon(layer.type) }}</span>
+        <!-- 5. Layer Name -->
+        <div class="layer-name-col" @dblclick.stop="startRename">
+          <span class="type-icon" :style="{ color: getLayerColor(layer.type) }">■</span>
           <span v-if="!isRenaming" class="name-text">{{ layer.name }}</span>
           <input v-else v-model="renameVal" @blur="saveRename" @keydown.enter="saveRename" class="rename-input" ref="renameInput" />
+        </div>
+
+        <!-- 6. Switches / Mode / Parent -->
+        <!-- Mode Dropdown -->
+        <div class="col-mode">
+          <select class="mini-select">
+            <option>Normal</option>
+            <option>Add</option>
+            <option>Multiply</option>
+            <option>Screen</option>
+          </select>
+        </div>
+
+        <!-- TrkMat Dropdown -->
+        <div class="col-trkmat">
+          <select class="mini-select">
+            <option>None</option>
+            <option>Alpha</option>
+          </select>
+        </div>
+
+        <!-- Parent Dropdown -->
+        <div class="col-parent">
+          <span class="pickwhip-icon">@</span>
+          <select :value="layer.parentId || ''" @change="setParent" class="mini-select">
+            <option value="">None</option>
+            <option v-for="p in availableParents" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
         </div>
       </div>
 
@@ -41,18 +71,17 @@
       </div>
     </div>
 
-    <!-- ================== TRACK MODE ================== -->
-    <!-- Renders Duration Bar and Keyframe Markers -->
+    <!-- TRACK MODE -->
     <div v-else-if="layoutMode === 'track'" class="track-row-container">
       <div class="track-row">
-        <!-- Layer Duration Bar -->
-        <div class="duration-bar" :style="barStyle" @mousedown="startDrag">
-          <div class="bar-fill" :style="{ background: layer.labelColor || '#999' }"></div>
+        <!-- Duration Bar (Clicking selects layer) -->
+        <div class="duration-bar" :style="barStyle" @mousedown.stop="startDrag" @click.stop="selectLayer">
+          <div class="bar-fill" :style="{ background: layer.labelColor || '#777', opacity: isSelected ? 0.8 : 0.5 }"></div>
           <div class="trim-handle trim-in" @mousedown.stop="startTrimIn"></div>
           <div class="trim-handle trim-out" @mousedown.stop="startTrimOut"></div>
         </div>
 
-        <!-- Layer Keyframes Summary -->
+        <!-- Keyframe Markers (Summary) -->
         <div v-for="kf in allKeyframes" :key="kf.id"
              class="keyframe-marker"
              :style="{ left: `${(kf.frame / frameCount) * 100}%` }">◆</div>
@@ -85,7 +114,6 @@ const store = useCompositorStore();
 const localExpanded = ref(false);
 const isExpanded = computed(() => props.isExpandedExternal ?? localExpanded.value);
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
-const isSoloed = computed(() => props.soloedLayerIds?.includes(props.layer.id));
 
 const isRenaming = ref(false);
 const renameVal = ref('');
@@ -110,12 +138,14 @@ const barStyle = computed(() => {
   return { left: `${start}%`, width: `${end - start}%` };
 });
 
+const availableParents = computed(() => props.allLayers.filter((l: any) => l.id !== props.layer.id));
+
 function toggleExpand() { emit('toggleExpand', props.layer.id, !isExpanded.value); }
 function selectLayer() { emit('select', props.layer.id); }
 function toggleVis() { emit('updateLayer', props.layer.id, { visible: !props.layer.visible }); }
 function toggleLock() { emit('updateLayer', props.layer.id, { locked: !props.layer.locked }); }
-function toggleSolo() { emit('toggleSolo', props.layer.id); }
-function getLayerIcon(t: string) { return t === 'solid' ? '■' : t === 'text' ? 'T' : 'L'; }
+function setParent(e: Event) { emit('updateLayer', props.layer.id, { parentId: (e.target as HTMLSelectElement).value }); }
+function getLayerColor(t: string) { return t === 'solid' ? '#e74c3c' : t === 'text' ? '#f1c40f' : '#95a5a6'; }
 
 function startRename() { isRenaming.value = true; renameVal.value = props.layer.name; nextTick(() => renameInput.value?.focus()); }
 function saveRename() { emit('updateLayer', props.layer.id, { name: renameVal.value }); isRenaming.value = false; }
@@ -123,6 +153,7 @@ function saveRename() { emit('updateLayer', props.layer.id, { name: renameVal.va
 function startDrag() {}
 function startTrimIn() {}
 function startTrimOut() {}
+function toggleColorPicker() {}
 
 watch(() => props.isExpandedExternal, v => localExpanded.value = v);
 </script>
@@ -135,56 +166,44 @@ watch(() => props.isExpandedExternal, v => localExpanded.value = v);
   border-bottom: 1px solid #2a2a2a;
   background: #1e1e1e;
   color: #ccc;
-  font-size: 16px; /* LARGE FONT */
-  min-height: 32px;
+  font-size: 13px;
+  min-height: 28px;
 }
-.sidebar-row.selected { background: #2a2a2a; color: #fff; }
+.sidebar-row.selected { background: #333; color: #fff; }
 
-.row-content {
-  display: flex;
-  height: 32px; /* AE Standard Height */
-  align-items: center;
+.row-content { display: flex; height: 28px; align-items: center; }
+
+.label-box { width: 12px; height: 12px; margin: 0 4px; border-radius: 2px; cursor: pointer; border: 1px solid #000; }
+.layer-id { width: 24px; text-align: center; font-size: 10px; color: #666; }
+.icon-col { width: 24px; text-align: center; cursor: pointer; color: #aaa; font-size: 12px; }
+.icon-col .dim { color: #444; }
+.arrow-col { width: 20px; text-align: center; cursor: pointer; font-size: 9px; color: #888; }
+
+.layer-name-col { flex: 1; display: flex; align-items: center; padding: 0 5px; overflow: hidden; min-width: 100px; }
+.type-icon { font-size: 10px; margin-right: 6px; }
+.name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+.rename-input { background: #000; border: 1px solid #4a90d9; color: #fff; width: 100%; font-size: 13px; padding: 2px; }
+
+/* New Columns */
+.col-mode, .col-trkmat, .col-parent { border-left: 1px solid #333; padding: 0 4px; height: 100%; display: flex; align-items: center; }
+.col-mode { width: 60px; }
+.col-trkmat { width: 40px; }
+.col-parent { width: 60px; gap: 4px; }
+
+.mini-select {
+  width: 100%; background: transparent; border: none; color: #aaa;
+  font-size: 10px; -webkit-appearance: none; cursor: pointer;
 }
-
-.label-strip { width: 6px; height: 100%; margin-right: 4px; }
-.arrow-container { width: 24px; display: flex; justify-content: center; cursor: pointer; color: #888; }
-.layer-id { width: 24px; text-align: center; font-size: 12px; color: #888; }
-.icon-btn { width: 24px; background: none; border: none; color: #888; cursor: pointer; font-size: 14px; }
-.icon-btn:hover { color: #fff; }
-.icon-btn.active { color: #f5c542; }
-
-.layer-name-box {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  padding: 0 5px;
-}
-.type-icon { font-size: 12px; margin-right: 6px; color: #f5c542; }
-.name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px; }
-.rename-input { background: #000; border: 1px solid #4a90d9; color: #fff; width: 100%; font-size: 16px; }
+.pickwhip-icon { font-family: serif; font-weight: bold; color: #666; cursor: crosshair; }
 
 .children-container { display: flex; flex-direction: column; }
 
 /* TRACK LAYOUT */
 .track-row-container { width: 100%; }
-.track-row {
-  height: 32px; /* MATCHES SIDEBAR */
-  border-bottom: 1px solid #333;
-  position: relative;
-  background: #191919;
-}
-.duration-bar {
-  position: absolute;
-  height: 20px;
-  top: 6px;
-  border-radius: 2px;
-  opacity: 0.7;
-  cursor: move;
-  border: 1px solid rgba(0,0,0,0.5);
-}
-.bar-fill { width: 100%; height: 100%; opacity: 0.5; }
-.trim-handle { position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; background: rgba(255,255,255,0.1); }
+.track-row { height: 28px; border-bottom: 1px solid #333; position: relative; background: #191919; }
+.duration-bar { position: absolute; height: 18px; top: 5px; border-radius: 2px; cursor: move; }
+.bar-fill { width: 100%; height: 100%; border: 1px solid rgba(0,0,0,0.4); border-radius: 2px; }
+.trim-handle { position: absolute; top: 0; bottom: 0; width: 6px; cursor: ew-resize; background: rgba(255,255,255,0.1); }
 .trim-in { left: 0; } .trim-out { right: 0; }
-.keyframe-marker { position: absolute; top: 11px; width: 10px; height: 10px; margin-left: -5px; background: #ebcb8b; transform: rotate(45deg); border: 1px solid #000; z-index: 5; }
+.keyframe-marker { position: absolute; top: 10px; width: 8px; height: 8px; margin-left: -4px; background: #ccc; transform: rotate(45deg); border: 1px solid #000; z-index: 5; pointer-events: none; }
 </style>
