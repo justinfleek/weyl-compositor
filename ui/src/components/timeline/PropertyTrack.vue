@@ -194,23 +194,28 @@ function startKeyframeDrag(kf: any, e: MouseEvent) {
 <style scoped>
 .prop-wrapper { width: 100%; display: flex; flex-direction: column; }
 
-/* SIDEBAR - Grid layout matching parent */
+/* SIDEBAR - Grid layout matching parent Layer Track */
+/* Columns: 20 | 20 | 30 | 24 | 24 | 24 | 1fr | 60 | 60 */
 .prop-sidebar {
   display: grid;
+  grid-template-columns: 20px 20px 30px 24px 24px 24px 1fr 60px 60px;
   height: 24px;
   align-items: center;
   border-bottom: 1px solid #2a2a2a;
   background: #1a1a1a;
   color: #bbb;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
 }
 .prop-sidebar:hover { background: #222; color: #fff; }
 .prop-sidebar.selected { background: #252525; border-left: 2px solid #3ea6ff; }
 
-/* Indent spans arrow + color + id columns */
+/* 1. Indent spacer (Spans Arrow + Color + ID) -> Cols 1-3 */
 .indent-spacer { grid-column: span 3; }
 
+/* Icon boxes for diamond and stopwatch */
 .icon-box {
   display: flex;
   justify-content: center;
@@ -218,48 +223,57 @@ function startKeyframeDrag(kf: any, e: MouseEvent) {
   cursor: pointer;
 }
 
-/* Diamond FIRST - highlighted when keyframe exists */
-.kf-btn { font-size: 12px; color: #555; }
+/* Diamond / Stopwatch Styles */
+.kf-btn { font-size: 10px; color: #555; }
 .kf-btn:hover { color: #fff; }
 .kf-btn.active { color: #ebcb8b; }
 
-.stopwatch { font-size: 12px; color: #555; }
+.stopwatch { font-size: 10px; color: #555; }
 .stopwatch.active { color: #3ea6ff; }
 
-/* Property content (name + values) */
+/* 4. Property Name & Values (Spans 3D Icon + Name + Mode + Parent) -> Cols 6-End */
+/* CRITICAL FIX: This makes the inputs expand to fill the row */
 .prop-content {
+  grid-column: 6 / -1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 4px;
+  padding-right: 8px;
   overflow: hidden;
 }
 
 .prop-name {
   color: #888;
-  font-size: 11px;
+  margin-right: 12px;
   white-space: nowrap;
-  min-width: 60px;
+  min-width: 80px;
 }
 
-/* Value Container with ScrubableNumber components */
+/* Value Container */
 .prop-value-container {
   display: flex;
-  gap: 2px;
+  gap: 6px;
   align-items: center;
+  flex: 1;
 }
 
-/* Scrubable number overrides for compact timeline display */
+/* Override ScrubableNumber styles for timeline compactness */
 .prop-value-container :deep(.scrubable-number) {
   gap: 0;
+  display: flex;
 }
 .prop-value-container :deep(.scrub-input) {
-  width: 45px;
-  padding: 2px 3px;
+  width: 50px;
+  padding: 1px 2px;
   font-size: 11px;
-  background: #111;
-  border: 1px solid #333;
+  background: transparent;
+  border: none;
   color: #3ea6ff;
+  font-family: 'Consolas', monospace;
+  cursor: ew-resize;
+}
+.prop-value-container :deep(.scrub-input):hover {
+  background: #111;
+  color: #fff;
 }
 .prop-value-container :deep(.scrub-label) {
   display: none;
@@ -267,19 +281,32 @@ function startKeyframeDrag(kf: any, e: MouseEvent) {
 
 .val-display { color: #3ea6ff; font-family: monospace; font-size: 11px; }
 
-/* Spacers for mode/parent columns */
-.col-spacer { }
+/* Spacers for mode/parent columns - no longer needed with grid-column: 6 / -1 */
+.col-spacer { display: none; }
 
 /* TRACK */
-.prop-track { height: 24px; border-bottom: 1px solid #2a2a2a; position: relative; background: #161616; }
+.prop-track {
+  height: 24px;
+  border-bottom: 1px solid #2a2a2a;
+  position: relative;
+  background: #161616;
+  width: 100%;
+  box-sizing: border-box;
+}
 
 .keyframe {
-  position: absolute; width: 9px; height: 9px;
+  position: absolute;
+  width: 9px;
+  height: 9px;
   background: #ebcb8b;
   transform: rotate(45deg) translateX(-50%);
   top: 7px;
   border: 1px solid #000;
-  z-index: 5; cursor: pointer;
+  z-index: 5;
+  cursor: pointer;
 }
-.keyframe:hover { background: #fff; transform: rotate(45deg) translateX(-50%) scale(1.2); }
+.keyframe:hover {
+  background: #fff;
+  transform: rotate(45deg) translateX(-50%) scale(1.2);
+}
 </style>

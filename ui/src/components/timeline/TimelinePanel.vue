@@ -352,11 +352,19 @@ onUnmounted(() => {
 
 /* Horizontal Scroll Window for Tracks */
 .track-viewport {
-  flex: 1; position: relative; background: #1a1a1a;
+  flex: 1;
+  position: relative;
+  background: #1a1a1a;
   overflow-x: auto; /* Horizontal scrolling happens here */
   min-width: 0;
 }
-.track-scroll-content { position: relative; min-height: 100%; }
+.track-scroll-content {
+  position: relative;
+  min-height: 100%;
+  min-width: 100%; /* CRITICAL FIX: Forces grid to fill screen even if duration is short */
+  display: flex;
+  flex-direction: column;
+}
 
 .playhead-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #3ea6ff; pointer-events: none; z-index: 100; }
 

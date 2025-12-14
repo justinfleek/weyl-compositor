@@ -23362,7 +23362,7 @@ const RO = {
       ]);
     };
   }
-}), gd = /* @__PURE__ */ mt(GO, [["__scopeId", "data-v-e8899cc2"]]), KO = {
+}), gd = /* @__PURE__ */ mt(GO, [["__scopeId", "data-v-5c70264a"]]), KO = {
   key: 0,
   class: "track-wrapper"
 }, qO = { class: "arrow" }, ZO = { class: "layer-id" }, JO = { key: 0 }, QO = {
@@ -24375,7 +24375,7 @@ const RO = {
             class: "ruler-sidebar-spacer",
             style: Xe({ width: d.value + "px" })
           }, [...G[17] || (G[17] = [
-            xr('<div class="column-headers" data-v-2e8022a2><span class="col-header col-arrow" data-v-2e8022a2></span><span class="col-header col-color" data-v-2e8022a2>#</span><span class="col-header col-name" data-v-2e8022a2>Layer Name</span><span class="col-header col-mode" data-v-2e8022a2>Mode</span><span class="col-header col-parent" data-v-2e8022a2>Parent</span></div>', 1)
+            xr('<div class="column-headers" data-v-c38409d7><span class="col-header col-arrow" data-v-c38409d7></span><span class="col-header col-color" data-v-c38409d7>#</span><span class="col-header col-name" data-v-c38409d7>Layer Name</span><span class="col-header col-mode" data-v-c38409d7>Mode</span><span class="col-header col-parent" data-v-c38409d7>Parent</span></div>', 1)
           ])], 4),
           h("div", {
             class: "ruler-track-window",
@@ -24469,7 +24469,7 @@ const RO = {
       ], 512)
     ], 32));
   }
-}), yd = /* @__PURE__ */ mt(J3, [["__scopeId", "data-v-2e8022a2"]]), Q3 = { class: "graph-editor" }, eE = { class: "graph-header" }, tE = { class: "mode-toggle" }, nE = { class: "preset-buttons" }, sE = ["onClick", "title"], iE = { class: "toolbar" }, rE = { class: "graph-content" }, oE = { class: "property-list" }, aE = { class: "property-list-header" }, lE = ["title"], uE = ["onClick"], cE = ["onClick"], dE = { class: "property-name" }, hE = {
+}), yd = /* @__PURE__ */ mt(J3, [["__scopeId", "data-v-c38409d7"]]), Q3 = { class: "graph-editor" }, eE = { class: "graph-header" }, tE = { class: "mode-toggle" }, nE = { class: "preset-buttons" }, sE = ["onClick", "title"], iE = { class: "toolbar" }, rE = { class: "graph-content" }, oE = { class: "property-list" }, aE = { class: "property-list-header" }, lE = ["title"], uE = ["onClick"], cE = ["onClick"], dE = { class: "property-name" }, hE = {
   key: 0,
   class: "keyframe-count"
 }, fE = {
