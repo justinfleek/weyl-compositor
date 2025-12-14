@@ -1,7 +1,7 @@
 <template>
   <div class="properties-panel">
     <div class="panel-header">
-      <span class="panel-title">Properties</span>
+      <span class="panel-title">Layer Properties</span>
     </div>
 
     <div class="panel-content" v-if="selectedLayer">
@@ -151,38 +151,6 @@
         </div>
       </div>
 
-      <!-- Effects Section -->
-      <div v-if="effects.length > 0" class="property-section">
-        <div
-          class="section-header"
-          @click="toggleSection('effects')"
-        >
-          <span class="expand-icon">{{ expandedSections.includes('effects') ? '▼' : '►' }}</span>
-          <span class="section-title">Effects</span>
-          <span class="effect-count">{{ effects.length }}</span>
-        </div>
-
-        <div v-if="expandedSections.includes('effects')" class="section-content">
-          <div
-            v-for="(effect, index) in effects"
-            :key="effect.id"
-            class="effect-item"
-          >
-            <div class="effect-header">
-              <input
-                type="checkbox"
-                :checked="effect.enabled"
-                @change="toggleEffect(index)"
-                class="effect-toggle"
-              />
-              <span class="effect-name">{{ effect.name }}</span>
-              <button class="effect-delete" @click="removeEffect(index)">×</button>
-            </div>
-            <!-- Effect parameters would go here -->
-          </div>
-        </div>
-      </div>
-
       <!-- Layer-specific properties -->
       <component
         v-if="layerPropertiesComponent"
@@ -225,7 +193,6 @@ const transform = ref({
   opacity: 100
 });
 const blendMode = ref('normal');
-const effects = ref<any[]>([]);
 const keyframes = ref<string[]>([]);
 
 // Blend modes
@@ -279,7 +246,6 @@ watch(selectedLayer, (layer) => {
       opacity: layer.opacity?.value || 100
     };
     blendMode.value = layer.blendMode || 'normal';
-    effects.value = (layer as any).effects || [];
   }
 }, { immediate: true });
 
@@ -343,21 +309,7 @@ function toggleKeyframe(property: string) {
     keyframes.value.splice(index, 1);
   } else {
     keyframes.value.push(property);
-    // In real implementation, this would add a keyframe at current time
     console.log(`Added keyframe for ${property} at frame ${store.currentFrame}`);
-  }
-}
-
-function toggleEffect(index: number) {
-  if (effects.value[index]) {
-    effects.value[index].enabled = !effects.value[index].enabled;
-  }
-}
-
-function removeEffect(index: number) {
-  effects.value.splice(index, 1);
-  if (selectedLayer.value && (selectedLayer.value as any).effects) {
-    (selectedLayer.value as any).effects.splice(index, 1);
   }
 }
 
@@ -419,14 +371,6 @@ function onLayerUpdate() {
 .section-title {
   font-weight: 500;
   flex: 1;
-}
-
-.effect-count {
-  font-size: 9px;
-  color: #666;
-  background: #333;
-  padding: 1px 5px;
-  border-radius: 8px;
 }
 
 .section-content {
@@ -528,46 +472,6 @@ function onLayerUpdate() {
   color: #e0e0e0;
   border-radius: 3px;
   font-size: 11px;
-}
-
-.effect-item {
-  background: #222;
-  border-radius: 4px;
-  margin-bottom: 4px;
-}
-
-.effect-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-}
-
-.effect-toggle {
-  width: 14px;
-  height: 14px;
-}
-
-.effect-name {
-  flex: 1;
-  font-size: 11px;
-}
-
-.effect-delete {
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #666;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 3px;
-}
-
-.effect-delete:hover {
-  background: #3a3a3a;
-  color: #ff6b6b;
 }
 
 .empty-state {
