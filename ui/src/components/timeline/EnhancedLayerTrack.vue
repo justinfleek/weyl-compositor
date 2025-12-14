@@ -616,13 +616,13 @@ function stopDrag() {
 }
 
 .layer-info {
-  width: 236px;
-  min-width: 236px;
-  max-width: 236px;
+  width: 165px;
+  min-width: 165px;
+  max-width: 165px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
+  gap: 2px;
+  padding: 0 4px;
   border-right: 1px solid #333;
   background: #222;
 }
@@ -668,8 +668,8 @@ function stopDrag() {
 }
 
 .icon-btn {
-  width: 22px;
-  height: 24px;
+  width: 18px;
+  height: 20px;
   padding: 0;
   border: none;
   background: transparent;
@@ -678,7 +678,7 @@ function stopDrag() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   border-radius: 3px;
   transition: all 0.1s ease;
 }
@@ -704,7 +704,7 @@ function stopDrag() {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
   overflow: hidden;
 }
@@ -721,7 +721,7 @@ function stopDrag() {
 
 .layer-name {
   flex: 1;
-  font-size: 12px;
+  font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

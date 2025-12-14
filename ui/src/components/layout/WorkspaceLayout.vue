@@ -95,7 +95,7 @@
     <div class="workspace-content">
       <Splitpanes class="default-theme horizontal-split">
         <!-- Left Panel: Project/Effects -->
-        <Pane :size="15" :min-size="10" :max-size="25">
+        <Pane :size="12" :min-size="8" :max-size="20">
           <div class="panel left-panel">
             <div class="panel-tabs">
               <button
@@ -119,7 +119,7 @@
         </Pane>
 
         <!-- Center: Viewport + Timeline -->
-        <Pane :size="60" :min-size="30">
+        <Pane :size="70" :min-size="40">
           <Splitpanes horizontal class="default-theme">
             <!-- Viewport -->
             <Pane :size="65" :min-size="20">
@@ -207,7 +207,7 @@
         </Pane>
 
         <!-- Right Panel: Properties/Camera -->
-        <Pane :size="25" :min-size="15" :max-size="30">
+        <Pane :size="18" :min-size="12" :max-size="25">
           <div class="panel right-panel">
             <div class="panel-tabs">
               <button

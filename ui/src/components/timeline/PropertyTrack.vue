@@ -316,10 +316,10 @@ function formatEasingName(name: EasingName): string {
 .property-info {
   display: flex;
   align-items: center;
-  width: 236px;
-  min-width: 236px;
-  padding-left: 24px;
-  gap: 8px;
+  width: 165px;
+  min-width: 165px;
+  padding-left: 12px;
+  gap: 4px;
   background: #222;
   border-right: 1px solid #333;
   box-sizing: border-box;
@@ -327,19 +327,19 @@ function formatEasingName(name: EasingName): string {
 
 .stopwatch-btn,
 .keyframe-btn {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: transparent;
   color: #666;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: all 0.15s ease;
 }
 
@@ -358,28 +358,28 @@ function formatEasingName(name: EasingName): string {
 }
 
 .property-name {
-  font-size: 12px;
+  font-size: 11px;
   color: #aaa;
-  min-width: 70px;
+  min-width: 50px;
   font-weight: 400;
 }
 
 .property-value-inputs {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-left: auto;
-  padding-right: 8px;
+  padding-right: 4px;
 }
 
 .value-input {
-  width: 54px;
-  padding: 5px 6px;
+  width: 42px;
+  padding: 3px 4px;
   border: 1px solid #3a3a3a;
   background: #1a1a1a;
   color: #7c9cff;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-  font-size: 11px;
+  font-size: 10px;
   border-radius: 4px;
   text-align: right;
   transition: border-color 0.15s ease, background 0.15s ease;
