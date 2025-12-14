@@ -181,7 +181,14 @@ const isResizing = ref(false);
 
 // Logic
 const filteredLayers = computed(() => store.layers || []);
-const totalTrackWidth = computed(() => (store.frameCount + 50) * pixelsPerFrame.value); // Add buffer
+const totalTrackWidth = computed(() => {
+  const contentWidth = (store.frameCount + 50) * pixelsPerFrame.value;
+  // Ensure it fills the viewport at minimum
+  if (trackViewportRef.value) {
+    return Math.max(trackViewportRef.value.clientWidth, contentWidth);
+  }
+  return contentWidth;
+});
 const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
 
 // Grid layout style for sidebar rows (consistent column widths)

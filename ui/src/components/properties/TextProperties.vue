@@ -323,8 +323,30 @@ function getProperty(name: string) {
 }
 
 function updateAnimatable(name: string, val: number) {
+  // 1. Update the store (AnimatableProperty)
   const prop = getProperty(name);
-  if (prop) prop.value = val;
+  if (prop) {
+    prop.value = val;
+    store.project.meta.modified = new Date().toISOString();
+  }
+
+  // 2. Also update the local textData for immediate render feedback
+  // Map property name to data key (e.g., "Font Size" -> "fontSize", "Line Spacing" -> "lineSpacing")
+  const nameToDataKey: Record<string, string> = {
+    'Font Size': 'fontSize',
+    'Tracking': 'tracking',
+    'Line Spacing': 'lineSpacing',
+    'Character Offset': 'characterOffset',
+    'Character Value': 'characterValue',
+    'Path Offset': 'pathOffset',
+    'Stroke Width': 'strokeWidth'
+  };
+
+  const dataKey = nameToDataKey[name];
+  if (dataKey && textData.value[dataKey as keyof typeof textData.value] !== undefined) {
+    (textData.value as any)[dataKey] = val;
+  }
+
   emit('update');
 }
 
@@ -333,6 +355,7 @@ function updateVec2Property(name: string, axis: 'x' | 'y', value: number) {
   if (prop && typeof prop.value === 'object') {
     // Update the animatable property for keyframing
     prop.value = { ...prop.value, [axis]: value };
+    store.project.meta.modified = new Date().toISOString();
 
     // Also update the static textData for immediate rendering
     if (name === 'Grouping Alignment') {

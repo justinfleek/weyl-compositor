@@ -1059,24 +1059,24 @@ export const useCompositorStore = defineStore('compositor', {
       // --- TEXT PROPERTIES (Timeline) ---
 
       // Text Section
-      layer.properties.push(createAnimatableProperty('Font Size', 48, 'number'));
-      layer.properties.push(createAnimatableProperty('Fill Color', '#ffffff', 'color'));
-      layer.properties.push(createAnimatableProperty('Stroke Color', '#000000', 'color'));
-      layer.properties.push(createAnimatableProperty('Stroke Width', 0, 'number'));
+      layer.properties.push(createAnimatableProperty('Font Size', 48, 'number', 'Text'));
+      layer.properties.push(createAnimatableProperty('Fill Color', '#ffffff', 'color', 'Text'));
+      layer.properties.push(createAnimatableProperty('Stroke Color', '#000000', 'color', 'Text'));
+      layer.properties.push(createAnimatableProperty('Stroke Width', 0, 'number', 'Text'));
 
       // Path Options
-      layer.properties.push(createAnimatableProperty('Path Offset', 0, 'number'));
+      layer.properties.push(createAnimatableProperty('Path Offset', 0, 'number', 'Path Options'));
 
       // More Options
       // Grouping Alignment must be 'position' type for X/Y
-      layer.properties.push(createAnimatableProperty('Grouping Alignment', { x: 0, y: 0 }, 'position'));
+      layer.properties.push(createAnimatableProperty('Grouping Alignment', { x: 0, y: 0 }, 'position', 'More Options'));
 
       // Advanced / Animators
-      layer.properties.push(createAnimatableProperty('Tracking', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('Line Spacing', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('Character Offset', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('Character Value', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('Blur', { x: 0, y: 0 }, 'position')); // 2D Blur
+      layer.properties.push(createAnimatableProperty('Tracking', 0, 'number', 'Advanced'));
+      layer.properties.push(createAnimatableProperty('Line Spacing', 0, 'number', 'Advanced'));
+      layer.properties.push(createAnimatableProperty('Character Offset', 0, 'number', 'Advanced'));
+      layer.properties.push(createAnimatableProperty('Character Value', 0, 'number', 'Advanced'));
+      layer.properties.push(createAnimatableProperty('Blur', { x: 0, y: 0 }, 'position', 'Advanced')); // 2D Blur
 
       return layer;
     },

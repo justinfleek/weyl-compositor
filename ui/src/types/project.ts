@@ -472,6 +472,7 @@ export interface AnimatableProperty<T> {
   value: T;             // Default/current value
   animated: boolean;
   keyframes: Keyframe<T>[];
+  group?: string;       // Property group for timeline organization (e.g., "Transform", "Text", "More Options")
 }
 
 export interface Keyframe<T> {
@@ -610,7 +611,8 @@ export interface ExportOptions {
 export function createAnimatableProperty<T>(
   name: string,
   value: T,
-  type: 'number' | 'position' | 'color' | 'enum' | 'vector3' = 'number'
+  type: 'number' | 'position' | 'color' | 'enum' | 'vector3' = 'number',
+  group?: string
 ): AnimatableProperty<T> {
   return {
     id: `prop_${name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -618,7 +620,8 @@ export function createAnimatableProperty<T>(
     type,
     value,
     animated: false,
-    keyframes: []
+    keyframes: [],
+    group
   };
 }
 

@@ -59,16 +59,28 @@
         </div>
       </div>
 
-      <!-- Expanded Children (Sidebar) -->
+      <!-- Expanded Children (Sidebar) - Grouped -->
       <div v-if="isExpanded" class="children-container">
-        <PropertyTrack
-          v-for="prop in properties" :key="prop.path"
-          :layerId="layer.id" :propertyPath="prop.path" :name="prop.name" :property="prop.property"
-          layoutMode="sidebar"
-          :gridStyle="gridStyle"
-          :selectedPropertyIds="selectedPropertyIds"
-          @selectProperty="(id, add) => $emit('selectProperty', id, add)"
-        />
+        <div v-for="(groupProps, groupName) in groupedProperties" :key="groupName" class="property-group-section">
+          <!-- Group Header -->
+          <div class="sidebar-row group-header" :style="gridStyle" @click="toggleGroup(groupName as string)">
+            <div class="arrow-col">
+              <span class="arrow">{{ expandedGroups.includes(groupName as string) ? '▼' : '▶' }}</span>
+            </div>
+            <div class="group-label">{{ groupName }}</div>
+          </div>
+          <!-- Group Properties -->
+          <div v-if="expandedGroups.includes(groupName as string)" class="group-properties">
+            <PropertyTrack
+              v-for="prop in groupProps" :key="prop.path"
+              :layerId="layer.id" :propertyPath="prop.path" :name="prop.name" :property="prop.property"
+              layoutMode="sidebar"
+              :gridStyle="gridStyle"
+              :selectedPropertyIds="selectedPropertyIds"
+              @selectProperty="(id, add) => $emit('selectProperty', id, add)"
+            />
+          </div>
+        </div>
       </div>
     </template>
 
@@ -88,15 +100,24 @@
              :style="{ left: `${kf.frame * pixelsPerFrame}px` }">◆</div>
       </div>
 
-      <!-- Expanded Children (Track) -->
+      <!-- Expanded Children (Track) - Grouped -->
       <div v-if="isExpanded" class="children-container">
-        <PropertyTrack
-          v-for="prop in properties" :key="prop.path"
-          :layerId="layer.id" :propertyPath="prop.path" :name="prop.name" :property="prop.property"
-          layoutMode="track" :viewMode="viewMode" :frameCount="frameCount" :pixelsPerFrame="pixelsPerFrame"
-          :selectedKeyframeIds="[]"
-          @selectKeyframe="(id, add) => $emit('selectKeyframe', id, add)"
-        />
+        <div v-for="(groupProps, groupName) in groupedProperties" :key="groupName" class="property-group-section">
+          <!-- Group Header Row (Track) -->
+          <div class="track-row group-header-track" @click="toggleGroup(groupName as string)">
+            <span class="group-label-track">{{ groupName }}</span>
+          </div>
+          <!-- Group Properties -->
+          <div v-if="expandedGroups.includes(groupName as string)" class="group-properties">
+            <PropertyTrack
+              v-for="prop in groupProps" :key="prop.path"
+              :layerId="layer.id" :propertyPath="prop.path" :name="prop.name" :property="prop.property"
+              layoutMode="track" :viewMode="viewMode" :frameCount="frameCount" :pixelsPerFrame="pixelsPerFrame"
+              :selectedKeyframeIds="[]"
+              @selectKeyframe="(id, add) => $emit('selectKeyframe', id, add)"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -120,6 +141,9 @@ const isRenaming = ref(false);
 const renameVal = ref('');
 const renameInput = ref<HTMLInputElement | null>(null);
 
+// Property grouping state
+const expandedGroups = ref<string[]>(['Transform', 'Text', 'Path Options', 'More Options', 'Advanced']);
+
 // Layer index for display (use passed index prop or compute from allLayers)
 const layerIndex = computed(() => {
   if (props.index !== undefined) return props.index;
@@ -127,52 +151,88 @@ const layerIndex = computed(() => {
   return idx !== undefined && idx >= 0 ? idx + 1 : 1;
 });
 
-const properties = computed(() => {
-  const list: { path: string; name: string; property: any }[] = [];
+// Group properties by their group field
+const groupedProperties = computed(() => {
+  const groups: Record<string, { path: string; name: string; property: any }[]> = {};
   const t = props.layer.transform;
 
-  // 1. Position (always present)
+  // Transform group (always present)
+  const transformProps: { path: string; name: string; property: any }[] = [];
+
+  // Anchor Point
+  if (t.anchorPoint) {
+    transformProps.push({ path: 'transform.anchorPoint', name: 'Anchor Point', property: t.anchorPoint });
+  }
+
+  // Position
   if (t.position) {
-    list.push({ path: 'transform.position', name: 'Position', property: t.position });
+    transformProps.push({ path: 'transform.position', name: 'Position', property: t.position });
   }
 
-  // 2. Scale (always present)
+  // Scale
   if (t.scale) {
-    list.push({ path: 'transform.scale', name: 'Scale', property: t.scale });
+    transformProps.push({ path: 'transform.scale', name: 'Scale', property: t.scale });
   }
 
-  // 3. Rotation logic (2D vs 3D)
+  // Rotation logic (2D vs 3D)
   if (props.layer.threeD) {
-    // 3D mode: show Orientation and X/Y/Z Rotations
     if (t.orientation) {
-      list.push({ path: 'transform.orientation', name: 'Orientation', property: t.orientation });
+      transformProps.push({ path: 'transform.orientation', name: 'Orientation', property: t.orientation });
     }
     if (t.rotationX) {
-      list.push({ path: 'transform.rotationX', name: 'X Rotation', property: t.rotationX });
+      transformProps.push({ path: 'transform.rotationX', name: 'X Rotation', property: t.rotationX });
     }
     if (t.rotationY) {
-      list.push({ path: 'transform.rotationY', name: 'Y Rotation', property: t.rotationY });
+      transformProps.push({ path: 'transform.rotationY', name: 'Y Rotation', property: t.rotationY });
     }
     if (t.rotationZ) {
-      list.push({ path: 'transform.rotationZ', name: 'Z Rotation', property: t.rotationZ });
+      transformProps.push({ path: 'transform.rotationZ', name: 'Z Rotation', property: t.rotationZ });
     }
   } else {
-    // 2D mode: show standard Rotation
     if (t.rotation) {
-      list.push({ path: 'transform.rotation', name: 'Rotation', property: t.rotation });
+      transformProps.push({ path: 'transform.rotation', name: 'Rotation', property: t.rotation });
     }
   }
 
-  // 4. Opacity (always present)
+  // Opacity
   if (props.layer.opacity) {
-    list.push({ path: 'opacity', name: 'Opacity', property: props.layer.opacity });
+    transformProps.push({ path: 'opacity', name: 'Opacity', property: props.layer.opacity });
   }
 
-  // 5. Camera-specific: Point of Interest
-  if (props.layer.type === 'camera' && t.anchorPoint) {
-    list.push({ path: 'transform.anchorPoint', name: 'Point of Interest', property: t.anchorPoint });
+  if (transformProps.length > 0) {
+    groups['Transform'] = transformProps;
   }
 
+  // Layer-specific properties from layer.properties array
+  if (props.layer.properties && props.layer.properties.length > 0) {
+    props.layer.properties.forEach((prop: any) => {
+      const groupName = prop.group || 'Properties';
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push({
+        path: prop.name,
+        name: prop.name,
+        property: prop
+      });
+    });
+  }
+
+  // Camera-specific: Point of Interest (if not already in transform)
+  if (props.layer.type === 'camera' && t.anchorPoint && !transformProps.find(p => p.name === 'Anchor Point')) {
+    if (!groups['Camera']) groups['Camera'] = [];
+    groups['Camera'].push({ path: 'transform.anchorPoint', name: 'Point of Interest', property: t.anchorPoint });
+  }
+
+  return groups;
+});
+
+// Flatten for keyframe summary
+const properties = computed(() => {
+  const list: { path: string; name: string; property: any }[] = [];
+  Object.values(groupedProperties.value).forEach(groupProps => {
+    list.push(...groupProps);
+  });
   return list;
 });
 
@@ -199,6 +259,15 @@ function toggleLock() { emit('updateLayer', props.layer.id, { locked: !props.lay
 function toggle3D() { store.toggleLayer3D(props.layer.id); }
 function setParent(e: Event) { emit('updateLayer', props.layer.id, { parentId: (e.target as HTMLSelectElement).value || null }); }
 function setBlendMode(e: Event) { emit('updateLayer', props.layer.id, { blendMode: (e.target as HTMLSelectElement).value }); }
+
+function toggleGroup(name: string) {
+  const idx = expandedGroups.value.indexOf(name);
+  if (idx >= 0) {
+    expandedGroups.value.splice(idx, 1);
+  } else {
+    expandedGroups.value.push(name);
+  }
+}
 
 function getLayerColor(t: string) {
   const colors: Record<string, string> = {
@@ -360,6 +429,41 @@ watch(() => props.isExpandedExternal, v => localExpanded.value = v);
 .pickwhip-icon { font-family: serif; font-weight: bold; color: #666; cursor: crosshair; }
 
 .children-container { display: flex; flex-direction: column; }
+
+/* Property Group Sections */
+.property-group-section { display: flex; flex-direction: column; }
+.group-properties { display: flex; flex-direction: column; padding-left: 12px; }
+
+/* Group Header Styles (Sidebar) */
+.sidebar-row.group-header {
+  background: #252525;
+  border-bottom: 1px solid #2a2a2a;
+  cursor: pointer;
+  padding-left: 4px;
+}
+.sidebar-row.group-header:hover { background: #2a2a2a; }
+.group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  padding-left: 8px;
+  grid-column: span 7;
+}
+
+/* Group Header Styles (Track) */
+.group-header-track {
+  background: #252525;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+}
+.group-header-track:hover { background: #2a2a2a; }
+.group-label-track {
+  font-size: 10px;
+  font-weight: 600;
+  color: #666;
+}
 
 /* TRACK LAYOUT */
 .track-row-container { width: 100%; }
