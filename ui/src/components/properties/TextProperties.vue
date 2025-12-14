@@ -45,9 +45,9 @@
               :min="1"
               :max="500"
               unit="px"
-              @update:modelValue="updateAnimatable('fontSize', $event)"
+              @update:modelValue="updateAnimatable('Font Size', $event)"
             />
-            <KeyframeToggle :property="getProperty('fontSize')" :layerId="layer.id" />
+            <KeyframeToggle :property="getProperty('Font Size')" :layerId="layer.id" />
           </div>
         </div>
 
@@ -107,12 +107,12 @@
             <div class="control-with-keyframe">
               <ScrubableNumber
                 :modelValue="(textData.pathOffset || 0) * 100"
-                @update:modelValue="v => { textData.pathOffset = v / 100; updateAnimatable('pathOffset', v / 100); }"
+                @update:modelValue="v => { textData.pathOffset = v / 100; updateAnimatable('Path Offset', v / 100); }"
                 :min="0"
                 :max="100"
                 unit="%"
               />
-              <KeyframeToggle :property="getProperty('pathOffset')" :layerId="layer.id" />
+              <KeyframeToggle :property="getProperty('Path Offset')" :layerId="layer.id" />
             </div>
           </div>
           <div class="property-row">
@@ -148,20 +148,21 @@
           <label>Alignment</label>
           <div class="multi-value">
             <ScrubableNumber
-              v-model="textData.groupingAlignment.x"
+              :modelValue="textData.groupingAlignment.x"
               :min="-100"
               :max="100"
               unit="X%"
-              @update:modelValue="emit('update')"
+              @update:modelValue="v => updateVec2Property('Grouping Alignment', 'x', v)"
             />
             <ScrubableNumber
-              v-model="textData.groupingAlignment.y"
+              :modelValue="textData.groupingAlignment.y"
               :min="-100"
               :max="100"
               unit="Y%"
-              @update:modelValue="emit('update')"
+              @update:modelValue="v => updateVec2Property('Grouping Alignment', 'y', v)"
             />
           </div>
+          <KeyframeToggle :property="getProperty('Grouping Alignment')" :layerId="layer.id" />
         </div>
 
         <div class="property-row">
@@ -204,9 +205,9 @@
             <ScrubableNumber
               v-model="textData.tracking"
               unit="em"
-              @update:modelValue="updateAnimatable('tracking', $event)"
+              @update:modelValue="updateAnimatable('Tracking', $event)"
             />
-            <KeyframeToggle :property="getProperty('tracking')" :layerId="layer.id" />
+            <KeyframeToggle :property="getProperty('Tracking')" :layerId="layer.id" />
           </div>
         </div>
 
@@ -216,9 +217,9 @@
             <ScrubableNumber
               v-model="textData.lineSpacing"
               unit="px"
-              @update:modelValue="updateAnimatable('lineSpacing', $event)"
+              @update:modelValue="updateAnimatable('Line Spacing', $event)"
             />
-            <KeyframeToggle :property="getProperty('lineSpacing')" :layerId="layer.id" />
+            <KeyframeToggle :property="getProperty('Line Spacing')" :layerId="layer.id" />
           </div>
         </div>
 
@@ -239,18 +240,27 @@
             <ScrubableNumber
               v-model="textData.characterOffset"
               :precision="0"
-              @update:modelValue="updateAnimatable('characterOffset', $event)"
+              @update:modelValue="updateAnimatable('Character Offset', $event)"
             />
-            <KeyframeToggle :property="getProperty('characterOffset')" :layerId="layer.id" />
+            <KeyframeToggle :property="getProperty('Character Offset')" :layerId="layer.id" />
           </div>
         </div>
 
         <div class="property-row">
           <label>Blur</label>
           <div class="multi-value">
-            <ScrubableNumber v-model="textData.blur.x" unit="X" @update:modelValue="emit('update')" />
-            <ScrubableNumber v-model="textData.blur.y" unit="Y" @update:modelValue="emit('update')" />
+            <ScrubableNumber
+              :modelValue="textData.blur.x"
+              unit="X"
+              @update:modelValue="v => updateVec2Property('Blur', 'x', v)"
+            />
+            <ScrubableNumber
+              :modelValue="textData.blur.y"
+              unit="Y"
+              @update:modelValue="v => updateVec2Property('Blur', 'y', v)"
+            />
           </div>
+          <KeyframeToggle :property="getProperty('Blur')" :layerId="layer.id" />
         </div>
       </div>
     </div>
@@ -316,6 +326,23 @@ function updateAnimatable(name: string, val: number) {
   const prop = getProperty(name);
   if (prop) prop.value = val;
   emit('update');
+}
+
+function updateVec2Property(name: string, axis: 'x' | 'y', value: number) {
+  const prop = getProperty(name);
+  if (prop && typeof prop.value === 'object') {
+    // Update the animatable property for keyframing
+    prop.value = { ...prop.value, [axis]: value };
+
+    // Also update the static textData for immediate rendering
+    if (name === 'Grouping Alignment') {
+      textData.value.groupingAlignment[axis] = value;
+    } else if (name === 'Blur') {
+      textData.value.blur[axis] = value;
+    }
+
+    emit('update');
+  }
 }
 
 function updateFont() {

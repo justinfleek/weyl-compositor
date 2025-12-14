@@ -1056,13 +1056,27 @@ export const useCompositorStore = defineStore('compositor', {
 
       layer.data = textData;
 
-      // Add animatable properties for text (matching AE stopwatches)
-      layer.properties.push(createAnimatableProperty('fontSize', 48, 'number'));
-      layer.properties.push(createAnimatableProperty('pathOffset', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('tracking', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('lineSpacing', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('characterOffset', 0, 'number'));
-      layer.properties.push(createAnimatableProperty('letterSpacing', 0, 'number'));
+      // --- TEXT PROPERTIES (Timeline) ---
+
+      // Text Section
+      layer.properties.push(createAnimatableProperty('Font Size', 48, 'number'));
+      layer.properties.push(createAnimatableProperty('Fill Color', '#ffffff', 'color'));
+      layer.properties.push(createAnimatableProperty('Stroke Color', '#000000', 'color'));
+      layer.properties.push(createAnimatableProperty('Stroke Width', 0, 'number'));
+
+      // Path Options
+      layer.properties.push(createAnimatableProperty('Path Offset', 0, 'number'));
+
+      // More Options
+      // Grouping Alignment must be 'position' type for X/Y
+      layer.properties.push(createAnimatableProperty('Grouping Alignment', { x: 0, y: 0 }, 'position'));
+
+      // Advanced / Animators
+      layer.properties.push(createAnimatableProperty('Tracking', 0, 'number'));
+      layer.properties.push(createAnimatableProperty('Line Spacing', 0, 'number'));
+      layer.properties.push(createAnimatableProperty('Character Offset', 0, 'number'));
+      layer.properties.push(createAnimatableProperty('Character Value', 0, 'number'));
+      layer.properties.push(createAnimatableProperty('Blur', { x: 0, y: 0 }, 'position')); // 2D Blur
 
       return layer;
     },
