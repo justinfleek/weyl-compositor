@@ -1014,9 +1014,9 @@ watch(() => store.frameCount, (newCount) => {
 }
 
 .layer-columns-header {
-  width: 165px;
-  min-width: 165px;
-  max-width: 165px;
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
   display: flex;
   align-items: center;
   gap: 1px;
@@ -1030,13 +1030,13 @@ watch(() => store.frameCount, (newCount) => {
   justify-content: center;
 }
 
-.col-label { width: 20px; }
-.col-av { width: 16px; }
-.col-solo { width: 16px; }
-.col-lock { width: 16px; }
-.col-name { flex: 1; text-align: left; padding-left: 2px; }
-.col-parent { width: 32px; }
-.col-switches { width: 44px; }
+.col-label { width: 24px; }
+.col-av { width: 20px; }
+.col-solo { width: 20px; }
+.col-lock { width: 20px; }
+.col-name { flex: 1; text-align: left; padding-left: 4px; }
+.col-parent { width: 36px; }
+.col-switches { width: 50px; }
 
 .track-header {
   flex: 1;
@@ -1066,9 +1066,9 @@ watch(() => store.frameCount, (newCount) => {
 }
 
 .ruler-sidebar {
-  width: 165px;
-  min-width: 165px;
-  max-width: 165px;
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
   border-right: 1px solid #333;
 }
 
@@ -1216,8 +1216,8 @@ watch(() => store.frameCount, (newCount) => {
 }
 
 .scrubber-sidebar {
-  width: 165px;
-  min-width: 165px;
+  width: 200px;
+  min-width: 200px;
   display: flex;
   align-items: center;
   gap: 6px;

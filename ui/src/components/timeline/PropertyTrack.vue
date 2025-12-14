@@ -316,8 +316,8 @@ function formatEasingName(name: EasingName): string {
 .property-info {
   display: flex;
   align-items: center;
-  width: 165px;
-  min-width: 165px;
+  width: 200px;
+  min-width: 200px;
   padding-left: 12px;
   gap: 4px;
   background: #222;
@@ -358,9 +358,9 @@ function formatEasingName(name: EasingName): string {
 }
 
 .property-name {
-  font-size: 11px;
+  font-size: 12px;
   color: #aaa;
-  min-width: 50px;
+  min-width: 55px;
   font-weight: 400;
 }
 
@@ -373,13 +373,13 @@ function formatEasingName(name: EasingName): string {
 }
 
 .value-input {
-  width: 42px;
-  padding: 3px 4px;
+  width: 48px;
+  padding: 4px 5px;
   border: 1px solid #3a3a3a;
   background: #1a1a1a;
   color: #7c9cff;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-  font-size: 10px;
+  font-size: 11px;
   border-radius: 4px;
   text-align: right;
   transition: border-color 0.15s ease, background 0.15s ease;

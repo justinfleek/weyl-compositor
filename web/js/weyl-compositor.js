@@ -21820,7 +21820,7 @@ const D5 = {
       ]);
     };
   }
-}), J5 = /* @__PURE__ */ Et(Z5, [["__scopeId", "data-v-1583243a"]]), Q5 = { class: "layer-track-container" }, eO = { class: "twirl-arrow" }, tO = { class: "layer-info" }, nO = ["onClick", "title"], sO = { class: "av-switches" }, iO = ["title"], rO = { class: "icon" }, oO = ["title"], aO = { class: "icon" }, lO = { class: "layer-name-container" }, cO = ["title"], uO = ["title"], hO = { class: "parent-picker" }, dO = ["value", "disabled"], fO = ["value"], pO = {
+}), J5 = /* @__PURE__ */ Et(Z5, [["__scopeId", "data-v-ce248172"]]), Q5 = { class: "layer-track-container" }, eO = { class: "twirl-arrow" }, tO = { class: "layer-info" }, nO = ["onClick", "title"], sO = { class: "av-switches" }, iO = ["title"], rO = { class: "icon" }, oO = ["title"], aO = { class: "icon" }, lO = { class: "layer-name-container" }, cO = ["title"], uO = ["title"], hO = { class: "parent-picker" }, dO = ["value", "disabled"], fO = ["value"], pO = {
   key: 0,
   class: "layer-switches"
 }, mO = {
@@ -22211,7 +22211,7 @@ const D5 = {
       }, null, 8, ["layerId", "propertyPath", "name", "property", "frameCount", "selectedKeyframeIds"]))), 128)) : Le("", !0)
     ]));
   }
-}), yO = /* @__PURE__ */ Et(vO, [["__scopeId", "data-v-6e868a1d"]]), bO = { class: "graph-editor" }, xO = { class: "graph-header" }, _O = { class: "mode-toggle" }, wO = { class: "preset-buttons" }, CO = ["onClick", "title"], SO = { class: "toolbar" }, kO = { class: "graph-content" }, TO = { class: "property-list" }, OO = { class: "property-list-header" }, MO = ["title"], EO = ["onClick"], PO = ["onClick"], DO = { class: "property-name" }, AO = {
+}), yO = /* @__PURE__ */ Et(vO, [["__scopeId", "data-v-3fa04b07"]]), bO = { class: "graph-editor" }, xO = { class: "graph-header" }, _O = { class: "mode-toggle" }, wO = { class: "preset-buttons" }, CO = ["onClick", "title"], SO = { class: "toolbar" }, kO = { class: "graph-content" }, TO = { class: "property-list" }, OO = { class: "property-list-header" }, MO = ["title"], EO = ["onClick"], PO = ["onClick"], DO = { class: "property-name" }, AO = {
   key: 0,
   class: "keyframe-count"
 }, IO = {
@@ -23465,7 +23465,7 @@ const D5 = {
           ])) : Le("", !0)
         ])
       ]),
-      ve[36] || (ve[36] = Pi('<div class="column-headers" data-v-ea97fbd6><div class="layer-columns-header" data-v-ea97fbd6><span class="col-header col-label" title="Label Color" data-v-ea97fbd6>Label</span><span class="col-header col-av" title="Visibility" data-v-ea97fbd6>👁</span><span class="col-header col-solo" title="Solo" data-v-ea97fbd6>⚡</span><span class="col-header col-lock" title="Lock" data-v-ea97fbd6>🔒</span><span class="col-header col-name" data-v-ea97fbd6>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-ea97fbd6>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-ea97fbd6>Switches</span></div><div class="track-header" data-v-ea97fbd6></div></div>', 1)),
+      ve[36] || (ve[36] = Pi('<div class="column-headers" data-v-8752a705><div class="layer-columns-header" data-v-8752a705><span class="col-header col-label" title="Label Color" data-v-8752a705>Label</span><span class="col-header col-av" title="Visibility" data-v-8752a705>👁</span><span class="col-header col-solo" title="Solo" data-v-8752a705>⚡</span><span class="col-header col-lock" title="Lock" data-v-8752a705>🔒</span><span class="col-header col-name" data-v-8752a705>Layer Name</span><span class="col-header col-parent" title="Parent &amp; Link" data-v-8752a705>Parent</span><span class="col-header col-switches" title="Layer Switches" data-v-8752a705>Switches</span></div><div class="track-header" data-v-8752a705></div></div>', 1)),
       d("div", {
         class: "timeline-content",
         ref_key: "timelineContentRef",
@@ -23669,7 +23669,7 @@ const D5 = {
       ])) : Le("", !0)
     ]));
   }
-}), nh = /* @__PURE__ */ Et(IM, [["__scopeId", "data-v-ea97fbd6"]]), { abs: qi, cos: Yn, sin: ui, acos: FM, atan2: Zi, sqrt: ws, pow: gn } = Math;
+}), nh = /* @__PURE__ */ Et(IM, [["__scopeId", "data-v-8752a705"]]), { abs: qi, cos: Yn, sin: ui, acos: FM, atan2: Zi, sqrt: ws, pow: gn } = Math;
 function Ji(i) {
   return i < 0 ? -gn(-i, 1 / 3) : gn(i, 1 / 3);
 }
