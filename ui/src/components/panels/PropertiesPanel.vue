@@ -34,18 +34,21 @@
             <div class="multi-value">
               <ScrubableNumber
                 v-model="transform.position.x"
-                :min="-10000"
-                :max="10000"
                 :precision="1"
-                unit="px"
+                unit="X"
                 @update:modelValue="updateTransform"
               />
               <ScrubableNumber
                 v-model="transform.position.y"
-                :min="-10000"
-                :max="10000"
                 :precision="1"
-                unit="px"
+                unit="Y"
+                @update:modelValue="updateTransform"
+              />
+              <ScrubableNumber
+                v-if="selectedLayer?.threeD"
+                v-model="transform.position.z"
+                :precision="1"
+                unit="Z"
                 @update:modelValue="updateTransform"
               />
             </div>
@@ -59,7 +62,6 @@
                 v-model="transform.scale.x"
                 :min="0"
                 :max="1000"
-                :precision="1"
                 unit="%"
                 @update:modelValue="updateTransform"
               />
@@ -75,7 +77,6 @@
                 v-model="transform.scale.y"
                 :min="0"
                 :max="1000"
-                :precision="1"
                 unit="%"
                 @update:modelValue="updateTransform"
               />
@@ -83,39 +84,68 @@
             <button class="keyframe-btn" :class="{ active: hasKeyframe('scale') }" @click="toggleKeyframe('scale')">◆</button>
           </div>
 
-          <div class="property-row">
-            <label>Rotation</label>
-            <div class="single-value">
-              <ScrubableNumber
-                v-model="transform.rotation"
-                :min="-180"
-                :max="180"
-                :precision="1"
-                :wrap="true"
-                unit="°"
-                @update:modelValue="updateTransform"
-              />
+          <!-- 3D Rotations -->
+          <template v-if="selectedLayer?.threeD">
+            <div class="property-row">
+              <label>Orientation</label>
+              <div class="multi-value orientation-row">
+                <ScrubableNumber v-model="transform.orientationX" unit="X" @update:modelValue="updateTransform" />
+                <ScrubableNumber v-model="transform.orientationY" unit="Y" @update:modelValue="updateTransform" />
+                <ScrubableNumber v-model="transform.orientationZ" unit="Z" @update:modelValue="updateTransform" />
+              </div>
             </div>
-            <button class="keyframe-btn" :class="{ active: hasKeyframe('rotation') }" @click="toggleKeyframe('rotation')">◆</button>
-          </div>
+            <div class="property-row">
+              <label>X Rotation</label>
+              <div class="single-value">
+                <ScrubableNumber v-model="transform.rotationX" unit="°" @update:modelValue="updateTransform" />
+              </div>
+              <button class="keyframe-btn" :class="{ active: hasKeyframe('rotationX') }" @click="toggleKeyframe('rotationX')">◆</button>
+            </div>
+            <div class="property-row">
+              <label>Y Rotation</label>
+              <div class="single-value">
+                <ScrubableNumber v-model="transform.rotationY" unit="°" @update:modelValue="updateTransform" />
+              </div>
+              <button class="keyframe-btn" :class="{ active: hasKeyframe('rotationY') }" @click="toggleKeyframe('rotationY')">◆</button>
+            </div>
+            <div class="property-row">
+              <label>Z Rotation</label>
+              <div class="single-value">
+                <ScrubableNumber v-model="transform.rotationZ" unit="°" @update:modelValue="updateTransform" />
+              </div>
+              <button class="keyframe-btn" :class="{ active: hasKeyframe('rotationZ') }" @click="toggleKeyframe('rotationZ')">◆</button>
+            </div>
+          </template>
+          <!-- 2D Rotation -->
+          <template v-else>
+            <div class="property-row">
+              <label>Rotation</label>
+              <div class="single-value">
+                <ScrubableNumber
+                  v-model="transform.rotation"
+                  :min="-360"
+                  :max="360"
+                  unit="°"
+                  @update:modelValue="updateTransform"
+                />
+              </div>
+              <button class="keyframe-btn" :class="{ active: hasKeyframe('rotation') }" @click="toggleKeyframe('rotation')">◆</button>
+            </div>
+          </template>
 
           <div class="property-row">
             <label>Anchor Point</label>
             <div class="multi-value">
               <ScrubableNumber
                 v-model="transform.anchorPoint.x"
-                :min="-10000"
-                :max="10000"
                 :precision="1"
-                unit="px"
+                unit="X"
                 @update:modelValue="updateTransform"
               />
               <ScrubableNumber
                 v-model="transform.anchorPoint.y"
-                :min="-10000"
-                :max="10000"
                 :precision="1"
-                unit="px"
+                unit="Y"
                 @update:modelValue="updateTransform"
               />
             </div>
@@ -129,7 +159,6 @@
                 v-model="transform.opacity"
                 :min="0"
                 :max="100"
-                :precision="0"
                 unit="%"
                 @update:modelValue="updateTransform"
               />
@@ -188,11 +217,18 @@ const scaleLocked = ref(true);
 
 const layerName = ref('');
 const transform = ref({
-  position: { x: 0, y: 0 },
+  position: { x: 0, y: 0, z: 0 },
   scale: { x: 100, y: 100 },
   rotation: 0,
   anchorPoint: { x: 0, y: 0 },
-  opacity: 100
+  opacity: 100,
+  // 3D properties
+  orientationX: 0,
+  orientationY: 0,
+  orientationZ: 0,
+  rotationX: 0,
+  rotationY: 0,
+  rotationZ: 0
 });
 const blendMode = ref('normal');
 const keyframes = ref<string[]>([]);
@@ -244,12 +280,24 @@ const layerPropertiesComponent = computed<Component | null>(() => {
 watch(selectedLayer, (layer) => {
   if (layer) {
     layerName.value = layer.name;
+    const t = layer.transform;
     transform.value = {
-      position: { x: layer.transform?.position?.value?.x || 0, y: layer.transform?.position?.value?.y || 0 },
-      scale: { x: layer.transform?.scale?.value?.x || 100, y: layer.transform?.scale?.value?.y || 100 },
-      rotation: layer.transform?.rotation?.value || 0,
-      anchorPoint: { x: layer.transform?.anchorPoint?.value?.x || 0, y: layer.transform?.anchorPoint?.value?.y || 0 },
-      opacity: layer.opacity?.value || 100
+      position: {
+        x: t?.position?.value?.x || 0,
+        y: t?.position?.value?.y || 0,
+        z: t?.position?.value?.z || 0
+      },
+      scale: { x: t?.scale?.value?.x || 100, y: t?.scale?.value?.y || 100 },
+      rotation: t?.rotation?.value || 0,
+      anchorPoint: { x: t?.anchorPoint?.value?.x || 0, y: t?.anchorPoint?.value?.y || 0 },
+      opacity: layer.opacity?.value || 100,
+      // 3D properties
+      orientationX: t?.orientation?.value?.x || 0,
+      orientationY: t?.orientation?.value?.y || 0,
+      orientationZ: t?.orientation?.value?.z || 0,
+      rotationX: t?.rotationX?.value || 0,
+      rotationY: t?.rotationY?.value || 0,
+      rotationZ: t?.rotationZ?.value || 0
     };
     blendMode.value = layer.blendMode || 'normal';
   }
@@ -281,22 +329,36 @@ function updateLayerName() {
 
 function updateTransform() {
   if (!selectedLayer.value) return;
+  const t = selectedLayer.value.transform;
+  const v = transform.value;
 
-  if (selectedLayer.value.transform?.position) {
-    selectedLayer.value.transform.position.value = { x: transform.value.position.x, y: transform.value.position.y };
+  if (t?.position) {
+    t.position.value = { x: v.position.x, y: v.position.y, z: v.position.z };
   }
-  if (selectedLayer.value.transform?.scale) {
-    selectedLayer.value.transform.scale.value = { x: transform.value.scale.x, y: transform.value.scale.y };
+  if (t?.scale) {
+    t.scale.value = { x: v.scale.x, y: v.scale.y };
   }
-  if (selectedLayer.value.transform?.rotation) {
-    selectedLayer.value.transform.rotation.value = transform.value.rotation;
+  if (t?.rotation) {
+    t.rotation.value = v.rotation;
   }
-  if (selectedLayer.value.transform?.anchorPoint) {
-    selectedLayer.value.transform.anchorPoint.value = { x: transform.value.anchorPoint.x, y: transform.value.anchorPoint.y };
+  if (t?.anchorPoint) {
+    t.anchorPoint.value = { x: v.anchorPoint.x, y: v.anchorPoint.y };
   }
   if (selectedLayer.value.opacity) {
-    selectedLayer.value.opacity.value = transform.value.opacity;
+    selectedLayer.value.opacity.value = v.opacity;
   }
+
+  // 3D properties
+  if (selectedLayer.value.threeD) {
+    if (t?.orientation) {
+      t.orientation.value = { x: v.orientationX, y: v.orientationY, z: v.orientationZ };
+    }
+    if (t?.rotationX) t.rotationX.value = v.rotationX;
+    if (t?.rotationY) t.rotationY.value = v.rotationY;
+    if (t?.rotationZ) t.rotationZ.value = v.rotationZ;
+  }
+
+  onLayerUpdate();
 }
 
 function updateBlendMode() {
