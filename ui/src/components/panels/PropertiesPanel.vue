@@ -177,6 +177,8 @@ import { ScrubableNumber, SliderInput } from '@/components/controls';
 import TextProperties from '@/components/properties/TextProperties.vue';
 import ParticleProperties from '@/components/properties/ParticleProperties.vue';
 import DepthflowProperties from '@/components/properties/DepthflowProperties.vue';
+import LightProperties from '@/components/properties/LightProperties.vue';
+import ShapeProperties from '@/components/properties/ShapeProperties.vue';
 
 const store = useCompositorStore();
 
@@ -229,6 +231,10 @@ const layerPropertiesComponent = computed<Component | null>(() => {
       return markRaw(ParticleProperties);
     case 'depthflow':
       return markRaw(DepthflowProperties);
+    case 'light':
+      return markRaw(LightProperties);
+    case 'spline':
+      return markRaw(ShapeProperties);
     default:
       return null;
   }
