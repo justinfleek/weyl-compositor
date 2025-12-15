@@ -27,6 +27,13 @@ export interface AudioAnalysis {
   };
   onsets: number[];
   bpm: number;
+
+  // Enhanced features (from RyanOnTheInside/Yvann)
+  spectralFlux: number[];           // Rate of spectral change (useful for beats)
+  zeroCrossingRate: number[];       // Percussiveness indicator
+  spectralRolloff: number[];        // High-frequency energy cutoff
+  spectralFlatness: number[];       // Tonal vs noise-like (0=tonal, 1=noise)
+  chromaFeatures?: ChromaFeatures;  // Key/chord detection
 }
 
 export interface FrequencyBandRanges {
@@ -36,6 +43,31 @@ export interface FrequencyBandRanges {
   mid: [number, number];
   highMid: [number, number];
   high: [number, number];
+}
+
+// Chroma features for key/chord detection (12 pitch classes)
+export interface ChromaFeatures {
+  chroma: number[][];         // [frameIndex][pitchClass] 12 values per frame (C, C#, D, etc.)
+  chromaEnergy: number[];     // Total chroma energy per frame
+  estimatedKey: string;       // Best guess at musical key
+  keyConfidence: number;      // 0-1 confidence in key estimation
+}
+
+// Audio analysis configuration (matches Yvann-Nodes)
+export interface AudioAnalysisConfig {
+  fftSize: number;            // 512, 1024, 2048, 4096
+  hopSize?: number;           // Overlap (default fftSize/4)
+  minFrequency: number;       // Filter low frequencies (default 20)
+  maxFrequency: number;       // Filter high frequencies (default 20000)
+  // Analysis modes (like Yvann)
+  analysisMode: 'full' | 'drums' | 'vocals' | 'bass' | 'other';
+  // Stem data (if pre-separated)
+  stemData?: {
+    drums?: AudioBuffer;
+    vocals?: AudioBuffer;
+    bass?: AudioBuffer;
+    other?: AudioBuffer;
+  };
 }
 
 // ============================================================================
@@ -99,18 +131,38 @@ export async function loadAudioFromUrl(url: string): Promise<AudioBuffer> {
 /**
  * Perform comprehensive audio analysis
  */
-export async function analyzeAudio(buffer: AudioBuffer, fps: number): Promise<AudioAnalysis> {
+export async function analyzeAudio(
+  buffer: AudioBuffer,
+  fps: number,
+  config?: Partial<AudioAnalysisConfig>
+): Promise<AudioAnalysis> {
   const duration = buffer.duration;
   const frameCount = Math.ceil(duration * fps);
   const sampleRate = buffer.sampleRate;
 
+  // Determine which buffer to analyze based on mode
+  let analyzeBuffer = buffer;
+  if (config?.analysisMode && config.analysisMode !== 'full' && config.stemData) {
+    const stemKey = config.analysisMode as keyof typeof config.stemData;
+    if (config.stemData[stemKey]) {
+      analyzeBuffer = config.stemData[stemKey]!;
+    }
+  }
+
   // Extract features
-  const amplitudeEnvelope = extractAmplitudeEnvelope(buffer, fps);
-  const rmsEnergy = extractRMSEnergy(buffer, fps);
-  const frequencyBands = await extractFrequencyBands(buffer, fps);
-  const spectralCentroid = await extractSpectralCentroid(buffer, fps);
-  const onsets = detectOnsets(buffer, fps);
-  const bpm = detectBPM(buffer);
+  const amplitudeEnvelope = extractAmplitudeEnvelope(analyzeBuffer, fps);
+  const rmsEnergy = extractRMSEnergy(analyzeBuffer, fps);
+  const frequencyBands = await extractFrequencyBands(analyzeBuffer, fps, config);
+  const spectralCentroid = await extractSpectralCentroid(analyzeBuffer, fps);
+  const onsets = detectOnsets(analyzeBuffer, fps);
+  const bpm = detectBPM(analyzeBuffer);
+
+  // Enhanced features
+  const spectralFlux = extractSpectralFlux(analyzeBuffer, fps);
+  const zeroCrossingRate = extractZeroCrossingRate(analyzeBuffer, fps);
+  const spectralRolloff = extractSpectralRolloff(analyzeBuffer, fps);
+  const spectralFlatness = extractSpectralFlatness(analyzeBuffer, fps);
+  const chromaFeatures = extractChromaFeatures(analyzeBuffer, fps);
 
   return {
     sampleRate,
@@ -121,7 +173,13 @@ export async function analyzeAudio(buffer: AudioBuffer, fps: number): Promise<Au
     spectralCentroid,
     frequencyBands,
     onsets,
-    bpm
+    bpm,
+    // Enhanced
+    spectralFlux,
+    zeroCrossingRate,
+    spectralRolloff,
+    spectralFlatness,
+    chromaFeatures
   };
 }
 
@@ -198,7 +256,8 @@ export function extractRMSEnergy(buffer: AudioBuffer, fps: number): number[] {
  */
 export async function extractFrequencyBands(
   buffer: AudioBuffer,
-  fps: number
+  fps: number,
+  config?: Partial<AudioAnalysisConfig>
 ): Promise<AudioAnalysis['frequencyBands']> {
   const duration = buffer.duration;
   const frameCount = Math.ceil(duration * fps);
@@ -452,6 +511,256 @@ function calculateAdaptiveThreshold(flux: number[], sensitivity: number): number
 }
 
 // ============================================================================
+// Enhanced Audio Features (RyanOnTheInside / Yvann style)
+// ============================================================================
+
+/**
+ * Extract spectral flux (rate of spectral change) - great for beat detection
+ */
+export function extractSpectralFlux(buffer: AudioBuffer, fps: number): number[] {
+  const channelData = buffer.getChannelData(0);
+  const samplesPerFrame = Math.floor(buffer.sampleRate / fps);
+  const frameCount = Math.ceil(buffer.duration * fps);
+  const flux: number[] = [];
+  let prevSpectrum: number[] | null = null;
+
+  for (let frame = 0; frame < frameCount; frame++) {
+    const startSample = frame * samplesPerFrame;
+
+    if (startSample + DEFAULT_FFT_SIZE > channelData.length) {
+      flux.push(flux.length > 0 ? flux[flux.length - 1] : 0);
+      continue;
+    }
+
+    const spectrum = simpleFFT(channelData.slice(startSample, startSample + DEFAULT_FFT_SIZE));
+
+    if (prevSpectrum) {
+      // Spectral flux = sum of positive differences (only increases)
+      let fluxValue = 0;
+      for (let i = 0; i < spectrum.length; i++) {
+        const diff = spectrum[i] - prevSpectrum[i];
+        if (diff > 0) fluxValue += diff;
+      }
+      flux.push(fluxValue);
+    } else {
+      flux.push(0);
+    }
+
+    prevSpectrum = spectrum;
+  }
+
+  // Normalize
+  const maxValue = Math.max(...flux, 0.0001);
+  return flux.map(v => v / maxValue);
+}
+
+/**
+ * Extract zero crossing rate - indicates percussiveness/noisiness
+ */
+export function extractZeroCrossingRate(buffer: AudioBuffer, fps: number): number[] {
+  const channelData = buffer.getChannelData(0);
+  const samplesPerFrame = Math.floor(buffer.sampleRate / fps);
+  const frameCount = Math.ceil(buffer.duration * fps);
+  const zcr: number[] = [];
+
+  for (let frame = 0; frame < frameCount; frame++) {
+    const startSample = frame * samplesPerFrame;
+    const endSample = Math.min(startSample + samplesPerFrame, channelData.length);
+
+    let crossings = 0;
+    for (let i = startSample + 1; i < endSample; i++) {
+      if ((channelData[i] >= 0 && channelData[i - 1] < 0) ||
+          (channelData[i] < 0 && channelData[i - 1] >= 0)) {
+        crossings++;
+      }
+    }
+
+    // Normalize by frame length
+    const rate = crossings / (endSample - startSample);
+    zcr.push(rate);
+  }
+
+  // Normalize to 0-1
+  const maxValue = Math.max(...zcr, 0.0001);
+  return zcr.map(v => v / maxValue);
+}
+
+/**
+ * Extract spectral rolloff - frequency below which 85% of energy lies
+ * Good for detecting high-frequency content (hihats, cymbals)
+ */
+export function extractSpectralRolloff(buffer: AudioBuffer, fps: number, rolloffPercent: number = 0.85): number[] {
+  const channelData = buffer.getChannelData(0);
+  const samplesPerFrame = Math.floor(buffer.sampleRate / fps);
+  const frameCount = Math.ceil(buffer.duration * fps);
+  const rolloff: number[] = [];
+  const binFrequency = buffer.sampleRate / DEFAULT_FFT_SIZE;
+
+  for (let frame = 0; frame < frameCount; frame++) {
+    const startSample = frame * samplesPerFrame;
+
+    if (startSample + DEFAULT_FFT_SIZE > channelData.length) {
+      rolloff.push(rolloff.length > 0 ? rolloff[rolloff.length - 1] : 0);
+      continue;
+    }
+
+    const spectrum = simpleFFT(channelData.slice(startSample, startSample + DEFAULT_FFT_SIZE));
+
+    // Calculate total energy
+    const totalEnergy = spectrum.reduce((a, b) => a + b, 0);
+    const threshold = totalEnergy * rolloffPercent;
+
+    // Find frequency bin where cumulative energy exceeds threshold
+    let cumulativeEnergy = 0;
+    let rolloffBin = 0;
+
+    for (let i = 0; i < spectrum.length; i++) {
+      cumulativeEnergy += spectrum[i];
+      if (cumulativeEnergy >= threshold) {
+        rolloffBin = i;
+        break;
+      }
+    }
+
+    rolloff.push(rolloffBin * binFrequency);
+  }
+
+  // Normalize to 0-1
+  const maxValue = Math.max(...rolloff, 0.0001);
+  return rolloff.map(v => v / maxValue);
+}
+
+/**
+ * Extract spectral flatness - measure of noise-like vs tonal character
+ * 0 = very tonal (clear pitch), 1 = noise-like
+ */
+export function extractSpectralFlatness(buffer: AudioBuffer, fps: number): number[] {
+  const channelData = buffer.getChannelData(0);
+  const samplesPerFrame = Math.floor(buffer.sampleRate / fps);
+  const frameCount = Math.ceil(buffer.duration * fps);
+  const flatness: number[] = [];
+
+  for (let frame = 0; frame < frameCount; frame++) {
+    const startSample = frame * samplesPerFrame;
+
+    if (startSample + DEFAULT_FFT_SIZE > channelData.length) {
+      flatness.push(flatness.length > 0 ? flatness[flatness.length - 1] : 0);
+      continue;
+    }
+
+    const spectrum = simpleFFT(channelData.slice(startSample, startSample + DEFAULT_FFT_SIZE));
+
+    // Remove zeros to avoid log(0)
+    const nonZero = spectrum.filter(v => v > 1e-10);
+    if (nonZero.length === 0) {
+      flatness.push(0);
+      continue;
+    }
+
+    // Geometric mean (exp of mean of logs)
+    const logSum = nonZero.reduce((a, b) => a + Math.log(b), 0);
+    const geometricMean = Math.exp(logSum / nonZero.length);
+
+    // Arithmetic mean
+    const arithmeticMean = nonZero.reduce((a, b) => a + b, 0) / nonZero.length;
+
+    // Flatness = geometric mean / arithmetic mean
+    const flat = arithmeticMean > 0 ? geometricMean / arithmeticMean : 0;
+    flatness.push(flat);
+  }
+
+  return flatness;
+}
+
+/**
+ * Extract chroma features (12 pitch classes)
+ * Useful for music-aware animations that respond to harmony
+ */
+export function extractChromaFeatures(buffer: AudioBuffer, fps: number): ChromaFeatures {
+  const channelData = buffer.getChannelData(0);
+  const sampleRate = buffer.sampleRate;
+  const samplesPerFrame = Math.floor(sampleRate / fps);
+  const frameCount = Math.ceil(buffer.duration * fps);
+
+  // Pitch class frequencies (A4 = 440Hz reference)
+  const pitchNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  const chroma: number[][] = [];
+  const chromaEnergy: number[] = [];
+
+  // Bin to pitch class mapping
+  const binFrequency = sampleRate / DEFAULT_FFT_SIZE;
+
+  for (let frame = 0; frame < frameCount; frame++) {
+    const startSample = frame * samplesPerFrame;
+    const frameChroma = new Array(12).fill(0);
+
+    if (startSample + DEFAULT_FFT_SIZE > channelData.length) {
+      chroma.push(frameChroma);
+      chromaEnergy.push(0);
+      continue;
+    }
+
+    const spectrum = simpleFFT(channelData.slice(startSample, startSample + DEFAULT_FFT_SIZE));
+
+    // Map each bin to a pitch class
+    for (let bin = 1; bin < spectrum.length; bin++) {
+      const frequency = bin * binFrequency;
+      if (frequency < 27.5 || frequency > 4186) continue; // Piano range
+
+      // Convert frequency to pitch class (0-11)
+      // MIDI note = 69 + 12 * log2(f/440)
+      const midiNote = 69 + 12 * Math.log2(frequency / 440);
+      const pitchClass = Math.round(midiNote) % 12;
+
+      if (pitchClass >= 0 && pitchClass < 12) {
+        frameChroma[pitchClass] += spectrum[bin];
+      }
+    }
+
+    // Normalize frame chroma
+    const maxChroma = Math.max(...frameChroma, 0.0001);
+    const normalizedChroma = frameChroma.map(v => v / maxChroma);
+
+    chroma.push(normalizedChroma);
+    chromaEnergy.push(frameChroma.reduce((a, b) => a + b, 0));
+  }
+
+  // Estimate key by summing chroma across all frames
+  const totalChroma = new Array(12).fill(0);
+  for (const frame of chroma) {
+    for (let i = 0; i < 12; i++) {
+      totalChroma[i] += frame[i];
+    }
+  }
+
+  // Find dominant pitch class
+  let maxTotal = 0;
+  let dominantPitch = 0;
+  for (let i = 0; i < 12; i++) {
+    if (totalChroma[i] > maxTotal) {
+      maxTotal = totalChroma[i];
+      dominantPitch = i;
+    }
+  }
+
+  // Simple key estimation (major vs minor check could be added)
+  const estimatedKey = pitchNames[dominantPitch] + ' major';
+  const keyConfidence = maxTotal / (totalChroma.reduce((a, b) => a + b, 0) + 0.0001);
+
+  // Normalize chromaEnergy
+  const maxEnergy = Math.max(...chromaEnergy, 0.0001);
+  const normalizedEnergy = chromaEnergy.map(v => v / maxEnergy);
+
+  return {
+    chroma,
+    chromaEnergy: normalizedEnergy,
+    estimatedKey,
+    keyConfidence
+  };
+}
+
+// ============================================================================
 // BPM Detection
 // ============================================================================
 
@@ -575,6 +884,56 @@ export function getFeatureAtFrame(
     case 'onsets':
       // Return 1 if this frame is an onset, 0 otherwise
       return analysis.onsets.includes(clampedFrame) ? 1 : 0;
+
+    // Enhanced features
+    case 'spectralFlux':
+      return analysis.spectralFlux?.[clampedFrame] ?? 0;
+
+    case 'zeroCrossingRate':
+    case 'zcr':
+      return analysis.zeroCrossingRate?.[clampedFrame] ?? 0;
+
+    case 'spectralRolloff':
+    case 'rolloff':
+      return analysis.spectralRolloff?.[clampedFrame] ?? 0;
+
+    case 'spectralFlatness':
+    case 'flatness':
+      return analysis.spectralFlatness?.[clampedFrame] ?? 0;
+
+    case 'chromaEnergy':
+      return analysis.chromaFeatures?.chromaEnergy[clampedFrame] ?? 0;
+
+    // Individual chroma pitch classes (C, C#, D, etc.)
+    case 'chromaC':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[0] ?? 0;
+    case 'chromaCs':
+    case 'chromaDb':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[1] ?? 0;
+    case 'chromaD':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[2] ?? 0;
+    case 'chromaDs':
+    case 'chromaEb':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[3] ?? 0;
+    case 'chromaE':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[4] ?? 0;
+    case 'chromaF':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[5] ?? 0;
+    case 'chromaFs':
+    case 'chromaGb':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[6] ?? 0;
+    case 'chromaG':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[7] ?? 0;
+    case 'chromaGs':
+    case 'chromaAb':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[8] ?? 0;
+    case 'chromaA':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[9] ?? 0;
+    case 'chromaAs':
+    case 'chromaBb':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[10] ?? 0;
+    case 'chromaB':
+      return analysis.chromaFeatures?.chroma[clampedFrame]?.[11] ?? 0;
 
     default:
       return 0;
