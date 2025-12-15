@@ -15,27 +15,28 @@
             class="add-layer-btn"
             :class="{ active: showAddLayerMenu }"
             @mousedown.stop.prevent="toggleAddLayerMenu"
-            title="Add New Layer"
           >
             <span class="icon">+</span> Layer
           </button>
+
           <div v-if="showAddLayerMenu" class="add-layer-menu">
-            <button @click="addLayer('solid')"><span class="icon">■</span> Solid</button>
-            <button @click="addLayer('text')"><span class="icon">T</span> Text</button>
-            <button @click="addLayer('spline')"><span class="icon">~</span> Shape</button>
-            <button @click="addLayer('null')"><span class="icon">□</span> Null</button>
-            <button @click="addLayer('camera')"><span class="icon">📷</span> Camera</button>
-            <button @click="addLayer('light')"><span class="icon">💡</span> Light</button>
-            <button @click="addLayer('video')"><span class="icon">🎞️</span> Video</button>
+            <button @mousedown="addLayer('solid')"><span class="icon">■</span> Solid</button>
+            <button @mousedown="addLayer('text')"><span class="icon">T</span> Text</button>
+            <button @mousedown="addLayer('spline')"><span class="icon">~</span> Shape</button>
+            <button @mousedown="addLayer('null')"><span class="icon">□</span> Null</button>
+            <button @mousedown="addLayer('camera')"><span class="icon">📷</span> Camera</button>
+            <button @mousedown="addLayer('light')"><span class="icon">💡</span> Light</button>
+            <button @mousedown="addLayer('video')"><span class="icon">🎞️</span> Video</button>
           </div>
         </div>
+
         <div class="tool-group">
            <button class="delete-btn" @click="deleteSelectedLayers" :disabled="store.selectedLayerIds.length === 0">🗑️</button>
         </div>
       </div>
 
       <div class="header-right">
-        <input type="range" min="1" max="50" v-model.number="pixelsPerFrame" class="zoom-slider" title="Zoom" />
+        <input type="range" min="0.1" max="50" step="0.1" v-model.number="pixelsPerFrame" class="zoom-slider" title="Zoom Timeline" />
       </div>
     </div>
 
@@ -67,14 +68,21 @@
       <div class="sidebar-resizer" @mousedown="startResize"></div>
 
       <div class="track-viewport" ref="trackViewportRef" @scroll="syncScrollX">
-        <div class="track-scroll-content" :style="{ width: trackContentWidth + 'px' }">
+        <div class="track-scroll-content" :style="{ width: computedWidthStyle }">
+
           <div class="time-ruler" @mousedown="startRulerScrub">
              <canvas ref="rulerCanvas" height="30"></canvas>
+
              <div class="playhead-head" :style="{ left: playheadPosition + 'px' }"></div>
+             <div class="playhead-hit-area"
+                  :style="{ left: playheadPosition + 'px' }"
+                  @mousedown.stop="startRulerScrub"
+             ></div>
           </div>
 
           <div class="layer-bars-container">
              <div class="grid-background"></div>
+
              <EnhancedLayerTrack
                 v-for="layer in filteredLayers"
                 :key="layer.id"
@@ -86,6 +94,7 @@
                 @select="selectLayer"
                 @updateLayer="updateLayer"
               />
+
              <div class="playhead-line" :style="{ left: playheadPosition + 'px' }"></div>
           </div>
         </div>
@@ -95,63 +104,65 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import EnhancedLayerTrack from './EnhancedLayerTrack.vue';
 
 const store = useCompositorStore();
-const pixelsPerFrame = ref(15); // Default zoom level
+const pixelsPerFrame = ref(10);
 const sidebarWidth = ref(450);
 const expandedLayers = ref<Record<string, boolean>>({});
 const showAddLayerMenu = ref(false);
-const addLayerContainer = ref<null | HTMLElement>(null);
+const addLayerContainer = ref<HTMLElement | null>(null);
 const trackViewportRef = ref<HTMLElement | null>(null);
 const rulerCanvas = ref<HTMLCanvasElement | null>(null);
+const viewportWidth = ref(1000); // Default, updated by observer
 
 const filteredLayers = computed(() => store.layers || []);
 const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
 
-// CSS max() string - forces timeline to fill viewport OR content, whichever is larger
-const trackContentWidth = computed(() => {
-  const contentPx = (store.frameCount + 20) * pixelsPerFrame.value;
-  return `max(100%, ${contentPx}px)`;
+// CSS Width string - Fixes the scroll issue
+const computedWidthStyle = computed(() => {
+  const contentPx = (store.frameCount + 5) * pixelsPerFrame.value; // Small buffer
+  // If content is smaller than view, force 100% to fill background.
+  // If content is larger, use pixel width to enable scrolling.
+  return contentPx > viewportWidth.value ? `${contentPx}px` : '100%';
 });
 
 const sidebarGridStyle = computed(() => ({
   display: 'grid',
   gridTemplateColumns: '24px 24px 30px 24px 24px 24px 1fr 70px 70px',
   alignItems: 'center',
-  height: '32px', // Taller rows
+  height: '32px',
   width: '100%',
   boxSizing: 'border-box'
 }));
 
 // Actions
 function toggleAddLayerMenu() { showAddLayerMenu.value = !showAddLayerMenu.value; }
+
 function addLayer(type: string) {
-  if(type === 'text') store.createTextLayer();
-  else if(type === 'video') store.createLayer('video');
+  if (type === 'text') store.createTextLayer();
+  else if (type === 'video') store.createLayer('video');
   else store.createLayer(type as any);
   showAddLayerMenu.value = false;
 }
-function handleToggleExpand(id: string, val: boolean) { expandedLayers.value[id] = val; }
+
 function selectLayer(id: string) { store.selectLayer(id); }
 function updateLayer(id: string, u: any) { store.updateLayer(id, u); }
 function deleteSelectedLayers() { store.selectedLayerIds.forEach(id => store.deleteLayer(id)); }
 function setFrame(e: Event) { store.setFrame(parseInt((e.target as HTMLInputElement).value) || 0); }
 function togglePlayback() { store.togglePlayback(); }
-function goToStart() { store.goToStart(); }
-function goToEnd() { store.goToEnd(); }
+function handleToggleExpand(id: string, val: boolean) { expandedLayers.value[id] = val; }
 
-// Ruler Draw
 function drawRuler() {
   const cvs = rulerCanvas.value;
   if (!cvs || !trackViewportRef.value) return;
   const ctx = cvs.getContext('2d');
   if (!ctx) return;
 
-  // Match canvas size to the SCROLL width, not just the viewport width
-  const width = Math.max(trackViewportRef.value.scrollWidth, (store.frameCount + 20) * pixelsPerFrame.value);
+  // Canvas width matches the container width exactly
+  const width = trackViewportRef.value.scrollWidth;
   cvs.width = width;
   cvs.height = 30;
 
@@ -159,29 +170,43 @@ function drawRuler() {
   ctx.fillRect(0, 0, cvs.width, cvs.height);
   ctx.strokeStyle = '#555';
   ctx.fillStyle = '#aaa';
-  ctx.font = '11px sans-serif';
+  ctx.font = '10px sans-serif';
 
   const ppf = pixelsPerFrame.value;
-  const step = ppf < 5 ? 20 : 10;
+  // Dynamic tick step based on zoom
+  let step = 1;
+  if (ppf < 2) step = 50;
+  else if (ppf < 5) step = 20;
+  else if (ppf < 10) step = 10;
+  else if (ppf < 20) step = 5;
 
-  for(let f=0; f<=store.frameCount + 20; f++) {
+  // Only draw visible range + buffer for performance if needed,
+  // but for now simple loop is fine for < 10000px
+  const maxFrame = width / ppf;
+
+  for(let f=0; f<=maxFrame; f++) {
     const x = f * ppf;
     if(f % step === 0) {
+      // Major Tick
       ctx.beginPath(); ctx.moveTo(x, 15); ctx.lineTo(x, 30); ctx.stroke();
       ctx.fillText(String(f), x + 4, 12);
-    } else if (f % (step/2) === 0) {
+    } else if (f % (step/5) === 0 && step >= 5) {
+      // Minor Tick
       ctx.beginPath(); ctx.moveTo(x, 22); ctx.lineTo(x, 30); ctx.stroke();
     }
   }
 }
 
 function startRulerScrub(e: MouseEvent) {
+  const rect = rulerCanvas.value!.getBoundingClientRect();
+  const scrollX = trackViewportRef.value?.scrollLeft || 0;
+
   const update = (ev: MouseEvent) => {
-    const rect = rulerCanvas.value!.getBoundingClientRect();
-    const x = ev.clientX - rect.left;
+    const x = (ev.clientX - rect.left) + scrollX;
     const f = Math.max(0, Math.min(store.frameCount - 1, x / pixelsPerFrame.value));
     store.setFrame(Math.round(f));
   };
+
   update(e);
   window.addEventListener('mousemove', update);
   window.addEventListener('mouseup', () => window.removeEventListener('mousemove', update), { once: true });
@@ -195,34 +220,59 @@ function startResize(e: MouseEvent) {
   window.addEventListener('mouseup', () => window.removeEventListener('mousemove', onMove), { once: true });
 }
 
-function syncScrollX(e: Event) { /* Sync logic if needed later */ }
+function syncScrollX(e: Event) {
+    // Trigger redraw on scroll if dynamic culling is used (optional)
+}
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
   if (e.code === 'Space') { e.preventDefault(); togglePlayback(); }
 }
 
-watch(() => [pixelsPerFrame.value, store.frameCount], () => nextTick(drawRuler));
+let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
-  // Track window clicks to close menu
   window.addEventListener('mousedown', (e) => {
     if (addLayerContainer.value && !addLayerContainer.value.contains(e.target as Node)) {
       showAddLayerMenu.value = false;
     }
   });
 
-  // Initial draw with slight delay to ensure DOM is ready
+  // Track viewport size for accurate width calculation
+  if (trackViewportRef.value) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        viewportWidth.value = entry.contentRect.width;
+        drawRuler(); // Redraw ruler on resize
+      }
+    });
+    resizeObserver.observe(trackViewportRef.value);
+  }
+
   setTimeout(drawRuler, 100);
 });
+
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect();
+});
+
+watch(() => [computedWidthStyle.value, pixelsPerFrame.value, store.frameCount], () => nextTick(drawRuler));
 </script>
 
 <style scoped>
 .timeline-panel { display: flex; flex-direction: column; height: 100%; background: #111; color: #eee; font-family: 'Segoe UI', sans-serif; font-size: 13px; user-select: none; }
 .timeline-header { height: 40px; background: #2a2a2a; border-bottom: 1px solid #000; display: flex; justify-content: space-between; padding: 0 10px; align-items: center; z-index: 20; flex-shrink: 0; }
 .header-left, .header-center, .header-right { display: flex; gap: 10px; align-items: center; }
+
+/* Menus */
 .add-layer-wrapper { position: relative; }
-.add-layer-menu { position: absolute; top: 100%; left: 0; background: #333; z-index: 9999; border: 1px solid #000; display: flex; flex-direction: column; min-width: 140px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+.add-layer-menu {
+  position: absolute; top: 100%; left: 0;
+  background: #333; border: 1px solid #000;
+  display: flex; flex-direction: column;
+  min-width: 140px; z-index: 9999;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
 .add-layer-menu button { text-align: left; padding: 10px; border: none; background: transparent; color: #eee; cursor: pointer; border-bottom: 1px solid #444; }
 .add-layer-menu button:hover { background: #4a90d9; color: white; }
 .add-layer-btn { padding: 6px 12px; background: #444; border: 1px solid #555; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
@@ -237,11 +287,41 @@ onMounted(() => {
 .sidebar-resizer { width: 4px; background: #111; cursor: col-resize; flex-shrink: 0; z-index: 15; }
 .sidebar-resizer:hover { background: #4a90d9; }
 
-.track-viewport { flex: 1; display: flex; flex-direction: column; overflow-x: auto; overflow-y: hidden; position: relative; background: #151515; }
-.track-scroll-content { min-height: 100%; min-width: 100%; display: flex; flex-direction: column; }
+.track-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  background: #151515;
+}
+.track-scroll-content {
+  min-height: 100%;
+  /* Width controlled by computedWidthStyle */
+  display: flex;
+  flex-direction: column;
+}
+
 .time-ruler { height: 30px; position: relative; background: #222; border-bottom: 1px solid #000; cursor: pointer; z-index: 10; flex-shrink: 0; }
 .layer-bars-container { flex: 1; position: relative; }
-.playhead-head { position: absolute; top: 0; width: 2px; height: 30px; background: #e74c3c; z-index: 20; pointer-events: none; }
+
+/* Playhead Visuals */
+.playhead-head {
+  position: absolute; top: 0; width: 2px; height: 30px;
+  background: #e74c3c; z-index: 20; pointer-events: none;
+}
+/* Playhead Hit Area - Invisible but wider for easier grabbing */
+.playhead-hit-area {
+  position: absolute; top: 0; bottom: 0; width: 20px;
+  margin-left: -10px; /* Center on position */
+  background: transparent;
+  z-index: 30; cursor: ew-resize;
+}
+.playhead-hit-area:hover {
+  background: rgba(231, 76, 60, 0.1); /* Slight highlight on hover */
+}
+
 .playhead-line { position: absolute; top: 0; bottom: 0; width: 1px; background: #e74c3c; pointer-events: none; z-index: 10; }
 .grid-background { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, #222 1px, transparent 1px); background-size: 100px 100%; opacity: 0.3; }
 </style>
