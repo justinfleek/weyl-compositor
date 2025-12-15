@@ -93,21 +93,16 @@ const groupedProperties = computed(() => {
   const t = props.layer.transform;
   const transformProps: any[] = [];
 
-  if (t.anchorPoint) transformProps.push({ path: 'transform.anchorPoint', name: 'Anchor Point', property: t.anchorPoint });
-  if (t.position) {
-      transformProps.push({ path: 'transform.position', name: 'Position', property: t.position });
-      // FIX: Show Z Position if layer is 3D
-      if (props.layer.threeD) {
-          // We wrap the single Z value in a pseudo-property structure for rendering
-          const zVal = t.position.value.z ?? 0;
-          transformProps.push({
-              path: 'transform.position.z',
-              name: 'Z Position',
-              property: { value: zVal, animated: false, keyframes: [] }
-          });
-      }
-  }
-  if (t.scale) transformProps.push({ path: 'transform.scale', name: 'Scale', property: t.scale });
+  // Helper to safely add props
+  const add = (path: string, name: string, prop: any) => {
+    if (prop) transformProps.push({ path, name, property: prop });
+  };
+
+  add('transform.anchorPoint', 'Anchor Point', t.anchorPoint);
+  add('transform.position', 'Position', t.position);
+  // Note: PropertyTrack will automatically show X, Y, Z inputs if position.value.z exists
+  // No need for separate Z Position row - toggleLayer3D adds z to position.value when 3D enabled
+  add('transform.scale', 'Scale', t.scale);
 
   if (props.layer.threeD) {
       if(t.orientation) transformProps.push({ path: 'transform.orientation', name: 'Orientation', property: t.orientation });

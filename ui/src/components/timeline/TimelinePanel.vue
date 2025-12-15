@@ -102,16 +102,15 @@ const showAddLayerMenu = ref(false);
 const addLayerContainer = ref<null | HTMLElement>(null);
 const trackViewportRef = ref<HTMLElement | null>(null);
 const rulerCanvas = ref<HTMLCanvasElement | null>(null);
+const viewportWidth = ref(1920); // Reactive viewport width - updated by ResizeObserver
 
 const filteredLayers = computed(() => store.layers || []);
 const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
 
-// Force track to cover frames OR viewport, whichever is larger
+// CRITICAL FIX: Width is exactly max(viewport, content) - using reactive viewportWidth
 const trackContentWidth = computed(() => {
   const frameWidth = (store.frameCount + 50) * pixelsPerFrame.value;
-  // If we can't measure viewport yet, assume a reasonable min width (e.g. 1920)
-  const viewWidth = trackViewportRef.value?.clientWidth || 1920;
-  return Math.max(frameWidth, viewWidth);
+  return Math.max(frameWidth, viewportWidth.value);
 });
 
 const sidebarGridStyle = computed(() => ({
@@ -199,11 +198,33 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 watch(() => [trackContentWidth.value, pixelsPerFrame.value], () => nextTick(drawRuler));
+
+// ResizeObserver to keep timeline width correct
+let resizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
   drawRuler();
+
+  // Track window clicks to close menu
   window.addEventListener('mousedown', (e) => {
-    if (addLayerContainer.value && !addLayerContainer.value.contains(e.target as Node)) showAddLayerMenu.value = false;
+    if (addLayerContainer.value && !addLayerContainer.value.contains(e.target as Node)) {
+      showAddLayerMenu.value = false;
+    }
   });
+
+  // Observe track viewport size changes
+  if (trackViewportRef.value) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        viewportWidth.value = entry.contentRect.width;
+      }
+    });
+    resizeObserver.observe(trackViewportRef.value);
+  }
+});
+
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect();
 });
 </script>
 
