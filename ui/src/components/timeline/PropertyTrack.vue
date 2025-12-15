@@ -54,7 +54,10 @@
       </div>
     </div>
 
-    <div v-else class="prop-track" @mousedown="handleTrackClick">
+    <div v-else class="prop-track" @mousedown="handleTrackMouseDown" ref="trackRef">
+       <!-- Selection box for marquee select -->
+       <div v-if="isBoxSelecting" class="selection-box" :style="selectionBoxStyle"></div>
+
        <div v-for="kf in property.keyframes" :key="kf.id"
             class="keyframe"
             :class="{ selected: selectedKeyframeIds.has(kf.id) }"
@@ -79,6 +82,21 @@ const emit = defineEmits(['selectKeyframe', 'deleteKeyframe', 'moveKeyframe']);
 const store = useCompositorStore();
 
 const selectedKeyframeIds = ref<Set<string>>(new Set());
+const trackRef = ref<HTMLElement | null>(null);
+
+// Box selection state
+const isBoxSelecting = ref(false);
+const boxStartX = ref(0);
+const boxCurrentX = ref(0);
+
+const selectionBoxStyle = computed(() => {
+  const left = Math.min(boxStartX.value, boxCurrentX.value);
+  const width = Math.abs(boxCurrentX.value - boxStartX.value);
+  return {
+    left: `${left}px`,
+    width: `${width}px`
+  };
+});
 
 const hasKeyframeAtCurrent = computed(() => props.property.keyframes?.some((k:any) => k.frame === store.currentFrame));
 const isSelected = computed(() => store.selectedPropertyPath === props.propertyPath);
@@ -92,13 +110,56 @@ function updateValByIndex(axis: string, v: number) {
 }
 function selectProp() { store.selectProperty(props.propertyPath); }
 
-// Click on empty track area to add keyframe at that position
-function handleTrackClick(e: MouseEvent) {
+// Handle mouse down on track - start box selection or navigate
+function handleTrackMouseDown(e: MouseEvent) {
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
   const x = e.clientX - rect.left;
-  const frame = Math.round(x / props.pixelsPerFrame);
-  // Navigate to that frame
-  store.setFrame(Math.max(0, Math.min(store.frameCount - 1, frame)));
+
+  // Start box selection
+  isBoxSelecting.value = true;
+  boxStartX.value = x;
+  boxCurrentX.value = x;
+
+  // Clear selection unless Shift is held
+  if (!e.shiftKey) {
+    selectedKeyframeIds.value.clear();
+  }
+
+  const onMove = (ev: MouseEvent) => {
+    const currentX = ev.clientX - rect.left;
+    boxCurrentX.value = Math.max(0, currentX);
+
+    // Select keyframes within the box
+    const minFrame = Math.min(boxStartX.value, boxCurrentX.value) / props.pixelsPerFrame;
+    const maxFrame = Math.max(boxStartX.value, boxCurrentX.value) / props.pixelsPerFrame;
+
+    if (!ev.shiftKey) {
+      selectedKeyframeIds.value.clear();
+    }
+
+    for (const kf of props.property.keyframes || []) {
+      if (kf.frame >= minFrame && kf.frame <= maxFrame) {
+        selectedKeyframeIds.value.add(kf.id);
+      }
+    }
+  };
+
+  const onUp = (ev: MouseEvent) => {
+    isBoxSelecting.value = false;
+
+    // If it was just a click (no drag), navigate to that frame
+    const dragDistance = Math.abs(boxCurrentX.value - boxStartX.value);
+    if (dragDistance < 5) {
+      const frame = Math.round(boxStartX.value / props.pixelsPerFrame);
+      store.setFrame(Math.max(0, Math.min(store.frameCount - 1, frame)));
+    }
+
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
 }
 
 // Keyframe selection and dragging
@@ -214,5 +275,16 @@ function deleteKeyframe(kfId: string) {
   background: #fff;
   border-color: #4a90d9;
   box-shadow: 0 0 4px #4a90d9;
+}
+
+/* Selection box for marquee select */
+.selection-box {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background: rgba(74, 144, 217, 0.2);
+  border: 1px solid rgba(74, 144, 217, 0.6);
+  pointer-events: none;
+  z-index: 5;
 }
 </style>
