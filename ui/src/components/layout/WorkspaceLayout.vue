@@ -85,8 +85,11 @@
         <button @click="redo" :disabled="!canRedo" title="Redo (Ctrl+Shift+Z)">
           <span class="icon">↪</span>
         </button>
-        <button @click="showExportDialog = true" title="Export">
-          <span class="icon">📤</span> Export
+        <button @click="showExportDialog = true" title="Export Matte">
+          <span class="icon">📤</span> Matte
+        </button>
+        <button @click="showComfyUIExportDialog = true" title="Export to ComfyUI">
+          <span class="icon">🎬</span> ComfyUI
         </button>
       </div>
     </div>
@@ -169,10 +172,18 @@
                     >
                       <span class="icon">▦</span>
                     </button>
+                    <button
+                      :class="{ active: useThreeCanvas }"
+                      @click="useThreeCanvas = !useThreeCanvas"
+                      :title="useThreeCanvas ? 'Using Three.js (click for Fabric.js)' : 'Using Fabric.js (click for Three.js)'"
+                    >
+                      <span class="icon">{{ useThreeCanvas ? '3D' : '2D' }}</span>
+                    </button>
                   </div>
                 </div>
                 <div class="viewport-content">
-                  <CompositionCanvas v-if="viewportTab === 'composition'" ref="canvasRef" />
+                  <ThreeCanvas v-if="viewportTab === 'composition' && useThreeCanvas" ref="threeCanvasRef" />
+                  <CompositionCanvas v-else-if="viewportTab === 'composition'" ref="canvasRef" />
                   <ViewportRenderer
                     v-else
                     :camera="activeCamera"
@@ -275,6 +286,17 @@
       @close="showExportDialog = false"
       @exported="onExportComplete"
     />
+
+    <!-- ComfyUI Export Dialog -->
+    <ComfyUIExportDialog
+      v-if="showComfyUIExportDialog"
+      :layers="store.layers"
+      :camera-keyframes="activeCameraKeyframes"
+      :current-frame="store.currentFrame"
+      :total-frames="store.frameCount"
+      @close="showComfyUIExportDialog = false"
+      @exported="onComfyUIExportComplete"
+    />
   </div>
 </template>
 
@@ -299,6 +321,7 @@ import AudioPanel from '@/components/panels/AudioPanel.vue';
 // Viewport
 import ViewportRenderer from '@/components/viewport/ViewportRenderer.vue';
 import CompositionCanvas from '@/components/canvas/CompositionCanvas.vue';
+import ThreeCanvas from '@/components/canvas/ThreeCanvas.vue';
 
 // Timeline
 import TimelinePanel from '@/components/timeline/TimelinePanel.vue';
@@ -306,6 +329,7 @@ import GraphEditor from '@/components/graph-editor/GraphEditor.vue';
 
 // Dialogs
 import ExportDialog from '@/components/dialogs/ExportDialog.vue';
+import ComfyUIExportDialog from '@/components/export/ComfyUIExportDialog.vue';
 
 // Store
 const store = useCompositorStore();
@@ -325,11 +349,14 @@ const showGuides = ref(false);
 const showGrid = ref(true);
 const showGraphEditor = ref(false);
 const showExportDialog = ref(false);
+const showComfyUIExportDialog = ref(false);
+const useThreeCanvas = ref(true); // Toggle between Fabric.js and Three.js canvas
 
 const isPlaying = ref(false);
 const gpuTier = ref<GPUTier['tier']>('cpu');
 
 const canvasRef = ref<InstanceType<typeof CompositionCanvas> | null>(null);
+const threeCanvasRef = ref<InstanceType<typeof ThreeCanvas> | null>(null);
 
 // Camera state
 const activeCamera = ref<Camera3D>(createDefaultCamera());
@@ -417,8 +444,20 @@ function updateCamera(camera: Camera3D) {
 }
 
 function onExportComplete() {
-  console.log('[Weyl] Export completed');
+  console.log('[Weyl] Matte export completed');
 }
+
+function onComfyUIExportComplete(result: any) {
+  console.log('[Weyl] ComfyUI export completed', result);
+  showComfyUIExportDialog.value = false;
+}
+
+// Get camera keyframes for the active camera
+const activeCameraKeyframes = computed(() => {
+  const activeCam = store.getActiveCamera();
+  if (!activeCam) return [];
+  return store.getCameraKeyframes(activeCam.id);
+});
 
 // Sync grid/guides state with canvas
 watch(showGrid, (value) => {

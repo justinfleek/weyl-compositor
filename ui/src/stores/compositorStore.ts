@@ -17,10 +17,15 @@ import type {
   ParticleEmitterConfig,
   AudioParticleMapping,
   CameraLayerData,
+  VideoData,
+  PrecompData,
   InterpolationType
 } from '@/types/project';
-import type { Camera3D, ViewportState, ViewOptions } from '@/types/camera';
+import type { VideoMetadata } from '@/engine/layers/VideoLayer';
+import { extractVideoMetadata, calculateCompositionFromVideo } from '@/engine/layers/VideoLayer';
+import type { Camera3D, CameraKeyframe, ViewportState, ViewOptions } from '@/types/camera';
 import { createDefaultCamera, createDefaultViewportState, createDefaultViewOptions } from '@/types/camera';
+import { interpolateCameraAtFrame } from '@/services/export/cameraExportFormats';
 import type { AudioAnalysis, PeakData, PeakDetectionConfig } from '@/services/audioFeatures';
 import { getFeatureAtFrame, detectPeaks, isBeatAtFrame } from '@/services/audioFeatures';
 import { loadAndAnalyzeAudio, cancelAnalysis } from '@/services/audioWorkerClient';
@@ -30,6 +35,22 @@ import type { AudioMapping, TargetParameter } from '@/services/audioReactiveMapp
 import { AudioReactiveMapper } from '@/services/audioReactiveMapping';
 import { AudioPathAnimator, type PathAnimatorConfig } from '@/services/audioPathAnimator';
 import { createEffectInstance } from '@/types/effects';
+import {
+  PropertyDriverSystem,
+  type PropertyDriver,
+  type PropertyPath,
+  createPropertyDriver,
+  createAudioDriver,
+  createPropertyLink
+} from '@/services/propertyDriver';
+import {
+  type SnapConfig,
+  type SnapResult,
+  findNearestSnap,
+  DEFAULT_SNAP_CONFIG,
+  getBeatFrames,
+  getPeakFrames
+} from '@/services/timelineSnap';
 
 interface CompositorState {
   // Project data
@@ -51,6 +72,7 @@ interface CompositorState {
   // Selection state
   selectedLayerIds: string[];
   selectedKeyframeIds: string[];
+  selectedPropertyPath: string | null;  // e.g. "transform.position" for graph editor focus
 
   // Tool state
   currentTool: 'select' | 'pen' | 'text' | 'hand' | 'zoom';
@@ -84,9 +106,17 @@ interface CompositorState {
 
   // Camera system
   cameras: Map<string, Camera3D>;           // All cameras by ID
+  cameraKeyframes: Map<string, CameraKeyframe[]>; // Keyframes per camera
   activeCameraId: string | null;            // Which camera is currently active
   viewportState: ViewportState;             // Multi-view layout state
   viewOptions: ViewOptions;                 // Display options (wireframes, etc.)
+
+  // Property driver system (expressions/links)
+  propertyDriverSystem: PropertyDriverSystem | null;
+  propertyDrivers: PropertyDriver[];        // Serializable driver configs
+
+  // Timeline snapping
+  snapConfig: SnapConfig;
 }
 
 export const useCompositorStore = defineStore('compositor', {
@@ -101,6 +131,7 @@ export const useCompositorStore = defineStore('compositor', {
     playbackStartFrame: 0,
     selectedLayerIds: [],
     selectedKeyframeIds: [],
+    selectedPropertyPath: null,
     currentTool: 'select',
     graphEditorVisible: false,
     historyStack: [],
@@ -120,9 +151,17 @@ export const useCompositorStore = defineStore('compositor', {
 
     // Camera system
     cameras: new Map(),
+    cameraKeyframes: new Map(),
     activeCameraId: null,
     viewportState: createDefaultViewportState(),
-    viewOptions: createDefaultViewOptions()
+    viewOptions: createDefaultViewOptions(),
+
+    // Property driver system
+    propertyDriverSystem: null,
+    propertyDrivers: [],
+
+    // Timeline snapping
+    snapConfig: { ...DEFAULT_SNAP_CONFIG }
   }),
 
   getters: {
@@ -251,6 +290,11 @@ export const useCompositorStore = defineStore('compositor', {
             lineHeight: 1.2,
             textAlign: 'left',
             pathLayerId: null,
+            pathReversed: false,
+            pathPerpendicularToPath: true,
+            pathForceAlignment: false,
+            pathFirstMargin: 0,
+            pathLastMargin: 0,
             pathOffset: 0,
             pathAlign: 'left'
           };
@@ -468,6 +512,64 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Update layer-specific data (e.g., text content, image path, etc.)
+     */
+    updateLayerData(layerId: string, dataUpdates: Record<string, any>): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || !layer.data) return;
+
+      Object.assign(layer.data, dataUpdates);
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Add a control point to a spline layer
+     */
+    addSplineControlPoint(layerId: string, point: { id: string; x: number; y: number; handleIn?: { x: number; y: number } | null; handleOut?: { x: number; y: number } | null; type: 'corner' | 'smooth' | 'symmetric' }): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || layer.type !== 'spline' || !layer.data) return;
+
+      const splineData = layer.data as any;
+      if (!splineData.controlPoints) {
+        splineData.controlPoints = [];
+      }
+      splineData.controlPoints.push(point);
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Update a spline control point
+     */
+    updateSplineControlPoint(layerId: string, pointId: string, updates: Partial<{ x: number; y: number; handleIn: { x: number; y: number } | null; handleOut: { x: number; y: number } | null; type: 'corner' | 'smooth' | 'symmetric' }>): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || layer.type !== 'spline' || !layer.data) return;
+
+      const splineData = layer.data as any;
+      const point = splineData.controlPoints?.find((p: any) => p.id === pointId);
+      if (!point) return;
+
+      Object.assign(point, updates);
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Delete a spline control point
+     */
+    deleteSplineControlPoint(layerId: string, pointId: string): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || layer.type !== 'spline' || !layer.data) return;
+
+      const splineData = layer.data as any;
+      if (!splineData.controlPoints) return;
+
+      const index = splineData.controlPoints.findIndex((p: any) => p.id === pointId);
+      if (index >= 0) {
+        splineData.controlPoints.splice(index, 1);
+        this.project.meta.modified = new Date().toISOString();
+      }
+    },
+
+    /**
      * Toggle 3D mode for a layer
      */
     toggleLayer3D(layerId: string): void {
@@ -551,9 +653,50 @@ export const useCompositorStore = defineStore('compositor', {
       this.selectedLayerIds = this.selectedLayerIds.filter(id => id !== layerId);
     },
 
+    /**
+     * Set a layer's parent for parenting/hierarchy
+     */
+    setLayerParent(layerId: string, parentId: string | null): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return;
+
+      // Prevent self-parenting
+      if (parentId === layerId) return;
+
+      // Prevent circular parenting (parent can't be a descendant)
+      if (parentId) {
+        const getDescendantIds = (id: string): string[] => {
+          const children = this.project.layers.filter(l => l.parentId === id);
+          let ids = children.map(c => c.id);
+          for (const child of children) {
+            ids = ids.concat(getDescendantIds(child.id));
+          }
+          return ids;
+        };
+
+        const descendants = new Set(getDescendantIds(layerId));
+        if (descendants.has(parentId)) {
+          console.warn('[Store] Cannot set parent: would create circular reference');
+          return;
+        }
+      }
+
+      layer.parentId = parentId;
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
+    },
+
     clearSelection(): void {
       this.selectedLayerIds = [];
       this.selectedKeyframeIds = [];
+      this.selectedPropertyPath = null;
+    },
+
+    /**
+     * Select a property path for graph editor focus
+     */
+    selectProperty(propertyPath: string | null): void {
+      this.selectedPropertyPath = propertyPath;
     },
 
     /**
@@ -715,9 +858,11 @@ export const useCompositorStore = defineStore('compositor', {
     addKeyframe<T>(
       layerId: string,
       propertyName: string,
-      value: T
+      value: T,
+      atFrame?: number
     ): Keyframe<T> | null {
-      console.log('[Store] addKeyframe called:', { layerId, propertyName, value, frame: this.project.currentFrame });
+      const frame = atFrame ?? this.project.currentFrame;
+      console.log('[Store] addKeyframe called:', { layerId, propertyName, value, frame });
       const layer = this.project.layers.find(l => l.id === layerId);
       if (!layer) {
         console.log('[Store] addKeyframe: layer not found');
@@ -755,7 +900,7 @@ export const useCompositorStore = defineStore('compositor', {
       // Default handles are disabled (linear interpolation until graph editor enables them)
       const keyframe: Keyframe<T> = {
         id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        frame: this.project.currentFrame,
+        frame,
         value,
         interpolation: 'linear',
         inHandle: { frame: 0, value: 0, enabled: false },
@@ -764,7 +909,7 @@ export const useCompositorStore = defineStore('compositor', {
       };
 
       // Check for existing keyframe at this frame
-      const existingIndex = property.keyframes.findIndex(k => k.frame === this.project.currentFrame);
+      const existingIndex = property.keyframes.findIndex(k => k.frame === frame);
       if (existingIndex >= 0) {
         property.keyframes[existingIndex] = keyframe;
         console.log('[Store] addKeyframe: replaced existing keyframe at frame', this.project.currentFrame);
@@ -973,6 +1118,52 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Update keyframe frame position and/or value
+     */
+    updateKeyframe(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string,
+      updates: { frame?: number; value?: any }
+    ): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return;
+
+      let property: AnimatableProperty<any> | undefined;
+
+      if (propertyPath === 'position' || propertyPath === 'transform.position') {
+        property = layer.transform.position;
+      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
+        property = layer.transform.scale;
+      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
+        property = layer.transform.rotation;
+      } else if (propertyPath === 'opacity') {
+        property = layer.opacity;
+      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
+        property = layer.transform.anchorPoint;
+      } else {
+        property = layer.properties.find(p => p.id === propertyPath || p.name === propertyPath);
+      }
+
+      if (!property) return;
+
+      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
+      if (!keyframe) return;
+
+      if (updates.frame !== undefined) {
+        keyframe.frame = updates.frame;
+        // Re-sort keyframes by frame
+        property.keyframes.sort((a, b) => a.frame - b.frame);
+      }
+
+      if (updates.value !== undefined) {
+        keyframe.value = updates.value;
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
      * Set keyframe bezier handle
      */
     setKeyframeHandle(
@@ -1050,8 +1241,13 @@ export const useCompositorStore = defineStore('compositor', {
         lineHeight: 1.2,
         textAlign: 'left',
 
-        // Path Options
+        // Path Options (Full AE Parity)
         pathLayerId: null,
+        pathReversed: false,
+        pathPerpendicularToPath: true,
+        pathForceAlignment: false,
+        pathFirstMargin: 0,
+        pathLastMargin: 0,
         pathOffset: 0,
         pathAlign: 'left',
 
@@ -1075,8 +1271,10 @@ export const useCompositorStore = defineStore('compositor', {
       layer.properties.push(createAnimatableProperty('Stroke Color', '#000000', 'color', 'Text'));
       layer.properties.push(createAnimatableProperty('Stroke Width', 0, 'number', 'Text'));
 
-      // Path Options
+      // Path Options (Full AE Parity)
       layer.properties.push(createAnimatableProperty('Path Offset', 0, 'number', 'Path Options'));
+      layer.properties.push(createAnimatableProperty('First Margin', 0, 'number', 'Path Options'));
+      layer.properties.push(createAnimatableProperty('Last Margin', 0, 'number', 'Path Options'));
 
       // More Options
       // Grouping Alignment must be 'position' type for X/Y
@@ -1301,6 +1499,222 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     // ============================================================
+    // VIDEO LAYER ACTIONS
+    // ============================================================
+
+    /**
+     * Create a video layer from a file
+     * Automatically resizes composition to match video dimensions and duration
+     *
+     * @param file - Video file to import
+     * @param autoResizeComposition - If true, resize composition to match video (default: true for first video)
+     * @returns The created layer
+     */
+    async createVideoLayer(file: File, autoResizeComposition: boolean = true): Promise<Layer> {
+      // First extract metadata to determine dimensions and duration
+      let videoUrl: string;
+      try {
+        videoUrl = URL.createObjectURL(file);
+      } catch {
+        throw new Error('Failed to create URL for video file');
+      }
+
+      let metadata: VideoMetadata;
+      try {
+        metadata = await extractVideoMetadata(videoUrl);
+      } catch (error) {
+        URL.revokeObjectURL(videoUrl);
+        throw new Error(`Failed to load video metadata: ${(error as Error).message}`);
+      }
+
+      // Create asset reference
+      const assetId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const asset: AssetReference = {
+        id: assetId,
+        type: 'video',
+        source: 'local_file',
+        filename: file.name,
+        width: metadata.width,
+        height: metadata.height,
+        data: videoUrl,
+        // Video-specific metadata
+        duration: metadata.duration,
+        frameCount: metadata.frameCount,
+        fps: metadata.fps,
+        hasAudio: metadata.hasAudio
+      };
+
+      this.project.assets[assetId] = asset;
+
+      // Auto-resize composition if requested
+      if (autoResizeComposition) {
+        const compSettings = calculateCompositionFromVideo(metadata, this.project.composition.fps);
+
+        console.log('[Weyl] Auto-resizing composition for video:', {
+          originalWidth: this.project.composition.width,
+          originalHeight: this.project.composition.height,
+          originalFrameCount: this.project.composition.frameCount,
+          newWidth: compSettings.width,
+          newHeight: compSettings.height,
+          newFrameCount: compSettings.frameCount,
+          videoDuration: metadata.duration
+        });
+
+        this.project.composition.width = compSettings.width;
+        this.project.composition.height = compSettings.height;
+        this.project.composition.frameCount = compSettings.frameCount;
+        this.project.composition.duration = compSettings.frameCount / this.project.composition.fps;
+      }
+
+      // Create the layer
+      const layer = this.createLayer('video', file.name.replace(/\.[^.]+$/, ''));
+
+      // Set video data
+      const videoData: VideoData = {
+        assetId,
+        loop: false,
+        pingPong: false,
+        startTime: 0,
+        endTime: undefined,
+        speed: 1,
+        timeRemapEnabled: false,
+        timeRemap: undefined,
+        frameBlending: 'none',
+        audioEnabled: metadata.hasAudio,
+        audioLevel: 100,
+        posterFrame: 0
+      };
+
+      layer.data = videoData;
+
+      // Set layer duration to match video (in frames)
+      if (!autoResizeComposition) {
+        // If not auto-resizing, set layer out point to video duration
+        const videoFrameCount = Math.ceil(metadata.duration * this.project.composition.fps);
+        layer.outPoint = Math.min(videoFrameCount - 1, this.project.composition.frameCount - 1);
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
+
+      console.log('[Weyl] Created video layer:', {
+        layerId: layer.id,
+        assetId,
+        dimensions: `${metadata.width}x${metadata.height}`,
+        duration: `${metadata.duration.toFixed(2)}s`,
+        frameCount: metadata.frameCount,
+        hasAudio: metadata.hasAudio
+      });
+
+      return layer;
+    },
+
+    /**
+     * Update video layer data
+     */
+    updateVideoLayerData(layerId: string, updates: Partial<VideoData>): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || layer.type !== 'video') return;
+
+      const data = layer.data as VideoData;
+      Object.assign(data, updates);
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Handle video metadata loaded callback from engine
+     * Called by LayerManager when a video finishes loading
+     */
+    onVideoMetadataLoaded(layerId: string, metadata: VideoMetadata): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || layer.type !== 'video') return;
+
+      const videoData = layer.data as VideoData;
+      if (!videoData.assetId) return;
+
+      // Update asset with accurate metadata
+      const asset = this.project.assets[videoData.assetId];
+      if (asset) {
+        asset.width = metadata.width;
+        asset.height = metadata.height;
+        asset.duration = metadata.duration;
+        asset.frameCount = metadata.frameCount;
+        asset.fps = metadata.fps;
+        asset.hasAudio = metadata.hasAudio;
+      }
+
+      console.log('[Weyl] Video metadata loaded:', { layerId, metadata });
+    },
+
+    /**
+     * Resize composition settings
+     * Used for manual resize or when importing video
+     */
+    resizeComposition(width: number, height: number, frameCount?: number): void {
+      this.project.composition.width = width;
+      this.project.composition.height = height;
+
+      if (frameCount !== undefined) {
+        this.project.composition.frameCount = frameCount;
+        this.project.composition.duration = frameCount / this.project.composition.fps;
+      }
+
+      // Update current frame if it's now out of bounds
+      if (this.project.currentFrame >= this.project.composition.frameCount) {
+        this.project.currentFrame = this.project.composition.frameCount - 1;
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
+
+      console.log('[Weyl] Composition resized:', {
+        width,
+        height,
+        frameCount: this.project.composition.frameCount
+      });
+    },
+
+    // ============================================================
+    // PRECOMP LAYER ACTIONS
+    // ============================================================
+
+    /**
+     * Create a precomp layer referencing another composition
+     * (For future multi-composition architecture)
+     */
+    createPrecompLayer(compositionId: string, name?: string): Layer {
+      const layer = this.createLayer('precomp', name || 'Precomp');
+
+      const precompData: PrecompData = {
+        compositionId,
+        timeRemapEnabled: false,
+        timeRemap: undefined,
+        collapseTransformations: false,
+        overrideFrameRate: false,
+        frameRate: undefined
+      };
+
+      layer.data = precompData;
+
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
+
+      return layer;
+    },
+
+    /**
+     * Update precomp layer data
+     */
+    updatePrecompLayerData(layerId: string, updates: Partial<PrecompData>): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || layer.type !== 'precomp') return;
+
+      const data = layer.data as PrecompData;
+      Object.assign(data, updates);
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    // ============================================================
     // EFFECT ACTIONS
     // ============================================================
 
@@ -1349,6 +1763,32 @@ export const useCompositorStore = defineStore('compositor', {
 
       effect.parameters[paramKey].value = value;
       this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Toggle effect parameter animation state
+     */
+    setEffectParamAnimated(layerId: string, effectId: string, paramKey: string, animated: boolean): void {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer || !layer.effects) return;
+
+      const effect = layer.effects.find(e => e.id === effectId);
+      if (!effect || !effect.parameters[paramKey]) return;
+
+      const param = effect.parameters[paramKey];
+      param.animated = animated;
+
+      // If enabling animation and no keyframes exist, add one at current frame
+      if (animated && (!param.keyframes || param.keyframes.length === 0)) {
+        param.keyframes = [{
+          frame: this.currentFrame,
+          value: param.value,
+          easing: 'easeInOut',
+        }];
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
     },
 
     /**
@@ -1536,6 +1976,75 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Get camera keyframes for a specific camera
+     */
+    getCameraKeyframes(cameraId: string): CameraKeyframe[] {
+      return this.cameraKeyframes.get(cameraId) || [];
+    },
+
+    /**
+     * Add a keyframe to a camera
+     */
+    addCameraKeyframe(cameraId: string, keyframe: CameraKeyframe): void {
+      let keyframes = this.cameraKeyframes.get(cameraId);
+      if (!keyframes) {
+        keyframes = [];
+        this.cameraKeyframes.set(cameraId, keyframes);
+      }
+
+      // Remove existing keyframe at same frame
+      const existingIndex = keyframes.findIndex(k => k.frame === keyframe.frame);
+      if (existingIndex >= 0) {
+        keyframes[existingIndex] = keyframe;
+      } else {
+        keyframes.push(keyframe);
+        // Keep sorted by frame
+        keyframes.sort((a, b) => a.frame - b.frame);
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Remove a keyframe from a camera
+     */
+    removeCameraKeyframe(cameraId: string, frame: number): void {
+      const keyframes = this.cameraKeyframes.get(cameraId);
+      if (!keyframes) return;
+
+      const index = keyframes.findIndex(k => k.frame === frame);
+      if (index >= 0) {
+        keyframes.splice(index, 1);
+        this.project.meta.modified = new Date().toISOString();
+      }
+    },
+
+    /**
+     * Get camera with keyframe interpolation applied at a specific frame
+     * This is the main method for getting animated camera values
+     */
+    getCameraAtFrame(cameraId: string, frame: number): Camera3D | null {
+      const camera = this.cameras.get(cameraId);
+      if (!camera) return null;
+
+      const keyframes = this.cameraKeyframes.get(cameraId);
+      if (!keyframes || keyframes.length === 0) {
+        return camera; // No animation, return base camera
+      }
+
+      // Use the interpolation function from camera export service
+      return interpolateCameraAtFrame(camera, keyframes, frame);
+    },
+
+    /**
+     * Get the active camera with interpolation at current frame
+     */
+    getActiveCameraAtFrame(frame?: number): Camera3D | null {
+      if (!this.activeCameraId) return null;
+      return this.getCameraAtFrame(this.activeCameraId, frame ?? this.currentFrame);
+    },
+
+    /**
      * Update viewport state
      */
     updateViewportState(updates: Partial<ViewportState>): void {
@@ -1592,6 +2101,11 @@ export const useCompositorStore = defineStore('compositor', {
 
         // Initialize the audio reactive mapper
         this.initializeAudioReactiveMapper();
+
+        // Update property driver system with new audio data
+        if (this.propertyDriverSystem && this.audioAnalysis) {
+          this.propertyDriverSystem.setAudioAnalysis(this.audioAnalysis);
+        }
 
         console.log('[Weyl] Audio loaded:', {
           duration: this.audioBuffer.duration,
@@ -1771,11 +2285,86 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Get audio reactive values for a specific layer at a specific frame
+     * This is called by the engine during frame evaluation
+     */
+    getAudioReactiveValuesForLayer(layerId: string, frame: number): Map<TargetParameter, number> {
+      if (!this.audioReactiveMapper) return new Map();
+      return this.audioReactiveMapper.getValuesForLayerAtFrame(layerId, frame);
+    },
+
+    /**
      * Check if current frame is a beat
      */
     isBeatAtCurrentFrame(): boolean {
       if (!this.audioAnalysis) return false;
       return isBeatAtFrame(this.audioAnalysis, this.project.currentFrame);
+    },
+
+    // ============================================================
+    // TIMELINE SNAPPING
+    // ============================================================
+
+    /**
+     * Find nearest snap point for a given frame
+     * @param frame - The frame to snap
+     * @param pixelsPerFrame - Current zoom level
+     * @param selectedLayerId - Currently selected layer (excluded from keyframe snapping)
+     */
+    findSnapPoint(frame: number, pixelsPerFrame: number, selectedLayerId?: string | null): SnapResult | null {
+      return findNearestSnap(frame, this.snapConfig, pixelsPerFrame, {
+        layers: this.layers,
+        selectedLayerId,
+        currentFrame: this.project.currentFrame,
+        audioAnalysis: this.audioAnalysis,
+        peakData: this.peakData,
+      });
+    },
+
+    /**
+     * Get all beat frames from audio analysis
+     */
+    getAudioBeatFrames(): number[] {
+      return getBeatFrames(this.audioAnalysis);
+    },
+
+    /**
+     * Get all peak frames from peak data
+     */
+    getAudioPeakFrames(): number[] {
+      return getPeakFrames(this.peakData);
+    },
+
+    /**
+     * Update snap configuration
+     */
+    setSnapConfig(config: Partial<SnapConfig>): void {
+      this.snapConfig = { ...this.snapConfig, ...config };
+    },
+
+    /**
+     * Toggle snapping enabled
+     */
+    toggleSnapping(): void {
+      this.snapConfig.enabled = !this.snapConfig.enabled;
+    },
+
+    /**
+     * Toggle specific snap type
+     */
+    toggleSnapType(type: 'grid' | 'keyframes' | 'beats' | 'peaks' | 'layerBounds' | 'playhead'): void {
+      const typeMap: Record<string, keyof SnapConfig> = {
+        'grid': 'snapToGrid',
+        'keyframes': 'snapToKeyframes',
+        'beats': 'snapToBeats',
+        'peaks': 'snapToPeaks',
+        'layerBounds': 'snapToLayerBounds',
+        'playhead': 'snapToPlayhead',
+      };
+      const key = typeMap[type];
+      if (key && typeof this.snapConfig[key] === 'boolean') {
+        (this.snapConfig as any)[key] = !(this.snapConfig as any)[key];
+      }
     },
 
     // ============================================================
@@ -1864,6 +2453,250 @@ export const useCompositorStore = defineStore('compositor', {
       // Set peak data if available
       if (this.peakData) {
         this.audioReactiveMapper.setPeakData(this.peakData);
+      }
+    },
+
+    // ============================================================
+    // PROPERTY DRIVER SYSTEM (Expressions/Links)
+    // ============================================================
+
+    /**
+     * Initialize the property driver system
+     */
+    initializePropertyDriverSystem(): void {
+      this.propertyDriverSystem = new PropertyDriverSystem();
+
+      // Set up property getter that reads from store
+      this.propertyDriverSystem.setPropertyGetter((layerId, propertyPath, frame) => {
+        return this.getPropertyValueAtFrame(layerId, propertyPath, frame);
+      });
+
+      // Connect audio if available
+      if (this.audioAnalysis) {
+        this.propertyDriverSystem.setAudioAnalysis(this.audioAnalysis);
+      }
+
+      // Load existing drivers
+      for (const driver of this.propertyDrivers) {
+        this.propertyDriverSystem.addDriver(driver);
+      }
+    },
+
+    /**
+     * Get a property value at a specific frame
+     * Used by the driver system to read source properties
+     */
+    getPropertyValueAtFrame(layerId: string, propertyPath: PropertyPath, frame: number): number | null {
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return null;
+
+      // Parse property path
+      const parts = propertyPath.split('.');
+
+      if (parts[0] === 'transform') {
+        const t = layer.transform;
+        if (parts[1] === 'position') {
+          const pos = interpolateProperty(t.position, frame);
+          if (parts[2] === 'x') return pos.x;
+          if (parts[2] === 'y') return pos.y;
+          if (parts[2] === 'z') return pos.z ?? 0;
+        }
+        if (parts[1] === 'anchorPoint') {
+          const anchor = interpolateProperty(t.anchorPoint, frame);
+          if (parts[2] === 'x') return anchor.x;
+          if (parts[2] === 'y') return anchor.y;
+          if (parts[2] === 'z') return anchor.z ?? 0;
+        }
+        if (parts[1] === 'scale') {
+          const scale = interpolateProperty(t.scale, frame);
+          if (parts[2] === 'x') return scale.x;
+          if (parts[2] === 'y') return scale.y;
+          if (parts[2] === 'z') return scale.z ?? 100;
+        }
+        if (parts[1] === 'rotation') {
+          return interpolateProperty(t.rotation, frame);
+        }
+        if (parts[1] === 'rotationX' && t.rotationX) {
+          return interpolateProperty(t.rotationX, frame);
+        }
+        if (parts[1] === 'rotationY' && t.rotationY) {
+          return interpolateProperty(t.rotationY, frame);
+        }
+        if (parts[1] === 'rotationZ' && t.rotationZ) {
+          return interpolateProperty(t.rotationZ, frame);
+        }
+      }
+
+      if (parts[0] === 'opacity') {
+        return interpolateProperty(layer.opacity, frame);
+      }
+
+      return null;
+    },
+
+    /**
+     * Get driven property values for a layer at current frame
+     */
+    getDrivenValuesForLayer(layerId: string): Map<PropertyPath, number> {
+      if (!this.propertyDriverSystem) {
+        return new Map();
+      }
+
+      const layer = this.project.layers.find(l => l.id === layerId);
+      if (!layer) return new Map();
+
+      // Build base values map
+      const baseValues = new Map<PropertyPath, number>();
+      const frame = this.project.currentFrame;
+
+      // Position
+      const pos = interpolateProperty(layer.transform.position, frame);
+      baseValues.set('transform.position.x', pos.x);
+      baseValues.set('transform.position.y', pos.y);
+      baseValues.set('transform.position.z', pos.z ?? 0);
+
+      // Anchor point
+      const anchor = interpolateProperty(layer.transform.anchorPoint, frame);
+      baseValues.set('transform.anchorPoint.x', anchor.x);
+      baseValues.set('transform.anchorPoint.y', anchor.y);
+      baseValues.set('transform.anchorPoint.z', anchor.z ?? 0);
+
+      // Scale
+      const scale = interpolateProperty(layer.transform.scale, frame);
+      baseValues.set('transform.scale.x', scale.x);
+      baseValues.set('transform.scale.y', scale.y);
+      baseValues.set('transform.scale.z', scale.z ?? 100);
+
+      // Rotation
+      baseValues.set('transform.rotation', interpolateProperty(layer.transform.rotation, frame));
+      if (layer.transform.rotationX) {
+        baseValues.set('transform.rotationX', interpolateProperty(layer.transform.rotationX, frame));
+      }
+      if (layer.transform.rotationY) {
+        baseValues.set('transform.rotationY', interpolateProperty(layer.transform.rotationY, frame));
+      }
+      if (layer.transform.rotationZ) {
+        baseValues.set('transform.rotationZ', interpolateProperty(layer.transform.rotationZ, frame));
+      }
+
+      // Opacity
+      baseValues.set('opacity', interpolateProperty(layer.opacity, frame));
+
+      return this.propertyDriverSystem.evaluateLayerDrivers(layerId, frame, baseValues);
+    },
+
+    /**
+     * Add a property driver
+     * Returns false if adding would create a circular dependency
+     */
+    addPropertyDriver(driver: PropertyDriver): boolean {
+      // Check for cycles before adding
+      if (this.propertyDriverSystem) {
+        const added = this.propertyDriverSystem.addDriver(driver);
+        if (!added) {
+          console.warn('[Store] Cannot add property driver: would create circular dependency');
+          return false;
+        }
+      }
+
+      this.propertyDrivers.push(driver);
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
+      return true;
+    },
+
+    /**
+     * Create and add an audio-driven property driver
+     */
+    createAudioPropertyDriver(
+      targetLayerId: string,
+      targetProperty: PropertyPath,
+      audioFeature: 'amplitude' | 'bass' | 'mid' | 'high' | 'rms',
+      options: { threshold?: number; scale?: number; offset?: number; smoothing?: number } = {}
+    ): PropertyDriver {
+      const driver = createAudioDriver(targetLayerId, targetProperty, audioFeature, options);
+      this.addPropertyDriver(driver);
+      return driver;
+    },
+
+    /**
+     * Create and add a property-to-property link
+     * Returns null if creating would cause a circular dependency
+     */
+    createPropertyLink(
+      targetLayerId: string,
+      targetProperty: PropertyPath,
+      sourceLayerId: string,
+      sourceProperty: PropertyPath,
+      options: { scale?: number; offset?: number; blendMode?: 'replace' | 'add' | 'multiply' } = {}
+    ): PropertyDriver | null {
+      const driver = createPropertyLink(
+        targetLayerId,
+        targetProperty,
+        sourceLayerId,
+        sourceProperty,
+        options
+      );
+
+      const success = this.addPropertyDriver(driver);
+      if (!success) {
+        return null; // Circular dependency detected
+      }
+
+      return driver;
+    },
+
+    /**
+     * Remove a property driver
+     */
+    removePropertyDriver(driverId: string): void {
+      const index = this.propertyDrivers.findIndex(d => d.id === driverId);
+      if (index >= 0) {
+        this.propertyDrivers.splice(index, 1);
+      }
+
+      if (this.propertyDriverSystem) {
+        this.propertyDriverSystem.removeDriver(driverId);
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
+    },
+
+    /**
+     * Update a property driver
+     */
+    updatePropertyDriver(driverId: string, updates: Partial<PropertyDriver>): void {
+      const driver = this.propertyDrivers.find(d => d.id === driverId);
+      if (driver) {
+        Object.assign(driver, updates);
+      }
+
+      if (this.propertyDriverSystem) {
+        this.propertyDriverSystem.updateDriver(driverId, updates);
+      }
+
+      this.project.meta.modified = new Date().toISOString();
+    },
+
+    /**
+     * Get all drivers for a layer
+     */
+    getDriversForLayer(layerId: string): PropertyDriver[] {
+      return this.propertyDrivers.filter(d => d.targetLayerId === layerId);
+    },
+
+    /**
+     * Toggle driver enabled state
+     */
+    togglePropertyDriver(driverId: string): void {
+      const driver = this.propertyDrivers.find(d => d.id === driverId);
+      if (driver) {
+        driver.enabled = !driver.enabled;
+        if (this.propertyDriverSystem) {
+          this.propertyDriverSystem.updateDriver(driverId, { enabled: driver.enabled });
+        }
+        this.project.meta.modified = new Date().toISOString();
       }
     }
   }

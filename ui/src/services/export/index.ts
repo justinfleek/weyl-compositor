@@ -39,3 +39,16 @@ export {
   type ExportPipelineOptions,
   type RenderedFrame,
 } from './exportPipeline';
+
+// Video encoder
+export {
+  WebCodecsVideoEncoder,
+  encodeFrameSequence,
+  encodeFromGenerator,
+  downloadVideo,
+  isWebCodecsSupported,
+  getSupportedCodecs,
+  type VideoEncoderConfig,
+  type EncodingProgress,
+  type EncodedVideo,
+} from './videoEncoder';

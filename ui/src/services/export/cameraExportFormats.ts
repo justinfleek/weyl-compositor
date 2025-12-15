@@ -78,33 +78,46 @@ export function interpolateCameraAtFrame(
   // If only one keyframe or same frame
   if (!prev) prev = next;
   if (!next) next = prev;
+
+  // Helper to get value with fallback
+  const getPos = (kf: CameraKeyframe | null | undefined) => kf?.position ?? camera.position;
+  const getOri = (kf: CameraKeyframe | null | undefined) => kf?.orientation ?? camera.orientation;
+  const getFocal = (kf: CameraKeyframe | null | undefined) => kf?.focalLength ?? camera.focalLength;
+  const getZoom = (kf: CameraKeyframe | null | undefined) => kf?.zoom ?? camera.zoom;
+  const getFocusDist = (kf: CameraKeyframe | null | undefined) => kf?.focusDistance ?? camera.depthOfField.focusDistance;
+
   if (prev!.frame === next!.frame) {
     return {
-      position: prev!.position,
-      rotation: prev!.orientation,
-      focalLength: prev!.focalLength,
-      zoom: prev!.zoom,
-      focusDistance: prev!.focusDistance,
+      position: getPos(prev),
+      rotation: getOri(prev),
+      focalLength: getFocal(prev),
+      zoom: getZoom(prev),
+      focusDistance: getFocusDist(prev),
     };
   }
 
   // Interpolate
   const t = (frame - prev!.frame) / (next!.frame - prev!.frame);
 
+  const prevPos = getPos(prev);
+  const nextPos = getPos(next);
+  const prevOri = getOri(prev);
+  const nextOri = getOri(next);
+
   return {
     position: {
-      x: lerp(prev!.position.x, next!.position.x, t),
-      y: lerp(prev!.position.y, next!.position.y, t),
-      z: lerp(prev!.position.z, next!.position.z, t),
+      x: lerp(prevPos.x, nextPos.x, t),
+      y: lerp(prevPos.y, nextPos.y, t),
+      z: lerp(prevPos.z, nextPos.z, t),
     },
     rotation: {
-      x: lerpAngle(prev!.orientation.x, next!.orientation.x, t),
-      y: lerpAngle(prev!.orientation.y, next!.orientation.y, t),
-      z: lerpAngle(prev!.orientation.z, next!.orientation.z, t),
+      x: lerpAngle(prevOri.x, nextOri.x, t),
+      y: lerpAngle(prevOri.y, nextOri.y, t),
+      z: lerpAngle(prevOri.z, nextOri.z, t),
     },
-    focalLength: lerp(prev!.focalLength, next!.focalLength, t),
-    zoom: lerp(prev!.zoom, next!.zoom, t),
-    focusDistance: lerp(prev!.focusDistance, next!.focusDistance, t),
+    focalLength: lerp(getFocal(prev), getFocal(next), t),
+    zoom: lerp(getZoom(prev), getZoom(next), t),
+    focusDistance: lerp(getFocusDist(prev), getFocusDist(next), t),
   };
 }
 
@@ -229,10 +242,16 @@ export function detectMotionCtrlSVDPreset(
   const first = keyframes[0];
   const last = keyframes[keyframes.length - 1];
 
-  const deltaX = last.position.x - first.position.x;
-  const deltaY = last.position.y - first.position.y;
-  const deltaZ = last.position.z - first.position.z;
-  const deltaRy = last.orientation.y - first.orientation.y;
+  // Get positions and orientations with defaults
+  const firstPos = first.position ?? { x: 0, y: 0, z: 0 };
+  const lastPos = last.position ?? { x: 0, y: 0, z: 0 };
+  const firstOri = first.orientation ?? { x: 0, y: 0, z: 0 };
+  const lastOri = last.orientation ?? { x: 0, y: 0, z: 0 };
+
+  const deltaX = lastPos.x - firstPos.x;
+  const deltaY = lastPos.y - firstPos.y;
+  const deltaZ = lastPos.z - firstPos.z;
+  const deltaRy = lastOri.y - firstOri.y;
 
   const threshold = 50; // Movement threshold
 
@@ -320,10 +339,16 @@ export function analyzeCameraMotion(keyframes: CameraKeyframe[]): CameraMotionAn
   const first = keyframes[0];
   const last = keyframes[keyframes.length - 1];
 
-  const deltaX = last.position.x - first.position.x;
-  const deltaY = last.position.y - first.position.y;
-  const deltaZ = last.position.z - first.position.z;
-  const deltaRy = last.orientation.y - first.orientation.y;
+  // Get positions and orientations with defaults
+  const firstPos = first.position ?? { x: 0, y: 0, z: 0 };
+  const lastPos = last.position ?? { x: 0, y: 0, z: 0 };
+  const firstOri = first.orientation ?? { x: 0, y: 0, z: 0 };
+  const lastOri = last.orientation ?? { x: 0, y: 0, z: 0 };
+
+  const deltaX = lastPos.x - firstPos.x;
+  const deltaY = lastPos.y - firstPos.y;
+  const deltaZ = lastPos.z - firstPos.z;
+  const deltaRy = lastOri.y - firstOri.y;
 
   // Thresholds
   const panThreshold = 30;
@@ -496,13 +521,15 @@ export function detectCameraCtrlMotionType(keyframes: CameraKeyframe[]): CameraC
 
   // Check rotation
   if (motion.hasRotation) {
-    const analysis = analyzeCameraMotion(keyframes);
     const first = keyframes[0];
     const last = keyframes[keyframes.length - 1];
 
-    const deltaRx = last.orientation.x - first.orientation.x;
-    const deltaRy = last.orientation.y - first.orientation.y;
-    const deltaRz = last.orientation.z - first.orientation.z;
+    const firstOri = first.orientation ?? { x: 0, y: 0, z: 0 };
+    const lastOri = last.orientation ?? { x: 0, y: 0, z: 0 };
+
+    const deltaRx = lastOri.x - firstOri.x;
+    const deltaRy = lastOri.y - firstOri.y;
+    const deltaRz = lastOri.z - firstOri.z;
 
     if (Math.abs(deltaRy) > Math.abs(deltaRx) && Math.abs(deltaRy) > Math.abs(deltaRz)) {
       return deltaRy > 0 ? 'Rotate Right' : 'Rotate Left';

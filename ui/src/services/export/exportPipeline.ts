@@ -292,7 +292,11 @@ export class ExportPipeline {
     // Sort layers by z-index (back to front)
     const sortedLayers = [...this.layers]
       .filter(layer => layer.visible)
-      .sort((a, b) => a.position.z - b.position.z);
+      .sort((a, b) => {
+        const az = a.transform?.position?.value?.z ?? 0;
+        const bz = b.transform?.position?.value?.z ?? 0;
+        return az - bz;
+      });
 
     // Render each layer
     for (const layer of sortedLayers) {
@@ -305,29 +309,30 @@ export class ExportPipeline {
     layer: Layer,
     _frameIndex: number
   ): Promise<void> {
-    // Get layer's current transform (interpolated from keyframes if applicable)
-    const x = layer.position.x;
-    const y = layer.position.y;
-    const scale = layer.scale;
-    const rotation = layer.rotation;
-    const opacity = layer.opacity;
+    // Get layer's current transform from the transform property
+    const pos = layer.transform?.position?.value ?? { x: 0, y: 0 };
+    const scaleVal = layer.transform?.scale?.value ?? { x: 100, y: 100 };
+    const rotation = layer.transform?.rotation?.value ?? 0;
+    const opacity = typeof layer.opacity?.value === 'number' ? layer.opacity.value : 100;
 
     ctx.save();
 
     // Apply transforms
-    ctx.globalAlpha = opacity;
-    ctx.translate(x, y);
+    ctx.globalAlpha = opacity / 100;
+    ctx.translate(pos.x, pos.y);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(scale, scale);
+    ctx.scale(scaleVal.x / 100, scaleVal.y / 100);
 
     // Draw layer content
-    if (layer.type === 'image' && layer.content) {
+    if (layer.type === 'image' && layer.data?.src) {
       // Create image from content URL
-      const img = await this.loadImage(layer.content);
+      const img = await this.loadImage(layer.data.src);
       ctx.drawImage(img, -img.width / 2, -img.height / 2);
-    } else if (layer.type === 'solid') {
-      ctx.fillStyle = layer.content || '#000000';
-      ctx.fillRect(-50, -50, 100, 100);
+    } else if (layer.type === 'solid' && layer.data?.color) {
+      ctx.fillStyle = layer.data.color || '#000000';
+      const width = layer.data.width ?? 100;
+      const height = layer.data.height ?? 100;
+      ctx.fillRect(-width / 2, -height / 2, width, height);
     }
 
     ctx.restore();
@@ -365,32 +370,52 @@ export class ExportPipeline {
         message: `Rendering depth frame ${i + 1}/${frameCount}`,
       });
 
-      // Render depth for this frame
-      const depthBuffer = renderDepthFrame(
-        this.layers,
-        this.config.width,
-        this.config.height
-      );
+      // Render depth for this frame - need camera for proper depth calculation
+      // For now use a default camera if not available
+      const defaultCamera = {
+        id: 'default',
+        name: 'Default Camera',
+        type: 'one-node' as const,
+        position: { x: 0, y: 0, z: 1000 },
+        pointOfInterest: { x: 0, y: 0, z: 0 },
+        orientation: { x: 0, y: 0, z: 0 },
+        xRotation: 0,
+        yRotation: 0,
+        zRotation: 0,
+        focalLength: 50,
+        angleOfView: 60,
+        filmSize: { width: 36, height: 24 },
+        nearClip: 0.1,
+        farClip: 100,
+        depthOfField: {
+          enabled: false,
+          focusDistance: 100,
+          aperture: 1.2,
+          blurLevel: 1,
+        },
+      };
+
+      const depthResult = renderDepthFrame({
+        width: this.config.width,
+        height: this.config.height,
+        nearClip: 0.1,
+        farClip: 100,
+        camera: defaultCamera,
+        layers: this.layers,
+        frame: frameIndex,
+      });
 
       // Convert to target format
-      const formatSpec = DEPTH_FORMAT_SPECS[this.config.depthFormat];
       const convertedDepth = convertDepthToFormat(
-        depthBuffer,
-        this.config.depthFormat,
-        {
-          invert: formatSpec.invert,
-          normalize: formatSpec.normalize,
-          nearClip: 0.1,
-          farClip: 100,
-        }
+        depthResult,
+        this.config.depthFormat
       );
 
       // Create image data
       const imageData = depthToImageData(
         convertedDepth,
         this.config.width,
-        this.config.height,
-        formatSpec.bitDepth
+        this.config.height
       );
 
       // Convert to canvas and blob

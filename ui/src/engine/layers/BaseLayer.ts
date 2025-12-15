@@ -1,0 +1,786 @@
+/**
+ * BaseLayer - Abstract Base Class for All Layers
+ *
+ * Provides common functionality for all layer types:
+ * - Transform management
+ * - Animation evaluation
+ * - Visibility control
+ * - Resource lifecycle
+ */
+
+import * as THREE from 'three';
+import type { Layer, AnimatableProperty, LayerTransform } from '@/types/project';
+import type { EffectInstance } from '@/types/effects';
+import type { LayerInstance } from '../types';
+import type { TargetParameter } from '@/services/audioReactiveMapping';
+import { KeyframeEvaluator } from '../animation/KeyframeEvaluator';
+import { processEffectStack, hasEnabledEffects } from '@/services/effectProcessor';
+
+export abstract class BaseLayer implements LayerInstance {
+  /** Unique layer identifier */
+  public readonly id: string;
+
+  /** Layer type */
+  public readonly type: string;
+
+  /** The Three.js group containing this layer's content */
+  protected readonly group: THREE.Group;
+
+  /** Keyframe evaluator for animated properties */
+  protected readonly evaluator: KeyframeEvaluator;
+
+  /** Layer visibility */
+  protected visible: boolean;
+
+  /** Layer locked state */
+  protected locked: boolean;
+
+  /** In point (start frame) */
+  protected inPoint: number;
+
+  /** Out point (end frame) */
+  protected outPoint: number;
+
+  /** Layer opacity (0-100) */
+  protected opacity: AnimatableProperty<number>;
+
+  /** Layer transform */
+  protected transform: LayerTransform;
+
+  /** 3D layer flag */
+  protected threeD: boolean;
+
+  /** Blend mode */
+  protected blendMode: string;
+
+  /** Parent layer ID (for parenting hierarchy) */
+  protected parentId: string | null;
+
+  /** Reference to parent layer (set by LayerManager) */
+  protected parentLayer: BaseLayer | null = null;
+
+  /** Driven values override (from property drivers/expressions) */
+  protected drivenValues: Map<string, number> = new Map();
+
+  /** Audio reactive values (from audio analysis mapping) */
+  protected audioReactiveValues: Map<TargetParameter, number> = new Map();
+
+  /** Effects stack for this layer */
+  protected effects: EffectInstance[] = [];
+
+  /** Source canvas for effect processing (lazy initialized) */
+  protected effectSourceCanvas: HTMLCanvasElement | null = null;
+
+  /** Flag to track if effects need processing */
+  protected effectsDirty: boolean = false;
+
+  constructor(layerData: Layer) {
+    this.id = layerData.id;
+    this.type = layerData.type;
+
+    // Create container group
+    this.group = new THREE.Group();
+    this.group.name = `layer_${this.id}`;
+    this.group.userData.layerId = this.id;
+    this.group.userData.layerType = this.type;
+
+    // Initialize evaluator
+    this.evaluator = new KeyframeEvaluator();
+
+    // Copy properties
+    this.visible = layerData.visible;
+    this.locked = layerData.locked;
+    this.inPoint = layerData.inPoint;
+    this.outPoint = layerData.outPoint;
+    this.opacity = layerData.opacity;
+    this.transform = layerData.transform;
+    this.threeD = layerData.threeD ?? false;
+    this.blendMode = layerData.blendMode ?? 'normal';
+    this.parentId = layerData.parentId ?? null;
+    this.effects = layerData.effects ?? [];
+  }
+
+  /**
+   * Initialize blend mode after subclass creates mesh
+   * Subclasses should call this at the end of their constructor
+   */
+  protected initializeBlendMode(): void {
+    if (this.blendMode !== 'normal') {
+      this.applyBlendMode(this.blendMode);
+    }
+  }
+
+  // ============================================================================
+  // OBJECT ACCESS
+  // ============================================================================
+
+  /**
+   * Get the Three.js object representing this layer
+   */
+  getObject(): THREE.Group {
+    return this.group;
+  }
+
+  // ============================================================================
+  // FRAME EVALUATION
+  // ============================================================================
+
+  /**
+   * Evaluate all animated properties at the given frame
+   */
+  evaluateFrame(frame: number): void {
+    // Check if layer is visible at this frame
+    const inRange = frame >= this.inPoint && frame <= this.outPoint;
+    this.group.visible = this.visible && inRange;
+
+    if (!this.group.visible) {
+      return; // Skip evaluation for invisible layers
+    }
+
+    // Evaluate opacity (apply driven value if present, then audio reactive)
+    let baseOpacity = this.evaluator.evaluate(this.opacity, frame);
+    baseOpacity = this.getDrivenOrBase('opacity', baseOpacity);
+    // Apply audio reactive modulation to opacity (multiplicative, clamped 0-100)
+    const opacityValue = this.applyAudioModulation(baseOpacity, 'layer.opacity', 'multiply', { min: 0, max: 100 });
+    this.applyOpacity(opacityValue);
+
+    // Evaluate transform (with audio reactive modulation)
+    this.evaluateTransform(frame);
+
+    // Call subclass-specific evaluation
+    this.onEvaluateFrame(frame);
+  }
+
+  /**
+   * Evaluate and apply transform at the given frame
+   */
+  protected evaluateTransform(frame: number): void {
+    // Position (apply driven values if present, then audio reactive)
+    const basePosition = this.evaluator.evaluate(this.transform.position, frame);
+    let posX = this.getDrivenOrBase('transform.position.x', basePosition.x);
+    let posY = this.getDrivenOrBase('transform.position.y', basePosition.y);
+    const posZ = this.getDrivenOrBase('transform.position.z', basePosition.z ?? 0);
+
+    // Apply audio reactive modulation to position (additive)
+    posX = this.applyAudioModulation(posX, 'layer.x', 'add');
+    posY = this.applyAudioModulation(posY, 'layer.y', 'add');
+
+    const position = { x: posX, y: posY, z: posZ };
+
+    // Scale (stored as percentage, convert to multiplier)
+    const baseScale = this.evaluator.evaluate(this.transform.scale, frame);
+    let scaleX = this.getDrivenOrBase('transform.scale.x', baseScale.x ?? 100);
+    let scaleY = this.getDrivenOrBase('transform.scale.y', baseScale.y ?? 100);
+    const scaleZ = this.getDrivenOrBase('transform.scale.z', baseScale.z ?? 100);
+
+    // Apply audio reactive modulation to scale (multiplicative, affects both X and Y uniformly)
+    const audioScaleMod = this.getAudioReactiveValue('layer.scale');
+    if (audioScaleMod !== 0) {
+      const scaleFactor = 0.5 + audioScaleMod; // 0 -> 0.5x, 0.5 -> 1x, 1 -> 1.5x
+      scaleX *= scaleFactor;
+      scaleY *= scaleFactor;
+    }
+
+    const scale = { x: scaleX, y: scaleY, z: scaleZ };
+
+    // Anchor point
+    const baseAnchor = this.evaluator.evaluate(this.transform.anchorPoint, frame);
+    const anchorPoint = {
+      x: this.getDrivenOrBase('transform.anchorPoint.x', baseAnchor.x ?? 0),
+      y: this.getDrivenOrBase('transform.anchorPoint.y', baseAnchor.y ?? 0),
+      z: this.getDrivenOrBase('transform.anchorPoint.z', baseAnchor.z ?? 0)
+    };
+
+    // Rotation (depends on 3D mode)
+    let rotation = 0;
+    let rotationX = 0;
+    let rotationY = 0;
+
+    if (this.threeD) {
+      // 3D mode: use separate X, Y, Z rotations
+      const baseRotX = this.transform.rotationX
+        ? this.evaluator.evaluate(this.transform.rotationX, frame)
+        : 0;
+      rotationX = this.getDrivenOrBase('transform.rotationX', baseRotX);
+
+      const baseRotY = this.transform.rotationY
+        ? this.evaluator.evaluate(this.transform.rotationY, frame)
+        : 0;
+      rotationY = this.getDrivenOrBase('transform.rotationY', baseRotY);
+
+      const baseRotZ = this.transform.rotationZ
+        ? this.evaluator.evaluate(this.transform.rotationZ, frame)
+        : 0;
+      rotation = this.getDrivenOrBase('transform.rotationZ', baseRotZ);
+    } else {
+      // 2D mode: use single rotation
+      const baseRotation = this.evaluator.evaluate(this.transform.rotation, frame);
+      rotation = this.getDrivenOrBase('transform.rotation', baseRotation);
+    }
+
+    // Apply audio reactive modulation to rotation (additive, scaled to degrees)
+    const audioRotMod = this.getAudioReactiveValue('layer.rotation');
+    if (audioRotMod !== 0) {
+      rotation += audioRotMod * 360; // Full rotation range
+    }
+
+    // Apply transform
+    this.applyTransform({
+      position: {
+        x: position.x,
+        y: position.y,
+        z: position.z,
+      },
+      rotation: {
+        x: rotationX,
+        y: rotationY,
+        z: rotation,
+      },
+      scale: {
+        x: scale.x / 100,
+        y: scale.y / 100,
+        z: scale.z / 100,
+      },
+      anchorPoint: {
+        x: anchorPoint.x,
+        y: anchorPoint.y,
+        z: anchorPoint.z,
+      },
+    });
+  }
+
+  /**
+   * Apply transform to the group
+   */
+  protected applyTransform(transform: {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+    scale: { x: number; y: number; z: number };
+    anchorPoint: { x: number; y: number; z: number };
+  }): void {
+    const { position, rotation, scale, anchorPoint } = transform;
+
+    // Position (with anchor point offset)
+    // In screen coordinates: Y is down, so negate Y
+    this.group.position.set(
+      position.x - anchorPoint.x,
+      -(position.y - anchorPoint.y), // Negate for screen coords
+      position.z - anchorPoint.z
+    );
+
+    // Rotation (convert degrees to radians)
+    // Negate Z for screen coords
+    this.group.rotation.set(
+      THREE.MathUtils.degToRad(rotation.x),
+      THREE.MathUtils.degToRad(rotation.y),
+      THREE.MathUtils.degToRad(-rotation.z)
+    );
+
+    // Scale
+    this.group.scale.set(scale.x, scale.y, scale.z);
+
+    // Update matrix
+    this.group.updateMatrix();
+  }
+
+  /**
+   * Apply opacity to layer materials
+   */
+  protected applyOpacity(opacity: number): void {
+    const normalizedOpacity = Math.max(0, Math.min(100, opacity)) / 100;
+
+    this.group.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        const material = child.material as THREE.Material & { opacity?: number };
+        if ('opacity' in material) {
+          material.opacity = normalizedOpacity;
+          material.transparent = normalizedOpacity < 1;
+          material.needsUpdate = true;
+        }
+      }
+    });
+  }
+
+  /**
+   * Override in subclasses for type-specific frame evaluation
+   */
+  protected abstract onEvaluateFrame(frame: number): void;
+
+  // ============================================================================
+  // PROPERTY UPDATES
+  // ============================================================================
+
+  /**
+   * Update layer properties
+   */
+  update(properties: Partial<Layer>): void {
+    if (properties.visible !== undefined) {
+      this.visible = properties.visible;
+      this.group.visible = this.visible;
+    }
+
+    if (properties.locked !== undefined) {
+      this.locked = properties.locked;
+    }
+
+    if (properties.inPoint !== undefined) {
+      this.inPoint = properties.inPoint;
+    }
+
+    if (properties.outPoint !== undefined) {
+      this.outPoint = properties.outPoint;
+    }
+
+    if (properties.opacity !== undefined) {
+      this.opacity = properties.opacity;
+    }
+
+    if (properties.transform !== undefined) {
+      this.transform = properties.transform;
+    }
+
+    if (properties.threeD !== undefined) {
+      this.threeD = properties.threeD;
+    }
+
+    if (properties.blendMode !== undefined) {
+      this.blendMode = properties.blendMode;
+      this.applyBlendMode(this.blendMode);
+    }
+
+    if (properties.effects !== undefined) {
+      this.setEffects(properties.effects);
+    }
+
+    // Call subclass-specific update
+    this.onUpdate(properties);
+  }
+
+  /**
+   * Override in subclasses for type-specific updates
+   */
+  protected abstract onUpdate(properties: Partial<Layer>): void;
+
+  // ============================================================================
+  // VISIBILITY
+  // ============================================================================
+
+  /**
+   * Set layer visibility
+   */
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    this.group.visible = visible;
+  }
+
+  /**
+   * Get layer visibility
+   */
+  isVisible(): boolean {
+    return this.visible;
+  }
+
+  // ============================================================================
+  // DRIVEN VALUES (Expressions/Links)
+  // ============================================================================
+
+  /**
+   * Set driven values from property drivers
+   * These override the base animated values during transform evaluation
+   * @param values Map of property path to driven value
+   */
+  setDrivenValues(values: Map<string, number>): void {
+    this.drivenValues = values;
+  }
+
+  /**
+   * Clear driven values
+   */
+  clearDrivenValues(): void {
+    this.drivenValues.clear();
+  }
+
+  /**
+   * Get a driven value if it exists, otherwise return the base value
+   */
+  protected getDrivenOrBase(propertyPath: string, baseValue: number): number {
+    return this.drivenValues.get(propertyPath) ?? baseValue;
+  }
+
+  // ============================================================================
+  // AUDIO REACTIVE VALUES
+  // ============================================================================
+
+  /**
+   * Set audio reactive values from audio analysis
+   * These are applied additively/multiplicatively to animated properties
+   * @param values Map of target parameter to audio-derived value (0-1 range typically)
+   */
+  setAudioReactiveValues(values: Map<TargetParameter, number>): void {
+    this.audioReactiveValues = values;
+  }
+
+  /**
+   * Clear audio reactive values
+   */
+  clearAudioReactiveValues(): void {
+    this.audioReactiveValues.clear();
+  }
+
+  /**
+   * Get audio reactive modulation for a property
+   * Returns 0 if no mapping exists (additive identity)
+   */
+  protected getAudioReactiveValue(target: TargetParameter): number {
+    return this.audioReactiveValues.get(target) ?? 0;
+  }
+
+  /**
+   * Apply audio reactive modulation to a base value
+   * Mode determines how the modulation is applied
+   */
+  protected applyAudioModulation(
+    baseValue: number,
+    target: TargetParameter,
+    mode: 'add' | 'multiply' | 'replace' = 'add',
+    range: { min?: number; max?: number } = {}
+  ): number {
+    const audioValue = this.getAudioReactiveValue(target);
+    if (audioValue === 0) return baseValue;
+
+    let result: number;
+    switch (mode) {
+      case 'multiply':
+        // Audio value of 0.5 = no change, 0 = halved, 1 = doubled
+        result = baseValue * (0.5 + audioValue);
+        break;
+      case 'replace':
+        // Audio value directly replaces base value
+        result = audioValue;
+        break;
+      case 'add':
+      default:
+        // Audio value added to base (scaled to reasonable range)
+        result = baseValue + audioValue * 100; // Scale for typical property ranges
+        break;
+    }
+
+    // Clamp to range if specified
+    if (range.min !== undefined) result = Math.max(range.min, result);
+    if (range.max !== undefined) result = Math.min(range.max, result);
+
+    return result;
+  }
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
+
+  /**
+   * Update the effects stack for this layer
+   * @param effects - Array of effect instances
+   */
+  setEffects(effects: EffectInstance[]): void {
+    this.effects = effects;
+    this.effectsDirty = true;
+  }
+
+  /**
+   * Get the current effects stack
+   */
+  getEffects(): EffectInstance[] {
+    return this.effects;
+  }
+
+  /**
+   * Check if this layer has any enabled effects
+   */
+  hasEnabledEffects(): boolean {
+    return hasEnabledEffects(this.effects);
+  }
+
+  /**
+   * Process effects on a source canvas
+   * Subclasses that support effects should override getSourceCanvas()
+   * @param frame - Current frame for animated effect parameters
+   * @returns Processed canvas or null if no effects to apply
+   */
+  protected processEffects(frame: number): HTMLCanvasElement | null {
+    if (!this.hasEnabledEffects()) {
+      return null;
+    }
+
+    const sourceCanvas = this.getSourceCanvas();
+    if (!sourceCanvas) {
+      return null;
+    }
+
+    try {
+      const result = processEffectStack(this.effects, sourceCanvas, frame);
+      return result.canvas;
+    } catch (error) {
+      console.error(`[BaseLayer] Error processing effects for layer ${this.id}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get the source canvas for effect processing
+   * Override in subclasses that support effects (ImageLayer, VideoLayer, TextLayer)
+   * @returns Canvas with the layer's visual content, or null if not supported
+   */
+  protected getSourceCanvas(): HTMLCanvasElement | null {
+    // Default: no source canvas (effects not supported)
+    // Subclasses should override to provide their texture as a canvas
+    return null;
+  }
+
+  /**
+   * Apply processed effects back to the layer
+   * Override in subclasses to update their texture from the processed canvas
+   * @param processedCanvas - Canvas with effects applied
+   */
+  protected applyProcessedEffects(_processedCanvas: HTMLCanvasElement): void {
+    // Default: no-op
+    // Subclasses should override to update their material/texture
+  }
+
+  /**
+   * Called after frame evaluation to apply effects
+   * This should be called by subclasses after their content is rendered
+   */
+  protected evaluateEffects(frame: number): void {
+    if (!this.hasEnabledEffects()) {
+      return;
+    }
+
+    const processedCanvas = this.processEffects(frame);
+    if (processedCanvas) {
+      this.applyProcessedEffects(processedCanvas);
+    }
+  }
+
+  // ============================================================================
+  // PARENTING
+  // ============================================================================
+
+  /**
+   * Set parent layer reference
+   */
+  setParent(parent: BaseLayer | null): void {
+    // Remove from old parent's Three.js hierarchy
+    if (this.parentLayer) {
+      this.parentLayer.getObject().remove(this.group);
+    }
+
+    this.parentLayer = parent;
+
+    // Add to new parent's Three.js hierarchy
+    if (parent) {
+      parent.getObject().add(this.group);
+    }
+  }
+
+  /**
+   * Get parent layer reference
+   */
+  getParent(): BaseLayer | null {
+    return this.parentLayer;
+  }
+
+  /**
+   * Get parent layer ID
+   */
+  getParentId(): string | null {
+    return this.parentId;
+  }
+
+  /**
+   * Check if this layer has a parent
+   */
+  hasParent(): boolean {
+    return this.parentId !== null;
+  }
+
+  // ============================================================================
+  // BLEND MODES
+  // ============================================================================
+
+  /**
+   * Apply blend mode to layer materials
+   * Supports: normal, add, multiply, screen, overlay, soft-light, hard-light,
+   * color-dodge, color-burn, difference, exclusion, darken, lighten
+   */
+  protected applyBlendMode(mode: string): void {
+    this.group.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        const material = child.material as THREE.Material;
+        this.setMaterialBlendMode(material, mode);
+        material.needsUpdate = true;
+      }
+    });
+  }
+
+  /**
+   * Configure a material's blend mode
+   */
+  private setMaterialBlendMode(material: THREE.Material, mode: string): void {
+    // Reset to defaults first
+    material.blending = THREE.NormalBlending;
+    material.blendEquation = THREE.AddEquation;
+    material.blendSrc = THREE.SrcAlphaFactor;
+    material.blendDst = THREE.OneMinusSrcAlphaFactor;
+    material.blendEquationAlpha = THREE.AddEquation;
+    material.blendSrcAlpha = THREE.OneFactor;
+    material.blendDstAlpha = THREE.OneMinusSrcAlphaFactor;
+
+    switch (mode) {
+      case 'normal':
+        material.blending = THREE.NormalBlending;
+        break;
+
+      case 'add':
+        material.blending = THREE.AdditiveBlending;
+        break;
+
+      case 'multiply':
+        material.blending = THREE.MultiplyBlending;
+        break;
+
+      case 'screen':
+        // Screen: 1 - (1-a)(1-b) = a + b - ab
+        // In GL terms: src * 1 + dst * (1 - src)
+        material.blending = THREE.CustomBlending;
+        material.blendEquation = THREE.AddEquation;
+        material.blendSrc = THREE.OneFactor;
+        material.blendDst = THREE.OneMinusSrcColorFactor;
+        break;
+
+      case 'overlay':
+        // Overlay is a combination of multiply and screen
+        // Can't be done with simple blend factors - needs shader
+        // Fallback to multiply for dark, screen for light
+        material.blending = THREE.MultiplyBlending;
+        break;
+
+      case 'soft-light':
+        // Soft light is complex - needs shader
+        // Approximate with normal blending at reduced opacity
+        material.blending = THREE.NormalBlending;
+        break;
+
+      case 'hard-light':
+        // Hard light is overlay with layers swapped
+        material.blending = THREE.MultiplyBlending;
+        break;
+
+      case 'color-dodge':
+        // Color dodge: a / (1 - b)
+        // Approximation using additive with boost
+        material.blending = THREE.AdditiveBlending;
+        break;
+
+      case 'color-burn':
+        // Color burn: 1 - (1-a) / b
+        // Approximation using subtractive
+        material.blending = THREE.SubtractiveBlending;
+        break;
+
+      case 'difference':
+        // Difference: |a - b|
+        // Use subtractive blending as approximation
+        material.blending = THREE.CustomBlending;
+        material.blendEquation = THREE.SubtractEquation;
+        material.blendSrc = THREE.OneFactor;
+        material.blendDst = THREE.OneFactor;
+        break;
+
+      case 'exclusion':
+        // Exclusion: a + b - 2ab
+        // Similar to difference but softer
+        material.blending = THREE.CustomBlending;
+        material.blendEquation = THREE.AddEquation;
+        material.blendSrc = THREE.OneMinusDstColorFactor;
+        material.blendDst = THREE.OneMinusSrcColorFactor;
+        break;
+
+      case 'darken':
+        // Darken: min(a, b)
+        material.blending = THREE.CustomBlending;
+        material.blendEquation = THREE.MinEquation;
+        material.blendSrc = THREE.OneFactor;
+        material.blendDst = THREE.OneFactor;
+        break;
+
+      case 'lighten':
+        // Lighten: max(a, b)
+        material.blending = THREE.CustomBlending;
+        material.blendEquation = THREE.MaxEquation;
+        material.blendSrc = THREE.OneFactor;
+        material.blendDst = THREE.OneFactor;
+        break;
+
+      default:
+        material.blending = THREE.NormalBlending;
+        break;
+    }
+  }
+
+  // ============================================================================
+  // BOUNDS
+  // ============================================================================
+
+  /**
+   * Get the bounding box of this layer
+   */
+  getBoundingBox(): THREE.Box3 {
+    const box = new THREE.Box3();
+    box.setFromObject(this.group);
+    return box;
+  }
+
+  /**
+   * Get the center point of this layer
+   */
+  getCenter(): THREE.Vector3 {
+    const box = this.getBoundingBox();
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    return center;
+  }
+
+  // ============================================================================
+  // DISPOSAL
+  // ============================================================================
+
+  /**
+   * Dispose layer resources
+   */
+  dispose(): void {
+    // Dispose all meshes in the group
+    this.group.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry?.dispose();
+
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => m.dispose());
+        } else if (child.material) {
+          child.material.dispose();
+        }
+      }
+    });
+
+    // Clear group
+    this.group.clear();
+
+    // Call subclass-specific disposal
+    this.onDispose();
+  }
+
+  /**
+   * Override in subclasses for type-specific cleanup
+   */
+  protected onDispose(): void {
+    // Default: no additional cleanup
+  }
+}

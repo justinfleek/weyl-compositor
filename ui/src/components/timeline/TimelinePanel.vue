@@ -143,6 +143,7 @@ function toggleAddLayerMenu() { showAddLayerMenu.value = !showAddLayerMenu.value
 function addLayer(type: string) {
   if (type === 'text') store.createTextLayer();
   else if (type === 'video') store.createLayer('video');
+  else if (type === 'camera') store.createCameraLayer();
   else store.createLayer(type as any);
   showAddLayerMenu.value = false;
 }

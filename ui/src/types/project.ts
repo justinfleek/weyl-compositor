@@ -1,15 +1,30 @@
 // ============================================================
 // WEYL PROJECT SCHEMA - Complete Type Definitions
 // ============================================================
+//
+// Architecture Overview:
+// - Projects contain multiple Compositions (like After Effects)
+// - One composition is the "main" composition for export
+// - Layers can reference other compositions (pre-comps)
+// - Video assets store duration metadata for auto-sizing
+// - ComfyUI sub-graph mapping via workflowId references
+// ============================================================
 
 import type { EffectInstance } from './effects';
 
 export interface WeylProject {
   version: "1.0.0";
   meta: ProjectMeta;
+
+  // Multi-composition support (AE-style)
+  compositions: Record<string, Composition>;
+  mainCompositionId: string;  // Which comp to export
+
+  // Legacy single-comp alias (for backwards compatibility)
   composition: CompositionSettings;
+
   assets: Record<string, AssetReference>;
-  layers: Layer[];
+  layers: Layer[];  // Layers for main composition (legacy)
   currentFrame: number;
 }
 
@@ -20,23 +35,77 @@ export interface ProjectMeta {
   author?: string;
 }
 
+// ============================================================
+// COMPOSITION - Independent timeline with its own layers
+// ============================================================
+
+export interface Composition {
+  id: string;
+  name: string;
+  settings: CompositionSettings;
+  layers: Layer[];
+  currentFrame: number;
+
+  // Pre-comp metadata
+  isPrecomp: boolean;
+  parentCompositionId?: string;  // If this is used as a precomp
+
+  // ComfyUI sub-graph mapping
+  workflowId?: string;           // Maps to ComfyUI sub-graph ID
+  workflowInputs?: WorkflowInput[];
+  workflowOutputs?: WorkflowOutput[];
+}
+
 export interface CompositionSettings {
   width: number;      // Must be divisible by 8
   height: number;     // Must be divisible by 8
-  frameCount: number; // 81 for Phase 1
+  frameCount: number; // 81 default, auto-adjusted for video
   fps: number;        // 16 for Phase 1
   duration: number;   // Calculated: frameCount / fps
   backgroundColor: string;
+
+  // Auto-adjustment behavior
+  autoResizeToContent: boolean;  // Resize when video imported
 }
+
+// ============================================================
+// COMFYUI WORKFLOW MAPPING
+// ============================================================
+
+export interface WorkflowInput {
+  name: string;
+  type: 'image' | 'video' | 'latent' | 'mask' | 'number' | 'string';
+  nodeId: string;
+  inputName: string;
+}
+
+export interface WorkflowOutput {
+  name: string;
+  type: 'image' | 'video' | 'latent';
+  nodeId: string;
+  outputName: string;
+}
+
+// ============================================================
+// ASSET REFERENCES
+// ============================================================
 
 export interface AssetReference {
   id: string;
-  type: 'depth_map' | 'image' | 'video';
-  source: 'comfyui_node' | 'file' | 'generated';
+  type: 'depth_map' | 'image' | 'video' | 'audio';
+  source: 'comfyui_node' | 'file' | 'generated' | 'url';
   nodeId?: string;
   width: number;
   height: number;
   data?: string;      // Base64 or URL
+
+  // Video/Audio specific metadata
+  frameCount?: number;    // Total frames in video
+  duration?: number;      // Duration in seconds
+  fps?: number;           // Source FPS (for video)
+  hasAudio?: boolean;     // Video has audio track
+  audioChannels?: number; // 1=mono, 2=stereo
+  sampleRate?: number;    // Audio sample rate
 }
 
 // ============================================================
@@ -66,7 +135,7 @@ export interface Layer {
 
   properties: AnimatableProperty<any>[];
   effects: EffectInstance[];  // Effect stack - processed top to bottom
-  data: SplineData | TextData | ParticleData | ParticleLayerData | DepthflowLayerData | GeneratedMapData | CameraLayerData | VideoData | null;
+  data: SplineData | TextData | ParticleData | ParticleLayerData | DepthflowLayerData | GeneratedMapData | CameraLayerData | VideoData | PrecompData | null;
 }
 
 export type LayerType =
@@ -86,19 +155,57 @@ export type LayerType =
   | 'light'      // 3D Light layer
   | 'solid'      // Solid color plane
   | 'null'       // Null object
-  | 'group';     // Layer group
+  | 'group'      // Layer group
+  | 'precomp';   // Pre-composition (nested composition)
 
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'add' | 'difference';
 
 // ============================================================
-// VIDEO DATA
+// VIDEO DATA - Full video playback control
 // ============================================================
 
 export interface VideoData {
   assetId: string | null;
-  loop: boolean;
-  startTime: number;
-  speed: number;
+
+  // Playback control
+  loop: boolean;              // Loop when reaching end
+  pingPong: boolean;          // Reverse at end instead of restart
+  startTime: number;          // Start offset in source video (seconds)
+  endTime?: number;           // End time in source (undefined = full duration)
+  speed: number;              // Playback speed (1 = normal, 2 = 2x, 0.5 = half)
+
+  // Time remapping (AE-style)
+  timeRemapEnabled: boolean;
+  timeRemap?: AnimatableProperty<number>;  // Maps comp time to video time
+
+  // Frame blending for speed changes
+  frameBlending: 'none' | 'frame-mix' | 'pixel-motion';
+
+  // Audio
+  audioEnabled: boolean;
+  audioLevel: number;         // 0-100
+
+  // Poster frame (for thumbnails)
+  posterFrame: number;        // Frame to show when paused at start
+}
+
+// ============================================================
+// PRECOMP DATA - Nested composition reference
+// ============================================================
+
+export interface PrecompData {
+  compositionId: string;      // Reference to composition in project.compositions
+
+  // Time mapping
+  timeRemapEnabled: boolean;
+  timeRemap?: AnimatableProperty<number>;  // Maps parent time to precomp time
+
+  // Collapse transformations (like AE)
+  collapseTransformations: boolean;
+
+  // Override precomp settings
+  overrideFrameRate: boolean;
+  frameRate?: number;
 }
 
 // ============================================================
@@ -564,10 +671,15 @@ export interface TextData {
   lineHeight: number;         // Alias for lineSpacing
   textAlign: 'left' | 'center' | 'right';
 
-  // Path Options
+  // Path Options (Full AE Parity)
   pathLayerId: string | null;
-  pathOffset: number;         // 0-1, animatable
-  pathAlign: 'left' | 'center' | 'right';
+  pathReversed: boolean;          // Reverse Path direction
+  pathPerpendicularToPath: boolean; // Characters perpendicular to path tangent
+  pathForceAlignment: boolean;    // Force alignment to path
+  pathFirstMargin: number;        // First Margin (pixels from path start)
+  pathLastMargin: number;         // Last Margin (pixels from path end)
+  pathOffset: number;             // 0-100%, animatable - shifts all characters along path
+  pathAlign: 'left' | 'center' | 'right';  // Baseline alignment
 
   // More Options (AE Advanced)
   anchorPointGrouping: 'character' | 'word' | 'line' | 'all';

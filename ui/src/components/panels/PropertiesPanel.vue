@@ -18,6 +18,27 @@
         </div>
       </div>
 
+      <!-- Parent Layer -->
+      <div class="property-section">
+        <div class="property-row">
+          <label>Parent</label>
+          <select
+            class="parent-select"
+            :value="selectedLayer?.parentId || ''"
+            @change="updateParent"
+          >
+            <option value="">None</option>
+            <option
+              v-for="layer in availableParents"
+              :key="layer.id"
+              :value="layer.id"
+            >
+              {{ layer.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
       <!-- Transform Section -->
       <div class="property-section">
         <div
@@ -29,20 +50,39 @@
         </div>
 
         <div v-if="expandedSections.includes('transform')" class="section-content">
-          <div class="property-row">
-            <label>Position</label>
+          <!-- Position X -->
+          <div class="property-row" :class="{ 'has-driver': hasDriver('transform.position.x') }">
+            <Pickwhip
+              v-if="selectedLayer"
+              :layerId="selectedLayer.id"
+              property="transform.position.x"
+              :linkedTo="getDriverForProperty('transform.position.x')"
+              @link="(target) => onPickwhipLink('transform.position.x', target)"
+              @unlink="() => onPickwhipUnlink('transform.position.x')"
+            />
+            <label
+              data-pickwhip-target="transform.position.x"
+              :data-pickwhip-layer-id="selectedLayer?.id"
+              data-pickwhip-label="Position X"
+            >Position</label>
             <div class="multi-value">
               <ScrubableNumber
                 v-model="transform.position.x"
                 :precision="1"
                 unit="X"
                 @update:modelValue="updateTransform"
+                data-pickwhip-target="transform.position.x"
+                :data-pickwhip-layer-id="selectedLayer?.id"
+                data-pickwhip-label="Position X"
               />
               <ScrubableNumber
                 v-model="transform.position.y"
                 :precision="1"
                 unit="Y"
                 @update:modelValue="updateTransform"
+                data-pickwhip-target="transform.position.y"
+                :data-pickwhip-layer-id="selectedLayer?.id"
+                data-pickwhip-label="Position Y"
               />
               <ScrubableNumber
                 v-if="selectedLayer?.threeD"
@@ -50,12 +90,24 @@
                 :precision="1"
                 unit="Z"
                 @update:modelValue="updateTransform"
+                data-pickwhip-target="transform.position.z"
+                :data-pickwhip-layer-id="selectedLayer?.id"
+                data-pickwhip-label="Position Z"
               />
             </div>
             <button class="keyframe-btn" :class="{ active: hasKeyframe('position') }" @click="toggleKeyframe('position')">◆</button>
           </div>
 
-          <div class="property-row">
+          <!-- Scale -->
+          <div class="property-row" :class="{ 'has-driver': hasDriver('transform.scale.x') || hasDriver('transform.scale.y') }">
+            <Pickwhip
+              v-if="selectedLayer"
+              :layerId="selectedLayer.id"
+              property="transform.scale.x"
+              :linkedTo="getDriverForProperty('transform.scale.x')"
+              @link="(target) => onPickwhipLink('transform.scale.x', target)"
+              @unlink="() => onPickwhipUnlink('transform.scale.x')"
+            />
             <label>Scale</label>
             <div class="multi-value">
               <ScrubableNumber
@@ -64,6 +116,9 @@
                 :max="1000"
                 unit="%"
                 @update:modelValue="updateTransform"
+                data-pickwhip-target="transform.scale.x"
+                :data-pickwhip-layer-id="selectedLayer?.id"
+                data-pickwhip-label="Scale X"
               />
               <button
                 class="link-btn"
@@ -79,6 +134,9 @@
                 :max="1000"
                 unit="%"
                 @update:modelValue="updateTransform"
+                data-pickwhip-target="transform.scale.y"
+                :data-pickwhip-layer-id="selectedLayer?.id"
+                data-pickwhip-label="Scale Y"
               />
             </div>
             <button class="keyframe-btn" :class="{ active: hasKeyframe('scale') }" @click="toggleKeyframe('scale')">◆</button>
@@ -118,7 +176,15 @@
           </template>
           <!-- 2D Rotation -->
           <template v-else>
-            <div class="property-row">
+            <div class="property-row" :class="{ 'has-driver': hasDriver('transform.rotation') }">
+              <Pickwhip
+                v-if="selectedLayer"
+                :layerId="selectedLayer.id"
+                property="transform.rotation"
+                :linkedTo="getDriverForProperty('transform.rotation')"
+                @link="(target) => onPickwhipLink('transform.rotation', target)"
+                @unlink="() => onPickwhipUnlink('transform.rotation')"
+              />
               <label>Rotation</label>
               <div class="single-value">
                 <ScrubableNumber
@@ -127,6 +193,9 @@
                   :max="360"
                   unit="°"
                   @update:modelValue="updateTransform"
+                  data-pickwhip-target="transform.rotation"
+                  :data-pickwhip-layer-id="selectedLayer?.id"
+                  data-pickwhip-label="Rotation"
                 />
               </div>
               <button class="keyframe-btn" :class="{ active: hasKeyframe('rotation') }" @click="toggleKeyframe('rotation')">◆</button>
@@ -152,7 +221,16 @@
             <button class="keyframe-btn" :class="{ active: hasKeyframe('anchorPoint') }" @click="toggleKeyframe('anchorPoint')">◆</button>
           </div>
 
-          <div class="property-row">
+          <!-- Opacity -->
+          <div class="property-row" :class="{ 'has-driver': hasDriver('opacity') }">
+            <Pickwhip
+              v-if="selectedLayer"
+              :layerId="selectedLayer.id"
+              property="opacity"
+              :linkedTo="getDriverForProperty('opacity')"
+              @link="(target) => onPickwhipLink('opacity', target)"
+              @unlink="() => onPickwhipUnlink('opacity')"
+            />
             <label>Opacity</label>
             <div class="single-value">
               <SliderInput
@@ -161,6 +239,9 @@
                 :max="100"
                 unit="%"
                 @update:modelValue="updateTransform"
+                data-pickwhip-target="opacity"
+                :data-pickwhip-layer-id="selectedLayer?.id"
+                data-pickwhip-label="Opacity"
               />
             </div>
             <button class="keyframe-btn" :class="{ active: hasKeyframe('opacity') }" @click="toggleKeyframe('opacity')">◆</button>
@@ -187,6 +268,9 @@
         :layer="selectedLayer"
         @update="onLayerUpdate"
       />
+
+      <!-- Property Drivers -->
+      <DriverList v-if="selectedLayer" :layerId="selectedLayer.id" />
     </div>
 
     <!-- No Selection -->
@@ -209,6 +293,9 @@ import DepthflowProperties from '@/components/properties/DepthflowProperties.vue
 import LightProperties from '@/components/properties/LightProperties.vue';
 import ShapeProperties from '@/components/properties/ShapeProperties.vue';
 import VideoProperties from '@/components/properties/VideoProperties.vue';
+import Pickwhip from '@/components/controls/Pickwhip.vue';
+import DriverList from '@/components/panels/DriverList.vue';
+import type { PropertyPath } from '@/services/propertyDriver';
 
 const store = useCompositorStore();
 
@@ -257,6 +344,31 @@ const blendModes = [
 
 // Computed
 const selectedLayer = computed(() => store.selectedLayer);
+
+// Get layers that can be parents (exclude self and children to prevent cycles)
+const availableParents = computed(() => {
+  if (!selectedLayer.value) return [];
+
+  const selfId = selectedLayer.value.id;
+
+  // Get all descendant IDs to prevent circular parenting
+  const getDescendantIds = (layerId: string): string[] => {
+    const children = store.layers.filter(l => l.parentId === layerId);
+    let ids = children.map(c => c.id);
+    for (const child of children) {
+      ids = ids.concat(getDescendantIds(child.id));
+    }
+    return ids;
+  };
+
+  const descendantIds = new Set(getDescendantIds(selfId));
+
+  return store.layers.filter(l =>
+    l.id !== selfId &&
+    !descendantIds.has(l.id) &&
+    l.type !== 'camera' // Camera layers shouldn't be parents
+  );
+});
 
 const layerPropertiesComponent = computed<Component | null>(() => {
   if (!selectedLayer.value) return null;
@@ -384,8 +496,89 @@ function toggleKeyframe(property: string) {
   }
 }
 
-function onLayerUpdate() {
-  store.project.meta.modified = new Date().toISOString();
+function onLayerUpdate(dataUpdates?: Record<string, any>) {
+  if (!selectedLayer.value) return;
+
+  // If data updates are provided, apply them via store
+  if (dataUpdates && Object.keys(dataUpdates).length > 0) {
+    store.updateLayerData(selectedLayer.value.id, dataUpdates);
+  } else {
+    store.project.meta.modified = new Date().toISOString();
+  }
+}
+
+function updateParent(event: Event) {
+  if (!selectedLayer.value) return;
+  const parentId = (event.target as HTMLSelectElement).value || null;
+  store.setLayerParent(selectedLayer.value.id, parentId);
+}
+
+// ============================================================
+// PROPERTY DRIVER / PICKWHIP FUNCTIONS
+// ============================================================
+
+/**
+ * Get the driver linked to a property, if any
+ */
+function getDriverForProperty(property: PropertyPath): { layerId: string; property: PropertyPath } | null {
+  if (!selectedLayer.value) return null;
+
+  const drivers = store.getDriversForLayer(selectedLayer.value.id);
+  const driver = drivers.find(d => d.targetProperty === property && d.sourceType === 'property');
+
+  if (driver && driver.sourceLayerId && driver.sourceProperty) {
+    return {
+      layerId: driver.sourceLayerId,
+      property: driver.sourceProperty
+    };
+  }
+  return null;
+}
+
+/**
+ * Handle pickwhip link event
+ */
+function onPickwhipLink(
+  targetProperty: PropertyPath,
+  source: { layerId: string; property: PropertyPath }
+) {
+  if (!selectedLayer.value) return;
+
+  // Create the property link
+  store.createPropertyLink(
+    selectedLayer.value.id,
+    targetProperty,
+    source.layerId,
+    source.property,
+    { blendMode: 'add' }
+  );
+
+  console.log(`[PropertiesPanel] Linked ${selectedLayer.value.id}.${targetProperty} <- ${source.layerId}.${source.property}`);
+}
+
+/**
+ * Handle pickwhip unlink event
+ */
+function onPickwhipUnlink(targetProperty: PropertyPath) {
+  if (!selectedLayer.value) return;
+
+  // Find and remove the driver
+  const drivers = store.getDriversForLayer(selectedLayer.value.id);
+  const driver = drivers.find(d => d.targetProperty === targetProperty && d.sourceType === 'property');
+
+  if (driver) {
+    store.removePropertyDriver(driver.id);
+    console.log(`[PropertiesPanel] Unlinked ${selectedLayer.value.id}.${targetProperty}`);
+  }
+}
+
+/**
+ * Check if a property has a driver
+ */
+function hasDriver(property: PropertyPath): boolean {
+  if (!selectedLayer.value) return false;
+  const drivers = store.getDriversForLayer(selectedLayer.value.id);
+  return drivers.some(d => d.targetProperty === property && d.enabled);
 }
 </script>
 
@@ -454,6 +647,15 @@ function onLayerUpdate() {
   gap: 8px;
   padding: 4px 10px;
   min-height: 26px;
+}
+
+.property-row.has-driver {
+  background: rgba(46, 204, 113, 0.1);
+  border-left: 2px solid #2ecc71;
+}
+
+.property-row.has-driver label {
+  color: #2ecc71;
 }
 
 .property-row label {
@@ -535,7 +737,8 @@ function onLayerUpdate() {
   border-color: #4a90d9;
 }
 
-.blend-select {
+.blend-select,
+.parent-select {
   flex: 1;
   padding: 4px 8px;
   background: #1a1a1a;

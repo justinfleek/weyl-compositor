@@ -12,7 +12,7 @@ import type {
   DepthMapFormat,
   ControlType,
 } from '@/types/export';
-import type { Layer } from '@/types';
+import type { Layer } from '@/types/project';
 import { EXPORT_PRESETS, EXPORT_TARGET_INFO, RESOLUTION_PRESETS, FRAME_COUNT_PRESETS } from '@/config/exportPresets';
 import { exportToComfyUI } from '@/services/export/exportPipeline';
 import { getComfyUIClient } from '@/services/comfyui/comfyuiClient';
@@ -87,10 +87,11 @@ const abortController = ref<AbortController | null>(null);
 const targetInfo = computed(() => EXPORT_TARGET_INFO[selectedTarget.value]);
 
 const targetCategories = computed(() => ({
-  'Wan 2.2': ['wan22-i2v', 'wan22-t2v', 'wan22-fun-camera', 'wan22-first-last'] as ExportTarget[],
+  'Wan 2.2': ['wan22-i2v', 'wan22-t2v', 'wan22-fun-camera', 'wan22-first-last', 'wan-move'] as ExportTarget[],
   'Uni3C': ['uni3c-camera', 'uni3c-motion'] as ExportTarget[],
   'MotionCtrl': ['motionctrl', 'motionctrl-svd'] as ExportTarget[],
-  'Other': ['cogvideox', 'animatediff-cameractrl'] as ExportTarget[],
+  'Camera': ['animatediff-cameractrl', 'camera-comfyui', 'ati'] as ExportTarget[],
+  'Advanced': ['light-x', 'ttm', 'cogvideox'] as ExportTarget[],
   'ControlNet': ['controlnet-depth', 'controlnet-canny', 'controlnet-lineart'] as ExportTarget[],
   'Custom': ['custom-workflow'] as ExportTarget[],
 }));
@@ -101,12 +102,17 @@ const targetDisplayName = computed(() => {
     'wan22-t2v': 'Text to Video',
     'wan22-fun-camera': 'Fun Camera',
     'wan22-first-last': 'First + Last Frame',
+    'wan-move': 'Point Trajectories',
     'uni3c-camera': 'Camera Control',
     'uni3c-motion': 'Motion + Camera',
     'motionctrl': 'MotionCtrl',
     'motionctrl-svd': 'MotionCtrl SVD',
     'cogvideox': 'CogVideoX I2V',
     'animatediff-cameractrl': 'CameraCtrl',
+    'camera-comfyui': '4x4 Matrices',
+    'ati': 'Any Trajectory',
+    'light-x': 'Relighting',
+    'ttm': 'Cut & Drag',
     'controlnet-depth': 'Depth',
     'controlnet-canny': 'Canny Edge',
     'controlnet-lineart': 'Line Art',
@@ -140,20 +146,20 @@ function selectTarget(target: ExportTarget) {
   // Apply preset settings
   const preset = EXPORT_PRESETS[target];
   if (preset) {
-    width.value = preset.defaultWidth;
-    height.value = preset.defaultHeight;
-    frameCount.value = preset.defaultFrameCount;
-    fps.value = preset.defaultFPS;
+    width.value = preset.width ?? 832;
+    height.value = preset.height ?? 480;
+    frameCount.value = preset.frameCount ?? 81;
+    fps.value = preset.fps ?? 24;
     endFrame.value = frameCount.value;
   }
 
   // Update export options based on target
   const info = EXPORT_TARGET_INFO[target];
   if (info) {
-    exportDepthMap.value = info.requiresInputs.includes('depth_sequence');
-    exportCameraData.value = info.requiresInputs.includes('camera_data');
-    exportReferenceFrame.value = info.requiresInputs.includes('reference_image');
-    exportLastFrame.value = info.requiresInputs.includes('last_frame');
+    exportDepthMap.value = info.requiredInputs.includes('depth_sequence') || info.requiredInputs.includes('depth_map');
+    exportCameraData.value = info.requiredInputs.includes('camera_data') || info.requiredInputs.includes('camera_trajectory') || info.requiredInputs.includes('camera_poses');
+    exportReferenceFrame.value = info.requiredInputs.includes('reference_image') || info.requiredInputs.includes('first_frame');
+    exportLastFrame.value = info.requiredInputs.includes('last_frame');
     exportControlImages.value = target.startsWith('controlnet-');
   }
 }
@@ -334,7 +340,7 @@ watch(selectedTarget, () => {
             <h4>{{ targetDisplayName[selectedTarget] }}</h4>
             <div class="info-row">
               <span class="label">Required:</span>
-              <span>{{ targetInfo.requiresInputs.join(', ') || 'None' }}</span>
+              <span>{{ targetInfo.requiredInputs.join(', ') || 'None' }}</span>
             </div>
             <div class="info-row">
               <span class="label">Optional:</span>
@@ -354,10 +360,10 @@ watch(selectedTarget, () => {
             <div class="preset-buttons">
               <button
                 v-for="preset in RESOLUTION_PRESETS"
-                :key="preset.label"
+                :key="preset.name"
                 @click="applyResolutionPreset(preset)"
               >
-                {{ preset.label }}
+                {{ preset.name }}
               </button>
             </div>
             <div class="input-row">
@@ -382,11 +388,11 @@ watch(selectedTarget, () => {
             <h3>Frames</h3>
             <div class="preset-buttons">
               <button
-                v-for="count in FRAME_COUNT_PRESETS"
-                :key="count"
-                @click="applyFrameCountPreset(count)"
+                v-for="preset in FRAME_COUNT_PRESETS"
+                :key="preset.name"
+                @click="applyFrameCountPreset(preset.frameCount)"
               >
-                {{ count }}f
+                {{ preset.name }}
               </button>
             </div>
             <div class="input-row">
@@ -503,7 +509,8 @@ watch(selectedTarget, () => {
             </div>
             <div class="input-row seed-row">
               <ScrubableNumber
-                v-model="seed"
+                :modelValue="seed ?? 0"
+                @update:modelValue="v => seed = v"
                 label="Seed"
                 :min="0"
                 :max="2147483647"

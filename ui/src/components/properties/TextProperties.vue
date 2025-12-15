@@ -107,6 +107,64 @@
              <option v-for="l in splineLayers" :key="l.id" :value="l.id">{{ l.name }}</option>
           </select>
        </div>
+
+       <template v-if="textData.pathLayerId">
+         <div class="row">
+            <label>Path Offset %</label>
+            <ScrubableNumber
+              :modelValue="getPropertyValue('Path Offset') ?? textData.pathOffset ?? 0"
+              @update:modelValue="v => updateAnimatable('Path Offset', v)"
+              :min="-100"
+              :max="200"
+              :precision="1"
+            />
+            <button
+              class="keyframe-btn"
+              :class="{ active: isPropertyAnimated('Path Offset') }"
+              @click="toggleKeyframe('Path Offset')"
+              title="Add keyframe"
+            >◆</button>
+         </div>
+
+         <div class="row">
+            <label>First Margin</label>
+            <ScrubableNumber
+              :modelValue="getPropertyValue('First Margin') ?? textData.pathFirstMargin ?? 0"
+              @update:modelValue="v => updateAnimatable('First Margin', v)"
+              :min="0"
+            />
+         </div>
+
+         <div class="row">
+            <label>Last Margin</label>
+            <ScrubableNumber
+              :modelValue="getPropertyValue('Last Margin') ?? textData.pathLastMargin ?? 0"
+              @update:modelValue="v => updateAnimatable('Last Margin', v)"
+              :min="0"
+            />
+         </div>
+
+         <div class="row checkbox-row">
+            <label>
+              <input type="checkbox" :checked="textData.pathReversed" @change="updateData('pathReversed', !textData.pathReversed)" />
+              Reverse Path
+            </label>
+         </div>
+
+         <div class="row checkbox-row">
+            <label>
+              <input type="checkbox" :checked="textData.pathPerpendicularToPath ?? true" @change="updateData('pathPerpendicularToPath', !textData.pathPerpendicularToPath)" />
+              Perpendicular to Path
+            </label>
+         </div>
+
+         <div class="row checkbox-row">
+            <label>
+              <input type="checkbox" :checked="textData.pathForceAlignment" @change="updateData('pathForceAlignment', !textData.pathForceAlignment)" />
+              Force Alignment
+            </label>
+         </div>
+       </template>
     </div>
 
     <div class="prop-section">
@@ -183,67 +241,93 @@ function getPropertyValue(name: string) {
 }
 
 function updateText(val: string) {
-    textData.value.text = val;
-    // Also sync to AnimatableProperty if present
-    const prop = getProperty('Source Text');
-    if(prop) prop.value = val;
+    // Use store action to update text property
+    store.setPropertyValue(props.layer.id, 'Source Text', val);
+    // Also update the layer data directly for immediate render
+    store.updateLayerData(props.layer.id, { text: val });
     emit('update');
 }
 
 function updateData(key: string, val: any) {
-    textData.value[key] = val;
-    // Sync to animatable property
+    // Use store action to update layer data
+    store.updateLayerData(props.layer.id, { [key]: val });
+
+    // Sync to animatable property via store
     const map: Record<string, string> = {
         'fill': 'Fill Color',
         'stroke': 'Stroke Color',
         'fontSize': 'Font Size',
         'strokeWidth': 'Stroke Width'
     };
-    if(map[key]) {
-        const prop = getProperty(map[key]);
-        if(prop) prop.value = val;
+    if (map[key]) {
+        store.setPropertyValue(props.layer.id, map[key], val);
     }
-    store.project.meta.modified = new Date().toISOString();
     emit('update');
 }
 
 function updateAnimatable(name: string, val: number) {
-    const prop = getProperty(name);
-    if(prop) {
-        prop.value = val;
-        store.project.meta.modified = new Date().toISOString();
-    }
-    // Also update static data for immediate render
+    // Use store action to update property value
+    store.setPropertyValue(props.layer.id, name, val);
+
+    // Also update static data for immediate render via store
     const keyMap: Record<string, string> = {
         'Font Size': 'fontSize',
         'Stroke Width': 'strokeWidth',
         'Tracking': 'tracking',
         'Line Spacing': 'lineSpacing',
-        'Character Offset': 'characterOffset'
+        'Character Offset': 'characterOffset',
+        'Path Offset': 'pathOffset',
+        'First Margin': 'pathFirstMargin',
+        'Last Margin': 'pathLastMargin'
     };
-    if(keyMap[name] && textData.value) {
-        textData.value[keyMap[name]] = val;
+    if (keyMap[name]) {
+        store.updateLayerData(props.layer.id, { [keyMap[name]]: val });
     }
+    emit('update');
+}
+
+function isPropertyAnimated(name: string): boolean {
+    const prop = getProperty(name);
+    return prop?.animated ?? false;
+}
+
+function toggleKeyframe(name: string) {
+    const prop = getProperty(name);
+    if (!prop) return;
+
+    const currentFrame = store.currentFrame;
+
+    // Check if keyframe exists at current frame
+    const existingKf = prop.keyframes?.find((kf: any) => kf.frame === currentFrame);
+
+    if (existingKf) {
+        // Remove keyframe via store
+        store.removeKeyframe(props.layer.id, name, existingKf.id);
+    } else {
+        // Add keyframe at current frame via store
+        store.addKeyframe(props.layer.id, name, prop.value, currentFrame);
+    }
+
     emit('update');
 }
 
 function updateTransform(propName: string, axis: string | null, val: number) {
     const prop = transform.value[propName];
-    if(axis) {
-        prop.value = { ...prop.value, [axis]: val };
+    let newValue: any;
+    if (axis) {
+        newValue = { ...prop.value, [axis]: val };
     } else {
-        prop.value = val;
+        newValue = val;
     }
-    store.project.meta.modified = new Date().toISOString();
+    // Use store action to update transform property
+    store.setPropertyValue(props.layer.id, `transform.${propName}`, newValue);
     emit('update');
 }
 
 function updateOpacity(val: number) {
-    if (props.layer.opacity) {
-        props.layer.opacity.value = val;
-        store.project.meta.modified = new Date().toISOString();
-        emit('update');
-    }
+    // Use store action to update opacity
+    store.setPropertyValue(props.layer.id, 'opacity', val);
+    emit('update');
 }
 
 function toggleBold() {
@@ -313,4 +397,24 @@ async function handleFontChange(family: string) {
 
 .checkbox label { display: flex; align-items: center; gap: 10px; cursor: pointer; color: #eee; font-size: 13px; }
 .checkbox input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+
+.checkbox-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ddd; font-size: 12px; width: auto; }
+.checkbox-row input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; }
+
+.keyframe-btn {
+  background: #333;
+  border: 1px solid #444;
+  color: #666;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.keyframe-btn:hover { background: #444; color: #888; }
+.keyframe-btn.active { background: #b38600; color: #fff; border-color: #b38600; }
 </style>

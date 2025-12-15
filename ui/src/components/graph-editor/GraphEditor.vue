@@ -637,10 +637,14 @@ function applyPreset(presetKey: string): void {
   const preset = EASING_PRESETS[presetKey as keyof typeof EASING_PRESETS];
   if (!preset) return;
 
+  const layer = store.selectedLayer;
+  if (!layer) return;
+
   for (const sk of selectedKeyframes.value) {
     const prop = animatableProperties.value.find(p => p.id === sk.propId);
     if (!prop) continue;
 
+    const propertyPath = getPropertyPath(prop);
     const kfIndex = sk.index;
     const prevKf = kfIndex > 0 ? prop.keyframes[kfIndex - 1] : null;
     const nextKf = kfIndex < prop.keyframes.length - 1 ? prop.keyframes[kfIndex + 1] : null;
@@ -651,22 +655,32 @@ function applyPreset(presetKey: string): void {
 
     // Convert normalized preset to absolute frame/value handles
     if (presetKey === 'linear') {
+      store.setKeyframeInterpolation(layer.id, propertyPath, sk.keyframe.id, 'linear');
+      // Also update local reference
       sk.keyframe.interpolation = 'linear';
       sk.keyframe.outHandle = { frame: outDuration * 0.33, value: 0, enabled: false };
       sk.keyframe.inHandle = { frame: -inDuration * 0.33, value: 0, enabled: false };
     } else {
-      sk.keyframe.interpolation = 'bezier';
       // Apply normalized preset values scaled by duration
-      sk.keyframe.outHandle = {
+      const outHandle = {
         frame: preset.outHandle.x * outDuration,
         value: 0, // Would need value delta for proper curve
         enabled: true
       };
-      sk.keyframe.inHandle = {
+      const inHandle = {
         frame: -preset.inHandle.x * inDuration,
         value: 0, // Would need value delta for proper curve
         enabled: true
       };
+
+      store.setKeyframeInterpolation(layer.id, propertyPath, sk.keyframe.id, 'bezier');
+      store.setKeyframeHandle(layer.id, propertyPath, sk.keyframe.id, 'out', outHandle);
+      store.setKeyframeHandle(layer.id, propertyPath, sk.keyframe.id, 'in', inHandle);
+
+      // Update local reference
+      sk.keyframe.interpolation = 'bezier';
+      sk.keyframe.outHandle = outHandle;
+      sk.keyframe.inHandle = inHandle;
     }
   }
 
@@ -843,17 +857,46 @@ function moveSelectedKeyframes(screenX: number, screenY: number): void {
   const newFrame = Math.round(screenXToFrame(screenX));
   const newValue = screenYToValue(screenY);
 
+  const layer = store.selectedLayer;
+  if (!layer) return;
+
   // For now, just move the first selected keyframe
   if (selectedKeyframes.value.length > 0) {
     const sk = selectedKeyframes.value[0];
-    sk.keyframe.frame = snapEnabled.value ? Math.round(newFrame / 5) * 5 : newFrame;
+    const prop = animatableProperties.value.find(p => p.id === sk.propId);
+    if (!prop) return;
 
+    const frame = snapEnabled.value ? Math.round(newFrame / 5) * 5 : newFrame;
+    const value = typeof sk.keyframe.value === 'number' ? newValue : sk.keyframe.value;
+
+    // Get property path from property name
+    const propertyPath = getPropertyPath(prop);
+
+    // Call store method to persist the change
+    store.updateKeyframe(layer.id, propertyPath, sk.keyframe.id, {
+      frame,
+      value: typeof sk.keyframe.value === 'number' ? newValue : undefined
+    });
+
+    // Update local reference
+    sk.keyframe.frame = frame;
     if (typeof sk.keyframe.value === 'number') {
       sk.keyframe.value = newValue;
     }
   }
 
   drawGraph();
+}
+
+// Helper to get property path from AnimatableProperty
+function getPropertyPath(prop: AnimatableProperty<any>): string {
+  const name = prop.name.toLowerCase();
+  if (name === 'position') return 'transform.position';
+  if (name === 'scale') return 'transform.scale';
+  if (name === 'rotation') return 'transform.rotation';
+  if (name === 'opacity') return 'opacity';
+  if (name === 'anchor point') return 'transform.anchorPoint';
+  return prop.id; // Custom properties use ID
 }
 
 // Handle dragging
@@ -875,6 +918,9 @@ function onDragHandle(event: MouseEvent): void {
 function moveHandle(screenX: number, screenY: number): void {
   if (!dragTarget.value || !dragTarget.value.propId) return;
 
+  const layer = store.selectedLayer;
+  if (!layer) return;
+
   const prop = animatableProperties.value.find(p => p.id === dragTarget.value!.propId);
   if (!prop) return;
 
@@ -884,6 +930,7 @@ function moveHandle(screenX: number, screenY: number): void {
 
   const handleFrame = screenXToFrame(screenX);
   const handleValue = screenYToValue(screenY);
+  const propertyPath = getPropertyPath(prop);
 
   if (dragTarget.value.type === 'outHandle') {
     const nextKf = prop.keyframes[kfIndex + 1];
@@ -900,15 +947,21 @@ function moveHandle(screenX: number, screenY: number): void {
     // Calculate value offset
     const valueOffset = handleValue - getNumericValue(kf.value);
 
-    kf.outHandle = {
+    const newHandle = {
       frame: frameOffset,
       value: valueOffset,
       enabled: true
     };
+
+    // Call store method to persist
+    store.setKeyframeHandle(layer.id, propertyPath, kf.id, 'out', newHandle);
+
+    // Update local reference
+    kf.outHandle = newHandle;
     kf.interpolation = 'bezier';
 
     // Apply control mode constraints (spec B3/B4)
-    applyControlModeConstraints(kf, 'out');
+    applyControlModeConstraints(kf, 'out', propertyPath);
   } else if (dragTarget.value.type === 'inHandle') {
     const prevKf = prop.keyframes[kfIndex - 1];
 
@@ -924,25 +977,34 @@ function moveHandle(screenX: number, screenY: number): void {
     // Calculate value offset
     const valueOffset = handleValue - getNumericValue(kf.value);
 
-    kf.inHandle = {
+    const newHandle = {
       frame: frameOffset,
       value: valueOffset,
       enabled: true
     };
 
+    // Call store method to persist
+    store.setKeyframeHandle(layer.id, propertyPath, kf.id, 'in', newHandle);
+
+    // Update local reference
+    kf.inHandle = newHandle;
+
     // Apply control mode constraints (spec B3/B4)
-    applyControlModeConstraints(kf, 'in');
+    applyControlModeConstraints(kf, 'in', propertyPath);
   }
 
   drawGraph();
 }
 
 // Control mode constraints (from spec B2, B3, B4)
-function applyControlModeConstraints(kf: Keyframe<any>, changedHandle: 'in' | 'out'): void {
+function applyControlModeConstraints(kf: Keyframe<any>, changedHandle: 'in' | 'out', propertyPath: string): void {
   if (!kf.controlMode || kf.controlMode === 'corner') {
     // Fully independent - no constraints (spec B4)
     return;
   }
+
+  const layer = store.selectedLayer;
+  if (!layer) return;
 
   if (kf.controlMode === 'symmetric') {
     // Mirror opposite handle - same length, opposite direction (spec B2)
@@ -950,10 +1012,14 @@ function applyControlModeConstraints(kf: Keyframe<any>, changedHandle: 'in' | 'o
       kf.outHandle.frame = -kf.inHandle.frame;
       kf.outHandle.value = -kf.inHandle.value;
       kf.outHandle.enabled = kf.inHandle.enabled;
+      // Persist to store
+      store.setKeyframeHandle(layer.id, propertyPath, kf.id, 'out', { ...kf.outHandle });
     } else {
       kf.inHandle.frame = -kf.outHandle.frame;
       kf.inHandle.value = -kf.outHandle.value;
       kf.inHandle.enabled = kf.outHandle.enabled;
+      // Persist to store
+      store.setKeyframeHandle(layer.id, propertyPath, kf.id, 'in', { ...kf.inHandle });
     }
   }
 
@@ -961,6 +1027,7 @@ function applyControlModeConstraints(kf: Keyframe<any>, changedHandle: 'in' | 'o
     // Keep collinear but allow different lengths (spec B3)
     const changed = changedHandle === 'in' ? kf.inHandle : kf.outHandle;
     const other = changedHandle === 'in' ? kf.outHandle : kf.inHandle;
+    const otherType = changedHandle === 'in' ? 'out' : 'in';
 
     if (changed.frame !== 0 || changed.value !== 0) {
       const angle = Math.atan2(changed.value, changed.frame);
@@ -969,6 +1036,9 @@ function applyControlModeConstraints(kf: Keyframe<any>, changedHandle: 'in' | 'o
 
       other.frame = Math.cos(oppositeAngle) * otherLength;
       other.value = Math.sin(oppositeAngle) * otherLength;
+
+      // Persist to store
+      store.setKeyframeHandle(layer.id, propertyPath, kf.id, otherType, { ...other });
     }
   }
 }
@@ -987,31 +1057,20 @@ function showContextMenu(event: MouseEvent): void {
 function addKeyframeAtPosition(): void {
   if (!contextMenu.value) return;
 
+  const layer = store.selectedLayer;
+  if (!layer) return;
+
   const frame = Math.round(screenXToFrame(contextMenu.value.x));
   const value = screenYToValue(contextMenu.value.y);
 
   // Add keyframe to first visible property
   if (visibleProperties.value.length > 0) {
     const prop = visibleProperties.value[0];
-    const newKf: Keyframe<any> = {
-      id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      frame,
-      value: typeof prop.value === 'number' ? value : { x: value, y: value },
-      interpolation: 'linear',
-      inHandle: { frame: 0, value: 0, enabled: false },
-      outHandle: { frame: 0, value: 0, enabled: false },
-      controlMode: 'smooth'
-    };
+    const propertyPath = getPropertyPath(prop);
+    const keyframeValue = typeof prop.value === 'number' ? value : { x: value, y: value };
 
-    // Insert in sorted order
-    const insertIndex = prop.keyframes.findIndex(kf => kf.frame > frame);
-    if (insertIndex === -1) {
-      prop.keyframes.push(newKf);
-    } else {
-      prop.keyframes.splice(insertIndex, 0, newKf);
-    }
-
-    prop.animated = true;
+    // Call store method to persist - it handles sorting and animation flag
+    store.addKeyframe(layer.id, propertyPath, keyframeValue, frame);
     drawGraph();
   }
 
@@ -1019,16 +1078,15 @@ function addKeyframeAtPosition(): void {
 }
 
 function deleteSelectedKeyframes(): void {
+  const layer = store.selectedLayer;
+  if (!layer) return;
+
   for (const sk of selectedKeyframes.value) {
     const prop = animatableProperties.value.find(p => p.id === sk.propId);
     if (prop) {
-      const index = prop.keyframes.indexOf(sk.keyframe);
-      if (index !== -1) {
-        prop.keyframes.splice(index, 1);
-      }
-      if (prop.keyframes.length === 0) {
-        prop.animated = false;
-      }
+      const propertyPath = getPropertyPath(prop);
+      // Call store method to persist deletion
+      store.removeKeyframe(layer.id, propertyPath, sk.keyframe.id);
     }
   }
   selectedKeyframes.value = [];
@@ -1042,24 +1100,32 @@ function copyKeyframes(): void {
 function pasteKeyframes(): void {
   if (!clipboard.value || visibleProperties.value.length === 0) return;
 
+  const layer = store.selectedLayer;
+  if (!layer) return;
+
   const prop = visibleProperties.value[0];
+  const propertyPath = getPropertyPath(prop);
   const offset = store.currentFrame - clipboard.value[0].frame;
 
   for (const kf of clipboard.value) {
-    const newKf = {
-      ...kf,
-      frame: kf.frame + offset
-    };
+    const newFrame = kf.frame + offset;
+    // Use store method to properly add keyframes
+    const newKeyframe = store.addKeyframe(layer.id, propertyPath, kf.value, newFrame);
 
-    const insertIndex = prop.keyframes.findIndex(k => k.frame > newKf.frame);
-    if (insertIndex === -1) {
-      prop.keyframes.push(newKf);
-    } else {
-      prop.keyframes.splice(insertIndex, 0, newKf);
+    // Set interpolation and handles on the newly created keyframe
+    if (newKeyframe) {
+      if (kf.interpolation !== 'linear') {
+        store.setKeyframeInterpolation(layer.id, propertyPath, newKeyframe.id, kf.interpolation);
+      }
+      if (kf.inHandle?.enabled) {
+        store.setKeyframeHandle(layer.id, propertyPath, newKeyframe.id, 'in', kf.inHandle);
+      }
+      if (kf.outHandle?.enabled) {
+        store.setKeyframeHandle(layer.id, propertyPath, newKeyframe.id, 'out', kf.outHandle);
+      }
     }
   }
 
-  prop.animated = true;
   drawGraph();
 }
 

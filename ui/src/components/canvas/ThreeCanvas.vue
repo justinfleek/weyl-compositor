@@ -1,0 +1,1060 @@
+<template>
+  <div class="three-canvas" ref="containerRef">
+    <canvas ref="canvasRef" />
+
+    <SplineEditor
+      v-if="activeSplineLayerId || isPenMode"
+      :layerId="activeSplineLayerId"
+      :canvasWidth="canvasWidth"
+      :canvasHeight="canvasHeight"
+      :zoom="zoom"
+      :viewportTransform="viewportTransformArray"
+      :isPenMode="isPenMode"
+      @pointAdded="onPointAdded"
+      @pathUpdated="onPathUpdated"
+      ref="splineEditorRef"
+    />
+
+    <div class="overlay-controls" v-if="hasDepthMap">
+      <label>
+        <input type="checkbox" v-model="showDepthOverlay" />
+        Depth Overlay
+      </label>
+      <select v-model="depthColormap" class="colormap-select">
+        <option value="viridis">Viridis</option>
+        <option value="plasma">Plasma</option>
+        <option value="grayscale">Grayscale</option>
+      </select>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        v-model.number="depthOpacity"
+        class="opacity-slider"
+      />
+    </div>
+
+    <div class="render-mode-controls">
+      <button
+        :class="{ active: renderMode === 'color' }"
+        @click="setRenderMode('color')"
+        title="Color View"
+      >
+        <i class="pi pi-image" />
+      </button>
+      <button
+        :class="{ active: renderMode === 'depth' }"
+        @click="setRenderMode('depth')"
+        title="Depth View"
+      >
+        <i class="pi pi-box" />
+      </button>
+      <button
+        :class="{ active: renderMode === 'normal' }"
+        @click="setRenderMode('normal')"
+        title="Normal View"
+      >
+        <i class="pi pi-compass" />
+      </button>
+    </div>
+
+    <div class="transform-mode-controls" v-if="store.selectedLayerIds.length > 0">
+      <button
+        :class="{ active: transformMode === 'translate' }"
+        @click="setTransformModeTo('translate')"
+        title="Move (V)"
+      >
+        <i class="pi pi-arrows-alt" />
+      </button>
+      <button
+        :class="{ active: transformMode === 'rotate' }"
+        @click="setTransformModeTo('rotate')"
+        title="Rotate (R)"
+      >
+        <i class="pi pi-sync" />
+      </button>
+      <button
+        :class="{ active: transformMode === 'scale' }"
+        @click="setTransformModeTo('scale')"
+        title="Scale (S)"
+      >
+        <i class="pi pi-expand" />
+      </button>
+    </div>
+
+    <div class="performance-overlay" v-if="showPerformance">
+      <span>FPS: {{ performanceStats.fps }}</span>
+      <span>Draw: {{ performanceStats.drawCalls }}</span>
+      <span>Tris: {{ performanceStats.triangles }}</span>
+    </div>
+
+    <div class="loading-overlay" v-if="loading">
+      <div class="loading-spinner"></div>
+      <span>Loading...</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch, computed, nextTick, shallowRef } from 'vue';
+import { useCompositorStore } from '@/stores/compositorStore';
+import { WeylEngine } from '@/engine';
+import type { WeylEngineConfig, PerformanceStats, RenderState } from '@/engine';
+import type { LayerTransformUpdate } from '@/engine/WeylEngine';
+import type { Layer, SplineData, ControlPoint } from '@/types/project';
+import SplineEditor from './SplineEditor.vue';
+
+// Store
+const store = useCompositorStore();
+
+// Refs
+const containerRef = ref<HTMLDivElement | null>(null);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const splineEditorRef = ref<InstanceType<typeof SplineEditor> | null>(null);
+
+// Engine instance (shallowRef for performance - don't make Three.js objects reactive)
+const engine = shallowRef<WeylEngine | null>(null);
+
+// State
+const loading = ref(false);
+const zoom = ref(1);
+const canvasWidth = ref(800);
+const canvasHeight = ref(600);
+const showDepthOverlay = ref(false);
+const depthColormap = ref<'viridis' | 'plasma' | 'grayscale'>('viridis');
+const depthOpacity = ref(50);
+const renderMode = ref<'color' | 'depth' | 'normal'>('color');
+const showPerformance = ref(false);
+const performanceStats = ref<PerformanceStats>({
+  fps: 0,
+  frameTime: 0,
+  drawCalls: 0,
+  triangles: 0,
+  textures: 0,
+  geometries: 0,
+  memoryUsed: 0
+});
+
+// Pan/zoom state
+const viewportTransform = ref<number[]>([1, 0, 0, 1, 0, 0]);
+
+// Transform mode for transform controls
+const transformMode = ref<'translate' | 'rotate' | 'scale'>('translate');
+
+// Computed
+const hasDepthMap = computed(() => store.depthMap !== null);
+const isPenMode = computed(() => store.currentTool === 'pen');
+
+const activeSplineLayerId = computed(() => {
+  const selectedLayer = store.selectedLayer;
+  if (selectedLayer?.type === 'spline') {
+    return selectedLayer.id;
+  }
+  if (isPenMode.value) {
+    const splines = store.layers.filter(l => l.type === 'spline');
+    return splines.length > 0 ? splines[splines.length - 1].id : null;
+  }
+  return null;
+});
+
+const viewportTransformArray = computed(() => viewportTransform.value);
+
+// Initialize Three.js engine
+onMounted(async () => {
+  if (!canvasRef.value || !containerRef.value) return;
+
+  const container = containerRef.value;
+  const rect = container.getBoundingClientRect();
+
+  canvasWidth.value = rect.width;
+  canvasHeight.value = rect.height;
+
+  // Create engine config
+  const config: WeylEngineConfig = {
+    canvas: canvasRef.value,
+    width: rect.width,
+    height: rect.height,
+    compositionWidth: store.width || 1920,
+    compositionHeight: store.height || 1080,
+    pixelRatio: Math.min(window.devicePixelRatio, 2), // Cap at 2 for performance
+    antialias: true,
+    alpha: true,
+    powerPreference: 'high-performance'
+  };
+
+  try {
+    loading.value = true;
+    engine.value = new WeylEngine(config);
+
+    // Wire up callbacks for video/precomp/camera integration
+    engine.value.setAssetGetter((assetId: string) => store.assets[assetId]);
+    engine.value.setVideoMetadataCallback((layerId, metadata) => {
+      store.onVideoMetadataLoaded(layerId, metadata);
+    });
+    engine.value.setCameraCallbacks(
+      (cameraId: string) => store.getCamera(cameraId),
+      (cameraId: string, updates) => store.updateCamera(cameraId, updates),
+      (cameraId: string, frame: number) => store.getCameraAtFrame(cameraId, frame)
+    );
+
+    // Wire up audio reactivity - connects audio analysis to layer properties
+    engine.value.setAudioReactiveCallback(
+      (layerId: string, frame: number) => store.getAudioReactiveValuesForLayer(layerId, frame)
+    );
+
+    // Initialize transform controls and wire callback to update store
+    engine.value.initializeTransformControls();
+    engine.value.setTransformChangeCallback((layerId: string, transform: LayerTransformUpdate) => {
+      handleTransformChange(layerId, transform);
+    });
+
+    // Initialize particle systems with renderer and composition FPS
+    engine.value.initializeParticleSystems();
+    engine.value.setCompositionFPS(store.fps || 60);
+
+    // Start render loop
+    engine.value.start();
+
+    // Initial render
+    await nextTick();
+    syncLayersToEngine();
+
+    // Initialize property driver system
+    store.initializePropertyDriverSystem();
+
+    engine.value.setFrame(store.currentFrame);
+
+    // Setup event listeners
+    setupInputHandlers();
+
+    // Handle resize
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(container);
+
+    // Center on composition
+    centerOnComposition();
+
+  } catch (err) {
+    console.error('[ThreeCanvas] Failed to initialize engine:', err);
+  } finally {
+    loading.value = false;
+  }
+
+  // Setup watchers
+  setupWatchers();
+});
+
+onUnmounted(() => {
+  if (engine.value) {
+    engine.value.stop();
+    engine.value.dispose();
+    engine.value = null;
+  }
+});
+
+// Setup reactive watchers
+function setupWatchers() {
+  // Watch layers for changes
+  watch(
+    () => store.layers,
+    () => {
+      syncLayersToEngine();
+      // Re-evaluate frame to apply layer changes (like 3D toggle)
+      if (engine.value) {
+        engine.value.setFrame(store.currentFrame);
+      }
+    },
+    { deep: true }
+  );
+
+  // Watch current frame
+  watch(
+    () => store.currentFrame,
+    (frame) => {
+      if (engine.value) {
+        // Apply property drivers before frame evaluation
+        applyPropertyDrivers();
+        engine.value.setFrame(frame);
+      }
+    }
+  );
+
+  // Watch composition size
+  watch(
+    () => [store.width, store.height],
+    ([width, height]) => {
+      if (engine.value) {
+        engine.value.resize(canvasWidth.value, canvasHeight.value, width, height);
+        centerOnComposition();
+      }
+    }
+  );
+
+  // Watch source image
+  watch(
+    () => store.sourceImage,
+    async (imageData) => {
+      if (engine.value && imageData) {
+        await loadSourceImage(imageData);
+      }
+    },
+    { immediate: true }
+  );
+
+  // Watch depth map
+  watch(
+    () => store.depthMap,
+    async (depthData) => {
+      if (engine.value && depthData) {
+        await loadDepthMap(depthData);
+      }
+    },
+    { immediate: true }
+  );
+
+  // Performance stats update
+  watch(
+    () => engine.value?.getPerformanceStats(),
+    (stats) => {
+      if (stats) {
+        performanceStats.value = stats;
+      }
+    }
+  );
+
+  // Watch active camera and sync to engine
+  watch(
+    () => store.activeCameraId,
+    (activeCameraId) => {
+      if (!engine.value) return;
+
+      if (!activeCameraId) {
+        engine.value.setActiveCameraLayer(null);
+        return;
+      }
+
+      // Find the camera layer that references this camera
+      const cameraLayer = store.layers.find(
+        l => l.type === 'camera' && (l.data as any)?.cameraId === activeCameraId
+      );
+
+      if (cameraLayer) {
+        engine.value.setActiveCameraLayer(cameraLayer.id);
+      }
+    },
+    { immediate: true }
+  );
+
+  // Watch selected layer and sync transform controls
+  watch(
+    () => store.selectedLayerIds,
+    (selectedIds) => {
+      if (!engine.value) return;
+      // Use first selected layer for transform controls
+      const selectedId = selectedIds.length > 0 ? selectedIds[0] : null;
+      engine.value.selectLayer(selectedId);
+    },
+    { deep: true }
+  );
+}
+
+// Sync store layers to engine
+function syncLayersToEngine() {
+  if (!engine.value) return;
+
+  const engineLayerIds = new Set(engine.value.getLayerIds());
+  const storeLayerIds = new Set(store.layers.map(l => l.id));
+
+  // Remove layers no longer in store
+  for (const id of engineLayerIds) {
+    if (!storeLayerIds.has(id)) {
+      engine.value.removeLayer(id);
+    }
+  }
+
+  // Add or update layers from store
+  for (const layer of store.layers) {
+    if (engineLayerIds.has(layer.id)) {
+      engine.value.updateLayer(layer.id, layer);
+    } else {
+      engine.value.addLayer(layer);
+    }
+  }
+}
+
+/**
+ * Apply property drivers to all layers
+ * Calculates driven values from expressions/links and passes to engine
+ */
+function applyPropertyDrivers() {
+  if (!engine.value) return;
+
+  // Clear all previous driven values
+  engine.value.clearAllDrivenValues();
+
+  // For each layer, get driven values and apply
+  for (const layer of store.layers) {
+    const drivenValues = store.getDrivenValuesForLayer(layer.id);
+    if (drivenValues.size > 0) {
+      engine.value.setLayerDrivenValues(layer.id, drivenValues);
+    }
+  }
+}
+
+// Load source image as background
+async function loadSourceImage(imageData: string) {
+  if (!engine.value) return;
+
+  try {
+    loading.value = true;
+    const img = await loadImage(imageData);
+
+    // Create a background image layer in the engine
+    // This is handled through the ResourceManager
+    engine.value.setBackgroundImage(img);
+
+  } catch (err) {
+    console.error('[ThreeCanvas] Failed to load source image:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Load depth map
+async function loadDepthMap(depthData: string) {
+  if (!engine.value) return;
+
+  try {
+    const img = await loadImage(depthData);
+    engine.value.setDepthMap(img, {
+      colormap: depthColormap.value,
+      opacity: depthOpacity.value / 100,
+      visible: showDepthOverlay.value
+    });
+  } catch (err) {
+    console.error('[ThreeCanvas] Failed to load depth map:', err);
+  }
+}
+
+// Image loader utility
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src.startsWith('data:') ? src : `data:image/png;base64,${src}`;
+  });
+}
+
+// Input handling
+function setupInputHandlers() {
+  const container = containerRef.value;
+  const canvas = canvasRef.value;
+  if (!container || !canvas) return;
+
+  let isPanning = false;
+  let isZooming = false;
+  let lastPosX = 0;
+  let lastPosY = 0;
+  let zoomStartY = 0;
+  let zoomStartLevel = 1;
+
+  // Prevent default middle mouse behavior
+  container.addEventListener('mousedown', (e: MouseEvent) => {
+    if (e.button === 1) {
+      e.preventDefault();
+    }
+  });
+
+  container.addEventListener('auxclick', (e: MouseEvent) => {
+    if (e.button === 1) {
+      e.preventDefault();
+    }
+  });
+
+  // Wheel zoom
+  canvas.addEventListener('wheel', (e: WheelEvent) => {
+    e.preventDefault();
+
+    const delta = e.deltaY;
+    let newZoom = zoom.value * (delta > 0 ? 0.9 : 1.1);
+    newZoom = Math.min(Math.max(newZoom, 0.1), 10);
+
+    // Zoom towards mouse position
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Update viewport transform to zoom towards mouse
+    const scaleFactor = newZoom / zoom.value;
+    viewportTransform.value[4] = mouseX - scaleFactor * (mouseX - viewportTransform.value[4]);
+    viewportTransform.value[5] = mouseY - scaleFactor * (mouseY - viewportTransform.value[5]);
+    viewportTransform.value[0] = newZoom;
+    viewportTransform.value[3] = newZoom;
+
+    zoom.value = newZoom;
+
+    if (engine.value) {
+      engine.value.setViewportTransform(viewportTransform.value);
+    }
+  }, { passive: false });
+
+  // Mouse down
+  canvas.addEventListener('mousedown', (e: MouseEvent) => {
+    const currentTool = store.currentTool;
+
+    // Middle mouse or Alt+Left for panning
+    if (e.button === 1 || currentTool === 'hand' || (e.button === 0 && e.altKey)) {
+      isPanning = true;
+      lastPosX = e.clientX;
+      lastPosY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+      e.preventDefault();
+      return;
+    }
+
+    // Zoom tool
+    if (currentTool === 'zoom') {
+      if (e.shiftKey) {
+        // Zoom out on shift+click
+        const newZoom = Math.max(zoom.value * 0.7, 0.1);
+        zoom.value = newZoom;
+        viewportTransform.value[0] = newZoom;
+        viewportTransform.value[3] = newZoom;
+        if (engine.value) {
+          engine.value.setViewportTransform(viewportTransform.value);
+        }
+      } else {
+        // Start drag zoom
+        isZooming = true;
+        zoomStartY = e.clientY;
+        zoomStartLevel = zoom.value;
+      }
+      return;
+    }
+
+    // Text tool - create text layer at click position
+    if (currentTool === 'text') {
+      const rect = canvas.getBoundingClientRect();
+      const scenePos = screenToScene(e.clientX - rect.left, e.clientY - rect.top);
+
+      const newLayer = store.createLayer('text');
+      if (newLayer.transform?.position) {
+        newLayer.transform.position.value = { x: scenePos.x, y: scenePos.y, z: 0 };
+      }
+      store.updateLayer(newLayer.id, {
+        transform: {
+          ...newLayer.transform,
+          position: {
+            ...newLayer.transform!.position,
+            value: { x: scenePos.x, y: scenePos.y, z: 0 }
+          }
+        }
+      });
+      store.selectLayer(newLayer.id);
+      store.setTool('select');
+      return;
+    }
+
+    // Selection - raycast to find layer
+    if (currentTool === 'select' && e.button === 0) {
+      // Don't handle selection if transform controls are being dragged
+      if (engine.value?.isTransformDragging()) {
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      if (engine.value) {
+        const hitLayer = engine.value.raycastLayers(x, y);
+        if (hitLayer) {
+          store.selectLayer(hitLayer);
+          engine.value.selectLayer(hitLayer); // Attach transform controls
+        } else {
+          store.clearSelection();
+          engine.value.selectLayer(null); // Detach transform controls
+        }
+      }
+    }
+  });
+
+  // Mouse move
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    if (isPanning) {
+      const dx = e.clientX - lastPosX;
+      const dy = e.clientY - lastPosY;
+
+      viewportTransform.value[4] += dx;
+      viewportTransform.value[5] += dy;
+
+      lastPosX = e.clientX;
+      lastPosY = e.clientY;
+
+      if (engine.value) {
+        engine.value.setViewportTransform(viewportTransform.value);
+      }
+      return;
+    }
+
+    if (isZooming) {
+      const dy = zoomStartY - e.clientY;
+      const zoomFactor = 1 + dy * 0.01;
+      const newZoom = Math.max(0.1, Math.min(10, zoomStartLevel * zoomFactor));
+
+      zoom.value = newZoom;
+      viewportTransform.value[0] = newZoom;
+      viewportTransform.value[3] = newZoom;
+
+      if (engine.value) {
+        engine.value.setViewportTransform(viewportTransform.value);
+      }
+      return;
+    }
+
+    // Update cursor based on tool
+    const currentTool = store.currentTool;
+    if (currentTool === 'hand') canvas.style.cursor = 'grab';
+    else if (currentTool === 'zoom') canvas.style.cursor = 'zoom-in';
+    else if (currentTool === 'text') canvas.style.cursor = 'text';
+    else if (currentTool === 'pen') canvas.style.cursor = 'crosshair';
+    else canvas.style.cursor = 'default';
+  });
+
+  // Mouse up
+  canvas.addEventListener('mouseup', () => {
+    if (isPanning) {
+      isPanning = false;
+      canvas.style.cursor = store.currentTool === 'hand' ? 'grab' : 'default';
+    }
+    if (isZooming) {
+      isZooming = false;
+    }
+  });
+
+  // Mouse leave
+  canvas.addEventListener('mouseleave', () => {
+    isPanning = false;
+    isZooming = false;
+  });
+}
+
+// Convert screen coordinates to scene coordinates
+function screenToScene(screenX: number, screenY: number): { x: number; y: number } {
+  const vpt = viewportTransform.value;
+  return {
+    x: (screenX - vpt[4]) / vpt[0],
+    y: (screenY - vpt[5]) / vpt[3]
+  };
+}
+
+/**
+ * Handle transform changes from TransformControls
+ * Updates the store with the new transform values
+ */
+function handleTransformChange(layerId: string, transform: LayerTransformUpdate) {
+  const layer = store.layers.find(l => l.id === layerId);
+  if (!layer) return;
+
+  // Build the update object for the store
+  const updates: Partial<Layer> = {};
+
+  if (transform.position && layer.transform) {
+    updates.transform = {
+      ...layer.transform,
+      position: {
+        ...layer.transform.position,
+        value: {
+          x: transform.position.x,
+          y: transform.position.y,
+          z: transform.position.z ?? (layer.transform.position?.value as any)?.z ?? 0
+        }
+      }
+    };
+  }
+
+  // Handle rotation - for 3D layers use rotationX/Y/Z, for 2D use rotation
+  if (layer.threeD) {
+    if (transform.rotationX !== undefined || transform.rotationY !== undefined || transform.rotationZ !== undefined) {
+      if (!updates.transform && layer.transform) {
+        updates.transform = { ...layer.transform };
+      }
+      if (updates.transform) {
+        if (transform.rotationX !== undefined) {
+          updates.transform.rotationX = { ...layer.transform!.rotationX!, value: transform.rotationX };
+        }
+        if (transform.rotationY !== undefined) {
+          updates.transform.rotationY = { ...layer.transform!.rotationY!, value: transform.rotationY };
+        }
+        if (transform.rotationZ !== undefined) {
+          updates.transform.rotationZ = { ...layer.transform!.rotationZ!, value: transform.rotationZ };
+        }
+      }
+    }
+  } else {
+    // 2D layer: use rotation (Z axis)
+    if (transform.rotation !== undefined && layer.transform) {
+      if (!updates.transform) {
+        updates.transform = { ...layer.transform };
+      }
+      updates.transform.rotation = { ...layer.transform.rotation!, value: transform.rotation };
+    }
+  }
+
+  // Handle scale
+  if (transform.scale && layer.transform) {
+    if (!updates.transform) {
+      updates.transform = { ...layer.transform };
+    }
+    updates.transform.scale = {
+      ...layer.transform.scale,
+      value: {
+        x: transform.scale.x,
+        y: transform.scale.y,
+        z: transform.scale.z ?? (layer.transform.scale?.value as any)?.z ?? 100
+      }
+    };
+  }
+
+  // Update the store
+  if (Object.keys(updates).length > 0) {
+    store.updateLayer(layerId, updates);
+  }
+}
+
+/**
+ * Set transform mode (translate/rotate/scale)
+ */
+function setTransformModeTo(mode: 'translate' | 'rotate' | 'scale') {
+  transformMode.value = mode;
+  if (engine.value) {
+    engine.value.setTransformMode(mode);
+  }
+}
+
+// Handle resize
+function handleResize(entries: ResizeObserverEntry[]) {
+  for (const entry of entries) {
+    const { width, height } = entry.contentRect;
+    if (width > 0 && height > 0) {
+      canvasWidth.value = width;
+      canvasHeight.value = height;
+
+      if (engine.value) {
+        engine.value.resize(width, height);
+      }
+    }
+  }
+}
+
+// Center viewport on composition
+function centerOnComposition() {
+  const container = containerRef.value;
+  if (!container || !engine.value) return;
+
+  const compWidth = store.width || 1920;
+  const compHeight = store.height || 1080;
+  const containerRect = container.getBoundingClientRect();
+  const padding = 60;
+
+  const scaleX = (containerRect.width - padding * 2) / compWidth;
+  const scaleY = (containerRect.height - padding * 2) / compHeight;
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  viewportTransform.value = [
+    scale, 0, 0, scale,
+    (containerRect.width - compWidth * scale) / 2,
+    (containerRect.height - compHeight * scale) / 2
+  ];
+
+  zoom.value = scale;
+  engine.value.setViewportTransform(viewportTransform.value);
+}
+
+// Render mode switching
+function setRenderMode(mode: 'color' | 'depth' | 'normal') {
+  renderMode.value = mode;
+  if (engine.value) {
+    engine.value.setRenderMode(mode);
+  }
+}
+
+// Spline editor handlers
+function onPointAdded(_point: ControlPoint) {
+  if (!activeSplineLayerId.value) {
+    const newLayer = store.createLayer('spline');
+    store.selectLayer(newLayer.id);
+  }
+}
+
+function onPathUpdated() {
+  syncLayersToEngine();
+}
+
+// Zoom controls
+function zoomIn() {
+  const newZoom = Math.min(zoom.value * 1.2, 10);
+  zoom.value = newZoom;
+  viewportTransform.value[0] = newZoom;
+  viewportTransform.value[3] = newZoom;
+  if (engine.value) {
+    engine.value.setViewportTransform(viewportTransform.value);
+  }
+}
+
+function zoomOut() {
+  const newZoom = Math.max(zoom.value * 0.8, 0.1);
+  zoom.value = newZoom;
+  viewportTransform.value[0] = newZoom;
+  viewportTransform.value[3] = newZoom;
+  if (engine.value) {
+    engine.value.setViewportTransform(viewportTransform.value);
+  }
+}
+
+function fitToView() {
+  centerOnComposition();
+}
+
+// Capture frame for export
+async function captureFrame(): Promise<string | null> {
+  if (!engine.value) return null;
+
+  const result = engine.value.captureFrame();
+  if (!result?.imageData) return null;
+
+  // Convert ImageData to data URL
+  const canvas = document.createElement('canvas');
+  canvas.width = result.width;
+  canvas.height = result.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  ctx.putImageData(result.imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+// Capture depth for ComfyUI
+async function captureDepth(): Promise<string | null> {
+  if (!engine.value) return null;
+
+  const result = engine.value.captureDepth();
+  if (!result?.depthBuffer) return null;
+
+  // Convert depth buffer to grayscale image data URL
+  const canvas = document.createElement('canvas');
+  canvas.width = result.width;
+  canvas.height = result.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  const imageData = ctx.createImageData(result.width, result.height);
+  for (let i = 0; i < result.depthBuffer.length; i++) {
+    const value = Math.floor(result.depthBuffer[i] * 255);
+    const idx = i * 4;
+    imageData.data[idx] = value;     // R
+    imageData.data[idx + 1] = value; // G
+    imageData.data[idx + 2] = value; // B
+    imageData.data[idx + 3] = 255;   // A
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+// Watch depth overlay settings
+watch(showDepthOverlay, (visible) => {
+  if (engine.value) {
+    engine.value.setDepthOverlayVisible(visible);
+  }
+});
+
+watch(depthColormap, (colormap) => {
+  if (engine.value) {
+    engine.value.setDepthColormap(colormap);
+  }
+});
+
+watch(depthOpacity, (opacity) => {
+  if (engine.value) {
+    engine.value.setDepthOpacity(opacity / 100);
+  }
+});
+
+// Expose public methods
+defineExpose({
+  engine,
+  fitToView,
+  zoomIn,
+  zoomOut,
+  zoom,
+  captureFrame,
+  captureDepth,
+  showPerformance,
+  performanceStats,
+  renderMode,
+  setRenderMode,
+  transformMode,
+  setTransformModeTo
+});
+</script>
+
+<style scoped>
+.three-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.three-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.overlay-controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #e0e0e0;
+}
+
+.colormap-select {
+  background: #3a3a3a;
+  border: none;
+  color: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.opacity-slider {
+  width: 60px;
+  height: 4px;
+  cursor: pointer;
+}
+
+.render-mode-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px;
+  border-radius: 6px;
+  z-index: 10;
+}
+
+.render-mode-controls button {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.render-mode-controls button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.render-mode-controls button.active {
+  background: #4a90d9;
+  color: #fff;
+}
+
+.transform-mode-controls {
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px;
+  border-radius: 6px;
+  z-index: 10;
+}
+
+.transform-mode-controls button {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.transform-mode-controls button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.transform-mode-controls button.active {
+  background: #ff9900;
+  color: #fff;
+}
+
+.performance-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #8f8;
+  z-index: 10;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  color: #e0e0e0;
+  gap: 12px;
+  z-index: 20;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #3a3a3a;
+  border-top-color: #4a90d9;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>

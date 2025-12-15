@@ -279,11 +279,8 @@ function applyEffect(effectKey: string) {
     return;
   }
 
-  // Add effect to layer
-  if (!selectedLayer.effects) {
-    (selectedLayer as any).effects = [];
-  }
-  (selectedLayer as any).effects.push(effect);
+  // Add effect to layer via store action
+  store.addEffectToLayer(selectedLayer.id, effect.effectKey);
 }
 
 function applyPreset(preset: AnimationPreset) {

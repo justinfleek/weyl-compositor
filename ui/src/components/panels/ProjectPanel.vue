@@ -234,7 +234,7 @@ function triggerFileImport() {
   fileInputRef.value?.click();
 }
 
-function handleFileImport(event: Event) {
+async function handleFileImport(event: Event) {
   const input = event.target as HTMLInputElement;
   const files = input.files;
   if (!files || files.length === 0) return;
@@ -247,15 +247,46 @@ function handleFileImport(event: Event) {
       type,
     };
 
-    // Add to appropriate folder
+    // Handle different file types
     if (type === 'audio') {
       // Handle audio loading through store
       store.loadAudio(file);
+    } else if (file.type.startsWith('video/')) {
+      // Handle video import - creates video layer with auto-resize
+      try {
+        const layer = await store.createVideoLayer(file, true);
+        newItem.id = layer.id;
+        newItem.width = store.width;
+        newItem.height = store.height;
+        newItem.duration = store.frameCount;
+        newItem.fps = store.fps;
+        console.log('[ProjectPanel] Video layer created:', layer.id, layer.name);
+      } catch (error) {
+        console.error('[ProjectPanel] Failed to import video:', error);
+        continue;
+      }
+    } else if (file.type.startsWith('image/')) {
+      // Handle image import - create image layer
+      const imageUrl = URL.createObjectURL(file);
+      const assetId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Add to assets
+      store.project.assets[assetId] = {
+        id: assetId,
+        type: 'image',
+        source: 'local_file',
+        filename: file.name,
+        data: imageUrl
+      };
+
+      // Create image layer
+      const layer = store.createLayer('image', file.name.replace(/\.[^.]+$/, ''));
+      layer.data = { assetId, fit: 'contain' };
+      newItem.id = layer.id;
     }
 
-    const folder = folders.value.find(f =>
-      f.id === (type === 'audio' ? 'footage' : 'footage')
-    );
+    // Add to footage folder
+    const folder = folders.value.find(f => f.id === 'footage');
     if (folder) {
       folder.items.push(newItem);
     } else {

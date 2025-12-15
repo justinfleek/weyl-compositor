@@ -217,6 +217,78 @@ export const EXPORT_PRESETS: Record<ExportTarget, Partial<ExportConfig>> = {
     steps: 30,
     cfgScale: 7.0,
   },
+
+  // New model targets (Dec 2025)
+  'light-x': {
+    width: 832,
+    height: 480,
+    frameCount: 81,
+    fps: 24,
+    exportDepthMap: true,
+    exportControlImages: false,
+    exportCameraData: true,
+    exportReferenceFrame: true,
+    exportLastFrame: false,
+    depthFormat: 'normalized',
+    steps: 30,
+    cfgScale: 5.0,
+  },
+
+  'wan-move': {
+    width: 832,
+    height: 480,
+    frameCount: 81,
+    fps: 24,
+    exportDepthMap: false,
+    exportControlImages: false,
+    exportCameraData: false,
+    exportReferenceFrame: true,
+    exportLastFrame: false,
+    steps: 30,
+    cfgScale: 5.0,
+  },
+
+  'ati': {
+    width: 832,
+    height: 480,
+    frameCount: 81,
+    fps: 24,
+    exportDepthMap: false,
+    exportControlImages: false,
+    exportCameraData: true,
+    exportReferenceFrame: true,
+    exportLastFrame: false,
+    steps: 30,
+    cfgScale: 5.0,
+  },
+
+  'ttm': {
+    width: 832,
+    height: 480,
+    frameCount: 81,
+    fps: 24,
+    exportDepthMap: false,
+    exportControlImages: false,
+    exportCameraData: false,
+    exportReferenceFrame: true,
+    exportLastFrame: true,
+    steps: 30,
+    cfgScale: 5.0,
+  },
+
+  'camera-comfyui': {
+    width: 832,
+    height: 480,
+    frameCount: 81,
+    fps: 24,
+    exportDepthMap: false,
+    exportControlImages: false,
+    exportCameraData: true,
+    exportReferenceFrame: true,
+    exportLastFrame: false,
+    steps: 30,
+    cfgScale: 5.0,
+  },
 };
 
 // ============================================================================
@@ -597,6 +669,52 @@ export const EXPORT_TARGET_INFO: Record<ExportTarget, {
     optionalInputs: [],
     outputTypes: ['video', 'image'],
     comfyNodes: [],
+  },
+
+  // New model targets (Dec 2025)
+  'light-x': {
+    name: 'Light-X Relighting',
+    description: 'Video generation with relighting and camera control',
+    requiredInputs: ['reference_image', 'prompt', 'camera_trajectory', 'lighting_data'],
+    optionalInputs: ['depth_map', 'negative_prompt'],
+    outputTypes: ['video'],
+    comfyNodes: ['LightXLoader', 'LightXSampler'],
+  },
+
+  'wan-move': {
+    name: 'Wan-Move Point Trajectories',
+    description: 'Video generation with user-defined point trajectories',
+    requiredInputs: ['reference_image', 'prompt', 'point_trajectories'],
+    optionalInputs: ['negative_prompt', 'seed'],
+    outputTypes: ['video'],
+    comfyNodes: ['WanMoveLoader', 'WanMovePointTrajectory'],
+  },
+
+  'ati': {
+    name: 'ATI Any Trajectory',
+    description: 'Any Trajectory Instruction - flexible camera/object motion',
+    requiredInputs: ['reference_image', 'prompt', 'trajectory_instruction'],
+    optionalInputs: ['negative_prompt', 'camera_poses'],
+    outputTypes: ['video'],
+    comfyNodes: ['ATILoader', 'ATISampler'],
+  },
+
+  'ttm': {
+    name: 'TTM Time-to-Move',
+    description: 'Cut-and-drag video editing with temporal control',
+    requiredInputs: ['reference_image', 'last_frame', 'drag_points'],
+    optionalInputs: ['prompt', 'mask'],
+    outputTypes: ['video'],
+    comfyNodes: ['TTMLoader', 'TTMDragEditor'],
+  },
+
+  'camera-comfyui': {
+    name: 'Camera-ComfyUI 4x4 Matrices',
+    description: 'Generic camera control via 4x4 transformation matrices',
+    requiredInputs: ['reference_image', 'camera_matrices'],
+    optionalInputs: ['prompt', 'depth_map'],
+    outputTypes: ['video'],
+    comfyNodes: ['CameraMatrixLoader', 'CameraMatrixApply'],
   },
 };
 

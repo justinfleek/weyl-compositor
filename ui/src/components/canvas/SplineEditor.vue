@@ -154,8 +154,6 @@ function handleMouseDown(event: MouseEvent) {
   if (props.layerId) {
     const layer = store.layers.find(l => l.id === props.layerId);
     if (layer && layer.type === 'spline') {
-      const splineData = layer.data as SplineData;
-
       const newPoint: ControlPoint = {
         id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         x: pos.x,
@@ -165,11 +163,8 @@ function handleMouseDown(event: MouseEvent) {
         type: 'corner'
       };
 
-      // Add point to spline data
-      if (!splineData.controlPoints) {
-        splineData.controlPoints = [];
-      }
-      splineData.controlPoints.push(newPoint);
+      // Add point via store action
+      store.addSplineControlPoint(props.layerId, newPoint);
 
       // Select the new point
       selectedPointId.value = newPoint.id;
@@ -197,7 +192,7 @@ function handleMouseMove(event: MouseEvent) {
   }
 
   // Handle dragging
-  if (dragTarget.value) {
+  if (dragTarget.value && props.layerId) {
     const layer = store.layers.find(l => l.id === props.layerId);
     if (!layer || layer.type !== 'spline') return;
 
@@ -210,41 +205,42 @@ function handleMouseMove(event: MouseEvent) {
       const dx = pos.x - point.x;
       const dy = pos.y - point.y;
 
-      point.x = pos.x;
-      point.y = pos.y;
-
-      // Move handles with point
+      // Build update with moved handles
+      const updates: any = { x: pos.x, y: pos.y };
       if (point.handleIn) {
-        point.handleIn.x += dx;
-        point.handleIn.y += dy;
+        updates.handleIn = { x: point.handleIn.x + dx, y: point.handleIn.y + dy };
       }
       if (point.handleOut) {
-        point.handleOut.x += dx;
-        point.handleOut.y += dy;
+        updates.handleOut = { x: point.handleOut.x + dx, y: point.handleOut.y + dy };
       }
+
+      // Update via store
+      store.updateSplineControlPoint(props.layerId, point.id, updates);
 
       emit('pointMoved', point.id, pos.x, pos.y);
     } else if (dragTarget.value.type === 'handleIn') {
-      point.handleIn = { x: pos.x, y: pos.y };
+      const updates: any = { handleIn: { x: pos.x, y: pos.y } };
 
       // Mirror to handleOut if smooth
       if (point.type === 'smooth') {
         const dx = pos.x - point.x;
         const dy = pos.y - point.y;
-        point.handleOut = { x: point.x - dx, y: point.y - dy };
+        updates.handleOut = { x: point.x - dx, y: point.y - dy };
       }
 
+      store.updateSplineControlPoint(props.layerId, point.id, updates);
       emit('handleMoved', point.id, 'in', pos.x, pos.y);
     } else if (dragTarget.value.type === 'handleOut') {
-      point.handleOut = { x: pos.x, y: pos.y };
+      const updates: any = { handleOut: { x: pos.x, y: pos.y } };
 
       // Mirror to handleIn if smooth
       if (point.type === 'smooth') {
         const dx = pos.x - point.x;
         const dy = pos.y - point.y;
-        point.handleIn = { x: point.x - dx, y: point.y - dy };
+        updates.handleIn = { x: point.x - dx, y: point.y - dy };
       }
 
+      store.updateSplineControlPoint(props.layerId, point.id, updates);
       emit('handleMoved', point.id, 'out', pos.x, pos.y);
     }
 
@@ -253,7 +249,7 @@ function handleMouseMove(event: MouseEvent) {
 }
 
 function handleMouseUp() {
-  if (dragTarget.value) {
+  if (dragTarget.value && props.layerId) {
     // If we were creating a new handle by dragging, convert to smooth point
     const layer = store.layers.find(l => l.id === props.layerId);
     if (layer && layer.type === 'spline') {
@@ -266,12 +262,16 @@ function handleMouseUp() {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 5) {
-          point.type = 'smooth';
-          // Create mirrored handleIn
-          point.handleIn = { x: point.x - dx, y: point.y - dy };
+          // Convert to smooth and create mirrored handleIn via store
+          store.updateSplineControlPoint(props.layerId, point.id, {
+            type: 'smooth',
+            handleIn: { x: point.x - dx, y: point.y - dy }
+          });
         } else {
-          // Too small, remove handle
-          point.handleOut = null;
+          // Too small, remove handle via store
+          store.updateSplineControlPoint(props.layerId, point.id, {
+            handleOut: null
+          });
         }
       }
     }
@@ -311,14 +311,12 @@ function handleKeyDown(event: KeyboardEvent) {
     if (selectedPointId.value && props.layerId) {
       const layer = store.layers.find(l => l.id === props.layerId);
       if (layer && layer.type === 'spline') {
-        const splineData = layer.data as SplineData;
-        const index = splineData.controlPoints?.findIndex(p => p.id === selectedPointId.value);
-        if (index !== undefined && index >= 0) {
-          splineData.controlPoints?.splice(index, 1);
-          emit('pointDeleted', selectedPointId.value);
-          emit('pathUpdated');
-          selectedPointId.value = null;
-        }
+        const pointId = selectedPointId.value;
+        // Delete via store action
+        store.deleteSplineControlPoint(props.layerId, pointId);
+        emit('pointDeleted', pointId);
+        emit('pathUpdated');
+        selectedPointId.value = null;
       }
     }
   }

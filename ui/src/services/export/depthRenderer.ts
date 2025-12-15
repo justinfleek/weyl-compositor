@@ -101,17 +101,20 @@ export function renderDepthFrame(options: DepthRenderOptions): DepthRenderResult
  * Get layer Z depth at frame
  */
 function getLayerDepth(layer: Layer, frame: number): number {
+  const position = layer.transform?.position;
+  if (!position) return 0;
+
   // Check for animated position
-  if (layer.position && 'keyframes' in layer.position && layer.position.keyframes?.length > 0) {
+  if (position.keyframes && position.keyframes.length > 0) {
     // Interpolate keyframes
-    return interpolateValue(layer.position.keyframes, frame, 2) || 0;
+    return interpolateValue(position.keyframes, frame, 2) || 0;
   }
 
   // Static position
-  if (layer.position && 'value' in layer.position) {
-    const value = layer.position.value;
-    if (Array.isArray(value) && value.length > 2) {
-      return value[2];
+  if (position.value) {
+    const value = position.value;
+    if (typeof value === 'object' && 'z' in value) {
+      return (value as { z?: number }).z ?? 0;
     }
   }
 

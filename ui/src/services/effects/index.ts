@@ -5,6 +5,7 @@
  * Import this module to initialize the effect system.
  */
 import { registerBlurEffects } from './blurRenderer';
+import { registerColorEffects } from './colorRenderer';
 
 /**
  * Initialize all effect renderers
@@ -12,11 +13,18 @@ import { registerBlurEffects } from './blurRenderer';
  */
 export function initializeEffects(): void {
   registerBlurEffects();
+  registerColorEffects();
   // Future effects will be registered here:
-  // registerColorEffects();
   // registerDistortEffects();
-  // registerStylizeEffects();
+  // registerGenerateEffects();
 }
 
 // Re-export for convenience
 export { gaussianBlurRenderer } from './blurRenderer';
+export {
+  brightnessContrastRenderer,
+  hueSaturationRenderer,
+  levelsRenderer,
+  tintRenderer,
+  dropShadowRenderer
+} from './colorRenderer';

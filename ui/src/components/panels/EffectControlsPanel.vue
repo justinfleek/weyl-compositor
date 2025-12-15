@@ -281,10 +281,7 @@ function toggleParamAnim(effectId: string, paramKey: string) {
   const effect = layer.value.effects.find((e: any) => e.id === effectId);
   const param = effect?.parameters[paramKey];
   if(param) {
-    param.animated = !param.animated;
-    if(param.animated && param.keyframes.length === 0) {
-      store.addKeyframe(layer.value.id, param.id, param.value);
-    }
+    store.setEffectParamAnimated(layer.value.id, effectId, paramKey, !param.animated);
   }
 }
 

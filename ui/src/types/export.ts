@@ -21,7 +21,13 @@ export type ExportTarget =
   | 'controlnet-canny'    // Canny edge for ControlNet
   | 'controlnet-lineart'  // Line art for ControlNet
   | 'animatediff-cameractrl' // AnimateDiff CameraCtrl
-  | 'custom-workflow';    // User's custom workflow
+  | 'custom-workflow'     // User's custom workflow
+  // New model targets (Dec 2025)
+  | 'light-x'             // Light-X relighting + camera
+  | 'wan-move'            // Wan-Move point trajectories
+  | 'ati'                 // ATI Any Trajectory Instruction
+  | 'ttm'                 // TTM Time-to-Move cut-and-drag
+  | 'camera-comfyui';     // camera-comfyUI 4x4 matrices
 
 // ============================================================================
 // Export Configuration

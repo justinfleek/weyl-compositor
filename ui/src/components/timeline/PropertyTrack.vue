@@ -71,7 +71,7 @@ const props = defineProps(['name', 'property', 'layerId', 'propertyPath', 'layou
 const store = useCompositorStore();
 
 const hasKeyframeAtCurrent = computed(() => props.property.keyframes?.some((k:any) => k.frame === store.currentFrame));
-const isSelected = false; // Simplified
+const isSelected = computed(() => store.selectedPropertyPath === props.propertyPath);
 
 function toggleAnim() { store.setPropertyAnimated(props.layerId, props.propertyPath, !props.property.animated); }
 function addKeyframeAtCurrent() { store.addKeyframe(props.layerId, props.propertyPath, props.property.value); }
@@ -80,7 +80,7 @@ function updateValByIndex(axis: string, v: number) {
   const newVal = { ...props.property.value, [axis]: v };
   store.setPropertyValue(props.layerId, props.propertyPath, newVal);
 }
-function selectProp() {} // TODO
+function selectProp() { store.selectProperty(props.propertyPath); }
 </script>
 
 <style scoped>
