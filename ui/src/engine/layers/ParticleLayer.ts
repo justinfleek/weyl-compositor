@@ -465,8 +465,68 @@ export class ParticleLayer extends BaseLayer {
     // Calculate delta time based on composition frame rate
     const deltaTime = 1 / this.fps;
 
+    // Apply audio-reactive values to particle system
+    this.applyAudioReactivity();
+
     // Step the simulation
     this.step(deltaTime);
+  }
+
+  /**
+   * Apply audio-reactive values to particle system emitters and force fields
+   */
+  private applyAudioReactivity(): void {
+    // Map audio reactive targets to particle system features
+    const emissionRate = this.getAudioReactiveValue('particle.emissionRate');
+    const speed = this.getAudioReactiveValue('particle.speed');
+    const size = this.getAudioReactiveValue('particle.size');
+    const gravity = this.getAudioReactiveValue('particle.gravity');
+    const windStrength = this.getAudioReactiveValue('particle.windStrength');
+
+    // Set audio features on the particle system (values are 0-1 normalized)
+    if (emissionRate !== 0) {
+      this.particleSystem.setAudioFeature('amplitude', emissionRate);
+    }
+
+    // Update emitters based on audio
+    if (speed !== 0 || size !== 0 || emissionRate !== 0) {
+      const emitters = this.particleSystem.getConfig().emitters;
+      for (const emitter of emitters) {
+        // Speed modulation (0.5 base + audio value for range 0.5x to 1.5x)
+        if (speed !== 0) {
+          this.particleSystem.updateEmitter(emitter.id, {
+            initialSpeed: emitter.initialSpeed * (0.5 + speed)
+          });
+        }
+
+        // Size modulation
+        if (size !== 0) {
+          this.particleSystem.updateEmitter(emitter.id, {
+            initialSize: emitter.initialSize * (0.5 + size)
+          });
+        }
+      }
+    }
+
+    // Update force fields based on audio
+    if (gravity !== 0 || windStrength !== 0) {
+      const forceFields = this.particleSystem.getConfig().forceFields;
+      for (const field of forceFields) {
+        if (field.type === 'gravity' && gravity !== 0) {
+          this.particleSystem.updateForceField(field.id, {
+            strength: field.strength * (0.5 + gravity)
+          });
+        }
+        if (field.type === 'wind' && windStrength !== 0) {
+          this.particleSystem.updateForceField(field.id, {
+            strength: field.strength * (0.5 + windStrength)
+          });
+        }
+      }
+    }
+
+    // Check for beat/onset to trigger bursts
+    // This is handled by the audio system calling triggerBeat() externally
   }
 
   protected onUpdate(properties: Partial<Layer>): void {

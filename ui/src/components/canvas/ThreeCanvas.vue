@@ -198,19 +198,27 @@ onMounted(async () => {
     );
 
     // Wire up precomp rendering - allows precomp layers to render nested compositions
+    // NOTE: Full precomp render-to-texture requires:
+    // 1. Creating a separate render target for each precomp
+    // 2. Temporarily setting up the precomp's layers in the scene
+    // 3. Rendering to the offscreen target
+    // 4. Managing texture lifecycle (cache/dispose)
+    // This is a complex feature that needs careful architecture to avoid
+    // recursive rendering issues and performance problems.
     engine.value.setPrecompRenderContext({
       renderComposition: (compositionId: string, frame: number) => {
         // Get the composition
         const comp = store.getComposition(compositionId);
         if (!comp) return null;
 
-        // For now, render nested compositions using a simple approach:
-        // We'll render them inline by temporarily switching the active composition
-        // In the future, this should render to an offscreen texture
+        // FUTURE: Implement proper render-to-texture for precomps
+        // This would involve:
+        // - engine.renderCompositionToTexture(compositionId, frame)
+        // - Caching rendered textures per frame
+        // - Handling composition changes
         console.log('[ThreeCanvas] Precomp render requested:', compositionId, 'frame:', frame);
 
-        // TODO: Implement proper render-to-texture for precomps
-        // For now, return null - the precomp will show a placeholder
+        // For now, precomps show placeholder - render-to-texture not yet implemented
         return null;
       },
       getComposition: (compositionId: string) => store.getComposition(compositionId)

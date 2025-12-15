@@ -30,6 +30,7 @@ export interface LightData {
   // Animated properties
   animatedIntensity?: AnimatableProperty<number>;
   animatedConeAngle?: AnimatableProperty<number>;
+  animatedColor?: AnimatableProperty<string>;  // Hex color animation
 }
 
 export class LightLayer extends BaseLayer {
@@ -74,6 +75,7 @@ export class LightLayer extends BaseLayer {
       coneFeather: data?.coneFeather ?? 50,
       animatedIntensity: data?.animatedIntensity,
       animatedConeAngle: data?.animatedConeAngle,
+      animatedColor: data?.animatedColor,
     };
   }
 
@@ -299,19 +301,36 @@ export class LightLayer extends BaseLayer {
 
   protected onEvaluateFrame(frame: number): void {
     // Evaluate animated intensity
-    if (this.lightData.animatedIntensity) {
+    if (this.lightData.animatedIntensity?.animated) {
       const intensity = this.evaluator.evaluate(this.lightData.animatedIntensity, frame);
       this.light.intensity = intensity / 100;
     }
 
     // Evaluate animated cone angle (spot lights)
-    if (this.lightData.animatedConeAngle && this.light instanceof THREE.SpotLight) {
+    if (this.lightData.animatedConeAngle?.animated && this.light instanceof THREE.SpotLight) {
       const angle = this.evaluator.evaluate(this.lightData.animatedConeAngle, frame);
       this.light.angle = THREE.MathUtils.degToRad(angle / 2);
 
       // Update helper
       if (this.helper instanceof THREE.SpotLightHelper) {
         this.helper.update();
+      }
+    }
+
+    // Evaluate animated color
+    if (this.lightData.animatedColor?.animated) {
+      const color = this.evaluator.evaluate(this.lightData.animatedColor, frame);
+      this.light.color.set(color);
+
+      // Update helper color
+      if (this.helper) {
+        if (this.helper instanceof THREE.PointLightHelper) {
+          this.helper.update();
+        } else if (this.helper instanceof THREE.SpotLightHelper) {
+          this.helper.update();
+        } else if (this.helper instanceof THREE.DirectionalLightHelper) {
+          this.helper.update();
+        }
       }
     }
   }
@@ -373,6 +392,10 @@ export class LightLayer extends BaseLayer {
 
     if (data.animatedConeAngle !== undefined) {
       this.lightData.animatedConeAngle = data.animatedConeAngle;
+    }
+
+    if (data.animatedColor !== undefined) {
+      this.lightData.animatedColor = data.animatedColor;
     }
   }
 

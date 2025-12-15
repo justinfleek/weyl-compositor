@@ -8,8 +8,15 @@
  */
 
 import * as THREE from 'three';
-import type { Layer } from '@/types/project';
+import type { Layer, AnimatableProperty } from '@/types/project';
 import { BaseLayer } from './BaseLayer';
+
+export interface SolidData {
+  color: string;
+  width: number;
+  height: number;
+  animatedColor?: AnimatableProperty<string>;  // Hex color animation support
+}
 
 export class SolidLayer extends BaseLayer {
   private mesh: THREE.Mesh;
@@ -23,6 +30,9 @@ export class SolidLayer extends BaseLayer {
   private width: number;
   private height: number;
 
+  /** Animated color property */
+  private animatedColor?: AnimatableProperty<string>;
+
   constructor(layerData: Layer) {
     super(layerData);
 
@@ -31,6 +41,7 @@ export class SolidLayer extends BaseLayer {
     this.color = solidData.color;
     this.width = solidData.width;
     this.height = solidData.height;
+    this.animatedColor = solidData.animatedColor;
 
     // Create geometry
     this.geometry = new THREE.PlaneGeometry(this.width, this.height);
@@ -57,18 +68,15 @@ export class SolidLayer extends BaseLayer {
   /**
    * Extract solid layer data from layer object
    */
-  private extractSolidData(layerData: Layer): {
-    color: string;
-    width: number;
-    height: number;
-  } {
+  private extractSolidData(layerData: Layer): SolidData {
     // Solid data might be in layerData.data or direct properties
-    const data = layerData.data as any;
+    const data = layerData.data as Partial<SolidData> | undefined;
 
     return {
       color: data?.color ?? '#808080',
       width: data?.width ?? 1920,
       height: data?.height ?? 1080,
+      animatedColor: data?.animatedColor,
     };
   }
 
@@ -116,13 +124,17 @@ export class SolidLayer extends BaseLayer {
   // ABSTRACT IMPLEMENTATIONS
   // ============================================================================
 
-  protected onEvaluateFrame(_frame: number): void {
-    // Solid layers have no frame-specific animation beyond transform
-    // Color could be animated in the future
+  protected onEvaluateFrame(frame: number): void {
+    // Evaluate animated color if present
+    if (this.animatedColor?.animated) {
+      const color = this.evaluator.evaluate(this.animatedColor, frame);
+      this.material.color.set(color);
+      this.material.needsUpdate = true;
+    }
   }
 
   protected onUpdate(properties: Partial<Layer>): void {
-    const data = properties.data as any;
+    const data = properties.data as Partial<SolidData> | undefined;
 
     if (data?.color !== undefined) {
       this.setColor(data.color);
@@ -130,9 +142,14 @@ export class SolidLayer extends BaseLayer {
 
     if (data?.width !== undefined || data?.height !== undefined) {
       this.setDimensions(
-        data.width ?? this.width,
-        data.height ?? this.height
+        data?.width ?? this.width,
+        data?.height ?? this.height
       );
+    }
+
+    // Update animated color property
+    if (data?.animatedColor !== undefined) {
+      this.animatedColor = data.animatedColor;
     }
 
     // Color can also be set directly
