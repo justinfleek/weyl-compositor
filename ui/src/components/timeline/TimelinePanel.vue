@@ -95,27 +95,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import EnhancedLayerTrack from './EnhancedLayerTrack.vue';
 
 const store = useCompositorStore();
-const pixelsPerFrame = ref(10);
-const sidebarWidth = ref(450); // Increased default width for readability
+const pixelsPerFrame = ref(15); // Default zoom level
+const sidebarWidth = ref(450);
 const expandedLayers = ref<Record<string, boolean>>({});
 const showAddLayerMenu = ref(false);
 const addLayerContainer = ref<null | HTMLElement>(null);
 const trackViewportRef = ref<HTMLElement | null>(null);
 const rulerCanvas = ref<HTMLCanvasElement | null>(null);
-const viewportWidth = ref(1920); // Reactive viewport width - updated by ResizeObserver
 
 const filteredLayers = computed(() => store.layers || []);
 const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
 
-// CRITICAL FIX: Width is exactly max(viewport, content) - using reactive viewportWidth
+// CSS max() string - forces timeline to fill viewport OR content, whichever is larger
 const trackContentWidth = computed(() => {
-  const frameWidth = (store.frameCount + 50) * pixelsPerFrame.value;
-  return Math.max(frameWidth, viewportWidth.value);
+  const contentPx = (store.frameCount + 20) * pixelsPerFrame.value;
+  return `max(100%, ${contentPx}px)`;
 });
 
 const sidebarGridStyle = computed(() => ({
@@ -147,32 +146,33 @@ function goToEnd() { store.goToEnd(); }
 // Ruler Draw
 function drawRuler() {
   const cvs = rulerCanvas.value;
-  if (!cvs) return;
+  if (!cvs || !trackViewportRef.value) return;
   const ctx = cvs.getContext('2d');
   if (!ctx) return;
 
-  cvs.width = trackContentWidth.value;
+  // Match canvas size to the SCROLL width, not just the viewport width
+  const width = Math.max(trackViewportRef.value.scrollWidth, (store.frameCount + 20) * pixelsPerFrame.value);
+  cvs.width = width;
   cvs.height = 30;
 
   ctx.fillStyle = '#222';
   ctx.fillRect(0, 0, cvs.width, cvs.height);
-  ctx.strokeStyle = '#666';
+  ctx.strokeStyle = '#555';
   ctx.fillStyle = '#aaa';
   ctx.font = '11px sans-serif';
 
   const ppf = pixelsPerFrame.value;
   const step = ppf < 5 ? 20 : 10;
 
-  for(let f=0; f<=store.frameCount + 50; f++) {
+  for(let f=0; f<=store.frameCount + 20; f++) {
     const x = f * ppf;
     if(f % step === 0) {
       ctx.beginPath(); ctx.moveTo(x, 15); ctx.lineTo(x, 30); ctx.stroke();
-      ctx.fillText(String(f), x + 2, 12);
+      ctx.fillText(String(f), x + 4, 12);
     } else if (f % (step/2) === 0) {
       ctx.beginPath(); ctx.moveTo(x, 22); ctx.lineTo(x, 30); ctx.stroke();
     }
   }
-  ctx.beginPath(); ctx.moveTo(0, 29.5); ctx.lineTo(cvs.width, 29.5); ctx.stroke();
 }
 
 function startRulerScrub(e: MouseEvent) {
@@ -202,14 +202,9 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.code === 'Space') { e.preventDefault(); togglePlayback(); }
 }
 
-watch(() => [trackContentWidth.value, pixelsPerFrame.value], () => nextTick(drawRuler));
-
-// ResizeObserver to keep timeline width correct
-let resizeObserver: ResizeObserver | null = null;
+watch(() => [pixelsPerFrame.value, store.frameCount], () => nextTick(drawRuler));
 
 onMounted(() => {
-  drawRuler();
-
   // Track window clicks to close menu
   window.addEventListener('mousedown', (e) => {
     if (addLayerContainer.value && !addLayerContainer.value.contains(e.target as Node)) {
@@ -217,25 +212,14 @@ onMounted(() => {
     }
   });
 
-  // Observe track viewport size changes
-  if (trackViewportRef.value) {
-    resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        viewportWidth.value = entry.contentRect.width;
-      }
-    });
-    resizeObserver.observe(trackViewportRef.value);
-  }
-});
-
-onUnmounted(() => {
-  if (resizeObserver) resizeObserver.disconnect();
+  // Initial draw with slight delay to ensure DOM is ready
+  setTimeout(drawRuler, 100);
 });
 </script>
 
 <style scoped>
-.timeline-panel { display: flex; flex-direction: column; height: 100%; background: #111; color: #eee; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
-.timeline-header { height: 40px; background: #2a2a2a; border-bottom: 1px solid #000; display: flex; justify-content: space-between; padding: 0 10px; align-items: center; z-index: 20; position: relative; }
+.timeline-panel { display: flex; flex-direction: column; height: 100%; background: #111; color: #eee; font-family: 'Segoe UI', sans-serif; font-size: 13px; user-select: none; }
+.timeline-header { height: 40px; background: #2a2a2a; border-bottom: 1px solid #000; display: flex; justify-content: space-between; padding: 0 10px; align-items: center; z-index: 20; flex-shrink: 0; }
 .header-left, .header-center, .header-right { display: flex; gap: 10px; align-items: center; }
 .add-layer-wrapper { position: relative; }
 .add-layer-menu { position: absolute; top: 100%; left: 0; background: #333; z-index: 9999; border: 1px solid #000; display: flex; flex-direction: column; min-width: 140px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
@@ -244,20 +228,20 @@ onUnmounted(() => {
 .add-layer-btn { padding: 6px 12px; background: #444; border: 1px solid #555; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
 .add-layer-btn:hover, .add-layer-btn.active { background: #555; }
 
-.timeline-content { flex: 1; display: flex; overflow: hidden; }
-.timeline-sidebar { background: #1e1e1e; border-right: 1px solid #000; display: flex; flex-direction: column; flex-shrink: 0; }
-.sidebar-header-row { height: 30px; background: #252525; display: flex; align-items: center; border-bottom: 1px solid #000; font-weight: bold; padding-left: 4px; }
+.timeline-content { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; }
+.timeline-sidebar { background: #1e1e1e; border-right: 1px solid #000; display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
+.sidebar-header-row { height: 30px; background: #252525; display: flex; align-items: center; border-bottom: 1px solid #000; font-weight: bold; }
 .col-header { padding: 0 4px; font-size: 12px; color: #aaa; }
 .sidebar-scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
 
-.sidebar-resizer { width: 4px; background: #111; cursor: col-resize; flex-shrink: 0; }
+.sidebar-resizer { width: 4px; background: #111; cursor: col-resize; flex-shrink: 0; z-index: 15; }
 .sidebar-resizer:hover { background: #4a90d9; }
 
 .track-viewport { flex: 1; display: flex; flex-direction: column; overflow-x: auto; overflow-y: hidden; position: relative; background: #151515; }
-.track-scroll-content { min-height: 100%; position: relative; display: flex; flex-direction: column; }
-.time-ruler { height: 30px; position: relative; background: #222; border-bottom: 1px solid #000; cursor: pointer; }
+.track-scroll-content { min-height: 100%; min-width: 100%; display: flex; flex-direction: column; }
+.time-ruler { height: 30px; position: relative; background: #222; border-bottom: 1px solid #000; cursor: pointer; z-index: 10; flex-shrink: 0; }
 .layer-bars-container { flex: 1; position: relative; }
-.playhead-head { position: absolute; top: 0; width: 2px; height: 30px; background: #e74c3c; z-index: 10; pointer-events: none; }
+.playhead-head { position: absolute; top: 0; width: 2px; height: 30px; background: #e74c3c; z-index: 20; pointer-events: none; }
 .playhead-line { position: absolute; top: 0; bottom: 0; width: 1px; background: #e74c3c; pointer-events: none; z-index: 10; }
 .grid-background { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, #222 1px, transparent 1px); background-size: 100px 100%; opacity: 0.3; }
 </style>

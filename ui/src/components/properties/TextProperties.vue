@@ -1,44 +1,127 @@
 <template>
   <div class="text-properties">
-    <div class="property-group">
-      <label>Source Text</label>
+    <div class="prop-section">
+      <div class="section-title">Source Text</div>
       <textarea
-        v-model="textData.text"
-        class="main-text-input"
+        :value="textData.text"
+        @input="e => updateText((e.target as HTMLTextAreaElement).value)"
+        class="text-area"
         rows="3"
-        @input="e => updateData('text', (e.target as HTMLTextAreaElement).value)"
       ></textarea>
     </div>
 
-    <div class="property-group">
+    <div class="prop-section">
+      <div class="section-title">Character</div>
+      <div class="row">
+         <select :value="textData.fontFamily" @change="e => updateData('fontFamily', (e.target as HTMLSelectElement).value)" class="font-select">
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Georgia">Georgia</option>
+         </select>
+         <div class="style-toggles">
+            <button :class="{active: textData.fontWeight === 'bold'}" @click="toggleBold">B</button>
+            <button :class="{active: textData.fontStyle === 'italic'}" @click="toggleItalic">I</button>
+         </div>
+      </div>
+
+      <div class="row">
+         <label>Size</label>
+         <ScrubableNumber :modelValue="getPropertyValue('Font Size') || textData.fontSize" @update:modelValue="v => updateAnimatable('Font Size', v)" />
+      </div>
+
+      <div class="row color-row">
+         <div class="color-item">
+            <input type="color" :value="textData.fill" @input="e => updateData('fill', (e.target as HTMLInputElement).value)" />
+            <span>Fill</span>
+         </div>
+         <div class="color-item">
+            <input type="color" :value="textData.stroke || '#000000'" @input="e => updateData('stroke', (e.target as HTMLInputElement).value)" />
+            <span>Stroke</span>
+         </div>
+      </div>
+
+      <div class="row">
+         <label>Stroke Width</label>
+         <ScrubableNumber :modelValue="getPropertyValue('Stroke Width') || textData.strokeWidth || 0" @update:modelValue="v => updateAnimatable('Stroke Width', v)" :min="0" :max="50" />
+      </div>
+
+      <div class="row">
+         <label>Alignment</label>
+         <div class="align-buttons">
+            <button :class="{ active: textData.textAlign === 'left' }" @click="updateData('textAlign', 'left')">◀</button>
+            <button :class="{ active: textData.textAlign === 'center' }" @click="updateData('textAlign', 'center')">▬</button>
+            <button :class="{ active: textData.textAlign === 'right' }" @click="updateData('textAlign', 'right')">▶</button>
+         </div>
+      </div>
+    </div>
+
+    <div class="prop-section">
+      <div class="section-title">Transform</div>
+
+      <div class="row">
+         <label>Position</label>
+         <div class="vec2">
+            <ScrubableNumber :modelValue="transform.position.value.x" @update:modelValue="v => updateTransform('position', 'x', v)" />
+            <ScrubableNumber :modelValue="transform.position.value.y" @update:modelValue="v => updateTransform('position', 'y', v)" />
+         </div>
+      </div>
+      <div class="row">
+         <label>Anchor Pt</label>
+         <div class="vec2">
+            <ScrubableNumber :modelValue="transform.anchorPoint.value.x" @update:modelValue="v => updateTransform('anchorPoint', 'x', v)" />
+            <ScrubableNumber :modelValue="transform.anchorPoint.value.y" @update:modelValue="v => updateTransform('anchorPoint', 'y', v)" />
+         </div>
+      </div>
+      <div class="row">
+         <label>Scale %</label>
+         <div class="vec2">
+            <ScrubableNumber :modelValue="transform.scale.value.x" @update:modelValue="v => updateTransform('scale', 'x', v)" />
+            <ScrubableNumber :modelValue="transform.scale.value.y" @update:modelValue="v => updateTransform('scale', 'y', v)" />
+         </div>
+      </div>
+      <div class="row">
+         <label>Rotation</label>
+         <ScrubableNumber :modelValue="transform.rotation.value" @update:modelValue="v => updateTransform('rotation', null, v)" />
+      </div>
+      <div class="row">
+         <label>Opacity</label>
+         <ScrubableNumber :modelValue="layer.opacity?.value ?? 100" @update:modelValue="v => updateOpacity(v)" :min="0" :max="100" />
+      </div>
+    </div>
+
+    <div class="prop-section">
+       <div class="section-title">Path Options</div>
        <div class="row">
-          <div class="col">
-             <label>Fill Color</label>
-             <ColorPicker :modelValue="textData.fill" @update:modelValue="v => updateData('fill', v)" />
-          </div>
-          <div class="col">
-             <label>Stroke Color</label>
-             <ColorPicker :modelValue="textData.stroke" @update:modelValue="v => updateData('stroke', v)" />
-          </div>
+          <label>Path</label>
+          <select :value="textData.pathLayerId || ''" @change="e => updateData('pathLayerId', (e.target as HTMLSelectElement).value || null)" class="full-select">
+             <option value="">None</option>
+             <option v-for="l in splineLayers" :key="l.id" :value="l.id">{{ l.name }}</option>
+          </select>
        </div>
     </div>
 
-    <div class="property-group">
+    <div class="prop-section">
+       <div class="section-title">Advanced</div>
        <div class="row">
           <label>Tracking</label>
-          <ScrubableNumber :modelValue="textData.tracking" @update:modelValue="v => updateAnimatable('Tracking', v)" />
-          <KeyframeToggle :property="getProperty('Tracking')" :layerId="layer.id" />
+          <ScrubableNumber :modelValue="getPropertyValue('Tracking') || textData.tracking || 0" @update:modelValue="v => updateAnimatable('Tracking', v)" />
        </div>
        <div class="row">
           <label>Line Spacing</label>
-          <ScrubableNumber :modelValue="textData.lineSpacing" @update:modelValue="v => updateAnimatable('Line Spacing', v)" />
-          <KeyframeToggle :property="getProperty('Line Spacing')" :layerId="layer.id" />
+          <ScrubableNumber :modelValue="getPropertyValue('Line Spacing') || textData.lineSpacing || 0" @update:modelValue="v => updateAnimatable('Line Spacing', v)" />
+       </div>
+       <div class="row">
+          <label>Char Offset</label>
+          <ScrubableNumber :modelValue="getPropertyValue('Character Offset') || textData.characterOffset || 0" @update:modelValue="v => updateAnimatable('Character Offset', v)" :precision="0" />
        </div>
     </div>
 
-    <div class="property-group checkbox">
+    <div class="prop-section checkbox">
        <label>
-         <input type="checkbox" v-model="textData.perCharacter3D" @change="emit('update')" />
+         <input type="checkbox" :checked="textData.perCharacter3D" @change="updateData('perCharacter3D', !textData.perCharacter3D)" />
          Enable Per-Character 3D
        </label>
     </div>
@@ -48,47 +131,129 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
-import { ScrubableNumber, ColorPicker } from '@/components/controls';
-import KeyframeToggle from './KeyframeToggle.vue';
+import { ScrubableNumber } from '@/components/controls';
 
-const props = defineProps(['layer']);
+const props = defineProps<{ layer: any }>();
 const emit = defineEmits(['update']);
 const store = useCompositorStore();
 
 const textData = computed(() => props.layer.data);
+const transform = computed(() => props.layer.transform);
+const splineLayers = computed(() => store.layers.filter(l => l.type === 'spline'));
 
 function getProperty(name: string) {
-    return props.layer.properties.find((p: any) => p.name === name);
+    return props.layer.properties?.find((p: any) => p.name === name);
+}
+
+function getPropertyValue(name: string) {
+    const p = getProperty(name);
+    return p ? p.value : null;
+}
+
+function updateText(val: string) {
+    textData.value.text = val;
+    // Also sync to AnimatableProperty if present
+    const prop = getProperty('Source Text');
+    if(prop) prop.value = val;
+    emit('update');
 }
 
 function updateData(key: string, val: any) {
     textData.value[key] = val;
-    // Sync to animatable property if it exists
-    const propName = key === 'fill' ? 'Fill Color' : key === 'stroke' ? 'Stroke Color' : 'Source Text';
-    const prop = getProperty(propName);
-    if(prop) prop.value = val;
-
+    // Sync to animatable property
+    const map: Record<string, string> = {
+        'fill': 'Fill Color',
+        'stroke': 'Stroke Color',
+        'fontSize': 'Font Size',
+        'strokeWidth': 'Stroke Width'
+    };
+    if(map[key]) {
+        const prop = getProperty(map[key]);
+        if(prop) prop.value = val;
+    }
+    store.project.meta.modified = new Date().toISOString();
     emit('update');
 }
 
 function updateAnimatable(name: string, val: number) {
     const prop = getProperty(name);
-    if (prop) {
+    if(prop) {
         prop.value = val;
-        // Also update static data for immediate render if needed
-        const key = name.charAt(0).toLowerCase() + name.slice(1).replace(' ', '');
-        if (textData.value[key] !== undefined) textData.value[key] = val;
         store.project.meta.modified = new Date().toISOString();
     }
+    // Also update static data for immediate render
+    const keyMap: Record<string, string> = {
+        'Font Size': 'fontSize',
+        'Stroke Width': 'strokeWidth',
+        'Tracking': 'tracking',
+        'Line Spacing': 'lineSpacing',
+        'Character Offset': 'characterOffset'
+    };
+    if(keyMap[name] && textData.value) {
+        textData.value[keyMap[name]] = val;
+    }
+    emit('update');
+}
+
+function updateTransform(propName: string, axis: string | null, val: number) {
+    const prop = transform.value[propName];
+    if(axis) {
+        prop.value = { ...prop.value, [axis]: val };
+    } else {
+        prop.value = val;
+    }
+    store.project.meta.modified = new Date().toISOString();
+    emit('update');
+}
+
+function updateOpacity(val: number) {
+    if (props.layer.opacity) {
+        props.layer.opacity.value = val;
+        store.project.meta.modified = new Date().toISOString();
+        emit('update');
+    }
+}
+
+function toggleBold() {
+    updateData('fontWeight', textData.value.fontWeight === 'bold' ? '400' : 'bold');
+}
+function toggleItalic() {
+    updateData('fontStyle', textData.value.fontStyle === 'italic' ? 'normal' : 'italic');
 }
 </script>
 
 <style scoped>
-.text-properties { padding: 10px; font-size: 13px; color: #ccc; }
-.property-group { margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-.main-text-input { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 8px; font-size: 14px; margin-top: 5px; }
-.row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; justify-content: space-between; }
-.col { flex: 1; }
-label { display: block; color: #888; margin-bottom: 4px; font-size: 12px; }
-.checkbox label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #eee; }
+.text-properties { padding: 15px; color: #ddd; font-family: 'Segoe UI', sans-serif; font-size: 13px; overflow-y: auto; }
+.prop-section { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+.section-title { font-weight: bold; margin-bottom: 10px; color: #888; font-size: 11px; text-transform: uppercase; }
+
+.row { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
+.row label { width: 80px; color: #aaa; flex-shrink: 0; }
+
+.text-area { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 8px; font-family: sans-serif; resize: vertical; border-radius: 3px; }
+.text-area:focus { border-color: #4a90d9; outline: none; }
+
+.font-select, .full-select { flex: 1; background: #222; color: #fff; border: 1px solid #444; padding: 6px; border-radius: 3px; }
+.font-select:focus, .full-select:focus { border-color: #4a90d9; outline: none; }
+
+.style-toggles { display: flex; gap: 2px; }
+.style-toggles button { background: #333; border: 1px solid #444; color: #aaa; width: 28px; height: 28px; cursor: pointer; font-weight: bold; border-radius: 3px; }
+.style-toggles button.active { background: #4a90d9; color: #fff; border-color: #4a90d9; }
+.style-toggles button:hover:not(.active) { background: #444; }
+
+.color-row { justify-content: flex-start; gap: 20px; }
+.color-item { display: flex; align-items: center; gap: 8px; }
+.color-item input[type="color"] { width: 32px; height: 28px; border: 1px solid #444; padding: 0; cursor: pointer; border-radius: 3px; background: #222; }
+.color-item span { color: #aaa; font-size: 12px; }
+
+.align-buttons { display: flex; background: #222; border: 1px solid #444; border-radius: 3px; overflow: hidden; }
+.align-buttons button { flex: 1; background: transparent; border: none; color: #666; padding: 6px 12px; cursor: pointer; font-size: 12px; border-right: 1px solid #444; }
+.align-buttons button:last-child { border-right: none; }
+.align-buttons button.active { background: #4a90d9; color: #fff; }
+.align-buttons button:hover:not(.active) { background: #333; color: #fff; }
+
+.vec2 { display: flex; gap: 5px; flex: 1; }
+
+.checkbox label { display: flex; align-items: center; gap: 10px; cursor: pointer; color: #eee; font-size: 13px; }
+.checkbox input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
 </style>
