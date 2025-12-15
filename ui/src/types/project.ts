@@ -753,6 +753,17 @@ export function createDefaultTransform(): LayerTransform {
  * Create a new empty project
  */
 export function createEmptyProject(width: number, height: number): WeylProject {
+  const mainCompId = 'main';
+  const compositionSettings: CompositionSettings = {
+    width,
+    height,
+    frameCount: 81,
+    fps: 16,
+    duration: 81 / 16,
+    backgroundColor: '#000000',
+    autoResizeToContent: true
+  };
+
   return {
     version: "1.0.0",
     meta: {
@@ -760,14 +771,20 @@ export function createEmptyProject(width: number, height: number): WeylProject {
       created: new Date().toISOString(),
       modified: new Date().toISOString()
     },
-    composition: {
-      width,
-      height,
-      frameCount: 81,
-      fps: 16,
-      duration: 81 / 16,
-      backgroundColor: '#000000'
+    // Multi-composition support
+    compositions: {
+      [mainCompId]: {
+        id: mainCompId,
+        name: "Main Comp",
+        settings: compositionSettings,
+        layers: [],
+        currentFrame: 0,
+        isPrecomp: false
+      }
     },
+    mainCompositionId: mainCompId,
+    // Legacy alias
+    composition: compositionSettings,
     assets: {},
     layers: [],
     currentFrame: 0

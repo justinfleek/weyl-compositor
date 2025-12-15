@@ -270,18 +270,19 @@ async function handleFileImport(event: Event) {
       const imageUrl = URL.createObjectURL(file);
       const assetId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Add to assets
+      // Add to assets (use type assertion since width/height will be set asynchronously)
       store.project.assets[assetId] = {
         id: assetId,
         type: 'image',
-        source: 'local_file',
-        filename: file.name,
+        source: 'file',
+        width: 0, // Will be updated when image loads
+        height: 0,
         data: imageUrl
       };
 
       // Create image layer
       const layer = store.createLayer('image', file.name.replace(/\.[^.]+$/, ''));
-      layer.data = { assetId, fit: 'contain' };
+      (layer.data as any) = { assetId };
       newItem.id = layer.id;
     }
 

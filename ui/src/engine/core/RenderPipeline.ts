@@ -14,8 +14,12 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
 import type { SceneManager } from './SceneManager';
 import type { CameraController } from './CameraController';
+
+// Local Pass type since PostPass doesn't exist in main namespace
+type PostPass = Pass;
 
 // ============================================================================
 // DOF CONFIGURATION
@@ -219,7 +223,7 @@ export class RenderPipeline {
   /**
    * Add a post-processing pass
    */
-  addPass(pass: THREE.Pass): void {
+  addPass(pass: PostPass): void {
     // Insert before output pass
     const outputIndex = this.composer.passes.findIndex(
       p => p.constructor.name === 'OutputPass'
@@ -235,7 +239,7 @@ export class RenderPipeline {
   /**
    * Remove a post-processing pass
    */
-  removePass(pass: THREE.Pass): void {
+  removePass(pass: PostPass): void {
     this.composer.removePass(pass);
   }
 
@@ -287,9 +291,7 @@ export class RenderPipeline {
         focus: this.dofConfig.focusDistance,
         aperture: this.dofConfig.aperture,
         maxblur: this.dofConfig.maxBlur,
-        width: scaledWidth,
-        height: scaledHeight,
-      }
+      } as any // width/height are needed but not in types
     );
 
     // Insert before output pass

@@ -12,7 +12,7 @@
         <div class="property-row">
           <select
             :value="camera.type"
-            @change="updateProperty('type', ($event.target as HTMLSelectElement).value)"
+            @change="updateProperty('type', ($event.target as HTMLSelectElement).value as CameraType)"
             class="type-select"
           >
             <option value="one-node">One-Node Camera</option>
@@ -196,7 +196,7 @@
             <label>Measure Film Size</label>
             <select
               :value="camera.measureFilmSize"
-              @change="updateProperty('measureFilmSize', ($event.target as HTMLSelectElement).value)"
+              @change="updateProperty('measureFilmSize', ($event.target as HTMLSelectElement).value as MeasureFilmSize)"
             >
               <option value="horizontal">Horizontal</option>
               <option value="vertical">Vertical</option>
@@ -386,7 +386,7 @@
           <div class="property-group">
             <select
               :value="camera.autoOrient"
-              @change="updateProperty('autoOrient', ($event.target as HTMLSelectElement).value)"
+              @change="updateProperty('autoOrient', ($event.target as HTMLSelectElement).value as AutoOrientMode)"
             >
               <option value="off">Off</option>
               <option value="orient-along-path">Orient Along Path</option>
@@ -435,7 +435,7 @@
 
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
-import type { Camera3D } from '../../types/camera';
+import type { Camera3D, CameraType, MeasureFilmSize, AutoOrientMode } from '../../types/camera';
 import { CAMERA_PRESETS } from '../../types/camera';
 import { focalLengthToFOV, fovToFocalLength } from '../../services/math3d';
 import { ScrubableNumber, SliderInput, AngleDial } from '../controls';

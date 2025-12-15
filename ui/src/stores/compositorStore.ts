@@ -10,6 +10,7 @@ import type {
   AssetReference,
   AnimatableProperty,
   Keyframe,
+  BezierHandle,
   TextData,
   SplineData,
   ParticleLayerData,
@@ -1532,8 +1533,7 @@ export const useCompositorStore = defineStore('compositor', {
       const asset: AssetReference = {
         id: assetId,
         type: 'video',
-        source: 'local_file',
-        filename: file.name,
+        source: 'file',
         width: metadata.width,
         height: metadata.height,
         data: videoUrl,
@@ -1781,9 +1781,13 @@ export const useCompositorStore = defineStore('compositor', {
       // If enabling animation and no keyframes exist, add one at current frame
       if (animated && (!param.keyframes || param.keyframes.length === 0)) {
         param.keyframes = [{
+          id: `kf_${Date.now()}`,
           frame: this.currentFrame,
           value: param.value,
-          easing: 'easeInOut',
+          interpolation: 'linear' as InterpolationType,
+          inHandle: { frame: -5, value: 0, enabled: false },
+          outHandle: { frame: 5, value: 0, enabled: false },
+          controlMode: 'smooth' as const,
         }];
       }
 
@@ -2033,7 +2037,20 @@ export const useCompositorStore = defineStore('compositor', {
       }
 
       // Use the interpolation function from camera export service
-      return interpolateCameraAtFrame(camera, keyframes, frame);
+      const interpolated = interpolateCameraAtFrame(camera, keyframes, frame);
+
+      // Merge interpolated values back onto camera (return modified copy, not original)
+      return {
+        ...camera,
+        position: interpolated.position,
+        orientation: interpolated.rotation,
+        focalLength: interpolated.focalLength,
+        zoom: interpolated.zoom,
+        depthOfField: {
+          ...camera.depthOfField,
+          focusDistance: interpolated.focusDistance,
+        },
+      };
     },
 
     /**

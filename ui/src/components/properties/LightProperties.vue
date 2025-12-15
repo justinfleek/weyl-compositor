@@ -168,7 +168,7 @@ const emit = defineEmits(['update']);
 const store = useCompositorStore();
 
 const lightData = computed<LightData>(() => {
-  return props.layer.data as LightData || {
+  return (props.layer.data as unknown as LightData) || {
     lightType: 'spot',
     color: '#ffffff',
     intensity: 100,
@@ -185,7 +185,7 @@ const lightData = computed<LightData>(() => {
 
 function update(key: keyof LightData, value: any) {
   store.updateLayer(props.layer.id, {
-    data: { ...lightData.value, [key]: value }
+    data: { ...lightData.value, [key]: value } as unknown as typeof props.layer.data
   });
   emit('update');
 }

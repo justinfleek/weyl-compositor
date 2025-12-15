@@ -11,8 +11,8 @@ import type {
   GenerationProgress,
   DepthMapFormat,
 } from '@/types/export';
-import type { Layer } from '@/types';
-import type { CameraKeyframe } from '@/services/export/cameraExportFormats';
+import type { Layer } from '@/types/project';
+import type { CameraKeyframe, Camera3D } from '@/types/camera';
 
 import { renderDepthFrame, convertDepthToFormat, depthToImageData, exportDepthSequence } from './depthRenderer';
 import { exportCameraForTarget } from './cameraExportFormats';
@@ -324,14 +324,15 @@ export class ExportPipeline {
     ctx.scale(scaleVal.x / 100, scaleVal.y / 100);
 
     // Draw layer content
-    if (layer.type === 'image' && layer.data?.src) {
+    const layerData = layer.data as any;
+    if (layer.type === 'image' && layerData?.src) {
       // Create image from content URL
-      const img = await this.loadImage(layer.data.src);
+      const img = await this.loadImage(layerData.src);
       ctx.drawImage(img, -img.width / 2, -img.height / 2);
-    } else if (layer.type === 'solid' && layer.data?.color) {
-      ctx.fillStyle = layer.data.color || '#000000';
-      const width = layer.data.width ?? 100;
-      const height = layer.data.height ?? 100;
+    } else if (layer.type === 'solid' && layerData?.color) {
+      ctx.fillStyle = layerData.color || '#000000';
+      const width = layerData.width ?? 100;
+      const height = layerData.height ?? 100;
       ctx.fillRect(-width / 2, -height / 2, width, height);
     }
 
@@ -372,27 +373,44 @@ export class ExportPipeline {
 
       // Render depth for this frame - need camera for proper depth calculation
       // For now use a default camera if not available
-      const defaultCamera = {
+      const defaultCamera: Camera3D = {
         id: 'default',
         name: 'Default Camera',
-        type: 'one-node' as const,
+        type: 'one-node',
         position: { x: 0, y: 0, z: 1000 },
         pointOfInterest: { x: 0, y: 0, z: 0 },
         orientation: { x: 0, y: 0, z: 0 },
         xRotation: 0,
         yRotation: 0,
         zRotation: 0,
+        zoom: 1,
         focalLength: 50,
         angleOfView: 60,
-        filmSize: { width: 36, height: 24 },
+        filmSize: 36,
+        measureFilmSize: 'horizontal',
         nearClip: 0.1,
         farClip: 100,
         depthOfField: {
           enabled: false,
           focusDistance: 100,
           aperture: 1.2,
+          fStop: 2.8,
           blurLevel: 1,
+          lockToZoom: false,
         },
+        iris: {
+          shape: 7,
+          rotation: 0,
+          roundness: 0,
+          aspectRatio: 1,
+          diffractionFringe: 0,
+        },
+        highlight: {
+          gain: 0,
+          threshold: 1,
+          saturation: 1,
+        },
+        autoOrient: 'off',
       };
 
       const depthResult = renderDepthFrame({
@@ -623,15 +641,45 @@ export class ExportPipeline {
       message: 'Exporting camera data...',
     });
 
+    // Create a default camera for export if none provided
+    const exportCamera: Camera3D = {
+      id: 'export',
+      name: 'Export Camera',
+      type: 'one-node',
+      position: { x: 0, y: 0, z: 1000 },
+      pointOfInterest: { x: 0, y: 0, z: 0 },
+      orientation: { x: 0, y: 0, z: 0 },
+      xRotation: 0,
+      yRotation: 0,
+      zRotation: 0,
+      zoom: 1,
+      focalLength: 50,
+      angleOfView: 60,
+      filmSize: 36,
+      measureFilmSize: 'horizontal',
+      nearClip: 0.1,
+      farClip: 100,
+      depthOfField: {
+        enabled: false,
+        focusDistance: 100,
+        aperture: 1.2,
+        fStop: 2.8,
+        blurLevel: 1,
+        lockToZoom: false,
+      },
+      iris: { shape: 7, rotation: 0, roundness: 0, aspectRatio: 1, diffractionFringe: 0 },
+      highlight: { gain: 0, threshold: 1, saturation: 1 },
+      autoOrient: 'off',
+    };
+
     const cameraData = exportCameraForTarget(
-      this.cameraKeyframes,
       this.config.target,
-      {
-        frameCount: this.config.endFrame - this.config.startFrame,
-        fps: this.config.fps,
-        width: this.config.width,
-        height: this.config.height,
-      }
+      exportCamera,
+      this.cameraKeyframes,
+      this.config.endFrame - this.config.startFrame,
+      this.config.width,
+      this.config.height,
+      this.config.fps
     );
 
     const filename = `${this.config.filenamePrefix}_camera.json`;

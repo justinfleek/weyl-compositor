@@ -79,7 +79,25 @@
               </div>
 
               <div class="param-control">
-                <template v-if="param.type === 'number'">
+                <!-- Angle parameters (stored as 'number' type but originally 'angle') -->
+                <template v-if="param.type === 'number' && isAngleParam(effect.effectKey, String(key))">
+                  <div class="control-group">
+                    <AngleDial
+                      :modelValue="param.value"
+                      @update:modelValue="(v) => updateParam(effect.id, String(key), v)"
+                      :size="32"
+                      :showValue="false"
+                    />
+                    <ScrubableNumber
+                      :modelValue="param.value"
+                      @update:modelValue="(v) => updateParam(effect.id, String(key), v)"
+                      unit="°"
+                    />
+                  </div>
+                </template>
+
+                <!-- Regular number parameters -->
+                <template v-else-if="param.type === 'number'">
                   <div class="control-group">
                     <SliderInput
                       v-if="hasRange(effect.effectKey, String(key))"
@@ -94,22 +112,6 @@
                       :modelValue="param.value"
                       @update:modelValue="(v) => updateParam(effect.id, String(key), v)"
                       :step="getParamDef(effect.effectKey, String(key))?.step ?? 0.1"
-                    />
-                  </div>
-                </template>
-
-                <template v-else-if="param.type === 'angle'">
-                  <div class="control-group">
-                    <AngleDial
-                      :modelValue="param.value"
-                      @update:modelValue="(v) => updateParam(effect.id, String(key), v)"
-                      :size="32"
-                      :showValue="false"
-                    />
-                    <ScrubableNumber
-                      :modelValue="param.value"
-                      @update:modelValue="(v) => updateParam(effect.id, String(key), v)"
-                      unit="°"
                     />
                   </div>
                 </template>
@@ -212,6 +214,11 @@ function hasRange(effectKey: string, paramKey: string) {
 function isCheckbox(effectKey: string, paramKey: string) {
   const def = getParamDef(effectKey, paramKey);
   return def?.type === 'checkbox';
+}
+
+function isAngleParam(effectKey: string, paramKey: string) {
+  const def = getParamDef(effectKey, paramKey);
+  return def?.type === 'angle';
 }
 
 function getParamOptions(effectKey: string, paramKey: string) {

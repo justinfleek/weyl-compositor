@@ -21,14 +21,15 @@ export {
   exportToMotionCtrl,
   exportToMotionCtrlSVD,
   mapToWan22FunCamera,
-  exportToWan22FunCamera,
   exportToUni3C,
   exportToCameraCtrl,
   exportCameraMatrices,
   exportCameraForTarget,
-  type CameraKeyframe,
-  type ExportOptions,
 } from './cameraExportFormats';
+
+// Re-export camera types from their source
+export type { CameraKeyframe } from '@/types/camera';
+export type { FullCameraExport as ExportOptions } from '@/types/export';
 
 // Export pipeline
 export {

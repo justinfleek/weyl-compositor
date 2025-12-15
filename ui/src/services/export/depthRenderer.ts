@@ -147,11 +147,12 @@ function getLayerScreenBounds(
   screenWidth: number,
   screenHeight: number
 ): { x: number; y: number; width: number; height: number } | null {
-  // Get layer position
+  // Get layer position from transform
   let x = 0, y = 0;
 
-  if (layer.position && 'value' in layer.position) {
-    const value = layer.position.value;
+  const position = layer.transform?.position;
+  if (position && 'value' in position) {
+    const value = position.value;
     if (Array.isArray(value)) {
       x = value[0] || 0;
       y = value[1] || 0;
@@ -162,10 +163,11 @@ function getLayerScreenBounds(
   const layerWidth = (layer as any).width || screenWidth;
   const layerHeight = (layer as any).height || screenHeight;
 
-  // Get scale
+  // Get scale from transform
   let scaleX = 1, scaleY = 1;
-  if (layer.scale && 'value' in layer.scale) {
-    const value = layer.scale.value;
+  const scale = layer.transform?.scale;
+  if (scale && 'value' in scale) {
+    const value = scale.value;
     if (Array.isArray(value)) {
       scaleX = (value[0] || 100) / 100;
       scaleY = (value[1] || 100) / 100;
@@ -176,10 +178,11 @@ function getLayerScreenBounds(
   const finalWidth = layerWidth * scaleX;
   const finalHeight = layerHeight * scaleY;
 
-  // Get anchor point
+  // Get anchor point from transform
   let anchorX = 0.5, anchorY = 0.5;
-  if (layer.anchorPoint && 'value' in layer.anchorPoint) {
-    const value = layer.anchorPoint.value;
+  const anchorPoint = layer.transform?.anchorPoint;
+  if (anchorPoint && 'value' in anchorPoint) {
+    const value = anchorPoint.value;
     if (Array.isArray(value)) {
       anchorX = (value[0] || 0) / layerWidth + 0.5;
       anchorY = (value[1] || 0) / layerHeight + 0.5;

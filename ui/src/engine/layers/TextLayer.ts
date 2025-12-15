@@ -80,9 +80,9 @@ export class TextLayer extends BaseLayer {
   private readonly resources: ResourceManager;
 
   // Text rendering
-  private textMesh: typeof TroikaText;
+  private textMesh: InstanceType<typeof TroikaText>;
   private perCharacterGroup: THREE.Group | null = null;
-  private characterMeshes: (typeof TroikaText)[] = [];
+  private characterMeshes: InstanceType<typeof TroikaText>[] = [];
 
   // Text data from layer
   private textData: TextData;
@@ -264,14 +264,14 @@ export class TextLayer extends BaseLayer {
   /**
    * Create Troika text mesh with current settings
    */
-  private createTextMesh(): typeof TroikaText {
+  private createTextMesh(): InstanceType<typeof TroikaText> {
     const text = new TroikaText();
 
     // Core text content
     text.text = this.textData.text;
 
     // Font settings
-    text.font = this.getFontUrl(this.textData.fontFamily);
+    text.font = this.getFontUrl(this.textData.fontFamily) ?? null;
     text.fontSize = this.textData.fontSize;
 
     // Colors
@@ -548,7 +548,7 @@ export class TextLayer extends BaseLayer {
       const charMesh = new TroikaText();
 
       charMesh.text = char;
-      charMesh.font = this.getFontUrl(this.textData.fontFamily);
+      charMesh.font = this.getFontUrl(this.textData.fontFamily) ?? null;
       charMesh.fontSize = this.textData.fontSize;
       charMesh.color = this.textData.fill;
       charMesh.anchorX = 'center';
@@ -606,7 +606,7 @@ export class TextLayer extends BaseLayer {
 
   setFontFamily(family: string): void {
     this.textData.fontFamily = family;
-    const fontUrl = this.getFontUrl(family);
+    const fontUrl = this.getFontUrl(family) ?? null;
     this.textMesh.font = fontUrl;
     this.textMesh.sync();
     this.characterWidthsDirty = true;

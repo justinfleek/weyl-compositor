@@ -152,9 +152,13 @@ export class WebCodecsVideoEncoder {
     let frame: VideoFrame;
 
     if (imageData instanceof ImageData) {
-      frame = new VideoFrame(imageData, {
+      // Convert ImageData to rgba buffer for VideoFrame
+      frame = new VideoFrame(imageData.data, {
         timestamp: (frameIndex * 1_000_000) / this.config.frameRate,
         duration: 1_000_000 / this.config.frameRate,
+        codedWidth: imageData.width,
+        codedHeight: imageData.height,
+        format: 'RGBA',
       });
     } else {
       // Canvas

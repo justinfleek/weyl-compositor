@@ -26,6 +26,11 @@ export abstract class BaseLayer implements LayerInstance {
   /** The Three.js group containing this layer's content */
   protected readonly group: THREE.Group;
 
+  /** Three.js object representing this layer (from LayerInstance) */
+  public get object(): THREE.Object3D {
+    return this.group;
+  }
+
   /** Keyframe evaluator for animated properties */
   protected readonly evaluator: KeyframeEvaluator;
 

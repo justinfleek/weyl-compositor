@@ -270,17 +270,14 @@ function getCategoryIcon(category: EffectCategory): string {
 }
 
 function applyEffect(effectKey: string) {
-  const effect = createEffect(effectKey);
-  if (!effect) return;
-
   const selectedLayer = store.selectedLayer;
   if (!selectedLayer) {
     console.warn('No layer selected to apply effect');
     return;
   }
 
-  // Add effect to layer via store action
-  store.addEffectToLayer(selectedLayer.id, effect.effectKey);
+  // Add effect to layer via store action (use key directly)
+  store.addEffectToLayer(selectedLayer.id, effectKey);
 }
 
 function applyPreset(preset: AnimationPreset) {

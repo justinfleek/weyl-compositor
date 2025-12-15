@@ -358,8 +358,13 @@ const gpuTier = ref<GPUTier['tier']>('cpu');
 const canvasRef = ref<InstanceType<typeof CompositionCanvas> | null>(null);
 const threeCanvasRef = ref<InstanceType<typeof ThreeCanvas> | null>(null);
 
-// Camera state
-const activeCamera = ref<Camera3D>(createDefaultCamera());
+// Camera state - use computed to get from store, fallback to default
+const activeCamera = computed<Camera3D>(() => {
+  const cam = store.getActiveCameraAtFrame();
+  if (cam) return cam;
+  // Fallback to a default camera
+  return createDefaultCamera('default', compWidth.value, compHeight.value);
+});
 const viewportState = ref<ViewportState>(createDefaultViewportState());
 const viewOptions = ref({
   showGrid: true,
@@ -440,7 +445,10 @@ function redo() {
 }
 
 function updateCamera(camera: Camera3D) {
-  activeCamera.value = camera;
+  // Update the camera in the store
+  if (store.activeCameraId) {
+    store.updateCamera(camera.id, camera);
+  }
 }
 
 function onExportComplete() {
@@ -454,7 +462,7 @@ function onComfyUIExportComplete(result: any) {
 
 // Get camera keyframes for the active camera
 const activeCameraKeyframes = computed(() => {
-  const activeCam = store.getActiveCamera();
+  const activeCam = store.getActiveCameraAtFrame();
   if (!activeCam) return [];
   return store.getCameraKeyframes(activeCam.id);
 });

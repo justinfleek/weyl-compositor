@@ -326,7 +326,9 @@ export type EngineEventType =
   | 'resize'
   | 'dispose'
   | 'contextLost'
-  | 'contextRestored';
+  | 'contextRestored'
+  | 'transform-dragging'
+  | 'transform-end';
 
 export interface EngineEvent {
   type: EngineEventType;

@@ -14,7 +14,7 @@ export interface TextureOptions {
   wrapS?: THREE.Wrapping;
   wrapT?: THREE.Wrapping;
   minFilter?: THREE.TextureFilter;
-  magFilter?: THREE.TextureFilter;
+  magFilter?: THREE.MagnificationTextureFilter;
   generateMipmaps?: boolean;
   flipY?: boolean;
   colorSpace?: THREE.ColorSpace;

@@ -285,6 +285,7 @@
 import { ref, computed, watch, markRaw, type Component } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { ScrubableNumber, SliderInput } from '@/components/controls';
+import type { BlendMode } from '@/types/project';
 
 // Layer-specific property panels
 import TextProperties from '@/components/properties/TextProperties.vue';
@@ -478,7 +479,7 @@ function updateTransform() {
 
 function updateBlendMode() {
   if (selectedLayer.value) {
-    selectedLayer.value.blendMode = blendMode.value;
+    selectedLayer.value.blendMode = blendMode.value as BlendMode;
   }
 }
 

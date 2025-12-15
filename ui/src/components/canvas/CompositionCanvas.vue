@@ -901,7 +901,7 @@ function syncLayerZOrder() {
   layerZInfos.forEach((info, index) => {
     // Skip the composition bounds rect (always at bottom)
     const baseIndex = compositionBounds.value ? 1 : 0;
-    canvas.moveTo(info.obj, baseIndex + index);
+    (canvas as any).moveTo(info.obj, baseIndex + index);
   });
 }
 

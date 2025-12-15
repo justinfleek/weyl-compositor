@@ -66,7 +66,7 @@ export class SolidLayer extends BaseLayer {
     const data = layerData.data as any;
 
     return {
-      color: data?.color ?? layerData.labelColor ?? '#808080',
+      color: data?.color ?? '#808080',
       width: data?.width ?? 1920,
       height: data?.height ?? 1080,
     };
@@ -135,9 +135,9 @@ export class SolidLayer extends BaseLayer {
       );
     }
 
-    // Handle labelColor as fallback color source
-    if (properties.labelColor !== undefined && !data?.color) {
-      this.setColor(properties.labelColor);
+    // Color can also be set directly
+    if (data === undefined && (properties as any).labelColor !== undefined) {
+      this.setColor((properties as any).labelColor);
     }
   }
 

@@ -281,7 +281,7 @@ export class AnimatedText extends Group {
     return Math.max(0, width - this.letterSpacing);
   }
 
-  getTextData(): TextData {
+  getTextData(): Partial<TextData> {
     return {
       text: this.textContent,
       fontFamily: this.fontFamily,

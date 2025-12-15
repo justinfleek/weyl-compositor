@@ -993,8 +993,8 @@ export class WeylEngine {
     // Style the controls
     this.transformControls.setSize(1.0);
 
-    // Add to scene
-    this.scene.addUIElement(this.transformControls);
+    // Add to scene (TransformControls extends Object3D internally)
+    this.scene.addUIElement(this.transformControls as unknown as THREE.Object3D);
 
     // Handle transform changes
     this.transformControls.addEventListener('change', () => {
@@ -1109,7 +1109,7 @@ export class WeylEngine {
    */
   setTransformControlsVisible(visible: boolean): void {
     if (this.transformControls) {
-      this.transformControls.visible = visible;
+      (this.transformControls as any).visible = visible;
       this.transformControls.enabled = visible;
     }
   }
