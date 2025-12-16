@@ -334,31 +334,33 @@ export abstract class BaseLayer implements LayerInstance {
       return; // Skip applying state to invisible layers
     }
 
-    // Apply opacity
-    this.applyOpacity(state.opacity);
+    // Apply opacity (with driven value override if present)
+    const opacity = this.getDrivenOrBase('opacity', state.opacity);
+    this.applyOpacity(opacity);
 
-    // Apply transform (convert from evaluated values)
+    // Apply transform (with driven value overrides if present)
+    // This maintains property driver support during the MotionEngine transition
     const transform = state.transform;
     this.applyTransform({
       position: {
-        x: transform.position.x,
-        y: transform.position.y,
-        z: transform.position.z ?? 0,
+        x: this.getDrivenOrBase('transform.position.x', transform.position.x),
+        y: this.getDrivenOrBase('transform.position.y', transform.position.y),
+        z: this.getDrivenOrBase('transform.position.z', transform.position.z ?? 0),
       },
       rotation: {
-        x: transform.rotationX ?? 0,
-        y: transform.rotationY ?? 0,
-        z: transform.rotation,
+        x: this.getDrivenOrBase('transform.rotationX', transform.rotationX ?? 0),
+        y: this.getDrivenOrBase('transform.rotationY', transform.rotationY ?? 0),
+        z: this.getDrivenOrBase('transform.rotation', transform.rotation),
       },
       scale: {
-        x: (transform.scale.x ?? 100) / 100,
-        y: (transform.scale.y ?? 100) / 100,
-        z: (transform.scale.z ?? 100) / 100,
+        x: this.getDrivenOrBase('transform.scale.x', transform.scale.x ?? 100) / 100,
+        y: this.getDrivenOrBase('transform.scale.y', transform.scale.y ?? 100) / 100,
+        z: this.getDrivenOrBase('transform.scale.z', transform.scale.z ?? 100) / 100,
       },
       anchorPoint: {
-        x: transform.anchorPoint.x,
-        y: transform.anchorPoint.y,
-        z: transform.anchorPoint.z ?? 0,
+        x: this.getDrivenOrBase('transform.anchorPoint.x', transform.anchorPoint.x),
+        y: this.getDrivenOrBase('transform.anchorPoint.y', transform.anchorPoint.y),
+        z: this.getDrivenOrBase('transform.anchorPoint.z', transform.anchorPoint.z ?? 0),
       },
     });
 

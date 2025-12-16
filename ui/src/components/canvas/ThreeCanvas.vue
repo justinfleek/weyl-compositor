@@ -249,7 +249,9 @@ onMounted(async () => {
     // Initialize property driver system
     store.initializePropertyDriverSystem();
 
-    engine.value.setFrame(store.currentFrame);
+    // Apply initial frame state via MotionEngine
+    const initialFrameState = store.getFrameState(store.currentFrame);
+    engine.value.applyFrameState(initialFrameState);
 
     // Setup event listeners
     setupInputHandlers();
@@ -288,20 +290,27 @@ function setupWatchers() {
       syncLayersToEngine();
       // Re-evaluate frame to apply layer changes (like 3D toggle)
       if (engine.value) {
-        engine.value.setFrame(store.currentFrame);
+        const frameState = store.getFrameState(store.currentFrame);
+        engine.value.applyFrameState(frameState);
       }
     },
     { deep: true }
   );
 
-  // Watch current frame
+  // Watch current frame - use MotionEngine as single source of truth
   watch(
     () => store.currentFrame,
     (frame) => {
       if (engine.value) {
-        // Apply property drivers before frame evaluation
+        // Apply property drivers (sets driven values on layers for override)
         applyPropertyDrivers();
-        engine.value.setFrame(frame);
+
+        // Get pre-evaluated frame state from MotionEngine (PURE, deterministic)
+        const frameState = store.getFrameState(frame);
+
+        // Apply the evaluated state to the engine
+        // This is the canonical path - no interpolation happens in the engine
+        engine.value.applyFrameState(frameState);
       }
     }
   );
