@@ -221,28 +221,29 @@ npm run build    # Build to web/dist/
 
 ## Acknowledgments & Inspirations
 
-Weyl Compositor draws inspiration from and incorporates techniques from several outstanding research projects:
+Weyl Compositor incorporates techniques and exports to formats from these outstanding ComfyUI custom nodes and research projects:
+
+### Audio Reactive Systems
+- **[ATI_AudioReactive](https://github.com/Alter-AI/ATI_AudioReactive)** (Esther Alter) - Audio reactive system with amplitude curves, release envelopes, and beat detection. Our `audioFeatures.ts` implements their analysis approach.
+- **[Yvann-Nodes](https://github.com/yvann-ba/ComfyUI-YVANN)** (Yvann) - Audio analysis with stem separation modes, IPAdapter weight scheduling from peaks. Inspired our `audioReactiveMapping.ts` architecture.
+- **[RyanOnTheInside](https://github.com/ryanontheinside/ComfyUI_RyanOnTheInside)** - Flex Features system for mapping any audio feature to any parameter. Our audio mapping system follows this paradigm.
+
+### Depth & Parallax
+- **[ComfyUI-Depthflow-Nodes](https://github.com/akatz-ai/ComfyUI-Depthflow-Nodes)** (akatz-ai) - 2.5D parallax animation with stackable motion components. Our `depthflow.ts` matches their preset system and DOF configuration.
+- **[DepthAnything V3](https://github.com/LiheYoung/Depth-Anything)** - Depth map generation integrated into our backend for automatic depth estimation.
 
 ### Mask Generation
-- **[Saber](https://github.com/franciszzj/Saber)** - Procedural mask generation with topology-preserving operations. Our `maskGenerator.ts` is ported from their excellent Python implementation.
+- **[Saber](https://github.com/franciszzj/Saber)** - Procedural mask generation with topology-preserving operations. Our `maskGenerator.ts` is ported from their Python implementation.
 
-### Vector Graphics & Animation
-- **[Vector-PRISM](https://github.com/YeolJ00/vector-prism)** ([Project Page](https://yeolj00.github.io/personal-projects/vector-prism/)) - Semantic SVG animation via vision-language models. Inspiration for future text-to-animation features.
+### Video Generation Export Formats
+- **[Wan-Move](https://github.com/WanMove/ComfyUI-WanMove)** - Point trajectory format for object motion control. Full export support in `modelExport.ts`.
+- **[Time-to-Move (TTM)](https://time-to-move.github.io/)** - Cut-and-drag motion with dual-clock denoising. Multi-layer TTM workflow generation supported.
+- **[camera-comfyUI](https://github.com/camera-comfyui/camera-comfyui)** - 4x4 transformation matrices for camera animation export.
+- **[AnimateDiff CameraCtrl](https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved)** (Kosinkadink) - Camera control poses and motion type detection.
+- **[MotionCtrl](https://github.com/TencentARC/MotionCtrl)** - Camera trajectory export for both base and SVD variants.
+- **[Uni3C](https://github.com/AiuniAI/Uni3C)** - Universal 3D camera control trajectories.
 
-### 3D & Motion
-- **[DragMesh](https://github.com/AIGeeksGroup/DragMesh)** - Interactive 3D articulation with kinematic constraints. Concepts applicable to 3D layer manipulation.
-
-### Alpha Matting & Compositing
-- **[OmniAlpha](https://github.com/Longin-Yu/OmniAlpha)** - Unified RGBA generation framework. Inspiration for alpha matte workflows.
-
-### Audio-Visual Synthesis
-- **[SelVA](https://huggingface.co/jnwnlee/SelVA)** - Text-conditioned selective video-to-audio generation. Future integration for audio-reactive motion graphics.
-
-### Research Papers
-- [DragMesh: Interactive 3D Generation](https://arxiv.org/abs/2512.06424)
-- [SelVA: Selective Video-to-Audio](https://arxiv.org/abs/2512.02650)
-
-We're grateful to these researchers for open-sourcing their work and advancing the field of generative media.
+We're grateful to these developers for open-sourcing their work and advancing AI video generation.
 
 ---
 
