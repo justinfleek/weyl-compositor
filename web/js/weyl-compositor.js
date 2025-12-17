@@ -77276,31 +77276,12 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
       ctx.strokeStyle = "#666";
       ctx.fillStyle = "#aaa";
       ctx.font = "11px sans-serif";
-      const ppf = effectivePpf.value;
-      let majorStep;
-      let minorStep;
-      if (ppf >= 20) {
-        majorStep = 1;
-        minorStep = 0;
-      } else if (ppf >= 10) {
-        majorStep = 5;
-        minorStep = 1;
-      } else if (ppf >= 5) {
-        majorStep = 10;
-        minorStep = 5;
-      } else if (ppf >= 2) {
-        majorStep = 20;
-        minorStep = 10;
-      } else if (ppf >= 1) {
-        majorStep = 50;
-        minorStep = 25;
-      } else if (ppf >= 0.5) {
-        majorStep = 100;
-        minorStep = 50;
-      } else {
-        majorStep = 200;
-        minorStep = 0;
-      }
+      const labelMinWidth = 40;
+      const maxLabels = Math.max(1, Math.floor(width / labelMinWidth));
+      const idealStep = Math.ceil(store.frameCount / maxLabels);
+      const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 200];
+      const majorStep = niceSteps.find((s) => s >= idealStep) || 200;
+      const minorStep = majorStep > 1 ? Math.floor(majorStep / 2) : 0;
       const frameCount = store.frameCount;
       for (let f = 0; f <= frameCount; f++) {
         const x = f / frameCount * width;
@@ -77310,14 +77291,8 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
           ctx.moveTo(x, 12);
           ctx.lineTo(x, 30);
           ctx.stroke();
-          const labelText = String(f);
-          const textMetrics = ctx.measureText(labelText);
-          const nextLabelX = (f + majorStep) / frameCount * width;
-          const minSpacing = textMetrics.width + 20;
-          if (nextLabelX - x >= minSpacing || f === 0 || f >= frameCount - majorStep) {
-            ctx.fillStyle = "#ccc";
-            ctx.fillText(labelText, x + 3, 10);
-          }
+          ctx.fillStyle = "#ccc";
+          ctx.fillText(String(f), x + 3, 10);
         } else if (minorStep > 0 && f % minorStep === 0) {
           ctx.strokeStyle = "#555";
           ctx.beginPath();
@@ -77569,7 +77544,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             class: "timeline-sidebar",
             style: normalizeStyle({ width: sidebarWidth.value + "px" })
           }, [
-            _cache[17] || (_cache[17] = createStaticVNode('<div class="sidebar-header-row" data-v-b439edf2><div class="col-header col-arrow" data-v-b439edf2></div><div class="col-header col-name" data-v-b439edf2>Layer Name</div><div class="col-header col-mode" data-v-b439edf2>Mode</div><div class="col-header col-parent" data-v-b439edf2>Parent</div></div>', 1)),
+            _cache[17] || (_cache[17] = createStaticVNode('<div class="sidebar-header-row" data-v-0cf2fc99><div class="col-header col-arrow" data-v-0cf2fc99></div><div class="col-header col-name" data-v-0cf2fc99>Layer Name</div><div class="col-header col-mode" data-v-0cf2fc99>Mode</div><div class="col-header col-parent" data-v-0cf2fc99>Parent</div></div>', 1)),
             createBaseVNode("div", {
               class: "sidebar-scroll-area",
               ref_key: "sidebarScrollRef",
@@ -77664,7 +77639,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-b439edf2"]]);
+const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-0cf2fc99"]]);
 
 const _hoisted_1$6 = { class: "graph-editor" };
 const _hoisted_2$6 = { class: "graph-header" };

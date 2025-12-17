@@ -208,44 +208,18 @@ function drawRuler() {
   ctx.fillStyle = '#aaa';
   ctx.font = '11px sans-serif';
 
-  // Use effective ppf (accounts for minimum zoom to fill viewport)
-  const ppf = effectivePpf.value;
+  // Calculate label step based on available space, not raw ppf
+  // Ensure labels have enough room and don't overlap
+  const labelMinWidth = 40; // minimum pixels between labels
+  const maxLabels = Math.max(1, Math.floor(width / labelMinWidth));
+  const idealStep = Math.ceil(store.frameCount / maxLabels);
 
-  // Dynamic tick step based on zoom level - ensure labels don't overlap
-  // At low ppf (zoomed out), we need larger steps
-  // At high ppf (zoomed in), we can show every frame
-  let majorStep: number;
-  let minorStep: number;
+  // Round up to a nice number for clean ruler
+  const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 200];
+  const majorStep = niceSteps.find(s => s >= idealStep) || 200;
 
-  if (ppf >= 20) {
-    // Very zoomed in: show every frame
-    majorStep = 1;
-    minorStep = 0; // No minor ticks needed
-  } else if (ppf >= 10) {
-    // Zoomed in: major every 5, minor every 1
-    majorStep = 5;
-    minorStep = 1;
-  } else if (ppf >= 5) {
-    // Medium zoom: major every 10, minor every 5
-    majorStep = 10;
-    minorStep = 5;
-  } else if (ppf >= 2) {
-    // Zoomed out: major every 20, minor every 10
-    majorStep = 20;
-    minorStep = 10;
-  } else if (ppf >= 1) {
-    // Very zoomed out: major every 50, minor every 25
-    majorStep = 50;
-    minorStep = 25;
-  } else if (ppf >= 0.5) {
-    // Extremely zoomed out: major every 100, minor every 50
-    majorStep = 100;
-    minorStep = 50;
-  } else {
-    // Ultra zoomed out: major every 200, no minor ticks
-    majorStep = 200;
-    minorStep = 0;
-  }
+  // Minor step is half of major, or 0 if major is 1
+  const minorStep = majorStep > 1 ? Math.floor(majorStep / 2) : 0;
 
   // Proportional positioning: frame position = (frame / frameCount) * width
   // This ensures the ruler fills the viewport when zoomed out
@@ -262,17 +236,9 @@ function drawRuler() {
       ctx.lineTo(x, 30);
       ctx.stroke();
 
-      // Label - ensure minimum spacing between labels
-      const labelText = String(f);
-      const textMetrics = ctx.measureText(labelText);
-      const nextLabelX = ((f + majorStep) / frameCount) * width;
-      const minSpacing = textMetrics.width + 20;
-
-      // Only draw label if there's enough space
-      if (nextLabelX - x >= minSpacing || f === 0 || f >= frameCount - majorStep) {
-        ctx.fillStyle = '#ccc';
-        ctx.fillText(labelText, x + 3, 10);
-      }
+      // Label - majorStep already accounts for spacing
+      ctx.fillStyle = '#ccc';
+      ctx.fillText(String(f), x + 3, 10);
     } else if (minorStep > 0 && f % minorStep === 0) {
       // Minor Tick
       ctx.strokeStyle = '#555';
