@@ -76596,7 +76596,7 @@ const _hoisted_17$7 = {
 const _hoisted_18$7 = { key: 0 };
 const _sfc_main$a = /* @__PURE__ */ defineComponent({
   __name: "EnhancedLayerTrack",
-  props: ["layer", "index", "layoutMode", "isExpandedExternal", "allLayers", "frameCount", "pixelsPerFrame", "gridStyle"],
+  props: ["layer", "index", "layoutMode", "isExpandedExternal", "allLayers", "frameCount", "pixelsPerFrame", "timelineWidth", "gridStyle"],
   emits: ["toggleExpand", "select", "updateLayer"],
   setup(__props, { emit: __emit }) {
     const props = __props;
@@ -76651,8 +76651,14 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
       return groups;
     });
     const barStyle = computed(() => {
-      const ppf = props.pixelsPerFrame || 10;
-      return { left: `${props.layer.inPoint * ppf}px`, width: `${(props.layer.outPoint - props.layer.inPoint + 1) * ppf}px` };
+      const frameCount = props.frameCount || 81;
+      const containerWidth = props.timelineWidth || frameCount * (props.pixelsPerFrame || 10);
+      const leftPct = props.layer.inPoint / frameCount;
+      const widthPct = (props.layer.outPoint - props.layer.inPoint + 1) / frameCount;
+      return {
+        left: `${leftPct * containerWidth}px`,
+        width: `${widthPct * containerWidth}px`
+      };
     });
     function selectLayer() {
       emit("select", props.layer.id);
@@ -76832,7 +76838,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
                 onMousedown: _cache[2] || (_cache[2] = withModifiers(() => {
                 }, ["stop"]))
               }, [..._cache[5] || (_cache[5] = [
-                createStaticVNode('<optgroup label="Normal" data-v-3ea5e46d><option value="normal" data-v-3ea5e46d>Normal</option><option value="dissolve" data-v-3ea5e46d>Dissolve</option></optgroup><optgroup label="Darken" data-v-3ea5e46d><option value="darken" data-v-3ea5e46d>Darken</option><option value="multiply" data-v-3ea5e46d>Multiply</option><option value="colorBurn" data-v-3ea5e46d>Color Burn</option><option value="linearBurn" data-v-3ea5e46d>Linear Burn</option></optgroup><optgroup label="Lighten" data-v-3ea5e46d><option value="add" data-v-3ea5e46d>Add</option><option value="lighten" data-v-3ea5e46d>Lighten</option><option value="screen" data-v-3ea5e46d>Screen</option><option value="colorDodge" data-v-3ea5e46d>Color Dodge</option><option value="linearDodge" data-v-3ea5e46d>Linear Dodge</option></optgroup><optgroup label="Contrast" data-v-3ea5e46d><option value="overlay" data-v-3ea5e46d>Overlay</option><option value="softLight" data-v-3ea5e46d>Soft Light</option><option value="hardLight" data-v-3ea5e46d>Hard Light</option><option value="vividLight" data-v-3ea5e46d>Vivid Light</option><option value="linearLight" data-v-3ea5e46d>Linear Light</option><option value="pinLight" data-v-3ea5e46d>Pin Light</option><option value="hardMix" data-v-3ea5e46d>Hard Mix</option></optgroup><optgroup label="Inversion" data-v-3ea5e46d><option value="difference" data-v-3ea5e46d>Difference</option><option value="exclusion" data-v-3ea5e46d>Exclusion</option><option value="subtract" data-v-3ea5e46d>Subtract</option><option value="divide" data-v-3ea5e46d>Divide</option></optgroup><optgroup label="Component" data-v-3ea5e46d><option value="hue" data-v-3ea5e46d>Hue</option><option value="saturation" data-v-3ea5e46d>Saturation</option><option value="color" data-v-3ea5e46d>Color</option><option value="luminosity" data-v-3ea5e46d>Luminosity</option></optgroup>', 6)
+                createStaticVNode('<optgroup label="Normal" data-v-5b53b81d><option value="normal" data-v-5b53b81d>Normal</option><option value="dissolve" data-v-5b53b81d>Dissolve</option></optgroup><optgroup label="Darken" data-v-5b53b81d><option value="darken" data-v-5b53b81d>Darken</option><option value="multiply" data-v-5b53b81d>Multiply</option><option value="colorBurn" data-v-5b53b81d>Color Burn</option><option value="linearBurn" data-v-5b53b81d>Linear Burn</option></optgroup><optgroup label="Lighten" data-v-5b53b81d><option value="add" data-v-5b53b81d>Add</option><option value="lighten" data-v-5b53b81d>Lighten</option><option value="screen" data-v-5b53b81d>Screen</option><option value="colorDodge" data-v-5b53b81d>Color Dodge</option><option value="linearDodge" data-v-5b53b81d>Linear Dodge</option></optgroup><optgroup label="Contrast" data-v-5b53b81d><option value="overlay" data-v-5b53b81d>Overlay</option><option value="softLight" data-v-5b53b81d>Soft Light</option><option value="hardLight" data-v-5b53b81d>Hard Light</option><option value="vividLight" data-v-5b53b81d>Vivid Light</option><option value="linearLight" data-v-5b53b81d>Linear Light</option><option value="pinLight" data-v-5b53b81d>Pin Light</option><option value="hardMix" data-v-5b53b81d>Hard Mix</option></optgroup><optgroup label="Inversion" data-v-5b53b81d><option value="difference" data-v-5b53b81d>Difference</option><option value="exclusion" data-v-5b53b81d>Exclusion</option><option value="subtract" data-v-5b53b81d>Subtract</option><option value="divide" data-v-5b53b81d>Divide</option></optgroup><optgroup label="Component" data-v-5b53b81d><option value="hue" data-v-5b53b81d>Hue</option><option value="saturation" data-v-5b53b81d>Saturation</option><option value="color" data-v-5b53b81d>Color</option><option value="luminosity" data-v-5b53b81d>Luminosity</option></optgroup>', 6)
               ])], 40, _hoisted_7$9)
             ]),
             createBaseVNode("div", _hoisted_8$9, [
@@ -76961,7 +76967,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
   }
 });
 
-const EnhancedLayerTrack = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-3ea5e46d"]]);
+const EnhancedLayerTrack = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-5b53b81d"]]);
 
 const _hoisted_1$8 = { class: "composition-tabs" };
 const _hoisted_2$8 = { class: "tabs-container" };
@@ -77205,10 +77211,12 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
     let isScrollingTrack = false;
     const viewportWidth = ref(1e3);
     const filteredLayers = computed(() => store.layers || []);
-    const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
-    const computedWidthStyle = computed(() => {
-      return store.frameCount * pixelsPerFrame.value + "px";
+    const playheadPosition = computed(() => store.currentFrame / store.frameCount * timelineWidth.value);
+    const timelineWidth = computed(() => {
+      const frameWidth = store.frameCount * pixelsPerFrame.value;
+      return Math.max(frameWidth, viewportWidth.value);
     });
+    const computedWidthStyle = computed(() => timelineWidth.value + "px");
     const sidebarGridStyle = computed(() => ({
       display: "grid",
       gridTemplateColumns: "24px 24px 30px 24px 24px 24px 1fr 70px 70px",
@@ -77260,7 +77268,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
       if (!cvs) return;
       const ctx = cvs.getContext("2d");
       if (!ctx) return;
-      const width = store.frameCount * pixelsPerFrame.value;
+      const width = timelineWidth.value;
       cvs.width = width;
       cvs.height = 30;
       ctx.fillStyle = "#222";
@@ -77293,8 +77301,9 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
         majorStep = 200;
         minorStep = 0;
       }
-      for (let f = 0; f <= store.frameCount; f++) {
-        const x = f * ppf;
+      const frameCount = store.frameCount;
+      for (let f = 0; f <= frameCount; f++) {
+        const x = f / frameCount * width;
         if (f % majorStep === 0) {
           ctx.strokeStyle = "#888";
           ctx.beginPath();
@@ -77303,9 +77312,9 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
           ctx.stroke();
           const labelText = String(f);
           const textMetrics = ctx.measureText(labelText);
-          const nextLabelX = (f + majorStep) * ppf;
+          const nextLabelX = (f + majorStep) / frameCount * width;
           const minSpacing = textMetrics.width + 20;
-          if (nextLabelX - x >= minSpacing || f === 0 || f >= store.frameCount - majorStep) {
+          if (nextLabelX - x >= minSpacing || f === 0 || f >= frameCount - majorStep) {
             ctx.fillStyle = "#ccc";
             ctx.fillText(labelText, x + 3, 10);
           }
@@ -77328,7 +77337,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
       const update = (ev) => {
         const currentScrollX = rulerScrollRef.value?.scrollLeft || trackScrollRef.value?.scrollLeft || 0;
         const x = ev.clientX - rect.left + currentScrollX;
-        let f = Math.max(0, Math.min(store.frameCount - 1, x / pixelsPerFrame.value));
+        let f = Math.max(0, Math.min(store.frameCount - 1, x / timelineWidth.value * store.frameCount));
         if (!ev.altKey && store.snapConfig.enabled) {
           const snap = findNearestSnap(Math.round(f), store.snapConfig, pixelsPerFrame.value, {
             layers: store.layers,
@@ -77554,7 +77563,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             class: "timeline-sidebar",
             style: normalizeStyle({ width: sidebarWidth.value + "px" })
           }, [
-            _cache[17] || (_cache[17] = createStaticVNode('<div class="sidebar-header-row" data-v-9816a28b><div class="col-header col-arrow" data-v-9816a28b></div><div class="col-header col-name" data-v-9816a28b>Layer Name</div><div class="col-header col-mode" data-v-9816a28b>Mode</div><div class="col-header col-parent" data-v-9816a28b>Parent</div></div>', 1)),
+            _cache[17] || (_cache[17] = createStaticVNode('<div class="sidebar-header-row" data-v-3668b249><div class="col-header col-arrow" data-v-3668b249></div><div class="col-header col-name" data-v-3668b249>Layer Name</div><div class="col-header col-mode" data-v-3668b249>Mode</div><div class="col-header col-parent" data-v-3668b249>Parent</div></div>', 1)),
             createBaseVNode("div", {
               class: "sidebar-scroll-area",
               ref_key: "sidebarScrollRef",
@@ -77631,10 +77640,11 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                     layoutMode: "track",
                     frameCount: unref(store).frameCount,
                     pixelsPerFrame: pixelsPerFrame.value,
+                    timelineWidth: timelineWidth.value,
                     isExpandedExternal: expandedLayers.value[layer.id],
                     onSelect: selectLayer,
                     onUpdateLayer: updateLayer
-                  }, null, 8, ["layer", "frameCount", "pixelsPerFrame", "isExpandedExternal"]);
+                  }, null, 8, ["layer", "frameCount", "pixelsPerFrame", "timelineWidth", "isExpandedExternal"]);
                 }), 128)),
                 createBaseVNode("div", {
                   class: "playhead-line",
@@ -77649,7 +77659,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-9816a28b"]]);
+const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-3668b249"]]);
 
 const _hoisted_1$6 = { class: "graph-editor" };
 const _hoisted_2$6 = { class: "graph-header" };

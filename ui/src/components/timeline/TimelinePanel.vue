@@ -96,6 +96,7 @@
                 layoutMode="track"
                 :frameCount="store.frameCount"
                 :pixelsPerFrame="pixelsPerFrame"
+                :timelineWidth="timelineWidth"
                 :isExpandedExternal="expandedLayers[layer.id]"
                 @select="selectLayer"
                 @updateLayer="updateLayer"
@@ -136,13 +137,17 @@ let isScrollingTrack = false;
 const viewportWidth = ref(1000); // Default, updated by observer
 
 const filteredLayers = computed(() => store.layers || []);
-const playheadPosition = computed(() => store.currentFrame * pixelsPerFrame.value);
+// Playhead position is proportional to timeline width
+const playheadPosition = computed(() => (store.currentFrame / store.frameCount) * timelineWidth.value);
 
-// Width calculation - EXACT frame count only
-// The layer content should match the composition duration exactly
-const computedWidthStyle = computed(() => {
-  return (store.frameCount * pixelsPerFrame.value) + 'px';
+// Width calculation - always fill at least the viewport
+// When zoomed out, composition fills viewport. When zoomed in, content is larger (scrollable)
+const timelineWidth = computed(() => {
+  const frameWidth = store.frameCount * pixelsPerFrame.value;
+  return Math.max(frameWidth, viewportWidth.value);
 });
+
+const computedWidthStyle = computed(() => timelineWidth.value + 'px');
 
 const sidebarGridStyle = computed(() => ({
   display: 'grid',
@@ -190,8 +195,8 @@ function drawRuler() {
   const ctx = cvs.getContext('2d');
   if (!ctx) return;
 
-  // Width is EXACT: frameCount * pixelsPerFrame
-  const width = store.frameCount * pixelsPerFrame.value;
+  // Width fills viewport (or larger when zoomed in)
+  const width = timelineWidth.value;
   cvs.width = width;
   cvs.height = 30;
 
@@ -239,9 +244,12 @@ function drawRuler() {
     minorStep = 0;
   }
 
-  // Loop EXACTLY to frameCount - no extra frames
-  for (let f = 0; f <= store.frameCount; f++) {
-    const x = f * ppf;
+  // Proportional positioning: frame position = (frame / frameCount) * width
+  // This ensures the ruler fills the viewport when zoomed out
+  const frameCount = store.frameCount;
+
+  for (let f = 0; f <= frameCount; f++) {
+    const x = (f / frameCount) * width;
 
     if (f % majorStep === 0) {
       // Major Tick
@@ -254,11 +262,11 @@ function drawRuler() {
       // Label - ensure minimum spacing between labels
       const labelText = String(f);
       const textMetrics = ctx.measureText(labelText);
-      const nextLabelX = (f + majorStep) * ppf;
+      const nextLabelX = ((f + majorStep) / frameCount) * width;
       const minSpacing = textMetrics.width + 20;
 
       // Only draw label if there's enough space
-      if (nextLabelX - x >= minSpacing || f === 0 || f >= store.frameCount - majorStep) {
+      if (nextLabelX - x >= minSpacing || f === 0 || f >= frameCount - majorStep) {
         ctx.fillStyle = '#ccc';
         ctx.fillText(labelText, x + 3, 10);
       }
@@ -287,7 +295,8 @@ function startRulerScrub(e: MouseEvent) {
   const update = (ev: MouseEvent) => {
     const currentScrollX = rulerScrollRef.value?.scrollLeft || trackScrollRef.value?.scrollLeft || 0;
     const x = (ev.clientX - rect.left) + currentScrollX;
-    let f = Math.max(0, Math.min(store.frameCount - 1, x / pixelsPerFrame.value));
+    // Convert x position to frame using proportional formula
+    let f = Math.max(0, Math.min(store.frameCount - 1, (x / timelineWidth.value) * store.frameCount));
 
     // Apply snapping (hold Alt/Option to disable)
     if (!ev.altKey && store.snapConfig.enabled) {
