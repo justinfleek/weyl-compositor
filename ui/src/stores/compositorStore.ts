@@ -95,6 +95,12 @@ import {
 } from '@/services/frameCache';
 import { saveProject, loadProject, listProjects } from '@/services/projectStorage';
 
+// Extracted action modules
+import * as layerActions from './actions/layerActions';
+import * as keyframeActions from './actions/keyframeActions';
+import * as projectActions from './actions/projectActions';
+import * as timelineActions from './actions/timelineActions';
+
 interface CompositorState {
   // Project data
   project: WeylProject;
@@ -941,335 +947,106 @@ export const useCompositorStore = defineStore('compositor', {
      * Delete a layer
      */
     deleteLayer(layerId: string): void {
-      const layers = this.getActiveCompLayers();
-      const index = layers.findIndex(l => l.id === layerId);
-      if (index === -1) return;
-
-      layers.splice(index, 1);
-      this.selectedLayerIds = this.selectedLayerIds.filter(id => id !== layerId);
-      this.project.meta.modified = new Date().toISOString();
-      this.pushHistory();
+      layerActions.deleteLayer(this, layerId);
     },
 
     /**
      * Duplicate a layer
      */
     duplicateLayer(layerId: string): Layer | null {
-      const layers = this.getActiveCompLayers();
-      const original = layers.find(l => l.id === layerId);
-      if (!original) return null;
-
-      // Deep clone the layer
-      const duplicate: Layer = JSON.parse(JSON.stringify(original));
-
-      // Generate new IDs
-      duplicate.id = crypto.randomUUID();
-      duplicate.name = original.name + ' Copy';
-
-      // Generate new keyframe IDs to avoid conflicts
-      if (duplicate.transform) {
-        for (const key of Object.keys(duplicate.transform)) {
-          const prop = (duplicate.transform as any)[key];
-          if (prop?.keyframes) {
-            prop.keyframes = prop.keyframes.map((kf: any) => ({
-              ...kf,
-              id: crypto.randomUUID()
-            }));
-          }
-        }
-      }
-      if (duplicate.properties) {
-        for (const prop of duplicate.properties) {
-          if (prop.keyframes) {
-            prop.keyframes = prop.keyframes.map((kf: any) => ({
-              ...kf,
-              id: crypto.randomUUID()
-            }));
-          }
-        }
-      }
-
-      // Insert after the original
-      const index = layers.findIndex(l => l.id === layerId);
-      layers.splice(index, 0, duplicate);
-
-      this.project.meta.modified = new Date().toISOString();
-      this.pushHistory();
-
-      return duplicate;
+      return layerActions.duplicateLayer(this, layerId);
     },
 
     /**
      * Copy selected layers to clipboard
      */
     copySelectedLayers(): void {
-      const layers = this.getActiveCompLayers();
-      const selectedLayers = layers.filter(l => this.selectedLayerIds.includes(l.id));
-      if (selectedLayers.length === 0) return;
-
-      // Deep clone layers to clipboard
-      this.clipboard.layers = selectedLayers.map(layer => JSON.parse(JSON.stringify(layer)));
-      storeLogger.debug(`Copied ${this.clipboard.layers.length} layer(s) to clipboard`);
+      layerActions.copySelectedLayers(this);
     },
 
     /**
      * Paste layers from clipboard
      */
     pasteLayers(): Layer[] {
-      if (this.clipboard.layers.length === 0) return [];
-
-      const layers = this.getActiveCompLayers();
-      const pastedLayers: Layer[] = [];
-
-      for (const clipboardLayer of this.clipboard.layers) {
-        // Deep clone from clipboard
-        const newLayer: Layer = JSON.parse(JSON.stringify(clipboardLayer));
-
-        // Generate new IDs
-        newLayer.id = crypto.randomUUID();
-        newLayer.name = clipboardLayer.name + ' Copy';
-
-        // Generate new keyframe IDs
-        if (newLayer.transform) {
-          for (const key of Object.keys(newLayer.transform)) {
-            const prop = (newLayer.transform as any)[key];
-            if (prop?.keyframes) {
-              prop.keyframes = prop.keyframes.map((kf: any) => ({
-                ...kf,
-                id: crypto.randomUUID()
-              }));
-            }
-          }
-        }
-        if (newLayer.properties) {
-          for (const prop of newLayer.properties) {
-            if (prop.keyframes) {
-              prop.keyframes = prop.keyframes.map((kf: any) => ({
-                ...kf,
-                id: crypto.randomUUID()
-              }));
-            }
-          }
-        }
-
-        // Clear parent reference (may not exist in this comp)
-        newLayer.parentId = null;
-
-        layers.unshift(newLayer);
-        pastedLayers.push(newLayer);
-      }
-
-      // Select pasted layers
-      this.selectedLayerIds = pastedLayers.map(l => l.id);
-
-      this.project.meta.modified = new Date().toISOString();
-      this.pushHistory();
-
-      storeLogger.debug(`Pasted ${pastedLayers.length} layer(s)`);
-      return pastedLayers;
+      return layerActions.pasteLayers(this);
     },
 
     /**
      * Cut selected layers (copy + delete)
      */
     cutSelectedLayers(): void {
-      this.copySelectedLayers();
-      const layerIds = [...this.selectedLayerIds];
-      for (const id of layerIds) {
-        this.deleteLayer(id);
-      }
+      layerActions.cutSelectedLayers(this);
     },
 
     /**
      * Update layer properties
      */
     updateLayer(layerId: string, updates: Partial<Layer>): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      Object.assign(layer, updates);
-      this.project.meta.modified = new Date().toISOString();
+      layerActions.updateLayer(this, layerId, updates);
     },
 
     /**
      * Update layer-specific data (e.g., text content, image path, etc.)
      */
     updateLayerData(layerId: string, dataUpdates: Record<string, any>): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer || !layer.data) return;
-
-      Object.assign(layer.data, dataUpdates);
-      this.project.meta.modified = new Date().toISOString();
+      layerActions.updateLayerData(this, layerId, dataUpdates);
     },
 
     /**
      * Add a control point to a spline layer
      */
-    addSplineControlPoint(layerId: string, point: { id: string; x: number; y: number; depth?: number; handleIn?: { x: number; y: number } | null; handleOut?: { x: number; y: number } | null; type: 'corner' | 'smooth' | 'symmetric' }): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer || layer.type !== 'spline' || !layer.data) return;
-
-      const splineData = layer.data as any;
-      if (!splineData.controlPoints) {
-        splineData.controlPoints = [];
-      }
-      splineData.controlPoints.push(point);
-      this.project.meta.modified = new Date().toISOString();
+    addSplineControlPoint(layerId: string, point: layerActions.SplineControlPoint): void {
+      layerActions.addSplineControlPoint(this, layerId, point);
     },
 
     /**
      * Update a spline control point
      */
-    updateSplineControlPoint(layerId: string, pointId: string, updates: Partial<{ x: number; y: number; depth: number; handleIn: { x: number; y: number } | null; handleOut: { x: number; y: number } | null; type: 'corner' | 'smooth' | 'symmetric' }>): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer || layer.type !== 'spline' || !layer.data) return;
-
-      const splineData = layer.data as any;
-      const point = splineData.controlPoints?.find((p: any) => p.id === pointId);
-      if (!point) return;
-
-      Object.assign(point, updates);
-      this.project.meta.modified = new Date().toISOString();
+    updateSplineControlPoint(layerId: string, pointId: string, updates: Partial<layerActions.SplineControlPoint>): void {
+      layerActions.updateSplineControlPoint(this, layerId, pointId, updates);
     },
 
     /**
      * Delete a spline control point
      */
     deleteSplineControlPoint(layerId: string, pointId: string): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer || layer.type !== 'spline' || !layer.data) return;
-
-      const splineData = layer.data as any;
-      if (!splineData.controlPoints) return;
-
-      const index = splineData.controlPoints.findIndex((p: any) => p.id === pointId);
-      if (index >= 0) {
-        splineData.controlPoints.splice(index, 1);
-        this.project.meta.modified = new Date().toISOString();
-      }
+      layerActions.deleteSplineControlPoint(this, layerId, pointId);
     },
 
     /**
      * Toggle 3D mode for a layer
      */
     toggleLayer3D(layerId: string): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      layer.threeD = !layer.threeD;
-
-      if (layer.threeD) {
-        const t = layer.transform;
-
-        // Force reactivity by replacing the entire value objects
-        // Position - always create new object with z
-        const pos = t.position.value;
-        t.position.value = { x: pos.x, y: pos.y, z: pos.z ?? 0 };
-        t.position.type = 'vector3';
-
-        // Anchor Point
-        const anch = t.anchorPoint.value;
-        t.anchorPoint.value = { x: anch.x, y: anch.y, z: anch.z ?? 0 };
-        t.anchorPoint.type = 'vector3';
-
-        // Scale
-        const scl = t.scale.value;
-        t.scale.value = { x: scl.x, y: scl.y, z: scl.z ?? 100 };
-        t.scale.type = 'vector3';
-
-        // Initialize 3D rotations
-        if (!t.orientation) {
-          t.orientation = createAnimatableProperty('orientation', { x: 0, y: 0, z: 0 }, 'vector3');
-        }
-        if (!t.rotationX) {
-          t.rotationX = createAnimatableProperty('rotationX', 0, 'number');
-        }
-        if (!t.rotationY) {
-          t.rotationY = createAnimatableProperty('rotationY', 0, 'number');
-        }
-        if (!t.rotationZ) {
-          t.rotationZ = createAnimatableProperty('rotationZ', 0, 'number');
-          // Copy existing 2D rotation to Z rotation
-          t.rotationZ.value = t.rotation.value;
-        }
-      } else {
-        // Reverting to 2D
-        // Map Z rotation back to standard rotation
-        if (layer.transform.rotationZ) {
-          layer.transform.rotation.value = layer.transform.rotationZ.value;
-        }
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      layerActions.toggleLayer3D(this, layerId);
     },
 
     /**
      * Reorder layers
      */
     moveLayer(layerId: string, newIndex: number): void {
-      const layers = this.getActiveCompLayers();
-      const currentIndex = layers.findIndex(l => l.id === layerId);
-      if (currentIndex === -1) return;
-
-      const [layer] = layers.splice(currentIndex, 1);
-      layers.splice(newIndex, 0, layer);
-      this.project.meta.modified = new Date().toISOString();
-      this.pushHistory();
+      layerActions.moveLayer(this, layerId, newIndex);
     },
 
     /**
      * Selection
      */
     selectLayer(layerId: string, addToSelection = false): void {
-      if (addToSelection) {
-        if (!this.selectedLayerIds.includes(layerId)) {
-          this.selectedLayerIds.push(layerId);
-        }
-      } else {
-        this.selectedLayerIds = [layerId];
-      }
+      layerActions.selectLayer(this, layerId, addToSelection);
     },
 
     deselectLayer(layerId: string): void {
-      this.selectedLayerIds = this.selectedLayerIds.filter(id => id !== layerId);
+      layerActions.deselectLayer(this, layerId);
     },
 
     /**
      * Set a layer's parent for parenting/hierarchy
      */
     setLayerParent(layerId: string, parentId: string | null): void {
-      const layers = this.getActiveCompLayers();
-      const layer = layers.find(l => l.id === layerId);
-      if (!layer) return;
-
-      // Prevent self-parenting
-      if (parentId === layerId) return;
-
-      // Prevent circular parenting (parent can't be a descendant)
-      if (parentId) {
-        const getDescendantIds = (id: string): string[] => {
-          const children = layers.filter(l => l.parentId === id);
-          let ids = children.map(c => c.id);
-          for (const child of children) {
-            ids = ids.concat(getDescendantIds(child.id));
-          }
-          return ids;
-        };
-
-        const descendants = new Set(getDescendantIds(layerId));
-        if (descendants.has(parentId)) {
-          storeLogger.warn('Cannot set parent: would create circular reference');
-          return;
-        }
-      }
-
-      layer.parentId = parentId;
-      this.project.meta.modified = new Date().toISOString();
-      this.pushHistory();
+      layerActions.setLayerParent(this, layerId, parentId);
     },
 
     clearSelection(): void {
-      this.selectedLayerIds = [];
+      layerActions.clearSelection(this);
       this.selectedKeyframeIds = [];
       this.selectedPropertyPath = null;
     },
@@ -1507,135 +1284,54 @@ export const useCompositorStore = defineStore('compositor', {
      * History management
      */
     pushHistory(): void {
-      // Remove any future history if we're not at the end
-      if (this.historyIndex < this.historyStack.length - 1) {
-        this.historyStack = this.historyStack.slice(0, this.historyIndex + 1);
-      }
-
-      // Deep clone the project
-      const snapshot = JSON.parse(JSON.stringify(this.project));
-      this.historyStack.push(snapshot);
-      this.historyIndex = this.historyStack.length - 1;
-
-      // Limit history size
-      const maxHistory = 50;
-      if (this.historyStack.length > maxHistory) {
-        this.historyStack = this.historyStack.slice(-maxHistory);
-        this.historyIndex = this.historyStack.length - 1;
-      }
+      projectActions.pushHistory(this);
     },
 
     undo(): void {
-      if (this.historyIndex <= 0) return;
-
-      this.historyIndex--;
-      this.project = JSON.parse(JSON.stringify(this.historyStack[this.historyIndex]));
+      projectActions.undo(this);
     },
 
     redo(): void {
-      if (this.historyIndex >= this.historyStack.length - 1) return;
-
-      this.historyIndex++;
-      this.project = JSON.parse(JSON.stringify(this.historyStack[this.historyIndex]));
+      projectActions.redo(this);
     },
 
     /**
      * Project serialization
      */
     exportProject(): string {
-      return JSON.stringify(this.project, null, 2);
+      return projectActions.exportProject(this);
     },
 
     importProject(json: string): void {
-      try {
-        const project = JSON.parse(json) as WeylProject;
-        this.project = project;
-        this.pushHistory();
-      } catch (err) {
-        storeLogger.error('Failed to import project:', err);
-      }
+      projectActions.importProject(this, json, () => this.pushHistory());
     },
 
     /**
      * Save project to server (ComfyUI backend)
-     * @param projectId - Optional existing project ID for overwriting
-     * @returns The project ID if successful, null otherwise
      */
     async saveProjectToServer(projectId?: string): Promise<string | null> {
-      try {
-        const { saveProject } = await import('@/services/projectStorage');
-        const result = await saveProject(this.project, projectId);
-
-        if (result.status === 'success' && result.project_id) {
-          storeLogger.info('Project saved to server:', result.project_id);
-          return result.project_id;
-        } else {
-          storeLogger.error('Failed to save project:', result.message);
-          return null;
-        }
-      } catch (err) {
-        storeLogger.error('Error saving project to server:', err);
-        return null;
-      }
+      return projectActions.saveProjectToServer(this, projectId);
     },
 
     /**
      * Load project from server (ComfyUI backend)
-     * @param projectId - The project ID to load
-     * @returns True if successful
      */
     async loadProjectFromServer(projectId: string): Promise<boolean> {
-      try {
-        const { loadProject } = await import('@/services/projectStorage');
-        const result = await loadProject(projectId);
-
-        if (result.status === 'success' && result.project) {
-          this.project = result.project;
-          this.pushHistory();
-          storeLogger.info('Project loaded from server:', projectId);
-          return true;
-        } else {
-          storeLogger.error('Failed to load project:', result.message);
-          return false;
-        }
-      } catch (err) {
-        storeLogger.error('Error loading project from server:', err);
-        return false;
-      }
+      return projectActions.loadProjectFromServer(this, projectId, () => this.pushHistory());
     },
 
     /**
      * List all projects saved on server
      */
     async listServerProjects(): Promise<Array<{ id: string; name: string; modified?: string }>> {
-      try {
-        const { listProjects } = await import('@/services/projectStorage');
-        const result = await listProjects();
-
-        if (result.status === 'success' && result.projects) {
-          return result.projects;
-        }
-        return [];
-      } catch (err) {
-        storeLogger.error('Error listing projects:', err);
-        return [];
-      }
+      return projectActions.listServerProjects();
     },
 
     /**
      * Delete a project from server
-     * @param projectId - The project ID to delete
-     * @returns True if successful
      */
     async deleteServerProject(projectId: string): Promise<boolean> {
-      try {
-        const { deleteProject } = await import('@/services/projectStorage');
-        const result = await deleteProject(projectId);
-        return result.status === 'success';
-      } catch (err) {
-        storeLogger.error('Error deleting project:', err);
-        return false;
-      }
+      return projectActions.deleteServerProject(projectId);
     },
 
     /**
@@ -1661,263 +1357,47 @@ export const useCompositorStore = defineStore('compositor', {
       value: T,
       atFrame?: number
     ): Keyframe<T> | null {
-      const frame = atFrame ?? (this.getActiveComp()?.currentFrame ?? 0);
-      storeLogger.debug('addKeyframe called:', { layerId, propertyName, value, frame });
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) {
-        storeLogger.debug('addKeyframe: layer not found');
-        return null;
-      }
-
-      // Find the property
-      let property: AnimatableProperty<T> | undefined;
-
-      // Check transform properties (support both 'position' and 'transform.position' formats)
-      if (propertyName === 'position' || propertyName === 'transform.position') {
-        property = layer.transform.position as unknown as AnimatableProperty<T>;
-      } else if (propertyName === 'scale' || propertyName === 'transform.scale') {
-        property = layer.transform.scale as unknown as AnimatableProperty<T>;
-      } else if (propertyName === 'rotation' || propertyName === 'transform.rotation') {
-        property = layer.transform.rotation as unknown as AnimatableProperty<T>;
-      } else if (propertyName === 'anchorPoint' || propertyName === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint as unknown as AnimatableProperty<T>;
-      } else if (propertyName === 'opacity') {
-        property = layer.opacity as unknown as AnimatableProperty<T>;
-      } else {
-        // Check custom properties
-        property = layer.properties.find(p => p.name === propertyName) as AnimatableProperty<T> | undefined;
-      }
-
-      if (!property) {
-        storeLogger.debug('addKeyframe: property not found:', propertyName);
-        return null;
-      }
-
-      // Enable animation
-      property.animated = true;
-
-      // Create keyframe with new handle structure
-      // Default handles are disabled (linear interpolation until graph editor enables them)
-      const keyframe: Keyframe<T> = {
-        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        frame,
-        value,
-        interpolation: 'linear',
-        inHandle: { frame: 0, value: 0, enabled: false },
-        outHandle: { frame: 0, value: 0, enabled: false },
-        controlMode: 'smooth'
-      };
-
-      // Check for existing keyframe at this frame
-      const existingIndex = property.keyframes.findIndex(k => k.frame === frame);
-      if (existingIndex >= 0) {
-        property.keyframes[existingIndex] = keyframe;
-        storeLogger.debug('addKeyframe: replaced existing keyframe at frame', (this.getActiveComp()?.currentFrame ?? 0));
-      } else {
-        property.keyframes.push(keyframe);
-        property.keyframes.sort((a, b) => a.frame - b.frame);
-        storeLogger.debug('addKeyframe: added new keyframe at frame', (this.getActiveComp()?.currentFrame ?? 0), 'total keyframes:', property.keyframes.length);
-      }
-
-      this.project.meta.modified = new Date().toISOString();
-      return keyframe;
+      return keyframeActions.addKeyframe(this, layerId, propertyName, value, atFrame);
     },
 
     /**
      * Remove a keyframe
      */
     removeKeyframe(layerId: string, propertyName: string, keyframeId: string): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      // Find the property (support both 'position' and 'transform.position' formats)
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyName === 'position' || propertyName === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyName === 'scale' || propertyName === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyName === 'rotation' || propertyName === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyName === 'anchorPoint' || propertyName === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else if (propertyName === 'opacity') {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find(p => p.name === propertyName);
-      }
-
-      if (!property) return;
-
-      const index = property.keyframes.findIndex(k => k.id === keyframeId);
-      if (index >= 0) {
-        property.keyframes.splice(index, 1);
-
-        // Disable animation if no keyframes left
-        if (property.keyframes.length === 0) {
-          property.animated = false;
-        }
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.removeKeyframe(this, layerId, propertyName, keyframeId);
     },
 
     /**
      * Set a property's value (for direct editing in timeline)
      */
     setPropertyValue(layerId: string, propertyPath: string, value: any): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      // Find the property
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find(p => p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      property.value = value;
-
-      // If animated and at a keyframe, update that keyframe's value too
-      if (property.animated && property.keyframes.length > 0) {
-        const existingKf = property.keyframes.find(kf => kf.frame === (this.getActiveComp()?.currentFrame ?? 0));
-        if (existingKf) {
-          existingKf.value = value;
-        }
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.setPropertyValue(this, layerId, propertyPath, value);
     },
 
     /**
      * Set a property's animated state
      */
     setPropertyAnimated(layerId: string, propertyPath: string, animated: boolean): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find(p => p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      property.animated = animated;
-
-      // If enabling animation and no keyframes, add one at current frame
-      if (animated && property.keyframes.length === 0) {
-        this.addKeyframe(layerId, propertyPath, property.value);
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.setPropertyAnimated(this, layerId, propertyPath, animated, () => {
+        this.addKeyframe(layerId, propertyPath, keyframeActions.findPropertyByPath(
+          this.getActiveCompLayers().find(l => l.id === layerId)!,
+          propertyPath
+        )?.value);
+      });
     },
 
     /**
      * Move a keyframe to a new frame
      */
     moveKeyframe(layerId: string, propertyPath: string, keyframeId: string, newFrame: number): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find(p => p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
-      if (!keyframe) return;
-
-      // Check if there's already a keyframe at the target frame
-      const existingAtTarget = property.keyframes.find(kf => kf.frame === newFrame && kf.id !== keyframeId);
-      if (existingAtTarget) {
-        // Remove the existing keyframe at target
-        property.keyframes = property.keyframes.filter(kf => kf.id !== existingAtTarget.id);
-      }
-
-      keyframe.frame = newFrame;
-
-      // Re-sort keyframes by frame
-      property.keyframes.sort((a, b) => a.frame - b.frame);
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.moveKeyframe(this, layerId, propertyPath, keyframeId, newFrame);
     },
 
     /**
      * Set keyframe value (for graph editor numeric input)
      */
     setKeyframeValue(layerId: string, propertyPath: string, keyframeId: string, newValue: number): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find(p => p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
-      if (!keyframe) return;
-
-      // Handle vector values (Position X/Y are separated in graph editor)
-      if (typeof keyframe.value === 'object' && keyframe.value !== null) {
-        // For graph editor, the curve name tells us which dimension
-        // This is a simplified update - for full support, we'd need curve dimension info
-        // For now, just update scalar values directly
-        storeLogger.warn('setKeyframeValue: Cannot directly update vector keyframes from graph editor. Use separate dimension curves.');
-      } else {
-        keyframe.value = newValue;
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.setKeyframeValue(this, layerId, propertyPath, keyframeId, newValue);
     },
 
     /**
@@ -1929,33 +1409,7 @@ export const useCompositorStore = defineStore('compositor', {
       keyframeId: string,
       interpolation: InterpolationType
     ): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find(p => p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
-      if (!keyframe) return;
-
-      keyframe.interpolation = interpolation;
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.setKeyframeInterpolation(this, layerId, propertyPath, keyframeId, interpolation);
     },
 
     /**
@@ -1967,41 +1421,7 @@ export const useCompositorStore = defineStore('compositor', {
       keyframeId: string,
       updates: { frame?: number; value?: any }
     ): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else {
-        property = layer.properties.find(p => p.id === propertyPath || p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
-      if (!keyframe) return;
-
-      if (updates.frame !== undefined) {
-        keyframe.frame = updates.frame;
-        // Re-sort keyframes by frame
-        property.keyframes.sort((a, b) => a.frame - b.frame);
-      }
-
-      if (updates.value !== undefined) {
-        keyframe.value = updates.value;
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.updateKeyframe(this, layerId, propertyPath, keyframeId, updates);
     },
 
     /**
@@ -2014,42 +1434,7 @@ export const useCompositorStore = defineStore('compositor', {
       handleType: 'in' | 'out',
       handle: BezierHandle
     ): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer) return;
-
-      let property: AnimatableProperty<any> | undefined;
-
-      if (propertyPath === 'position' || propertyPath === 'transform.position') {
-        property = layer.transform.position;
-      } else if (propertyPath === 'scale' || propertyPath === 'transform.scale') {
-        property = layer.transform.scale;
-      } else if (propertyPath === 'rotation' || propertyPath === 'transform.rotation') {
-        property = layer.transform.rotation;
-      } else if (propertyPath === 'opacity') {
-        property = layer.opacity;
-      } else if (propertyPath === 'anchorPoint' || propertyPath === 'transform.anchorPoint') {
-        property = layer.transform.anchorPoint;
-      } else {
-        property = layer.properties.find(p => p.id === propertyPath || p.name === propertyPath);
-      }
-
-      if (!property) return;
-
-      const keyframe = property.keyframes.find(kf => kf.id === keyframeId);
-      if (!keyframe) return;
-
-      if (handleType === 'in') {
-        keyframe.inHandle = { ...handle };
-      } else {
-        keyframe.outHandle = { ...handle };
-      }
-
-      // Enable bezier interpolation when handles are modified
-      if (handle.enabled && keyframe.interpolation === 'linear') {
-        keyframe.interpolation = 'bezier';
-      }
-
-      this.project.meta.modified = new Date().toISOString();
+      keyframeActions.setKeyframeHandle(this, layerId, propertyPath, keyframeId, handleType, handle);
     },
 
     /**
@@ -3970,14 +3355,17 @@ export const useCompositorStore = defineStore('compositor', {
       if (!this.hasUnsavedChanges) return;
 
       try {
-        const projectId = this.lastSaveProjectId || undefined;
-        const result = await saveProject(this.project, projectId);
+        const existingProjectId = this.lastSaveProjectId || undefined;
+        const result = await saveProject(this.project, existingProjectId);
 
-        this.lastSaveProjectId = result.projectId;
-        this.lastSaveTime = Date.now();
-        this.hasUnsavedChanges = false;
-
-        storeLogger.info('Autosaved project:', result.projectId);
+        if (result.status === 'success' && result.project_id) {
+          this.lastSaveProjectId = result.project_id;
+          this.lastSaveTime = Date.now();
+          this.hasUnsavedChanges = false;
+          storeLogger.info('Autosaved project:', result.project_id);
+        } else {
+          storeLogger.error('Autosave failed:', result.message);
+        }
       } catch (error) {
         storeLogger.error('Autosave failed:', error);
       }
@@ -3998,11 +3386,15 @@ export const useCompositorStore = defineStore('compositor', {
     async saveProjectToBackend(): Promise<string> {
       try {
         const result = await saveProject(this.project, this.lastSaveProjectId || undefined);
-        this.lastSaveProjectId = result.projectId;
-        this.lastSaveTime = Date.now();
-        this.hasUnsavedChanges = false;
-        storeLogger.info('Saved project:', result.projectId);
-        return result.projectId;
+        if (result.status === 'success' && result.project_id) {
+          this.lastSaveProjectId = result.project_id;
+          this.lastSaveTime = Date.now();
+          this.hasUnsavedChanges = false;
+          storeLogger.info('Saved project:', result.project_id);
+          return result.project_id;
+        } else {
+          throw new Error(result.message || 'Save failed');
+        }
       } catch (error) {
         storeLogger.error('Save failed:', error);
         throw error;
@@ -4014,12 +3406,17 @@ export const useCompositorStore = defineStore('compositor', {
      */
     async loadProjectFromBackend(projectId: string): Promise<void> {
       try {
-        const project = await loadProject(projectId);
-        this.loadProject(project);
-        this.lastSaveProjectId = projectId;
-        this.lastSaveTime = Date.now();
-        this.hasUnsavedChanges = false;
-        storeLogger.info('Loaded project:', projectId);
+        const result = await loadProject(projectId);
+        if (result.status === 'success' && result.project) {
+          this.project = result.project;
+          this.pushHistory();
+          this.lastSaveProjectId = projectId;
+          this.lastSaveTime = Date.now();
+          this.hasUnsavedChanges = false;
+          storeLogger.info('Loaded project:', projectId);
+        } else {
+          throw new Error(result.message || 'Load failed');
+        }
       } catch (error) {
         storeLogger.error('Load failed:', error);
         throw error;
@@ -4029,9 +3426,15 @@ export const useCompositorStore = defineStore('compositor', {
     /**
      * List available projects from backend
      */
-    async listSavedProjects(): Promise<Array<{ projectId: string; name: string; modified: string }>> {
+    async listSavedProjects(): Promise<Array<{ id: string; name: string; modified?: string }>> {
       try {
-        return await listProjects();
+        const result = await listProjects();
+        if (result.status === 'success' && result.projects) {
+          return result.projects;
+        } else {
+          storeLogger.error('List projects failed:', result.message);
+          return [];
+        }
       } catch (error) {
         storeLogger.error('List projects failed:', error);
         return [];

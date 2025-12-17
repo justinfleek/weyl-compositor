@@ -2,7 +2,7 @@
  * Services Index
  *
  * Central export point for all service modules.
- * Organized by category for easier discovery.
+ * AUDITED: All exports verified against actual module exports.
  */
 
 // ============================================================================
@@ -11,20 +11,19 @@
 
 // Interpolation & Animation
 export {
-  interpolateValue,
   interpolateProperty,
-  interpolateVector2,
-  interpolateVector3,
-  interpolateColor,
-  applyEasing,
   EASING_PRESETS,
-  type EasingType,
+  EASING_PRESETS_NORMALIZED,
+  createHandlesForPreset,
+  applyEasingPreset,
+  getBezierCurvePoint,
+  getBezierCurvePointNormalized,
+  applyEasing,
 } from './interpolation';
 
 // Expressions
 export {
   evaluateExpression,
-  createExpressionContext,
   easing,
   motion,
   loop,
@@ -34,39 +33,16 @@ export {
   type Expression,
 } from './expressions';
 
-// Easing functions
+// Easing functions (object-based, not individual functions)
 export {
-  linear,
-  easeInQuad,
-  easeOutQuad,
-  easeInOutQuad,
-  easeInCubic,
-  easeOutCubic,
-  easeInOutCubic,
-  easeInQuart,
-  easeOutQuart,
-  easeInOutQuart,
-  easeInQuint,
-  easeOutQuint,
-  easeInOutQuint,
-  easeInSine,
-  easeOutSine,
-  easeInOutSine,
-  easeInExpo,
-  easeOutExpo,
-  easeInOutExpo,
-  easeInCirc,
-  easeOutCirc,
-  easeInOutCirc,
-  easeInBack,
-  easeOutBack,
-  easeInOutBack,
-  easeInElastic,
-  easeOutElastic,
-  easeInOutElastic,
-  easeInBounce,
-  easeOutBounce,
-  easeInOutBounce,
+  easings,
+  easingNames,
+  easingGroups,
+  getEasing,
+  applyEasing as applyEasingByName,
+  interpolateWithEasing,
+  type EasingFunction,
+  type EasingName,
 } from './easing';
 
 // ============================================================================
@@ -120,12 +96,15 @@ export {
 
 export {
   MotionBlurProcessor,
-  applyMotionBlur,
   createDefaultMotionBlurSettings,
+  getMotionBlurPreset,
+  listMotionBlurPresets,
   MOTION_BLUR_PRESETS,
   type MotionBlurSettings,
   type MotionBlurType,
-  type ObjectTransform,
+  type RadialBlurMode,
+  type VelocityData,
+  type MotionBlurFrame,
 } from './motionBlur';
 
 // ============================================================================
@@ -134,120 +113,226 @@ export {
 
 export * from './effects';
 
-// Effect processor
+// Effect processor (functions, not a class)
 export {
-  EffectProcessor,
-  type ProcessedEffectResult,
+  registerEffectRenderer,
+  evaluateEffectParameters,
+  processEffectStack,
+  imageDataToCanvas,
+  canvasToImageData,
+  createMatchingCanvas,
+  hasEnabledEffects,
+  getRegisteredEffects,
+  type EvaluatedEffectParams,
+  type EffectStackResult,
+  type EffectRenderer,
 } from './effectProcessor';
 
 // ============================================================================
 // AUDIO
 // ============================================================================
 
+// Audio features (functions, not classes)
 export {
-  AudioFeatureExtractor,
-  AudioSpectrumAnalyzer,
-  type AudioFeatures,
-  type BeatInfo,
-  type SpectralFeatures,
+  loadAudioFile,
+  loadAudioFromUrl,
+  analyzeAudio,
+  extractAmplitudeEnvelope,
+  extractRMSEnergy,
+  extractFrequencyBands,
+  extractSpectralCentroid,
+  detectOnsets,
+  extractSpectralFlux,
+  extractZeroCrossingRate,
+  extractSpectralRolloff,
+  extractSpectralFlatness,
+  extractChromaFeatures,
+  detectBPM,
+  getFeatureAtFrame,
+  getSmoothedFeature,
+  normalizeFeature,
+  applyFeatureCurve,
+  detectPeaks,
+  generatePeakGraph,
+  isBeatAtFrame,
+  isPeakAtFrame,
+  type AudioAnalysis,
+  type FrequencyBandRanges,
+  type ChromaFeatures,
+  type AudioAnalysisConfig,
+  type PeakDetectionConfig,
+  type PeakData,
 } from './audioFeatures';
 
+// Audio reactive mapping
 export {
   AudioReactiveMapper,
   createDefaultAudioMapping,
-  type AudioMapping,
+  createIPAdapterSchedule,
+  getIPAdapterWeightsAtFrame,
+  getFeatureDisplayName,
+  getTargetDisplayName,
+  getAllFeatures,
+  getFeaturesByCategory,
+  getAllTargets,
+  getTargetsByCategory,
+  createSplineControlPointTargets,
+  type AudioFeature,
   type TargetParameter,
-  type AudioMappingConfig,
+  type AudioMapping,
+  type IPAdapterTransition,
+  type WeightSchedule,
 } from './audioReactiveMapping';
 
+// Audio path animator
 export {
   AudioPathAnimator,
-  type PathAnimationConfig,
-  type PathAnimationState,
+  createDefaultPathAnimatorConfig,
+  type PathAnimatorConfig,
+  type PathAnimatorState,
+  type MovementMode,
 } from './audioPathAnimator';
 
 // ============================================================================
 // TEXT & PATHS
 // ============================================================================
 
+// Arc length (class-based)
 export {
-  buildArcLengthLUT,
-  getPointAtDistance,
-  getTangentAtDistance,
-  getCurvatureAtDistance,
-  distributePointsEvenly,
-  findClosestPointOnCurve,
-  type ArcLengthLUT,
+  ArcLengthParameterizer,
+  MultiSegmentParameterizer,
+  pathCommandsToBezier,
+  controlPointsToBeziers,
 } from './arcLength';
 
+// Text on path
 export {
-  TextOnPathEngine,
-  createDefaultTextOnPathConfig,
+  TextOnPathService,
+  createTextOnPathService,
+  createDefaultPathConfig,
   type TextOnPathConfig,
-  type GlyphPlacement,
-  type TextAnimationKeyframe,
+  type PathPoint,
+  type CharacterPlacement,
 } from './textOnPath';
 
+// Font service (singleton instance)
 export {
-  FontService,
-  getGlobalFontService,
+  fontService,
   type FontInfo,
-  type LoadedFont,
+  type FontCategory,
 } from './fontService';
 
 // ============================================================================
 // SHAPES & OPERATIONS
 // ============================================================================
 
+// Shape operations (many individual functions)
 export {
-  applyBooleanOperation,
+  // Point operations
+  distance,
+  lerpPoint,
+  addPoints,
+  subtractPoints,
+  scalePoint,
+  normalize as normalizePoint,
+  perpendicular,
+  dot,
+  cross,
+  rotatePoint,
+  rotateAround,
+  clonePoint,
+  cloneVertex,
+  clonePath,
+  // Bezier operations
+  cubicBezierPoint,
+  cubicBezierDerivative,
+  splitCubicBezier,
+  cubicBezierLength,
+  getPathLength,
+  getPointAtDistance,
+  trimPath,
+  mergePaths,
+  // Path modifications
   offsetPath,
+  offsetPathMultiple,
+  puckerBloat,
+  wigglePath,
+  zigZagPath,
+  twistPath,
   roundCorners,
   simplifyPath,
-  pathToPoints,
-  pointsToPath,
-  type BooleanOperation,
+  smoothPath,
+  applyRepeater,
+  transformPath,
+  // Shape generators
+  generateRectangle,
+  generateEllipse,
+  generatePolygon,
+  generateStar,
+  // Bundled export
+  ShapeOperations,
 } from './shapeOperations';
 
+// Image trace
 export {
   traceImage,
-  traceImageToSVG,
+  ImageTrace,
+  DEFAULT_TRACE_OPTIONS,
+  type TraceMode,
   type TraceOptions,
-  type TracedPath,
+  type TraceResult,
 } from './imageTrace';
 
 // ============================================================================
 // CAMERA & 3D
 // ============================================================================
 
+// Math 3D (corrected names)
 export {
-  createViewMatrix,
-  createProjectionMatrix,
-  multiplyMatrices,
-  invertMatrix,
+  // Vector operations
+  vec3,
+  addVec3,
+  subVec3,
+  scaleVec3,
+  lengthVec3,
+  normalizeVec3,
+  crossVec3,
+  dotVec3,
+  lerpVec3,
+  distanceVec3,
+  // Matrix operations
+  identityMat4,
+  multiplyMat4,
+  perspectiveMat4,
+  orthographicMat4,
+  lookAtMat4,
+  translateMat4,
+  rotateXMat4,
+  rotateYMat4,
+  rotateZMat4,
+  scaleMat4,
   transformPoint,
-  vec3Add,
-  vec3Sub,
-  vec3Scale,
-  vec3Normalize,
-  vec3Cross,
-  vec3Dot,
-  vec3Length,
-  mat4Identity,
-  mat4Translate,
-  mat4RotateX,
-  mat4RotateY,
-  mat4RotateZ,
-  mat4Scale,
-  quaternionFromEuler,
-  quaternionToMatrix,
-  quaternionSlerp,
+  transformDirection,
+  invertMat4,
+  // Quaternion operations
+  quatIdentity,
+  quatFromEuler,
+  quatToEuler,
+  slerpQuat,
+  // Utility
+  focalLengthToFOV,
+  fovToFocalLength,
+  zoomToFocalLength,
+  focalLengthToZoom,
+  degToRad,
+  radToDeg,
+  // Types
   type Vec3,
-  type Vec4,
   type Mat4,
-  type Quaternion,
+  type Quat,
 } from './math3d';
 
+// Camera export
 export {
   exportCameraJSON,
   importCameraJSON,
@@ -257,29 +342,85 @@ export {
   type Uni3CFrame,
 } from './cameraExport';
 
+// Camera trajectory
 export {
-  CameraTrajectoryGenerator,
-  createTrajectoryFromKeyframes,
+  sphericalToCartesian,
+  cartesianToSpherical,
+  getTrajectoryPosition,
+  generateTrajectoryKeyframes,
+  applyCameraTrajectory,
+  createTrajectoryFromPreset,
+  getTrajectoryDescription,
+  getTrajectoryCategory,
+  getTrajectoryTypesByCategory,
+  DEFAULT_SPHERICAL,
+  DEFAULT_TRAJECTORY,
+  TRAJECTORY_PRESETS,
+  type SphericalCoords,
+  type TrajectoryType,
   type TrajectoryConfig,
-  type TrajectoryPoint,
+  type TrajectoryKeyframes,
 } from './cameraTrajectory';
 
+// Camera 3D visualization
 export {
-  Camera3DVisualization,
-  type CameraVisualizationConfig,
+  generateCameraBody,
+  generateFrustum,
+  generateCompositionBounds,
+  generatePOILine,
+  generateFocalPlane,
+  generateCameraVisualization,
+  getCameraViewMatrices,
+  getOrthoViewMatrices,
+  projectToScreen,
+  generate3DAxes,
+  generateGrid,
+  type LineSegment,
+  type CameraVisualization,
+  type ViewMatrices,
 } from './camera3DVisualization';
 
 // ============================================================================
 // DEPTH & SEGMENTATION
 // ============================================================================
 
+// Depthflow (corrected names - lowercase 'f')
 export {
-  DepthFlowGenerator,
-  createDefaultDepthFlowConfig,
-  type DepthFlowConfig,
-  type DepthFlowResult,
+  DepthflowRenderer,
+  createDefaultDepthflowConfig,
+  createDefaultDOFConfig,
+  createDefaultEnhancedConfig,
+  createMotionComponent,
+  applyEasing as applyDepthflowEasing,
+  evaluateMotionComponent,
+  evaluateMotionsForParameter,
+  evaluateAllMotions,
+  applyMotionPreset,
+  getMotionPresetNames,
+  getMotionPresetDescription,
+  createDepthSliceMask,
+  createAnimatedDepthSlice,
+  createAllDepthSlices,
+  cameraToDepthflowParams,
+  cameraTrajToDepthflowMotions,
+  evaluateCameraSyncedDepthflow,
+  MOTION_PRESETS,
+  DEFAULT_CAMERA_SYNC_CONFIG,
+  type MotionType,
+  type MotionParameter,
+  type EasingType as DepthflowEasingType,
+  type MotionComponent,
+  type DOFConfig,
+  type DepthflowEnhanced,
+  type DepthflowPreset,
+  type DepthflowConfig,
+  type DepthflowState,
+  type DepthSliceConfig,
+  type CameraToDepthflowConfig,
+  type CameraState,
 } from './depthflow';
 
+// Segmentation
 export {
   segmentImage,
   segmentByPoint,
@@ -310,6 +451,7 @@ export {
 
 export * from './export';
 
+// Model export
 export {
   camera3DToMatrix4x4,
   exportCameraTrajectory,
@@ -343,21 +485,32 @@ export {
   type UnifiedExportResult,
 } from './modelExport';
 
+// Matte exporter (singleton instance)
 export {
-  MatteExporter,
-  type MatteExportConfig,
-  type MatteFrame,
+  matteExporter,
+  type ExportProgress,
+  type ProgressCallback,
+  type ExportOptions,
+  type DimensionValidation,
 } from './matteExporter';
 
 // ============================================================================
 // PROJECT & STORAGE
 // ============================================================================
 
+// Project storage (functions, not a class)
 export {
-  ProjectStorage,
-  getProjectStorage,
-  type StoredProject,
-  type ProjectMetadata,
+  saveProject,
+  loadProject,
+  listProjects,
+  deleteProject,
+  isApiAvailable,
+  exportProjectAsFile,
+  importProjectFromFile,
+  type ProjectInfo,
+  type SaveResult,
+  type LoadResult,
+  type ListResult,
 } from './projectStorage';
 
 // ============================================================================
@@ -365,11 +518,29 @@ export {
 // ============================================================================
 
 export {
-  PropertyDriverEngine,
-  createDefaultDriverConfig,
+  PropertyDriverSystem,
+  createPropertyDriver,
+  createAudioDriver,
+  createPropertyLink,
+  createGearDriver,
+  createAudioLightDriver,
+  createAudioColorTempDriver,
+  createLightFollowDriver,
+  getPropertyPathDisplayName,
+  getAllPropertyPaths,
+  getLightPropertyPaths,
+  getPropertyPathsForLayerType,
+  isSplineControlPointPath,
+  isLightPropertyPath,
+  parseSplineControlPointPath,
+  createSplineControlPointPath,
   type PropertyDriver,
-  type DriverType,
-  type DriverConfig,
+  type DriverSourceType,
+  type PropertyPath,
+  type AudioFeatureType,
+  type DriverTransform,
+  type PropertyGetter,
+  type PropertySetter,
 } from './propertyDriver';
 
 // ============================================================================
@@ -377,9 +548,17 @@ export {
 // ============================================================================
 
 export {
-  TimelineSnapService,
+  findNearestSnap,
+  getBeatFrames,
+  getPeakFrames,
+  isNearBeat,
+  getNearestBeatFrame,
+  getSnapColor,
+  DEFAULT_SNAP_CONFIG,
+  type SnapType,
   type SnapResult,
   type SnapConfig,
+  type SnapIndicator,
 } from './timelineSnap';
 
 // ============================================================================

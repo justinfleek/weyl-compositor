@@ -863,3 +863,74 @@ Canvas handlers for select/text/hand/zoom tools still need implementation.
 10. [ ] No layer reorder UI
 11. [ ] Missing property panels for spline layers
 12. [ ] Camera presets not exposed
+
+---
+
+## ADDENDUM: December 2024 Updates
+
+**Last Updated:** 2025-12-17
+
+### Revised Statistics
+
+| Category | Previous | Current | Change |
+|----------|----------|---------|--------|
+| Components | 30 | 45 | +15 |
+| Services | ~20 | 32 | +12 |
+| Tests | ~500 | 851 | +351 |
+| Layer Types Implemented | 4 | 10 | +6 |
+| TypeScript Errors | Unknown | 0 | Clean |
+
+### Fixed Issues Since Original Audit
+
+1. **[x] Tools connected to store** - WorkspaceLayout.vue computed property
+2. **[x] Effects rendered** - effectProcessor.ts + StackBlur algorithm
+3. **[x] Audio non-blocking** - Web Worker implementation (audioWorker.ts)
+4. **[x] Camera layers** - Full camera system with store integration
+5. **[x] Expression system** - expressions.ts service added
+6. **[x] Motion blur** - Multi-type motion blur processor
+7. **[x] Shape layers** - shapeOperations.ts with boolean ops
+8. **[x] services/index.ts exports** - All 32 services properly exported
+
+### New Services Added
+
+| Service | Purpose |
+|---------|---------|
+| expressions.ts | Expression evaluation (wiggle, time, etc.) |
+| motionBlur.ts | Multi-type motion blur processing |
+| shapeOperations.ts | Boolean shape operations |
+| propertyDriver.ts | Property linking system |
+| frameCache.ts | LRU frame caching |
+| audioWorkerClient.ts | Non-blocking audio analysis |
+
+### Remaining P0 Issues
+
+1. **[ ] Particle determinism** - Math.random() still in spawn positions
+2. **[ ] Timeline scroll sync** - Sidebar scrolls independently
+3. **[ ] Keyframe dragging** - Selection only, no movement
+
+### Updated Layer Type Status
+
+| Type | Previous | Current |
+|------|----------|---------|
+| camera | Not Implemented | **WORKING** |
+| light | Not Implemented | **WORKING** |
+| shape | Not Implemented | **WORKING** |
+| solid | Not Implemented | **WORKING** |
+| null | Not Implemented | **WORKING** |
+| image | Not Implemented | **PARTIAL** |
+| video | Not Implemented | **PARTIAL** |
+
+### Test Coverage Improvement
+
+```
+Previous: ~500 tests (estimated)
+Current:  851 tests (verified)
+Increase: +70%
+
+All 19 test suites passing
+0 TypeScript errors
+```
+
+---
+
+**End of Addendum**

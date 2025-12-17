@@ -489,12 +489,210 @@ function animate() {
   animationId = requestAnimationFrame(animate);
 }
 
+// Keyboard shortcut handler
+function onKeyDown(e: KeyboardEvent) {
+  // Only handle if viewport is focused (not typing in input)
+  if (document.activeElement?.tagName === 'INPUT' ||
+      document.activeElement?.tagName === 'TEXTAREA' ||
+      document.activeElement?.tagName === 'SELECT') {
+    return;
+  }
+
+  const activeView = activeViews.value[activeViewIndex.value];
+
+  // Numpad shortcuts for view presets
+  switch (e.code) {
+    case 'Numpad1':
+      if (e.ctrlKey) {
+        // Ctrl+Numpad1 = Back view
+        updateViewType(activeViewIndex.value, 'back');
+      } else {
+        // Numpad1 = Front view
+        updateViewType(activeViewIndex.value, 'front');
+      }
+      e.preventDefault();
+      break;
+
+    case 'Numpad3':
+      if (e.ctrlKey) {
+        // Ctrl+Numpad3 = Left view
+        updateViewType(activeViewIndex.value, 'left');
+      } else {
+        // Numpad3 = Right view
+        updateViewType(activeViewIndex.value, 'right');
+      }
+      e.preventDefault();
+      break;
+
+    case 'Numpad7':
+      if (e.ctrlKey) {
+        // Ctrl+Numpad7 = Bottom view
+        updateViewType(activeViewIndex.value, 'bottom');
+      } else {
+        // Numpad7 = Top view
+        updateViewType(activeViewIndex.value, 'top');
+      }
+      e.preventDefault();
+      break;
+
+    case 'Numpad0':
+      // Numpad0 = Active camera view
+      updateViewType(activeViewIndex.value, 'active-camera');
+      e.preventDefault();
+      break;
+
+    case 'Numpad5':
+      // Numpad5 = Toggle between ortho and perspective (switch to custom)
+      if (!isCustomView(activeView)) {
+        // Switch to custom view with current orientation
+        const targetView = 'custom-1' as const;
+        let theta = 0;
+        let phi = 90;
+
+        // Map current ortho view to spherical coords
+        switch (activeView) {
+          case 'front': theta = 0; phi = 90; break;
+          case 'back': theta = 180; phi = 90; break;
+          case 'left': theta = -90; phi = 90; break;
+          case 'right': theta = 90; phi = 90; break;
+          case 'top': theta = 0; phi = 1; break;
+          case 'bottom': theta = 0; phi = 179; break;
+          default: theta = 45; phi = 60;
+        }
+
+        store.updateViewportState({
+          customViews: {
+            ...viewportState.value.customViews,
+            [targetView]: {
+              ...viewportState.value.customViews[targetView],
+              orbitTheta: theta,
+              orbitPhi: phi,
+            }
+          }
+        });
+        updateViewType(activeViewIndex.value, targetView);
+      } else {
+        // Already in custom view, snap to nearest ortho view
+        const theta = customViews.value[activeView].orbitTheta % 360;
+        const phi = customViews.value[activeView].orbitPhi;
+
+        // Determine closest ortho view
+        let closestView: ViewType = 'front';
+        if (phi < 30) {
+          closestView = 'top';
+        } else if (phi > 150) {
+          closestView = 'bottom';
+        } else {
+          // Check theta for horizontal views
+          const normalizedTheta = ((theta % 360) + 360) % 360;
+          if (normalizedTheta >= 315 || normalizedTheta < 45) {
+            closestView = 'front';
+          } else if (normalizedTheta >= 45 && normalizedTheta < 135) {
+            closestView = 'right';
+          } else if (normalizedTheta >= 135 && normalizedTheta < 225) {
+            closestView = 'back';
+          } else {
+            closestView = 'left';
+          }
+        }
+        updateViewType(activeViewIndex.value, closestView);
+      }
+      e.preventDefault();
+      break;
+
+    case 'NumpadDecimal':
+    case 'Period':
+      // Focus on selected layer
+      focusOnSelectedLayer();
+      e.preventDefault();
+      break;
+
+    case 'Home':
+      // Reset view
+      if (isCustomView(activeView)) {
+        resetCustomView(activeView);
+      }
+      e.preventDefault();
+      break;
+
+    case 'KeyG':
+      // Toggle grid
+      if (!e.ctrlKey && !e.metaKey) {
+        store.updateViewOptions({
+          showGrid: !viewOptions.value.showGrid
+        });
+        e.preventDefault();
+      }
+      break;
+
+    case 'KeyH':
+      // Toggle layer handles
+      if (!e.ctrlKey && !e.metaKey) {
+        store.updateViewOptions({
+          showLayerHandles: !viewOptions.value.showLayerHandles
+        });
+        e.preventDefault();
+      }
+      break;
+
+    case 'KeyC':
+      // Toggle composition bounds
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        store.updateViewOptions({
+          showCompositionBounds: !viewOptions.value.showCompositionBounds
+        });
+        e.preventDefault();
+      }
+      break;
+
+    case 'KeyA':
+      // Toggle 3D axes
+      if (!e.ctrlKey && !e.metaKey && e.shiftKey) {
+        store.updateViewOptions({
+          show3DReferenceAxes: !viewOptions.value.show3DReferenceAxes
+        });
+        e.preventDefault();
+      }
+      break;
+  }
+}
+
+function focusOnSelectedLayer() {
+  // Find first selected layer
+  const selectedLayer = store.layers.find(l => store.selectedLayerIds.includes(l.id));
+  if (!selectedLayer) return;
+
+  // Get layer bounds (simplified - assumes layer at origin with 100x100 size)
+  const pos = selectedLayer.transform.position.value;
+  const width = 100; // Would need actual layer dimensions
+  const height = 100;
+
+  // Update custom view to focus on layer
+  const activeView = activeViews.value[activeViewIndex.value];
+  if (isCustomView(activeView)) {
+    store.updateViewportState({
+      customViews: {
+        ...viewportState.value.customViews,
+        [activeView]: {
+          ...customViews.value[activeView],
+          orbitCenter: { x: pos.x + width / 2, y: pos.y + height / 2, z: 0 },
+          orbitDistance: Math.max(width, height) * 3, // Zoom to fit
+        }
+      }
+    });
+  }
+}
+
 onMounted(() => {
   animate();
+  // Add keyboard listener
+  window.addEventListener('keydown', onKeyDown);
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(animationId);
+  // Remove keyboard listener
+  window.removeEventListener('keydown', onKeyDown);
 });
 
 // Re-render when store values change

@@ -1,118 +1,228 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## PROTOCOL: SYSTEM RESET & HANDOVER
 
-## Project Overview
+### 1. THE MISSION
+Building a pixel-perfect Adobe After Effects Clone for ComfyUI using Vue 3. I am the "Human in the Loop" managing Claude Code (an autonomous CLI agent). You are the Lead Architect.
 
-Weyl is an After Effects-caliber motion graphics compositor embedded as a ComfyUI extension. It enables spline drawing on depth maps, text animation along paths, particle systems, and matte export for Wan 2.1 video generation.
+### 2. THE CURRENT ARCHITECTURE
 
-**Target**: 81 frames at 16fps (5.0625 seconds), dimensions divisible by 8.
+**Framework**: Vue 3 + TypeScript + Pinia Store + Three.js
 
-## Build Commands
+**Timeline Logic**: We recently refactored from a percentage-based system to a `pixelsPerFrame` system to support true zooming.
 
-### Frontend (Vue + TypeScript)
+**Layout**: Split-Pane architecture:
+- **Left Pane (Sidebar)**: Layer Names, Icons, Properties, and Values
+- **Right Pane (Track)**: Duration Bars, Keyframe Diamonds, and Time Ruler
+
+**Scroll Sync**: Parent container handles vertical scrolling to keep Left and Right panes aligned.
+
+---
+
+## 3. BUILD COMMANDS
+
 ```bash
 cd ui
 npm install
 npm run dev          # Development server
-npm run build        # Production build (outputs to dist/)
+npm run build        # Production build (outputs to web/js/)
+npm test             # Run Vitest tests (851 passing)
+npx tsc --noEmit     # Type check (0 errors)
 ```
 
-### Backend (Python)
-```bash
-pip install -r requirements.txt
+---
+
+## 4. RECENT WORK (Last 24-48 Hours)
+
+### 4.1 Expression System (`ui/src/services/expressions.ts`) - 1288 lines
+Complete After Effects-style expression engine:
+- **Easing**: All Penner functions (Sine, Quad, Cubic, Quart, Quint, Expo, Circ, Back, Elastic, Bounce)
+- **Cubic Bezier**: With Newton-Raphson solving
+- **Motion**: `inertia()`, `bounce()`, `elastic()`
+- **Loops**: `loopIn()`, `loopOut()` with cycle/pingpong/offset/continue modes
+- **Wiggle**: `wiggle()`, `temporalWiggle()` with octaves
+- **Time**: timeRamp, periodic, sawtooth, triangle, square, sine, pulse
+- **Math**: lerp, clamp, map, smoothstep, smootherstep, seedRandom
+- **Presets**: Named expression presets (inertiaLight, bounceGentle, wiggleSubtle, etc.)
+
+### 4.2 View Options Toolbar (`ui/src/components/viewport/ViewOptionsToolbar.vue`)
+Viewport control toolbar with:
+- Grid/Axes/Rulers/Bounds toggles
+- Layer handles and paths toggles
+- Camera wireframe display modes (never/selected/always)
+- View presets (Front, Right, Top, Camera)
+- Reset view and focus selected buttons
+
+### 4.3 Store Actions Refactoring (`ui/src/stores/actions/`)
+Started decomposing the monolithic compositorStore (5000+ lines):
+- `cameraActions.ts` (7.8KB) - Camera CRUD, keyframes, interpolation
+- `effectActions.ts` (4.8KB) - Effect management
+- `segmentationActions.ts` (7.3KB) - SAM2/vision model integration
+- `index.ts` - Barrel exports
+
+### 4.4 Camera System (`ui/src/engine/core/CameraController.ts`)
+Enhanced 3D camera with:
+- Orbit, pan, dolly controls
+- DOF (depth of field) support
+- SSAO integration
+- View preset support (front/right/top/custom)
+
+### 4.5 Service Exports Fix (`ui/src/services/index.ts`)
+Complete rewrite to match actual module exports (was causing 100+ TypeScript errors)
+
+### 4.6 Test Infrastructure (`ui/src/__tests__/setup.ts`)
+Browser API mocks for Node.js test environment:
+- MockImageData, MockOffscreenCanvas
+- mockCreateImageBitmap, mockRequestAnimationFrame
+- Test utilities: createTestImageData, createTestCanvas
+
+---
+
+## 5. THE CRITICAL BUGS (Current Focus)
+
+### Bug A (The Bleed)
+Inputs from the Sidebar are visually rendering inside the Timeline Track area. `PropertyTrack.vue` is failing to respect the `layoutMode` split.
+
+### Bug B (Playhead Desync)
+The playhead triangle (in ruler) and the red line (in track) are disconnected or moving at different rates.
+
+### Bug C (UX Failures)
+- Twirl-down arrows misaligned/floating
+- Font sizes too small (need 14px/16px)
+- Missing columns: "Mode", "TrkMat", "Parent"
+- "+ Layer" menu floats in wrong place
+
+---
+
+## 6. KEY FILE LOCATIONS
+
+### Timeline Components (5 Core Files)
+```
+ui/src/components/timeline/
+├── TimelinePanel.vue       # Layout Controller (split-pane)
+├── EnhancedLayerTrack.vue  # Layer Row Router
+├── PropertyTrack.vue       # Property Row Renderer
+├── GraphEditorCanvas.vue   # Graph Mode Logic
+└── Playhead.vue            # Playhead component
 ```
 
-### Full Build
-```bash
-# Nix (reference build)
-nix build .#default
-
-# Docker
-docker build -t weyl-compositor .
+### Store
+```
+ui/src/stores/
+├── compositorStore.ts      # Main store (~5000 lines)
+└── actions/                # Extracted action modules
+    ├── cameraActions.ts
+    ├── effectActions.ts
+    └── segmentationActions.ts
 ```
 
-## Architecture
-
+### Engine
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  FRONTEND (Vue 3 + TypeScript)                              │
-│  ├── Canvas: Fabric.js 6.x → WebGL fallback                │
-│  ├── UI: PrimeVue (matches ComfyUI)                        │
-│  └── State: Pinia stores                                    │
-├─────────────────────────────────────────────────────────────┤
-│  BACKEND (Python + ComfyUI)                                 │
-│  ├── Inference: DepthAnything, NormalCrafter, MatSeg       │
-│  ├── Export: Frame sequence generation                      │
-│  └── Routes: /weyl/* endpoints via aiohttp                 │
-├─────────────────────────────────────────────────────────────┤
-│  COMFYUI INTEGRATION                                        │
-│  ├── web/js/extension.js - Sidebar registration            │
-│  ├── nodes/*.py - Python nodes                             │
-│  └── WEB_DIRECTORY = "./web/js"                            │
-└─────────────────────────────────────────────────────────────┘
+ui/src/engine/
+├── WeylEngine.ts           # Main facade
+├── MotionEngine.ts         # Pure frame evaluation (TIME AUTHORITY)
+├── core/
+│   ├── CameraController.ts
+│   ├── LayerManager.ts
+│   ├── RenderPipeline.ts
+│   └── SceneManager.ts
+└── layers/                 # Layer type implementations
 ```
 
-## Critical Library Notes
+### Services (32 total)
+```
+ui/src/services/
+├── expressions.ts          # NEW - Expression system
+├── interpolation.ts        # Keyframe interpolation
+├── easing.ts              # Penner easing functions
+├── particleSystem.ts       # CPU particles (has determinism issue)
+├── audioFeatures.ts        # Web Worker audio analysis
+├── motionBlur.ts          # Multi-type motion blur
+└── ... 26 more
+```
 
-### Fabric.js 6.x
-- **Uses ES6 classes**, NOT `createClass()` (removed in v6)
-- Must register custom classes: `classRegistry.setClass(MyClass)`
+---
 
+## 7. ARCHITECTURE RULES
+
+### MotionEngine is Time Authority
 ```typescript
 // CORRECT
-class SplinePath extends Path {
-  static type = 'SplinePath';
-}
-classRegistry.setClass(SplinePath);
+const frameState = motionEngine.evaluate(frame, project, audioAnalysis);
+engine.applyFrameState(frameState);
 
-// WRONG - does not exist
-fabric.util.createClass(...)
+// DEPRECATED - bypasses MotionEngine
+engine.setFrame(frame);
 ```
 
-### Bezier.js
-- `.get(t)`, `.derivative(t)`, `.length()`, `.project(point)` - all work
-- **`.getPointAtDistance(d)` does NOT exist** - must build arc-length LUT manually (see `ui/src/services/arcLength.ts` in specs)
+### layoutMode Must Be Respected
+```vue
+<!-- Sidebar: Show inputs -->
+<div v-if="layoutMode === 'sidebar'" class="prop-sidebar">
+  <input ... />
+</div>
 
-## Key File Locations
-
-```
-specs/                           # Complete technical specifications
-├── SPEC_01_FOUNDATION.md       # Requirements, tech stack, file structure
-├── SPEC_02_TYPES.md            # TypeScript type definitions
-├── SPEC_03_COMFYUI.md          # ComfyUI integration code
-├── SPEC_04_FABRIC.md           # Custom Fabric.js classes
-├── SPEC_05_SERVICES.md         # Core services (arc length, fonts, particles)
-├── SPEC_06_UI.md               # Vue components, Pinia stores
-└── SPEC_07_BUILD_TEST.md       # Build config, testing checklist
-
-ui/                             # Vue application (to be built)
-├── src/main.ts                 # App entry
-├── src/stores/                 # Pinia state management
-├── src/services/               # Business logic
-├── src/fabric/                 # Custom Fabric.js classes
-└── src/components/             # Vue components
-
-web/js/extension.js             # ComfyUI sidebar registration
-nodes/*.py                      # Python ComfyUI nodes
+<!-- Track: Show keyframes ONLY -->
+<div v-else class="prop-track">
+  <KeyframeDiamond ... />
+</div>
 ```
 
-## Implementation Order
+### pixelsPerFrame System
+```typescript
+const playheadPosition = currentFrame * pixelsPerFrame;
+const barLeft = layer.inPoint * pixelsPerFrame;
+const barWidth = (layer.outPoint - layer.inPoint + 1) * pixelsPerFrame;
+```
 
-1. Nix flake setup + extension skeleton
-2. ComfyUI integration (Section 5 in specs)
-3. Canvas + depth map loading
-4. Spline editor
-5. Timeline + keyframes
-6. Text on path animation
-7. Particle system
-8. Built-in generation (DepthAnything, etc.)
-9. Matte export
-10. GPU optimization (Blackwell/WebGPU)
+---
 
-## Core Concepts
+## 8. CURRENT PROJECT STATUS
 
-- **Lazy model loading**: AI models load on-demand, unload under memory pressure
-- **GPU tiers**: Detect cpu/webgl/webgpu/blackwell, enable optimized paths accordingly
-- **Arc-length parameterization**: Required for even text spacing on curves
-- **Matte export**: White = keep, Black = exclude (for Wan video generation)
+| Metric | Value |
+|--------|-------|
+| Tests | 851 passing |
+| TypeScript Errors | 0 |
+| Services | 32 |
+| Vue Components | 45 |
+| Layer Types Working | 10/13 |
+
+### What's Working
+- Expression system (complete)
+- All 32 services properly exported
+- MotionEngine (pure frame evaluation)
+- Camera system with store integration
+- Audio analysis (Web Worker)
+- Motion blur processor
+- Effect processor
+
+### P0 Bugs (Blocking)
+1. Timeline input bleed (Bug A)
+2. Playhead desync (Bug B)
+3. Particle Math.random() determinism
+
+### P1 Remaining
+4. Keyframe dragging (selection only, no movement)
+5. Delete layer UI button
+6. Graph editor handle dragging
+
+---
+
+## 9. OUTPUT RULES (Non-Negotiable)
+
+1. **Agent-Ready Specs**: Frame solutions as "Instructions for Claude Code"
+2. **Zero Abbreviations**: Never output `// ... existing code`. Full, complete file content.
+3. **Check Your Math**: Verify width calculations include `pixelsPerFrame` logic
+4. **Test Before Commit**: `npm test && npx tsc --noEmit` must pass
+
+---
+
+## 10. DETERMINISM REQUIREMENTS
+
+For diffusion model compatibility:
+- `evaluate(frame)` must return identical results every call
+- No `Math.random()` in render path (only for ID generation)
+- No `Date.now()` in render path (only for metrics)
+- Particle system must use seeded PRNG
+
+**Current Violation**: `particleSystem.ts:1196,1212,1219-1220` uses `Math.random()` in spawn positions

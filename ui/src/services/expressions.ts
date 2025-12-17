@@ -1189,3 +1189,99 @@ export function listExpressionPresets(): string[] {
 export function listEasingPresets(): string[] {
   return Object.keys(EASING_PRESETS);
 }
+
+// ============================================================================
+// NAMESPACE EXPORTS (for index.ts and test compatibility)
+// ============================================================================
+
+/**
+ * Easing namespace - all easing functions in one object
+ */
+export const easing = {
+  linear,
+  easeInQuad,
+  easeOutQuad,
+  easeInOutQuad,
+  easeInCubic,
+  easeOutCubic,
+  easeInOutCubic,
+  easeInQuart,
+  easeOutQuart,
+  easeInOutQuart,
+  easeInQuint,
+  easeOutQuint,
+  easeInOutQuint,
+  easeInSine,
+  easeOutSine,
+  easeInOutSine,
+  easeInExpo,
+  easeOutExpo,
+  easeInOutExpo,
+  easeInCirc,
+  easeOutCirc,
+  easeInOutCirc,
+  easeInBack,
+  easeOutBack,
+  easeInOutBack,
+  easeInElastic,
+  easeOutElastic,
+  easeInOutElastic,
+  easeInBounce,
+  easeOutBounce,
+  easeInOutBounce,
+  stepStart,
+  stepEnd,
+  cubicBezier,
+};
+
+/**
+ * Motion namespace - motion expression functions
+ */
+export const motion = {
+  inertia,
+  bounce,
+  elastic,
+  wiggle,
+  temporalWiggle,
+};
+
+/**
+ * Loop namespace - loop expression functions
+ */
+export const loop = {
+  loopOut,
+  loopIn,
+};
+
+/**
+ * Time namespace - time-based functions
+ */
+export const time = {
+  timeRamp: timeExpressions.timeRamp,
+  periodic: timeExpressions.periodic,
+  sawtooth: timeExpressions.sawtooth,
+  triangle: timeExpressions.triangle,
+  square: timeExpressions.square,
+  sine: timeExpressions.sine,
+  pulse: timeExpressions.pulse,
+};
+
+/**
+ * Math namespace - math utility functions
+ */
+export const math = {
+  lerp: mathExpressions.lerp,
+  clamp: mathExpressions.clamp,
+  map: mathExpressions.map,
+  normalize: mathExpressions.normalize,
+  smoothstep: mathExpressions.smoothstep,
+  smootherstep: mathExpressions.smootherstep,
+  mod: mathExpressions.mod,
+  distance: mathExpressions.distance,
+  angleBetween: mathExpressions.angleBetween,
+  degreesToRadians: mathExpressions.degreesToRadians,
+  radiansToDegrees: mathExpressions.radiansToDegrees,
+  seedRandom: mathExpressions.seedRandom,
+  gaussRandom: mathExpressions.gaussRandom,
+};
+

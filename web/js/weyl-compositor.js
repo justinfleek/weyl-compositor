@@ -7753,10 +7753,10 @@ const EASING_FUNCTIONS = {
   stepEnd
 };
 function inertia(ctx, amplitude = 0.1, frequency = 2, decay = 2) {
-  const { time, keyframes, value, velocity } = ctx;
+  const { time: time2, keyframes, value, velocity } = ctx;
   if (keyframes.length === 0) return value;
   const fps = ctx.fps || 30;
-  const currentFrame = time * fps;
+  const currentFrame = time2 * fps;
   let nearestKey = null;
   for (let i = keyframes.length - 1; i >= 0; i--) {
     if (keyframes[i].frame <= currentFrame) {
@@ -7766,7 +7766,7 @@ function inertia(ctx, amplitude = 0.1, frequency = 2, decay = 2) {
   }
   if (!nearestKey) return value;
   const keyTime = nearestKey.frame / fps;
-  const t = time - keyTime;
+  const t = time2 - keyTime;
   if (t <= 0) return value;
   const vel = typeof velocity === "number" ? velocity : velocity[0];
   const val = typeof value === "number" ? value : value[0];
@@ -7780,10 +7780,10 @@ function inertia(ctx, amplitude = 0.1, frequency = 2, decay = 2) {
   });
 }
 function bounce(ctx, elasticity = 0.7, gravity = 4e3) {
-  const { time, keyframes, value } = ctx;
+  const { time: time2, keyframes, value } = ctx;
   if (keyframes.length === 0) return value;
   const fps = ctx.fps || 30;
-  const currentFrame = time * fps;
+  const currentFrame = time2 * fps;
   let lastKey = null;
   for (let i = keyframes.length - 1; i >= 0; i--) {
     if (keyframes[i].frame <= currentFrame) {
@@ -7793,7 +7793,7 @@ function bounce(ctx, elasticity = 0.7, gravity = 4e3) {
   }
   if (!lastKey) return value;
   const keyTime = lastKey.frame / fps;
-  const t = time - keyTime;
+  const t = time2 - keyTime;
   if (t <= 0) return value;
   let bounceTime = t;
   let bounceHeight = 1;
@@ -7817,10 +7817,10 @@ function bounce(ctx, elasticity = 0.7, gravity = 4e3) {
   return value.map((v) => v - bounceOffset * (1 - elasticity));
 }
 function elastic(ctx, amplitude = 1, period = 0.3) {
-  const { time, keyframes, value } = ctx;
+  const { time: time2, keyframes, value } = ctx;
   if (keyframes.length === 0) return value;
   const fps = ctx.fps || 30;
-  const currentFrame = time * fps;
+  const currentFrame = time2 * fps;
   let lastKey = null;
   for (let i = keyframes.length - 1; i >= 0; i--) {
     if (keyframes[i].frame <= currentFrame) {
@@ -7830,7 +7830,7 @@ function elastic(ctx, amplitude = 1, period = 0.3) {
   }
   if (!lastKey) return value;
   const keyTime = lastKey.frame / fps;
-  const t = time - keyTime;
+  const t = time2 - keyTime;
   if (t <= 0) return value;
   const s = period / 4;
   const decay = Math.pow(2, -10 * t);
@@ -7841,7 +7841,7 @@ function elastic(ctx, amplitude = 1, period = 0.3) {
   return value.map((v) => v + amplitude * oscillation);
 }
 function loopOut(ctx, type = "cycle", numKeyframes = 0) {
-  const { time, keyframes, fps } = ctx;
+  const { time: time2, keyframes, fps } = ctx;
   if (keyframes.length < 2) return ctx.value;
   const startIdx = numKeyframes > 0 ? Math.max(0, keyframes.length - numKeyframes) : 0;
   const startKey = keyframes[startIdx];
@@ -7849,8 +7849,8 @@ function loopOut(ctx, type = "cycle", numKeyframes = 0) {
   const startTime = startKey.frame / fps;
   const endTime = endKey.frame / fps;
   const duration = endTime - startTime;
-  if (duration <= 0 || time <= endTime) return ctx.value;
-  const elapsed = time - endTime;
+  if (duration <= 0 || time2 <= endTime) return ctx.value;
+  const elapsed = time2 - endTime;
   switch (type) {
     case "cycle": {
       const cycleTime = startTime + elapsed % duration;
@@ -7881,7 +7881,7 @@ function loopOut(ctx, type = "cycle", numKeyframes = 0) {
   }
 }
 function loopIn(ctx, type = "cycle", numKeyframes = 0) {
-  const { time, keyframes, fps } = ctx;
+  const { time: time2, keyframes, fps } = ctx;
   if (keyframes.length < 2) return ctx.value;
   const endIdx = numKeyframes > 0 ? Math.min(keyframes.length - 1, numKeyframes - 1) : keyframes.length - 1;
   const startKey = keyframes[0];
@@ -7889,8 +7889,8 @@ function loopIn(ctx, type = "cycle", numKeyframes = 0) {
   const startTime = startKey.frame / fps;
   const endTime = endKey.frame / fps;
   const duration = endTime - startTime;
-  if (duration <= 0 || time >= startTime) return ctx.value;
-  const elapsed = startTime - time;
+  if (duration <= 0 || time2 >= startTime) return ctx.value;
+  const elapsed = startTime - time2;
   switch (type) {
     case "cycle": {
       const cycleTime = endTime - elapsed % duration;
@@ -7920,8 +7920,8 @@ function loopIn(ctx, type = "cycle", numKeyframes = 0) {
     }
   }
 }
-function wiggle(ctx, frequency = 5, amplitude = 50, octaves = 1, amplitudeMultiplier = 0.5, time) {
-  const t = ctx.time;
+function wiggle(ctx, frequency = 5, amplitude = 50, octaves = 1, amplitudeMultiplier = 0.5, time2) {
+  const t = time2 ?? ctx.time;
   const { value } = ctx;
   const noise = (seed, t2) => {
     let result = 0;
@@ -7944,50 +7944,50 @@ const timeExpressions = {
   /**
    * Linear time ramp
    */
-  timeRamp(startTime, endTime, startValue, endValue, time) {
-    if (time <= startTime) return startValue;
-    if (time >= endTime) return endValue;
-    const t = (time - startTime) / (endTime - startTime);
+  timeRamp(startTime, endTime, startValue, endValue, time2) {
+    if (time2 <= startTime) return startValue;
+    if (time2 >= endTime) return endValue;
+    const t = (time2 - startTime) / (endTime - startTime);
     return startValue + (endValue - startValue) * t;
   },
   /**
    * Periodic function (loops every period seconds)
    */
-  periodic(time, period) {
-    return time % period / period;
+  periodic(time2, period) {
+    return time2 % period / period;
   },
   /**
    * Sawtooth wave
    */
-  sawtooth(time, frequency, amplitude = 1) {
-    const t = time * frequency;
+  sawtooth(time2, frequency, amplitude = 1) {
+    const t = time2 * frequency;
     return amplitude * 2 * (t - Math.floor(t + 0.5));
   },
   /**
    * Triangle wave
    */
-  triangle(time, frequency, amplitude = 1) {
-    const t = time * frequency;
+  triangle(time2, frequency, amplitude = 1) {
+    const t = time2 * frequency;
     return amplitude * (2 * Math.abs(2 * (t - Math.floor(t + 0.5))) - 1);
   },
   /**
    * Square wave
    */
-  square(time, frequency, amplitude = 1) {
-    const t = time * frequency;
+  square(time2, frequency, amplitude = 1) {
+    const t = time2 * frequency;
     return amplitude * (t - Math.floor(t) < 0.5 ? 1 : -1);
   },
   /**
    * Sine wave
    */
-  sine(time, frequency, amplitude = 1, phase = 0) {
-    return amplitude * Math.sin(2 * Math.PI * frequency * time + phase);
+  sine(time2, frequency, amplitude = 1, phase = 0) {
+    return amplitude * Math.sin(2 * Math.PI * frequency * time2 + phase);
   },
   /**
    * Pulse (duty cycle controlled square)
    */
-  pulse(time, frequency, dutyCycle = 0.5, amplitude = 1) {
-    const t = time * frequency % 1;
+  pulse(time2, frequency, dutyCycle = 0.5, amplitude = 1) {
+    const t = time2 * frequency % 1;
     return amplitude * (t < dutyCycle ? 1 : 0);
   }
 };
@@ -8080,8 +8080,8 @@ const mathExpressions = {
     return mean + z0 * stdDev;
   }
 };
-function interpolateAtTime(keyframes, time, fps) {
-  const frame = time * fps;
+function interpolateAtTime(keyframes, time2, fps) {
+  const frame = time2 * fps;
   let before = null;
   let after = null;
   for (const kf of keyframes) {
@@ -38102,13 +38102,508 @@ async function deleteProject(projectId) {
   }
 }
 
-const projectStorage = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
-  __proto__: null,
-  deleteProject,
-  listProjects,
-  loadProject,
-  saveProject
-}, Symbol.toStringTag, { value: 'Module' }));
+function deleteLayer(store, layerId) {
+  const layers = store.getActiveCompLayers();
+  const index = layers.findIndex((l) => l.id === layerId);
+  if (index === -1) return;
+  layers.splice(index, 1);
+  store.selectedLayerIds = store.selectedLayerIds.filter((id) => id !== layerId);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  store.pushHistory();
+}
+function duplicateLayer(store, layerId) {
+  const layers = store.getActiveCompLayers();
+  const original = layers.find((l) => l.id === layerId);
+  if (!original) return null;
+  const duplicate = JSON.parse(JSON.stringify(original));
+  duplicate.id = crypto.randomUUID();
+  duplicate.name = original.name + " Copy";
+  regenerateKeyframeIds(duplicate);
+  const index = layers.findIndex((l) => l.id === layerId);
+  layers.splice(index, 0, duplicate);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  store.pushHistory();
+  return duplicate;
+}
+function copySelectedLayers(store) {
+  const layers = store.getActiveCompLayers();
+  const selectedLayers = layers.filter((l) => store.selectedLayerIds.includes(l.id));
+  if (selectedLayers.length === 0) return;
+  store.clipboard.layers = selectedLayers.map((layer) => JSON.parse(JSON.stringify(layer)));
+  storeLogger.debug(`Copied ${store.clipboard.layers.length} layer(s) to clipboard`);
+}
+function pasteLayers(store) {
+  if (store.clipboard.layers.length === 0) return [];
+  const layers = store.getActiveCompLayers();
+  const pastedLayers = [];
+  for (const clipboardLayer of store.clipboard.layers) {
+    const newLayer = JSON.parse(JSON.stringify(clipboardLayer));
+    newLayer.id = crypto.randomUUID();
+    newLayer.name = clipboardLayer.name + " Copy";
+    regenerateKeyframeIds(newLayer);
+    newLayer.parentId = null;
+    layers.unshift(newLayer);
+    pastedLayers.push(newLayer);
+  }
+  store.selectedLayerIds = pastedLayers.map((l) => l.id);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  store.pushHistory();
+  storeLogger.debug(`Pasted ${pastedLayers.length} layer(s)`);
+  return pastedLayers;
+}
+function cutSelectedLayers(store) {
+  copySelectedLayers(store);
+  const layerIds = [...store.selectedLayerIds];
+  for (const id of layerIds) {
+    deleteLayer(store, id);
+  }
+}
+function updateLayer(store, layerId, updates) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  Object.assign(layer, updates);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function updateLayerData(store, layerId, dataUpdates) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer || !layer.data) return;
+  Object.assign(layer.data, dataUpdates);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function moveLayer(store, layerId, newIndex) {
+  const layers = store.getActiveCompLayers();
+  const currentIndex = layers.findIndex((l) => l.id === layerId);
+  if (currentIndex === -1) return;
+  const [layer] = layers.splice(currentIndex, 1);
+  layers.splice(newIndex, 0, layer);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  store.pushHistory();
+}
+function toggleLayer3D(store, layerId) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  layer.threeD = !layer.threeD;
+  if (layer.threeD) {
+    const t = layer.transform;
+    const pos = t.position.value;
+    t.position.value = { x: pos.x, y: pos.y, z: pos.z ?? 0 };
+    t.position.type = "vector3";
+    const anch = t.anchorPoint.value;
+    t.anchorPoint.value = { x: anch.x, y: anch.y, z: anch.z ?? 0 };
+    t.anchorPoint.type = "vector3";
+    const scl = t.scale.value;
+    t.scale.value = { x: scl.x, y: scl.y, z: scl.z ?? 100 };
+    t.scale.type = "vector3";
+    if (!t.orientation) {
+      t.orientation = createAnimatableProperty("orientation", { x: 0, y: 0, z: 0 }, "vector3");
+    }
+    if (!t.rotationX) {
+      t.rotationX = createAnimatableProperty("rotationX", 0, "number");
+    }
+    if (!t.rotationY) {
+      t.rotationY = createAnimatableProperty("rotationY", 0, "number");
+    }
+    if (!t.rotationZ) {
+      t.rotationZ = createAnimatableProperty("rotationZ", 0, "number");
+      t.rotationZ.value = t.rotation.value;
+    }
+  } else {
+    if (layer.transform.rotationZ) {
+      layer.transform.rotation.value = layer.transform.rotationZ.value;
+    }
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function setLayerParent(store, layerId, parentId) {
+  const layers = store.getActiveCompLayers();
+  const layer = layers.find((l) => l.id === layerId);
+  if (!layer) return;
+  if (parentId === layerId) return;
+  if (parentId) {
+    const getDescendants = (id) => {
+      const descendants2 = /* @__PURE__ */ new Set();
+      const children = layers.filter((l) => l.parentId === id);
+      for (const child of children) {
+        descendants2.add(child.id);
+        const childDescendants = getDescendants(child.id);
+        childDescendants.forEach((d) => descendants2.add(d));
+      }
+      return descendants2;
+    };
+    const descendants = getDescendants(layerId);
+    if (descendants.has(parentId)) {
+      storeLogger.warn("Cannot set parent: would create circular reference");
+      return;
+    }
+  }
+  layer.parentId = parentId;
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  store.pushHistory();
+}
+function addSplineControlPoint(store, layerId, point) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer || layer.type !== "spline" || !layer.data) return;
+  const splineData = layer.data;
+  if (!splineData.controlPoints) {
+    splineData.controlPoints = [];
+  }
+  splineData.controlPoints.push(point);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function updateSplineControlPoint(store, layerId, pointId, updates) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer || layer.type !== "spline" || !layer.data) return;
+  const splineData = layer.data;
+  const point = splineData.controlPoints?.find((p) => p.id === pointId);
+  if (!point) return;
+  Object.assign(point, updates);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function deleteSplineControlPoint(store, layerId, pointId) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer || layer.type !== "spline" || !layer.data) return;
+  const splineData = layer.data;
+  if (!splineData.controlPoints) return;
+  const index = splineData.controlPoints.findIndex((p) => p.id === pointId);
+  if (index >= 0) {
+    splineData.controlPoints.splice(index, 1);
+    store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  }
+}
+function selectLayer(store, layerId, addToSelection = false) {
+  if (addToSelection) {
+    if (!store.selectedLayerIds.includes(layerId)) {
+      store.selectedLayerIds.push(layerId);
+    }
+  } else {
+    store.selectedLayerIds = [layerId];
+  }
+}
+function deselectLayer(store, layerId) {
+  store.selectedLayerIds = store.selectedLayerIds.filter((id) => id !== layerId);
+}
+function clearSelection(store) {
+  store.selectedLayerIds = [];
+}
+function regenerateKeyframeIds(layer) {
+  if (layer.transform) {
+    for (const key of Object.keys(layer.transform)) {
+      const prop = layer.transform[key];
+      if (prop?.keyframes) {
+        prop.keyframes = prop.keyframes.map((kf) => ({
+          ...kf,
+          id: crypto.randomUUID()
+        }));
+      }
+    }
+  }
+  if (layer.properties) {
+    for (const prop of layer.properties) {
+      if (prop.keyframes) {
+        prop.keyframes = prop.keyframes.map((kf) => ({
+          ...kf,
+          id: crypto.randomUUID()
+        }));
+      }
+    }
+  }
+}
+
+function findPropertyByPath(layer, propertyPath) {
+  const normalizedPath = propertyPath.replace(/^transform\./, "");
+  if (normalizedPath === "position") {
+    return layer.transform.position;
+  }
+  if (normalizedPath === "scale") {
+    return layer.transform.scale;
+  }
+  if (normalizedPath === "rotation") {
+    return layer.transform.rotation;
+  }
+  if (normalizedPath === "anchorPoint") {
+    return layer.transform.anchorPoint;
+  }
+  if (propertyPath === "opacity") {
+    return layer.opacity;
+  }
+  if (normalizedPath === "rotationX" && layer.transform.rotationX) {
+    return layer.transform.rotationX;
+  }
+  if (normalizedPath === "rotationY" && layer.transform.rotationY) {
+    return layer.transform.rotationY;
+  }
+  if (normalizedPath === "rotationZ" && layer.transform.rotationZ) {
+    return layer.transform.rotationZ;
+  }
+  if (normalizedPath === "orientation" && layer.transform.orientation) {
+    return layer.transform.orientation;
+  }
+  return layer.properties.find((p) => p.name === propertyPath || p.id === propertyPath);
+}
+function addKeyframe(store, layerId, propertyPath, value, atFrame) {
+  const comp = store.getActiveComp();
+  const frame = atFrame ?? (comp?.currentFrame ?? 0);
+  storeLogger.debug("addKeyframe called:", { layerId, propertyPath, value, frame });
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) {
+    storeLogger.debug("addKeyframe: layer not found");
+    return null;
+  }
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) {
+    storeLogger.debug("addKeyframe: property not found:", propertyPath);
+    return null;
+  }
+  property.animated = true;
+  const keyframe = {
+    id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    frame,
+    value,
+    interpolation: "linear",
+    inHandle: { frame: 0, value: 0, enabled: false },
+    outHandle: { frame: 0, value: 0, enabled: false },
+    controlMode: "smooth"
+  };
+  const existingIndex = property.keyframes.findIndex((k) => k.frame === frame);
+  if (existingIndex >= 0) {
+    property.keyframes[existingIndex] = keyframe;
+    storeLogger.debug("addKeyframe: replaced existing keyframe at frame", frame);
+  } else {
+    property.keyframes.push(keyframe);
+    property.keyframes.sort((a, b) => a.frame - b.frame);
+    storeLogger.debug("addKeyframe: added new keyframe at frame", frame, "total keyframes:", property.keyframes.length);
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+  return keyframe;
+}
+function removeKeyframe(store, layerId, propertyPath, keyframeId) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  const index = property.keyframes.findIndex((k) => k.id === keyframeId);
+  if (index >= 0) {
+    property.keyframes.splice(index, 1);
+    if (property.keyframes.length === 0) {
+      property.animated = false;
+    }
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function moveKeyframe(store, layerId, propertyPath, keyframeId, newFrame) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
+  if (!keyframe) return;
+  const existingAtTarget = property.keyframes.find(
+    (kf) => kf.frame === newFrame && kf.id !== keyframeId
+  );
+  if (existingAtTarget) {
+    property.keyframes = property.keyframes.filter((kf) => kf.id !== existingAtTarget.id);
+  }
+  keyframe.frame = newFrame;
+  property.keyframes.sort((a, b) => a.frame - b.frame);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function setKeyframeValue(store, layerId, propertyPath, keyframeId, newValue) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
+  if (!keyframe) return;
+  if (typeof keyframe.value === "object" && keyframe.value !== null && typeof newValue === "number") {
+    storeLogger.warn("setKeyframeValue: Cannot directly update vector keyframes with scalar. Use separate dimension curves.");
+    return;
+  }
+  keyframe.value = newValue;
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function updateKeyframe(store, layerId, propertyPath, keyframeId, updates) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
+  if (!keyframe) return;
+  if (updates.frame !== void 0) {
+    keyframe.frame = updates.frame;
+    property.keyframes.sort((a, b) => a.frame - b.frame);
+  }
+  if (updates.value !== void 0) {
+    keyframe.value = updates.value;
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function setKeyframeInterpolation(store, layerId, propertyPath, keyframeId, interpolation) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
+  if (!keyframe) return;
+  keyframe.interpolation = interpolation;
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function setKeyframeHandle(store, layerId, propertyPath, keyframeId, handleType, handle) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
+  if (!keyframe) return;
+  if (handleType === "in") {
+    keyframe.inHandle = { ...handle };
+  } else {
+    keyframe.outHandle = { ...handle };
+  }
+  if (handle.enabled && keyframe.interpolation === "linear") {
+    keyframe.interpolation = "bezier";
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function setPropertyValue(store, layerId, propertyPath, value) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  property.value = value;
+  if (property.animated && property.keyframes.length > 0) {
+    const currentFrame = store.getActiveComp()?.currentFrame ?? 0;
+    const existingKf = property.keyframes.find((kf) => kf.frame === currentFrame);
+    if (existingKf) {
+      existingKf.value = value;
+    }
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+function setPropertyAnimated(store, layerId, propertyPath, animated, addKeyframeCallback) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer) return;
+  const property = findPropertyByPath(layer, propertyPath);
+  if (!property) return;
+  property.animated = animated;
+  if (animated && property.keyframes.length === 0) {
+    if (addKeyframeCallback) {
+      addKeyframeCallback();
+    } else {
+      const comp = store.getActiveComp();
+      const frame = comp?.currentFrame ?? 0;
+      const keyframe = {
+        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        frame,
+        value: property.value,
+        interpolation: "linear",
+        inHandle: { frame: 0, value: 0, enabled: false },
+        outHandle: { frame: 0, value: 0, enabled: false },
+        controlMode: "smooth"
+      };
+      property.keyframes.push(keyframe);
+    }
+  }
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
+
+const MAX_HISTORY_SIZE = 50;
+function pushHistory(store) {
+  if (store.historyIndex < store.historyStack.length - 1) {
+    store.historyStack = store.historyStack.slice(0, store.historyIndex + 1);
+  }
+  const snapshot = JSON.parse(JSON.stringify(store.project));
+  store.historyStack.push(snapshot);
+  store.historyIndex = store.historyStack.length - 1;
+  if (store.historyStack.length > MAX_HISTORY_SIZE) {
+    store.historyStack = store.historyStack.slice(-MAX_HISTORY_SIZE);
+    store.historyIndex = store.historyStack.length - 1;
+  }
+}
+function undo(store) {
+  if (store.historyIndex <= 0) return false;
+  store.historyIndex--;
+  store.project = JSON.parse(JSON.stringify(store.historyStack[store.historyIndex]));
+  return true;
+}
+function redo(store) {
+  if (store.historyIndex >= store.historyStack.length - 1) return false;
+  store.historyIndex++;
+  store.project = JSON.parse(JSON.stringify(store.historyStack[store.historyIndex]));
+  return true;
+}
+function exportProject(store) {
+  return JSON.stringify(store.project, null, 2);
+}
+function importProject(store, json, pushHistoryFn) {
+  try {
+    const project = JSON.parse(json);
+    store.project = project;
+    pushHistoryFn();
+    return true;
+  } catch (err) {
+    storeLogger.error("Failed to import project:", err);
+    return false;
+  }
+}
+async function saveProjectToServer(store, projectId) {
+  try {
+    const result = await saveProject(store.project, projectId);
+    if (result.status === "success" && result.project_id) {
+      store.lastSaveProjectId = result.project_id;
+      store.lastSaveTime = Date.now();
+      store.hasUnsavedChanges = false;
+      storeLogger.info("Project saved to server:", result.project_id);
+      return result.project_id;
+    } else {
+      storeLogger.error("Failed to save project:", result.message);
+      return null;
+    }
+  } catch (err) {
+    storeLogger.error("Error saving project to server:", err);
+    return null;
+  }
+}
+async function loadProjectFromServer(store, projectId, pushHistoryFn) {
+  try {
+    const result = await loadProject(projectId);
+    if (result.status === "success" && result.project) {
+      store.project = result.project;
+      pushHistoryFn();
+      store.lastSaveProjectId = projectId;
+      store.lastSaveTime = Date.now();
+      store.hasUnsavedChanges = false;
+      storeLogger.info("Project loaded from server:", projectId);
+      return true;
+    } else {
+      storeLogger.error("Failed to load project:", result.message);
+      return false;
+    }
+  } catch (err) {
+    storeLogger.error("Error loading project from server:", err);
+    return false;
+  }
+}
+async function listServerProjects() {
+  try {
+    const result = await listProjects();
+    if (result.status === "success" && result.projects) {
+      return result.projects;
+    }
+    return [];
+  } catch (err) {
+    storeLogger.error("Error listing projects:", err);
+    return [];
+  }
+}
+async function deleteServerProject(projectId) {
+  try {
+    const result = await deleteProject(projectId);
+    return result.status === "success";
+  } catch (err) {
+    storeLogger.error("Error deleting project:", err);
+    return false;
+  }
+}
 
 const useCompositorStore = defineStore("compositor", {
   state: () => ({
@@ -38719,264 +39214,91 @@ const useCompositorStore = defineStore("compositor", {
      * Delete a layer
      */
     deleteLayer(layerId) {
-      const layers = this.getActiveCompLayers();
-      const index = layers.findIndex((l) => l.id === layerId);
-      if (index === -1) return;
-      layers.splice(index, 1);
-      this.selectedLayerIds = this.selectedLayerIds.filter((id) => id !== layerId);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      this.pushHistory();
+      deleteLayer(this, layerId);
     },
     /**
      * Duplicate a layer
      */
     duplicateLayer(layerId) {
-      const layers = this.getActiveCompLayers();
-      const original = layers.find((l) => l.id === layerId);
-      if (!original) return null;
-      const duplicate = JSON.parse(JSON.stringify(original));
-      duplicate.id = crypto.randomUUID();
-      duplicate.name = original.name + " Copy";
-      if (duplicate.transform) {
-        for (const key of Object.keys(duplicate.transform)) {
-          const prop = duplicate.transform[key];
-          if (prop?.keyframes) {
-            prop.keyframes = prop.keyframes.map((kf) => ({
-              ...kf,
-              id: crypto.randomUUID()
-            }));
-          }
-        }
-      }
-      if (duplicate.properties) {
-        for (const prop of duplicate.properties) {
-          if (prop.keyframes) {
-            prop.keyframes = prop.keyframes.map((kf) => ({
-              ...kf,
-              id: crypto.randomUUID()
-            }));
-          }
-        }
-      }
-      const index = layers.findIndex((l) => l.id === layerId);
-      layers.splice(index, 0, duplicate);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      this.pushHistory();
-      return duplicate;
+      return duplicateLayer(this, layerId);
     },
     /**
      * Copy selected layers to clipboard
      */
     copySelectedLayers() {
-      const layers = this.getActiveCompLayers();
-      const selectedLayers = layers.filter((l) => this.selectedLayerIds.includes(l.id));
-      if (selectedLayers.length === 0) return;
-      this.clipboard.layers = selectedLayers.map((layer) => JSON.parse(JSON.stringify(layer)));
-      storeLogger.debug(`Copied ${this.clipboard.layers.length} layer(s) to clipboard`);
+      copySelectedLayers(this);
     },
     /**
      * Paste layers from clipboard
      */
     pasteLayers() {
-      if (this.clipboard.layers.length === 0) return [];
-      const layers = this.getActiveCompLayers();
-      const pastedLayers = [];
-      for (const clipboardLayer of this.clipboard.layers) {
-        const newLayer = JSON.parse(JSON.stringify(clipboardLayer));
-        newLayer.id = crypto.randomUUID();
-        newLayer.name = clipboardLayer.name + " Copy";
-        if (newLayer.transform) {
-          for (const key of Object.keys(newLayer.transform)) {
-            const prop = newLayer.transform[key];
-            if (prop?.keyframes) {
-              prop.keyframes = prop.keyframes.map((kf) => ({
-                ...kf,
-                id: crypto.randomUUID()
-              }));
-            }
-          }
-        }
-        if (newLayer.properties) {
-          for (const prop of newLayer.properties) {
-            if (prop.keyframes) {
-              prop.keyframes = prop.keyframes.map((kf) => ({
-                ...kf,
-                id: crypto.randomUUID()
-              }));
-            }
-          }
-        }
-        newLayer.parentId = null;
-        layers.unshift(newLayer);
-        pastedLayers.push(newLayer);
-      }
-      this.selectedLayerIds = pastedLayers.map((l) => l.id);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      this.pushHistory();
-      storeLogger.debug(`Pasted ${pastedLayers.length} layer(s)`);
-      return pastedLayers;
+      return pasteLayers(this);
     },
     /**
      * Cut selected layers (copy + delete)
      */
     cutSelectedLayers() {
-      this.copySelectedLayers();
-      const layerIds = [...this.selectedLayerIds];
-      for (const id of layerIds) {
-        this.deleteLayer(id);
-      }
+      cutSelectedLayers(this);
     },
     /**
      * Update layer properties
      */
     updateLayer(layerId, updates) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      Object.assign(layer, updates);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      updateLayer(this, layerId, updates);
     },
     /**
      * Update layer-specific data (e.g., text content, image path, etc.)
      */
     updateLayerData(layerId, dataUpdates) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer || !layer.data) return;
-      Object.assign(layer.data, dataUpdates);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      updateLayerData(this, layerId, dataUpdates);
     },
     /**
      * Add a control point to a spline layer
      */
     addSplineControlPoint(layerId, point) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer || layer.type !== "spline" || !layer.data) return;
-      const splineData = layer.data;
-      if (!splineData.controlPoints) {
-        splineData.controlPoints = [];
-      }
-      splineData.controlPoints.push(point);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      addSplineControlPoint(this, layerId, point);
     },
     /**
      * Update a spline control point
      */
     updateSplineControlPoint(layerId, pointId, updates) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer || layer.type !== "spline" || !layer.data) return;
-      const splineData = layer.data;
-      const point = splineData.controlPoints?.find((p) => p.id === pointId);
-      if (!point) return;
-      Object.assign(point, updates);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      updateSplineControlPoint(this, layerId, pointId, updates);
     },
     /**
      * Delete a spline control point
      */
     deleteSplineControlPoint(layerId, pointId) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer || layer.type !== "spline" || !layer.data) return;
-      const splineData = layer.data;
-      if (!splineData.controlPoints) return;
-      const index = splineData.controlPoints.findIndex((p) => p.id === pointId);
-      if (index >= 0) {
-        splineData.controlPoints.splice(index, 1);
-        this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      }
+      deleteSplineControlPoint(this, layerId, pointId);
     },
     /**
      * Toggle 3D mode for a layer
      */
     toggleLayer3D(layerId) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      layer.threeD = !layer.threeD;
-      if (layer.threeD) {
-        const t = layer.transform;
-        const pos = t.position.value;
-        t.position.value = { x: pos.x, y: pos.y, z: pos.z ?? 0 };
-        t.position.type = "vector3";
-        const anch = t.anchorPoint.value;
-        t.anchorPoint.value = { x: anch.x, y: anch.y, z: anch.z ?? 0 };
-        t.anchorPoint.type = "vector3";
-        const scl = t.scale.value;
-        t.scale.value = { x: scl.x, y: scl.y, z: scl.z ?? 100 };
-        t.scale.type = "vector3";
-        if (!t.orientation) {
-          t.orientation = createAnimatableProperty("orientation", { x: 0, y: 0, z: 0 }, "vector3");
-        }
-        if (!t.rotationX) {
-          t.rotationX = createAnimatableProperty("rotationX", 0, "number");
-        }
-        if (!t.rotationY) {
-          t.rotationY = createAnimatableProperty("rotationY", 0, "number");
-        }
-        if (!t.rotationZ) {
-          t.rotationZ = createAnimatableProperty("rotationZ", 0, "number");
-          t.rotationZ.value = t.rotation.value;
-        }
-      } else {
-        if (layer.transform.rotationZ) {
-          layer.transform.rotation.value = layer.transform.rotationZ.value;
-        }
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      toggleLayer3D(this, layerId);
     },
     /**
      * Reorder layers
      */
     moveLayer(layerId, newIndex) {
-      const layers = this.getActiveCompLayers();
-      const currentIndex = layers.findIndex((l) => l.id === layerId);
-      if (currentIndex === -1) return;
-      const [layer] = layers.splice(currentIndex, 1);
-      layers.splice(newIndex, 0, layer);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      this.pushHistory();
+      moveLayer(this, layerId, newIndex);
     },
     /**
      * Selection
      */
     selectLayer(layerId, addToSelection = false) {
-      if (addToSelection) {
-        if (!this.selectedLayerIds.includes(layerId)) {
-          this.selectedLayerIds.push(layerId);
-        }
-      } else {
-        this.selectedLayerIds = [layerId];
-      }
+      selectLayer(this, layerId, addToSelection);
     },
     deselectLayer(layerId) {
-      this.selectedLayerIds = this.selectedLayerIds.filter((id) => id !== layerId);
+      deselectLayer(this, layerId);
     },
     /**
      * Set a layer's parent for parenting/hierarchy
      */
     setLayerParent(layerId, parentId) {
-      const layers = this.getActiveCompLayers();
-      const layer = layers.find((l) => l.id === layerId);
-      if (!layer) return;
-      if (parentId === layerId) return;
-      if (parentId) {
-        const getDescendantIds = (id) => {
-          const children = layers.filter((l) => l.parentId === id);
-          let ids = children.map((c) => c.id);
-          for (const child of children) {
-            ids = ids.concat(getDescendantIds(child.id));
-          }
-          return ids;
-        };
-        const descendants = new Set(getDescendantIds(layerId));
-        if (descendants.has(parentId)) {
-          storeLogger.warn("Cannot set parent: would create circular reference");
-          return;
-        }
-      }
-      layer.parentId = parentId;
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      this.pushHistory();
+      setLayerParent(this, layerId, parentId);
     },
     clearSelection() {
-      this.selectedLayerIds = [];
+      clearSelection(this);
       this.selectedKeyframeIds = [];
       this.selectedPropertyPath = null;
     },
@@ -39176,117 +39498,46 @@ const useCompositorStore = defineStore("compositor", {
      * History management
      */
     pushHistory() {
-      if (this.historyIndex < this.historyStack.length - 1) {
-        this.historyStack = this.historyStack.slice(0, this.historyIndex + 1);
-      }
-      const snapshot = JSON.parse(JSON.stringify(this.project));
-      this.historyStack.push(snapshot);
-      this.historyIndex = this.historyStack.length - 1;
-      const maxHistory = 50;
-      if (this.historyStack.length > maxHistory) {
-        this.historyStack = this.historyStack.slice(-maxHistory);
-        this.historyIndex = this.historyStack.length - 1;
-      }
+      pushHistory(this);
     },
     undo() {
-      if (this.historyIndex <= 0) return;
-      this.historyIndex--;
-      this.project = JSON.parse(JSON.stringify(this.historyStack[this.historyIndex]));
+      undo(this);
     },
     redo() {
-      if (this.historyIndex >= this.historyStack.length - 1) return;
-      this.historyIndex++;
-      this.project = JSON.parse(JSON.stringify(this.historyStack[this.historyIndex]));
+      redo(this);
     },
     /**
      * Project serialization
      */
     exportProject() {
-      return JSON.stringify(this.project, null, 2);
+      return exportProject(this);
     },
     importProject(json) {
-      try {
-        const project = JSON.parse(json);
-        this.project = project;
-        this.pushHistory();
-      } catch (err) {
-        storeLogger.error("Failed to import project:", err);
-      }
+      importProject(this, json, () => this.pushHistory());
     },
     /**
      * Save project to server (ComfyUI backend)
-     * @param projectId - Optional existing project ID for overwriting
-     * @returns The project ID if successful, null otherwise
      */
     async saveProjectToServer(projectId) {
-      try {
-        const { saveProject: saveProject2 } = await Promise.resolve().then(() => projectStorage);
-        const result = await saveProject2(this.project, projectId);
-        if (result.status === "success" && result.project_id) {
-          storeLogger.info("Project saved to server:", result.project_id);
-          return result.project_id;
-        } else {
-          storeLogger.error("Failed to save project:", result.message);
-          return null;
-        }
-      } catch (err) {
-        storeLogger.error("Error saving project to server:", err);
-        return null;
-      }
+      return saveProjectToServer(this, projectId);
     },
     /**
      * Load project from server (ComfyUI backend)
-     * @param projectId - The project ID to load
-     * @returns True if successful
      */
     async loadProjectFromServer(projectId) {
-      try {
-        const { loadProject: loadProject2 } = await Promise.resolve().then(() => projectStorage);
-        const result = await loadProject2(projectId);
-        if (result.status === "success" && result.project) {
-          this.project = result.project;
-          this.pushHistory();
-          storeLogger.info("Project loaded from server:", projectId);
-          return true;
-        } else {
-          storeLogger.error("Failed to load project:", result.message);
-          return false;
-        }
-      } catch (err) {
-        storeLogger.error("Error loading project from server:", err);
-        return false;
-      }
+      return loadProjectFromServer(this, projectId, () => this.pushHistory());
     },
     /**
      * List all projects saved on server
      */
     async listServerProjects() {
-      try {
-        const { listProjects: listProjects2 } = await Promise.resolve().then(() => projectStorage);
-        const result = await listProjects2();
-        if (result.status === "success" && result.projects) {
-          return result.projects;
-        }
-        return [];
-      } catch (err) {
-        storeLogger.error("Error listing projects:", err);
-        return [];
-      }
+      return listServerProjects();
     },
     /**
      * Delete a project from server
-     * @param projectId - The project ID to delete
-     * @returns True if successful
      */
     async deleteServerProject(projectId) {
-      try {
-        const { deleteProject } = await Promise.resolve().then(() => projectStorage);
-        const result = await deleteProject(projectId);
-        return result.status === "success";
-      } catch (err) {
-        storeLogger.error("Error deleting project:", err);
-        return false;
-      }
+      return deleteServerProject(projectId);
     },
     /**
      * Toggle graph editor visibility
@@ -39304,291 +39555,60 @@ const useCompositorStore = defineStore("compositor", {
      * Add a keyframe to a property
      */
     addKeyframe(layerId, propertyName, value, atFrame) {
-      const frame = atFrame ?? (this.getActiveComp()?.currentFrame ?? 0);
-      storeLogger.debug("addKeyframe called:", { layerId, propertyName, value, frame });
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) {
-        storeLogger.debug("addKeyframe: layer not found");
-        return null;
-      }
-      let property;
-      if (propertyName === "position" || propertyName === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyName === "scale" || propertyName === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyName === "rotation" || propertyName === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyName === "anchorPoint" || propertyName === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyName === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyName);
-      }
-      if (!property) {
-        storeLogger.debug("addKeyframe: property not found:", propertyName);
-        return null;
-      }
-      property.animated = true;
-      const keyframe = {
-        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        frame,
-        value,
-        interpolation: "linear",
-        inHandle: { frame: 0, value: 0, enabled: false },
-        outHandle: { frame: 0, value: 0, enabled: false },
-        controlMode: "smooth"
-      };
-      const existingIndex = property.keyframes.findIndex((k) => k.frame === frame);
-      if (existingIndex >= 0) {
-        property.keyframes[existingIndex] = keyframe;
-        storeLogger.debug("addKeyframe: replaced existing keyframe at frame", this.getActiveComp()?.currentFrame ?? 0);
-      } else {
-        property.keyframes.push(keyframe);
-        property.keyframes.sort((a, b) => a.frame - b.frame);
-        storeLogger.debug("addKeyframe: added new keyframe at frame", this.getActiveComp()?.currentFrame ?? 0, "total keyframes:", property.keyframes.length);
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
-      return keyframe;
+      return addKeyframe(this, layerId, propertyName, value, atFrame);
     },
     /**
      * Remove a keyframe
      */
     removeKeyframe(layerId, propertyName, keyframeId) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyName === "position" || propertyName === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyName === "scale" || propertyName === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyName === "rotation" || propertyName === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyName === "anchorPoint" || propertyName === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyName === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyName);
-      }
-      if (!property) return;
-      const index = property.keyframes.findIndex((k) => k.id === keyframeId);
-      if (index >= 0) {
-        property.keyframes.splice(index, 1);
-        if (property.keyframes.length === 0) {
-          property.animated = false;
-        }
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      removeKeyframe(this, layerId, propertyName, keyframeId);
     },
     /**
      * Set a property's value (for direct editing in timeline)
      */
     setPropertyValue(layerId, propertyPath, value) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyPath);
-      }
-      if (!property) return;
-      property.value = value;
-      if (property.animated && property.keyframes.length > 0) {
-        const existingKf = property.keyframes.find((kf) => kf.frame === (this.getActiveComp()?.currentFrame ?? 0));
-        if (existingKf) {
-          existingKf.value = value;
-        }
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      setPropertyValue(this, layerId, propertyPath, value);
     },
     /**
      * Set a property's animated state
      */
     setPropertyAnimated(layerId, propertyPath, animated) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyPath);
-      }
-      if (!property) return;
-      property.animated = animated;
-      if (animated && property.keyframes.length === 0) {
-        this.addKeyframe(layerId, propertyPath, property.value);
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      setPropertyAnimated(this, layerId, propertyPath, animated, () => {
+        this.addKeyframe(layerId, propertyPath, findPropertyByPath(
+          this.getActiveCompLayers().find((l) => l.id === layerId),
+          propertyPath
+        )?.value);
+      });
     },
     /**
      * Move a keyframe to a new frame
      */
     moveKeyframe(layerId, propertyPath, keyframeId, newFrame) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyPath);
-      }
-      if (!property) return;
-      const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
-      if (!keyframe) return;
-      const existingAtTarget = property.keyframes.find((kf) => kf.frame === newFrame && kf.id !== keyframeId);
-      if (existingAtTarget) {
-        property.keyframes = property.keyframes.filter((kf) => kf.id !== existingAtTarget.id);
-      }
-      keyframe.frame = newFrame;
-      property.keyframes.sort((a, b) => a.frame - b.frame);
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      moveKeyframe(this, layerId, propertyPath, keyframeId, newFrame);
     },
     /**
      * Set keyframe value (for graph editor numeric input)
      */
     setKeyframeValue(layerId, propertyPath, keyframeId, newValue) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyPath);
-      }
-      if (!property) return;
-      const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
-      if (!keyframe) return;
-      if (typeof keyframe.value === "object" && keyframe.value !== null) {
-        storeLogger.warn("setKeyframeValue: Cannot directly update vector keyframes from graph editor. Use separate dimension curves.");
-      } else {
-        keyframe.value = newValue;
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      setKeyframeValue(this, layerId, propertyPath, keyframeId, newValue);
     },
     /**
      * Set keyframe interpolation type
      */
     setKeyframeInterpolation(layerId, propertyPath, keyframeId, interpolation) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else {
-        property = layer.properties.find((p) => p.name === propertyPath);
-      }
-      if (!property) return;
-      const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
-      if (!keyframe) return;
-      keyframe.interpolation = interpolation;
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      setKeyframeInterpolation(this, layerId, propertyPath, keyframeId, interpolation);
     },
     /**
      * Update keyframe frame position and/or value
      */
     updateKeyframe(layerId, propertyPath, keyframeId, updates) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else {
-        property = layer.properties.find((p) => p.id === propertyPath || p.name === propertyPath);
-      }
-      if (!property) return;
-      const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
-      if (!keyframe) return;
-      if (updates.frame !== void 0) {
-        keyframe.frame = updates.frame;
-        property.keyframes.sort((a, b) => a.frame - b.frame);
-      }
-      if (updates.value !== void 0) {
-        keyframe.value = updates.value;
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      updateKeyframe(this, layerId, propertyPath, keyframeId, updates);
     },
     /**
      * Set keyframe bezier handle
      */
     setKeyframeHandle(layerId, propertyPath, keyframeId, handleType, handle) {
-      const layer = this.getActiveCompLayers().find((l) => l.id === layerId);
-      if (!layer) return;
-      let property;
-      if (propertyPath === "position" || propertyPath === "transform.position") {
-        property = layer.transform.position;
-      } else if (propertyPath === "scale" || propertyPath === "transform.scale") {
-        property = layer.transform.scale;
-      } else if (propertyPath === "rotation" || propertyPath === "transform.rotation") {
-        property = layer.transform.rotation;
-      } else if (propertyPath === "opacity") {
-        property = layer.opacity;
-      } else if (propertyPath === "anchorPoint" || propertyPath === "transform.anchorPoint") {
-        property = layer.transform.anchorPoint;
-      } else {
-        property = layer.properties.find((p) => p.id === propertyPath || p.name === propertyPath);
-      }
-      if (!property) return;
-      const keyframe = property.keyframes.find((kf) => kf.id === keyframeId);
-      if (!keyframe) return;
-      if (handleType === "in") {
-        keyframe.inHandle = { ...handle };
-      } else {
-        keyframe.outHandle = { ...handle };
-      }
-      if (handle.enabled && keyframe.interpolation === "linear") {
-        keyframe.interpolation = "bezier";
-      }
-      this.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+      setKeyframeHandle(this, layerId, propertyPath, keyframeId, handleType, handle);
     },
     /**
      * Create a text layer with proper data structure
@@ -41130,12 +41150,16 @@ const useCompositorStore = defineStore("compositor", {
     async performAutosave() {
       if (!this.hasUnsavedChanges) return;
       try {
-        const projectId = this.lastSaveProjectId || void 0;
-        const result = await saveProject(this.project, projectId);
-        this.lastSaveProjectId = result.projectId;
-        this.lastSaveTime = Date.now();
-        this.hasUnsavedChanges = false;
-        storeLogger.info("Autosaved project:", result.projectId);
+        const existingProjectId = this.lastSaveProjectId || void 0;
+        const result = await saveProject(this.project, existingProjectId);
+        if (result.status === "success" && result.project_id) {
+          this.lastSaveProjectId = result.project_id;
+          this.lastSaveTime = Date.now();
+          this.hasUnsavedChanges = false;
+          storeLogger.info("Autosaved project:", result.project_id);
+        } else {
+          storeLogger.error("Autosave failed:", result.message);
+        }
       } catch (error) {
         storeLogger.error("Autosave failed:", error);
       }
@@ -41154,11 +41178,15 @@ const useCompositorStore = defineStore("compositor", {
     async saveProjectToBackend() {
       try {
         const result = await saveProject(this.project, this.lastSaveProjectId || void 0);
-        this.lastSaveProjectId = result.projectId;
-        this.lastSaveTime = Date.now();
-        this.hasUnsavedChanges = false;
-        storeLogger.info("Saved project:", result.projectId);
-        return result.projectId;
+        if (result.status === "success" && result.project_id) {
+          this.lastSaveProjectId = result.project_id;
+          this.lastSaveTime = Date.now();
+          this.hasUnsavedChanges = false;
+          storeLogger.info("Saved project:", result.project_id);
+          return result.project_id;
+        } else {
+          throw new Error(result.message || "Save failed");
+        }
       } catch (error) {
         storeLogger.error("Save failed:", error);
         throw error;
@@ -41169,12 +41197,17 @@ const useCompositorStore = defineStore("compositor", {
      */
     async loadProjectFromBackend(projectId) {
       try {
-        const project = await loadProject(projectId);
-        this.loadProject(project);
-        this.lastSaveProjectId = projectId;
-        this.lastSaveTime = Date.now();
-        this.hasUnsavedChanges = false;
-        storeLogger.info("Loaded project:", projectId);
+        const result = await loadProject(projectId);
+        if (result.status === "success" && result.project) {
+          this.project = result.project;
+          this.pushHistory();
+          this.lastSaveProjectId = projectId;
+          this.lastSaveTime = Date.now();
+          this.hasUnsavedChanges = false;
+          storeLogger.info("Loaded project:", projectId);
+        } else {
+          throw new Error(result.message || "Load failed");
+        }
       } catch (error) {
         storeLogger.error("Load failed:", error);
         throw error;
@@ -41185,7 +41218,13 @@ const useCompositorStore = defineStore("compositor", {
      */
     async listSavedProjects() {
       try {
-        return await listProjects();
+        const result = await listProjects();
+        if (result.status === "success" && result.projects) {
+          return result.projects;
+        } else {
+          storeLogger.error("List projects failed:", result.message);
+          return [];
+        }
       } catch (error) {
         storeLogger.error("List projects failed:", error);
         return [];
@@ -51115,11 +51154,182 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
       render();
       animationId = requestAnimationFrame(animate);
     }
+    function onKeyDown(e) {
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA" || document.activeElement?.tagName === "SELECT") {
+        return;
+      }
+      const activeView = activeViews.value[activeViewIndex.value];
+      switch (e.code) {
+        case "Numpad1":
+          if (e.ctrlKey) {
+            updateViewType(activeViewIndex.value, "back");
+          } else {
+            updateViewType(activeViewIndex.value, "front");
+          }
+          e.preventDefault();
+          break;
+        case "Numpad3":
+          if (e.ctrlKey) {
+            updateViewType(activeViewIndex.value, "left");
+          } else {
+            updateViewType(activeViewIndex.value, "right");
+          }
+          e.preventDefault();
+          break;
+        case "Numpad7":
+          if (e.ctrlKey) {
+            updateViewType(activeViewIndex.value, "bottom");
+          } else {
+            updateViewType(activeViewIndex.value, "top");
+          }
+          e.preventDefault();
+          break;
+        case "Numpad0":
+          updateViewType(activeViewIndex.value, "active-camera");
+          e.preventDefault();
+          break;
+        case "Numpad5":
+          if (!isCustomView(activeView)) {
+            const targetView = "custom-1";
+            let theta = 0;
+            let phi = 90;
+            switch (activeView) {
+              case "front":
+                theta = 0;
+                phi = 90;
+                break;
+              case "back":
+                theta = 180;
+                phi = 90;
+                break;
+              case "left":
+                theta = -90;
+                phi = 90;
+                break;
+              case "right":
+                theta = 90;
+                phi = 90;
+                break;
+              case "top":
+                theta = 0;
+                phi = 1;
+                break;
+              case "bottom":
+                theta = 0;
+                phi = 179;
+                break;
+              default:
+                theta = 45;
+                phi = 60;
+            }
+            store.updateViewportState({
+              customViews: {
+                ...viewportState.value.customViews,
+                [targetView]: {
+                  ...viewportState.value.customViews[targetView],
+                  orbitTheta: theta,
+                  orbitPhi: phi
+                }
+              }
+            });
+            updateViewType(activeViewIndex.value, targetView);
+          } else {
+            const theta = customViews.value[activeView].orbitTheta % 360;
+            const phi = customViews.value[activeView].orbitPhi;
+            let closestView = "front";
+            if (phi < 30) {
+              closestView = "top";
+            } else if (phi > 150) {
+              closestView = "bottom";
+            } else {
+              const normalizedTheta = (theta % 360 + 360) % 360;
+              if (normalizedTheta >= 315 || normalizedTheta < 45) {
+                closestView = "front";
+              } else if (normalizedTheta >= 45 && normalizedTheta < 135) {
+                closestView = "right";
+              } else if (normalizedTheta >= 135 && normalizedTheta < 225) {
+                closestView = "back";
+              } else {
+                closestView = "left";
+              }
+            }
+            updateViewType(activeViewIndex.value, closestView);
+          }
+          e.preventDefault();
+          break;
+        case "NumpadDecimal":
+        case "Period":
+          focusOnSelectedLayer();
+          e.preventDefault();
+          break;
+        case "Home":
+          if (isCustomView(activeView)) {
+            resetCustomView(activeView);
+          }
+          e.preventDefault();
+          break;
+        case "KeyG":
+          if (!e.ctrlKey && !e.metaKey) {
+            store.updateViewOptions({
+              showGrid: !viewOptions.value.showGrid
+            });
+            e.preventDefault();
+          }
+          break;
+        case "KeyH":
+          if (!e.ctrlKey && !e.metaKey) {
+            store.updateViewOptions({
+              showLayerHandles: !viewOptions.value.showLayerHandles
+            });
+            e.preventDefault();
+          }
+          break;
+        case "KeyC":
+          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            store.updateViewOptions({
+              showCompositionBounds: !viewOptions.value.showCompositionBounds
+            });
+            e.preventDefault();
+          }
+          break;
+        case "KeyA":
+          if (!e.ctrlKey && !e.metaKey && e.shiftKey) {
+            store.updateViewOptions({
+              show3DReferenceAxes: !viewOptions.value.show3DReferenceAxes
+            });
+            e.preventDefault();
+          }
+          break;
+      }
+    }
+    function focusOnSelectedLayer() {
+      const selectedLayer = store.layers.find((l) => store.selectedLayerIds.includes(l.id));
+      if (!selectedLayer) return;
+      const pos = selectedLayer.transform.position.value;
+      const width = 100;
+      const height = 100;
+      const activeView = activeViews.value[activeViewIndex.value];
+      if (isCustomView(activeView)) {
+        store.updateViewportState({
+          customViews: {
+            ...viewportState.value.customViews,
+            [activeView]: {
+              ...customViews.value[activeView],
+              orbitCenter: { x: pos.x + width / 2, y: pos.y + height / 2, z: 0 },
+              orbitDistance: Math.max(width, height) * 3
+              // Zoom to fit
+            }
+          }
+        });
+      }
+    }
     onMounted(() => {
       animate();
+      window.addEventListener("keydown", onKeyDown);
     });
     onUnmounted(() => {
       cancelAnimationFrame(animationId);
+      window.removeEventListener("keydown", onKeyDown);
     });
     watch([camera, viewportState, viewOptions, layers], () => {
     }, { deep: true });
@@ -51139,7 +51349,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
                 onChange: ($event) => updateViewType(index, $event.target.value),
                 class: "view-select"
               }, [..._cache[1] || (_cache[1] = [
-                createStaticVNode('<option value="active-camera" data-v-cdf0e094>Active Camera</option><option value="custom-1" data-v-cdf0e094>Custom View 1</option><option value="custom-2" data-v-cdf0e094>Custom View 2</option><option value="custom-3" data-v-cdf0e094>Custom View 3</option><option value="front" data-v-cdf0e094>Front</option><option value="back" data-v-cdf0e094>Back</option><option value="left" data-v-cdf0e094>Left</option><option value="right" data-v-cdf0e094>Right</option><option value="top" data-v-cdf0e094>Top</option><option value="bottom" data-v-cdf0e094>Bottom</option>', 10)
+                createStaticVNode('<option value="active-camera" data-v-84bae3ba>Active Camera</option><option value="custom-1" data-v-84bae3ba>Custom View 1</option><option value="custom-2" data-v-84bae3ba>Custom View 2</option><option value="custom-3" data-v-84bae3ba>Custom View 3</option><option value="front" data-v-84bae3ba>Front</option><option value="back" data-v-84bae3ba>Back</option><option value="left" data-v-84bae3ba>Left</option><option value="right" data-v-84bae3ba>Right</option><option value="top" data-v-84bae3ba>Top</option><option value="bottom" data-v-84bae3ba>Bottom</option>', 10)
               ])], 40, _hoisted_3$d),
               createBaseVNode("div", _hoisted_4$d, [
                 isCustomView(viewType) ? (openBlock(), createElementBlock("button", {
@@ -51181,7 +51391,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ViewportRenderer = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-cdf0e094"]]);
+const ViewportRenderer = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-84bae3ba"]]);
 
 const _raycaster = new Raycaster();
 
@@ -72529,6 +72739,330 @@ class CameraController {
     ortho.position.set(0, 0, 1e3);
     ortho.lookAt(0, 0, 0);
     return ortho;
+  }
+  // ============================================================================
+  // 3D ORBIT CONTROLS
+  // ============================================================================
+  /** Current spherical coordinates for orbit mode */
+  spherical = { radius: 1e3, theta: 0, phi: Math.PI / 2 };
+  /** Whether orbit mode is enabled */
+  orbitEnabled = false;
+  /**
+   * Enable orbit mode for 3D navigation
+   * In orbit mode, the camera orbits around the target point
+   */
+  enableOrbitMode() {
+    this.orbitEnabled = true;
+    const offset = new Vector3().subVectors(this.camera.position, this.target);
+    this.spherical.radius = offset.length();
+    this.spherical.theta = Math.atan2(offset.x - this.target.x, offset.z);
+    this.spherical.phi = Math.acos(MathUtils.clamp(offset.y / this.spherical.radius, -1, 1));
+  }
+  /**
+   * Disable orbit mode (return to pan/zoom mode)
+   */
+  disableOrbitMode() {
+    this.orbitEnabled = false;
+  }
+  /**
+   * Check if orbit mode is active
+   */
+  isOrbitMode() {
+    return this.orbitEnabled;
+  }
+  /**
+   * Orbit camera around target point
+   * @param deltaTheta - Horizontal rotation in radians (around Y axis)
+   * @param deltaPhi - Vertical rotation in radians (around X axis)
+   */
+  orbit(deltaTheta, deltaPhi) {
+    if (!this.orbitEnabled) return;
+    this.spherical.theta -= deltaTheta;
+    this.spherical.phi = MathUtils.clamp(
+      this.spherical.phi - deltaPhi,
+      0.01,
+      // Prevent flipping at poles
+      Math.PI - 0.01
+    );
+    this.updateCameraFromSpherical();
+  }
+  /**
+   * Dolly (zoom in/out) in orbit mode
+   * @param delta - Positive to zoom in, negative to zoom out
+   */
+  dolly(delta) {
+    if (!this.orbitEnabled) {
+      this.setZoom(this.zoomLevel * (1 + delta * 0.1));
+      return;
+    }
+    this.spherical.radius = MathUtils.clamp(
+      this.spherical.radius * (1 - delta * 0.1),
+      10,
+      // Minimum distance
+      5e4
+      // Maximum distance
+    );
+    this.updateCameraFromSpherical();
+  }
+  /**
+   * Pan camera in orbit mode (move target point)
+   * @param deltaX - Horizontal pan in screen pixels
+   * @param deltaY - Vertical pan in screen pixels
+   */
+  orbitPan(deltaX, deltaY) {
+    if (!this.orbitEnabled) {
+      this.setPan(this.panOffset.x + deltaX, this.panOffset.y + deltaY);
+      return;
+    }
+    const panSpeed = this.spherical.radius * 1e-3;
+    const right = new Vector3();
+    const up = new Vector3();
+    right.setFromMatrixColumn(this.camera.matrix, 0);
+    up.setFromMatrixColumn(this.camera.matrix, 1);
+    const panOffset = new Vector3();
+    panOffset.addScaledVector(right, -deltaX * panSpeed);
+    panOffset.addScaledVector(up, deltaY * panSpeed);
+    this.target.add(panOffset);
+    this.updateCameraFromSpherical();
+  }
+  /**
+   * Update camera position from spherical coordinates
+   */
+  updateCameraFromSpherical() {
+    const x = this.spherical.radius * Math.sin(this.spherical.phi) * Math.sin(this.spherical.theta);
+    const y = this.spherical.radius * Math.cos(this.spherical.phi);
+    const z = this.spherical.radius * Math.sin(this.spherical.phi) * Math.cos(this.spherical.theta);
+    this.camera.position.set(
+      this.target.x + x,
+      this.target.y + y,
+      this.target.z + z
+    );
+    this.camera.lookAt(this.target);
+    this.camera.updateProjectionMatrix();
+  }
+  // ============================================================================
+  // VIEW PRESETS
+  // ============================================================================
+  /**
+   * Available orthographic view presets
+   */
+  static VIEW_PRESETS = {
+    front: { theta: 0, phi: Math.PI / 2, name: "Front" },
+    back: { theta: Math.PI, phi: Math.PI / 2, name: "Back" },
+    left: { theta: -Math.PI / 2, phi: Math.PI / 2, name: "Left" },
+    right: { theta: Math.PI / 2, phi: Math.PI / 2, name: "Right" },
+    top: { theta: 0, phi: 0.01, name: "Top" },
+    bottom: { theta: 0, phi: Math.PI - 0.01, name: "Bottom" },
+    perspective: { theta: Math.PI / 4, phi: Math.PI / 3, name: "Perspective" }
+  };
+  /**
+   * Switch to a predefined view preset
+   * @param preset - Name of the view preset
+   * @param animate - Whether to animate the transition (default: false)
+   */
+  setViewPreset(preset, animate = false) {
+    const view = CameraController.VIEW_PRESETS[preset];
+    if (!view) return;
+    if (!this.orbitEnabled) {
+      this.enableOrbitMode();
+    }
+    if (animate) {
+      const startTheta = this.spherical.theta;
+      const startPhi = this.spherical.phi;
+      const targetTheta = view.theta;
+      const targetPhi = view.phi;
+      const duration = 300;
+      const startTime = performance.now();
+      const animateView = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        this.spherical.theta = startTheta + (targetTheta - startTheta) * eased;
+        this.spherical.phi = startPhi + (targetPhi - startPhi) * eased;
+        this.updateCameraFromSpherical();
+        if (t < 1) {
+          requestAnimationFrame(animateView);
+        }
+      };
+      requestAnimationFrame(animateView);
+    } else {
+      this.spherical.theta = view.theta;
+      this.spherical.phi = view.phi;
+      this.updateCameraFromSpherical();
+    }
+  }
+  /**
+   * Reset camera to default 2D view (centered on composition)
+   */
+  resetTo2DView() {
+    this.disableOrbitMode();
+    this.panOffset.set(0, 0);
+    this.zoomLevel = 1;
+    this.reset();
+  }
+  /**
+   * Reset orbit to center on composition
+   */
+  resetOrbit() {
+    this.target.set(this.width / 2, -this.height / 2, 0);
+    const fovRad = MathUtils.degToRad(this.camera.fov);
+    this.spherical.radius = this.height / 2 / Math.tan(fovRad / 2);
+    this.spherical.theta = 0;
+    this.spherical.phi = Math.PI / 2;
+    if (this.orbitEnabled) {
+      this.updateCameraFromSpherical();
+    } else {
+      this.reset();
+    }
+  }
+  // ============================================================================
+  // FOCUS & FRAMING
+  // ============================================================================
+  /**
+   * Focus camera on a bounding box, framing it in view
+   * @param bounds - { min: {x, y, z}, max: {x, y, z} }
+   */
+  focusOnBounds(bounds) {
+    const center = new Vector3(
+      (bounds.min.x + bounds.max.x) / 2,
+      -(bounds.min.y + bounds.max.y) / 2,
+      // Negate for screen coords
+      (bounds.min.z + bounds.max.z) / 2
+    );
+    const size = new Vector3(
+      bounds.max.x - bounds.min.x,
+      bounds.max.y - bounds.min.y,
+      bounds.max.z - bounds.min.z
+    );
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fovRad = MathUtils.degToRad(this.camera.fov);
+    const distance = maxDim / 2 / Math.tan(fovRad / 2) * 1.5;
+    this.target.copy(center);
+    if (this.orbitEnabled) {
+      this.spherical.radius = distance;
+      this.updateCameraFromSpherical();
+    } else {
+      this.camera.position.set(center.x, center.y, center.z + distance);
+      this.camera.lookAt(this.target);
+      this.camera.updateProjectionMatrix();
+    }
+  }
+  /**
+   * Focus on a layer by its bounding rect
+   * @param x - Layer X position
+   * @param y - Layer Y position
+   * @param width - Layer width
+   * @param height - Layer height
+   * @param z - Layer Z position (default 0)
+   */
+  focusOnLayer(x, y, width, height, z = 0) {
+    this.focusOnBounds({
+      min: { x, y, z: z - 10 },
+      max: { x: x + width, y: y + height, z: z + 10 }
+    });
+  }
+  // ============================================================================
+  // CAMERA BOOKMARKS
+  // ============================================================================
+  /** Stored camera bookmarks */
+  bookmarks = /* @__PURE__ */ new Map();
+  /**
+   * Save current camera state as a bookmark
+   * @param name - Name for the bookmark
+   */
+  saveBookmark(name) {
+    this.bookmarks.set(name, {
+      position: this.camera.position.clone(),
+      target: this.target.clone(),
+      spherical: { ...this.spherical },
+      fov: this.camera.fov,
+      orbitEnabled: this.orbitEnabled
+    });
+  }
+  /**
+   * Load a saved camera bookmark
+   * @param name - Name of the bookmark
+   * @param animate - Whether to animate transition
+   */
+  loadBookmark(name, animate = false) {
+    const bookmark = this.bookmarks.get(name);
+    if (!bookmark) return false;
+    if (animate) {
+      const startPos = this.camera.position.clone();
+      const startTarget = this.target.clone();
+      const startFov = this.camera.fov;
+      const duration = 500;
+      const startTime = performance.now();
+      const animateBookmark = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        this.camera.position.lerpVectors(startPos, bookmark.position, eased);
+        this.target.lerpVectors(startTarget, bookmark.target, eased);
+        this.camera.fov = startFov + (bookmark.fov - startFov) * eased;
+        this.camera.lookAt(this.target);
+        this.camera.updateProjectionMatrix();
+        if (t < 1) {
+          requestAnimationFrame(animateBookmark);
+        } else {
+          this.spherical = { ...bookmark.spherical };
+          this.orbitEnabled = bookmark.orbitEnabled;
+        }
+      };
+      requestAnimationFrame(animateBookmark);
+    } else {
+      this.camera.position.copy(bookmark.position);
+      this.target.copy(bookmark.target);
+      this.camera.fov = bookmark.fov;
+      this.spherical = { ...bookmark.spherical };
+      this.orbitEnabled = bookmark.orbitEnabled;
+      this.camera.lookAt(this.target);
+      this.camera.updateProjectionMatrix();
+    }
+    return true;
+  }
+  /**
+   * Delete a bookmark
+   * @param name - Name of the bookmark
+   */
+  deleteBookmark(name) {
+    return this.bookmarks.delete(name);
+  }
+  /**
+   * Get list of bookmark names
+   */
+  getBookmarkNames() {
+    return Array.from(this.bookmarks.keys());
+  }
+  /**
+   * Export all bookmarks as JSON-serializable data
+   */
+  exportBookmarks() {
+    const result = {};
+    this.bookmarks.forEach((value, key) => {
+      result[key] = {
+        position: { x: value.position.x, y: value.position.y, z: value.position.z },
+        target: { x: value.target.x, y: value.target.y, z: value.target.z },
+        spherical: value.spherical,
+        fov: value.fov,
+        orbitEnabled: value.orbitEnabled
+      };
+    });
+    return result;
+  }
+  /**
+   * Import bookmarks from JSON data
+   */
+  importBookmarks(data) {
+    Object.entries(data).forEach(([name, value]) => {
+      this.bookmarks.set(name, {
+        position: new Vector3(value.position.x, value.position.y, value.position.z),
+        target: new Vector3(value.target.x, value.target.y, value.target.z),
+        spherical: value.spherical,
+        fov: value.fov,
+        orbitEnabled: value.orbitEnabled
+      });
+    });
   }
 }
 

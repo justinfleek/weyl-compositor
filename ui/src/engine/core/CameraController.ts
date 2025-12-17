@@ -413,4 +413,416 @@ export class CameraController {
 
     return ortho;
   }
+
+  // ============================================================================
+  // 3D ORBIT CONTROLS
+  // ============================================================================
+
+  /** Current spherical coordinates for orbit mode */
+  private spherical = { radius: 1000, theta: 0, phi: Math.PI / 2 };
+
+  /** Whether orbit mode is enabled */
+  private orbitEnabled = false;
+
+  /**
+   * Enable orbit mode for 3D navigation
+   * In orbit mode, the camera orbits around the target point
+   */
+  enableOrbitMode(): void {
+    this.orbitEnabled = true;
+    // Calculate current spherical coordinates from camera position
+    const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
+    this.spherical.radius = offset.length();
+    this.spherical.theta = Math.atan2(offset.x - this.target.x, offset.z);
+    this.spherical.phi = Math.acos(THREE.MathUtils.clamp(offset.y / this.spherical.radius, -1, 1));
+  }
+
+  /**
+   * Disable orbit mode (return to pan/zoom mode)
+   */
+  disableOrbitMode(): void {
+    this.orbitEnabled = false;
+  }
+
+  /**
+   * Check if orbit mode is active
+   */
+  isOrbitMode(): boolean {
+    return this.orbitEnabled;
+  }
+
+  /**
+   * Orbit camera around target point
+   * @param deltaTheta - Horizontal rotation in radians (around Y axis)
+   * @param deltaPhi - Vertical rotation in radians (around X axis)
+   */
+  orbit(deltaTheta: number, deltaPhi: number): void {
+    if (!this.orbitEnabled) return;
+
+    // Update spherical coordinates
+    this.spherical.theta -= deltaTheta;
+    this.spherical.phi = THREE.MathUtils.clamp(
+      this.spherical.phi - deltaPhi,
+      0.01, // Prevent flipping at poles
+      Math.PI - 0.01
+    );
+
+    this.updateCameraFromSpherical();
+  }
+
+  /**
+   * Dolly (zoom in/out) in orbit mode
+   * @param delta - Positive to zoom in, negative to zoom out
+   */
+  dolly(delta: number): void {
+    if (!this.orbitEnabled) {
+      // In non-orbit mode, use regular zoom
+      this.setZoom(this.zoomLevel * (1 + delta * 0.1));
+      return;
+    }
+
+    // Adjust radius
+    this.spherical.radius = THREE.MathUtils.clamp(
+      this.spherical.radius * (1 - delta * 0.1),
+      10,     // Minimum distance
+      50000   // Maximum distance
+    );
+
+    this.updateCameraFromSpherical();
+  }
+
+  /**
+   * Pan camera in orbit mode (move target point)
+   * @param deltaX - Horizontal pan in screen pixels
+   * @param deltaY - Vertical pan in screen pixels
+   */
+  orbitPan(deltaX: number, deltaY: number): void {
+    if (!this.orbitEnabled) {
+      // Use regular pan
+      this.setPan(this.panOffset.x + deltaX, this.panOffset.y + deltaY);
+      return;
+    }
+
+    // Calculate pan speed based on distance
+    const panSpeed = this.spherical.radius * 0.001;
+
+    // Get camera right and up vectors
+    const right = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    right.setFromMatrixColumn(this.camera.matrix, 0);
+    up.setFromMatrixColumn(this.camera.matrix, 1);
+
+    // Apply pan
+    const panOffset = new THREE.Vector3();
+    panOffset.addScaledVector(right, -deltaX * panSpeed);
+    panOffset.addScaledVector(up, deltaY * panSpeed);
+
+    this.target.add(panOffset);
+    this.updateCameraFromSpherical();
+  }
+
+  /**
+   * Update camera position from spherical coordinates
+   */
+  private updateCameraFromSpherical(): void {
+    // Convert spherical to Cartesian
+    const x = this.spherical.radius * Math.sin(this.spherical.phi) * Math.sin(this.spherical.theta);
+    const y = this.spherical.radius * Math.cos(this.spherical.phi);
+    const z = this.spherical.radius * Math.sin(this.spherical.phi) * Math.cos(this.spherical.theta);
+
+    this.camera.position.set(
+      this.target.x + x,
+      this.target.y + y,
+      this.target.z + z
+    );
+    this.camera.lookAt(this.target);
+    this.camera.updateProjectionMatrix();
+  }
+
+  // ============================================================================
+  // VIEW PRESETS
+  // ============================================================================
+
+  /**
+   * Available orthographic view presets
+   */
+  static readonly VIEW_PRESETS = {
+    front: { theta: 0, phi: Math.PI / 2, name: 'Front' },
+    back: { theta: Math.PI, phi: Math.PI / 2, name: 'Back' },
+    left: { theta: -Math.PI / 2, phi: Math.PI / 2, name: 'Left' },
+    right: { theta: Math.PI / 2, phi: Math.PI / 2, name: 'Right' },
+    top: { theta: 0, phi: 0.01, name: 'Top' },
+    bottom: { theta: 0, phi: Math.PI - 0.01, name: 'Bottom' },
+    perspective: { theta: Math.PI / 4, phi: Math.PI / 3, name: 'Perspective' },
+  } as const;
+
+  /**
+   * Switch to a predefined view preset
+   * @param preset - Name of the view preset
+   * @param animate - Whether to animate the transition (default: false)
+   */
+  setViewPreset(preset: keyof typeof CameraController.VIEW_PRESETS, animate = false): void {
+    const view = CameraController.VIEW_PRESETS[preset];
+    if (!view) return;
+
+    // Enable orbit mode if not already
+    if (!this.orbitEnabled) {
+      this.enableOrbitMode();
+    }
+
+    if (animate) {
+      // Store start values for animation
+      const startTheta = this.spherical.theta;
+      const startPhi = this.spherical.phi;
+      const targetTheta = view.theta;
+      const targetPhi = view.phi;
+
+      // Animate over 300ms
+      const duration = 300;
+      const startTime = performance.now();
+
+      const animateView = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        // Use smooth easing
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        this.spherical.theta = startTheta + (targetTheta - startTheta) * eased;
+        this.spherical.phi = startPhi + (targetPhi - startPhi) * eased;
+        this.updateCameraFromSpherical();
+
+        if (t < 1) {
+          requestAnimationFrame(animateView);
+        }
+      };
+
+      requestAnimationFrame(animateView);
+    } else {
+      this.spherical.theta = view.theta;
+      this.spherical.phi = view.phi;
+      this.updateCameraFromSpherical();
+    }
+  }
+
+  /**
+   * Reset camera to default 2D view (centered on composition)
+   */
+  resetTo2DView(): void {
+    this.disableOrbitMode();
+    this.panOffset.set(0, 0);
+    this.zoomLevel = 1;
+    this.reset();
+  }
+
+  /**
+   * Reset orbit to center on composition
+   */
+  resetOrbit(): void {
+    // Set target to composition center
+    this.target.set(this.width / 2, -this.height / 2, 0);
+
+    // Reset spherical to front-perspective view
+    const fovRad = THREE.MathUtils.degToRad(this.camera.fov);
+    this.spherical.radius = (this.height / 2) / Math.tan(fovRad / 2);
+    this.spherical.theta = 0;
+    this.spherical.phi = Math.PI / 2;
+
+    if (this.orbitEnabled) {
+      this.updateCameraFromSpherical();
+    } else {
+      this.reset();
+    }
+  }
+
+  // ============================================================================
+  // FOCUS & FRAMING
+  // ============================================================================
+
+  /**
+   * Focus camera on a bounding box, framing it in view
+   * @param bounds - { min: {x, y, z}, max: {x, y, z} }
+   */
+  focusOnBounds(bounds: {
+    min: { x: number; y: number; z: number };
+    max: { x: number; y: number; z: number };
+  }): void {
+    // Calculate center of bounds
+    const center = new THREE.Vector3(
+      (bounds.min.x + bounds.max.x) / 2,
+      -(bounds.min.y + bounds.max.y) / 2, // Negate for screen coords
+      (bounds.min.z + bounds.max.z) / 2
+    );
+
+    // Calculate size of bounds
+    const size = new THREE.Vector3(
+      bounds.max.x - bounds.min.x,
+      bounds.max.y - bounds.min.y,
+      bounds.max.z - bounds.min.z
+    );
+
+    // Calculate required distance to fit bounds in view
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fovRad = THREE.MathUtils.degToRad(this.camera.fov);
+    const distance = (maxDim / 2) / Math.tan(fovRad / 2) * 1.5; // 1.5x padding
+
+    // Update target and position
+    this.target.copy(center);
+
+    if (this.orbitEnabled) {
+      this.spherical.radius = distance;
+      this.updateCameraFromSpherical();
+    } else {
+      this.camera.position.set(center.x, center.y, center.z + distance);
+      this.camera.lookAt(this.target);
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /**
+   * Focus on a layer by its bounding rect
+   * @param x - Layer X position
+   * @param y - Layer Y position
+   * @param width - Layer width
+   * @param height - Layer height
+   * @param z - Layer Z position (default 0)
+   */
+  focusOnLayer(x: number, y: number, width: number, height: number, z = 0): void {
+    this.focusOnBounds({
+      min: { x, y, z: z - 10 },
+      max: { x: x + width, y: y + height, z: z + 10 },
+    });
+  }
+
+  // ============================================================================
+  // CAMERA BOOKMARKS
+  // ============================================================================
+
+  /** Stored camera bookmarks */
+  private bookmarks: Map<string, {
+    position: THREE.Vector3;
+    target: THREE.Vector3;
+    spherical: { radius: number; theta: number; phi: number };
+    fov: number;
+    orbitEnabled: boolean;
+  }> = new Map();
+
+  /**
+   * Save current camera state as a bookmark
+   * @param name - Name for the bookmark
+   */
+  saveBookmark(name: string): void {
+    this.bookmarks.set(name, {
+      position: this.camera.position.clone(),
+      target: this.target.clone(),
+      spherical: { ...this.spherical },
+      fov: this.camera.fov,
+      orbitEnabled: this.orbitEnabled,
+    });
+  }
+
+  /**
+   * Load a saved camera bookmark
+   * @param name - Name of the bookmark
+   * @param animate - Whether to animate transition
+   */
+  loadBookmark(name: string, animate = false): boolean {
+    const bookmark = this.bookmarks.get(name);
+    if (!bookmark) return false;
+
+    if (animate) {
+      // Animate transition
+      const startPos = this.camera.position.clone();
+      const startTarget = this.target.clone();
+      const startFov = this.camera.fov;
+
+      const duration = 500;
+      const startTime = performance.now();
+
+      const animateBookmark = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        this.camera.position.lerpVectors(startPos, bookmark.position, eased);
+        this.target.lerpVectors(startTarget, bookmark.target, eased);
+        this.camera.fov = startFov + (bookmark.fov - startFov) * eased;
+
+        this.camera.lookAt(this.target);
+        this.camera.updateProjectionMatrix();
+
+        if (t < 1) {
+          requestAnimationFrame(animateBookmark);
+        } else {
+          // Restore full state
+          this.spherical = { ...bookmark.spherical };
+          this.orbitEnabled = bookmark.orbitEnabled;
+        }
+      };
+
+      requestAnimationFrame(animateBookmark);
+    } else {
+      this.camera.position.copy(bookmark.position);
+      this.target.copy(bookmark.target);
+      this.camera.fov = bookmark.fov;
+      this.spherical = { ...bookmark.spherical };
+      this.orbitEnabled = bookmark.orbitEnabled;
+      this.camera.lookAt(this.target);
+      this.camera.updateProjectionMatrix();
+    }
+
+    return true;
+  }
+
+  /**
+   * Delete a bookmark
+   * @param name - Name of the bookmark
+   */
+  deleteBookmark(name: string): boolean {
+    return this.bookmarks.delete(name);
+  }
+
+  /**
+   * Get list of bookmark names
+   */
+  getBookmarkNames(): string[] {
+    return Array.from(this.bookmarks.keys());
+  }
+
+  /**
+   * Export all bookmarks as JSON-serializable data
+   */
+  exportBookmarks(): Record<string, {
+    position: { x: number; y: number; z: number };
+    target: { x: number; y: number; z: number };
+    spherical: { radius: number; theta: number; phi: number };
+    fov: number;
+    orbitEnabled: boolean;
+  }> {
+    const result: Record<string, any> = {};
+    this.bookmarks.forEach((value, key) => {
+      result[key] = {
+        position: { x: value.position.x, y: value.position.y, z: value.position.z },
+        target: { x: value.target.x, y: value.target.y, z: value.target.z },
+        spherical: value.spherical,
+        fov: value.fov,
+        orbitEnabled: value.orbitEnabled,
+      };
+    });
+    return result;
+  }
+
+  /**
+   * Import bookmarks from JSON data
+   */
+  importBookmarks(data: Record<string, any>): void {
+    Object.entries(data).forEach(([name, value]) => {
+      this.bookmarks.set(name, {
+        position: new THREE.Vector3(value.position.x, value.position.y, value.position.z),
+        target: new THREE.Vector3(value.target.x, value.target.y, value.target.z),
+        spherical: value.spherical,
+        fov: value.fov,
+        orbitEnabled: value.orbitEnabled,
+      });
+    });
+  }
 }

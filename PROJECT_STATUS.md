@@ -1,98 +1,318 @@
 # Project Status Audit
 
+**Last Updated:** 2025-12-17
+**Test Status:** 851 tests passing, 0 TypeScript errors
+**Build Status:** Compiles successfully
+
+---
+
+## Quick Summary
+
+| Metric | Count | Status |
+|--------|-------|--------|
+| TypeScript Files | 125 | All compiling |
+| Vue Components | 45 | All rendering |
+| Services | 32 | All exported |
+| Engine Files | 24 | Functional |
+| Test Suites | 19 | All passing |
+| Total Tests | 851 | 100% pass rate |
+
+---
+
 ## 1. Core Architecture
 
 ### State Management (`compositorStore.ts`)
-- **Undo/Redo:** YES - Implemented via `historyStack` and `historyIndex`. `pushHistory()` creates JSON snapshots, `undo()`/`redo()` restore them. Limited to 50 entries.
-- **Separated Dimensions:** PARTIAL - `GraphEditorCanvas.vue` manually separates Position X/Y, Scale X/Y for display, but this is display-only. The store does NOT natively support separated dimension keyframes - it stores `{x, y}` objects, and the graph editor just extracts components for viewing.
-- **Missing Core State Features:**
-  - No clipboard state (copy/paste layers/keyframes)
-  - No snapping preferences (snap to keyframes, snap to grid)
-  - No ruler/guide system
-  - No composition markers in store (only local to TimelinePanel)
-  - No layer grouping/pre-compose
-  - No expression system
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Undo/Redo | YES | `historyStack`, `historyIndex`, 50 entry limit |
+| Separated Dimensions | PARTIAL | GraphEditor extracts X/Y for display |
+| Clipboard | NO | Copy/paste not implemented |
+| Snapping | NO | No snap to keyframe/grid |
+| Rulers/Guides | NO | Not implemented |
+| Layer Grouping | NO | No pre-compose |
+| Expression System | YES | **NEW** - `expressions.ts` service added |
 
-### Layout (`TimelinePanel.vue`)
-- **Sidebar Persistent:** YES - Uses split-pane layout with `layoutMode="sidebar"` and `layoutMode="track"` on separate `EnhancedLayerTrack` instances. Sidebar stays visible when switching to graph mode.
-- **Scrolling Synchronized:** NO - The sidebar (`.property-tree-sidebar`) and track viewport (`.track-viewport`) have independent `overflow-y: auto` on sidebar only. Track viewport has `overflow: hidden`. There is NO scroll synchronization code - when you scroll the sidebar, the tracks don't scroll with it.
-
----
-
-## 2. Feature Checklist (vs After Effects)
-
-| Feature | Status | Notes/Bugs |
-| :--- | :--- | :--- |
-| **Layer Management** | | |
-| Create Layers | [x] | Dropdown menu: spline, text, solid, null, camera, light. Working via `store.createLayer()`. |
-| Delete Layers | [ ] | `store.deleteLayer()` exists but NO UI button or shortcut to trigger it. |
-| Rename Layers | [x] | Double-click layer name in sidebar triggers rename input. Working. |
-| Duplicate Layers | [ ] | Not implemented. No `duplicateLayer()` action. |
-| Hierarchy (Parenting) | [x] | Parent dropdown in sidebar. `setLayerParent()` works. Circular dependency prevention exists. |
-| Layer Reordering | [ ] | `store.moveLayer()` exists but NO drag-drop UI. |
-| **Timeline UI** | | |
-| Sidebar Rendering | [x] | Now correctly shows layer info, twirl arrows, property names with values. No input bleeding. |
-| Track Rendering | [x] | Shows duration bars and keyframe diamonds only. No text elements. |
-| Scroll Sync | [ ] | BROKEN - Sidebar and track area scroll independently. |
-| Row Height Alignment | [?] | Layer row = 28px, Property row = 24px. Heights match between sidebar/track but untested with many layers. |
-| Playhead Sync | [x] | Single playhead in `TimelinePanel.vue` spans entire area. |
-| **Properties** | | |
-| Expand/Collapse | [x] | Twirl arrows work. `expandedLayerIds` Set syncs sidebar and track expansion. |
-| Stopwatch Toggle | [x] | Click stopwatch in sidebar calls `store.setPropertyAnimated()`. |
-| Add Keyframe | [x] | Via `store.addKeyframe()`. UI: stopwatch enables animation and adds keyframe. |
-| Remove Keyframe | [x] | `store.removeKeyframe()` exists. UI access unclear (no delete button on diamond). |
-| Keyframe Editing | [~] | Can click to select. Dragging exists in `PropertyTrack.vue` but `startKeyframeDrag()` only emits select, doesn't actually drag. |
-| **Graph Editor** | | |
-| Toggle Button | [x] | Graph toggle button in header switches `viewMode`. |
-| Value Curves | [x] | `GraphEditorCanvas.vue` draws curves with canvas 2D. Bezier interpolation supported. |
-| Speed Curves | [x] | "Speed" mode shows derivative (bell curves). Math implemented. |
-| Zoom/Pan | [x] | Mouse wheel + Ctrl for zoom, wheel alone for pan. `zoomLevel` and `scrollOffset` refs. |
-| Keyframe Points | [x] | DOM elements for keyframes with drag handlers. |
-| Bezier Handles | [~] | Rendered when `interpolation === 'bezier'` but handle dragging may not update store correctly. |
-| **Playback** | | |
-| Play/Pause | [x] | Space key, button click. `setInterval` based on FPS. |
-| Loop Modes | [x] | None, Loop, Ping-pong. Works with work area. |
-| Frame Navigation | [x] | Home/End, Page Up/Down, frame input field. |
-| Work Area | [x] | Draggable handles on ruler. B/N keys set in/out. |
-| **Selection** | | |
-| Layer Selection | [x] | Single select works. Multi-select via shift not implemented for layers. |
-| Keyframe Selection | [~] | Toggle selection works. Shift-click should add but may replace. |
-| Property Selection | [x] | For graph filtering. `selectedPropertyIds` Set. |
+### Timeline Architecture (`TimelinePanel.vue`)
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Split-pane Layout | YES | Sidebar (left) + Track (right) |
+| pixelsPerFrame System | YES | **NEW** - Replaced percentage-based |
+| Scroll Sync | PARTIAL | Track → Ruler syncs, sidebar independent |
+| Playhead | YES | Single playhead spans both areas |
 
 ---
 
-## 3. Critical Bugs
+## 2. Feature Completion Matrix
 
-### Bug #1: No Scroll Synchronization
-**Location:** `TimelinePanel.vue` lines 1214-1228
-**Problem:** `.property-tree-sidebar` and `.track-viewport` are sibling divs with independent overflow. When you scroll the sidebar to see more layers/properties, the track area stays stationary, causing row misalignment.
-**Impact:** Unusable with more than ~10 layers. Users cannot match which track belongs to which layer.
+### Layer Types
 
-### Bug #2: Keyframe Dragging Does Not Move Keyframes
-**Location:** `PropertyTrack.vue` line 123-127
-**Problem:** `startKeyframeDrag()` only calls `emit('selectKeyframe')`. It does NOT set up mousemove/mouseup handlers or call `store.moveKeyframe()`. The drag functionality is incomplete.
-**Impact:** Users cannot drag keyframes to new positions in keyframe mode.
+| Type | Store | Render | Properties | Status |
+|------|-------|--------|------------|--------|
+| spline | YES | YES | PARTIAL | Working |
+| text | YES | YES | YES | Working |
+| particles | YES | YES | YES | Working |
+| depthflow | YES | PARTIAL | YES | Partial |
+| solid | YES | YES | YES | Working |
+| null | YES | YES | YES | Working |
+| camera | YES | YES | YES | **FIXED** |
+| light | YES | YES | YES | Working |
+| shape | YES | YES | YES | **NEW** |
+| image | YES | PARTIAL | YES | Partial |
+| video | YES | PARTIAL | YES | Partial |
+| precomp | YES | NO | NO | Stub only |
+| procedural_matte | YES | NO | NO | Stub only |
 
-### Bug #3: No Delete Layer UI
-**Location:** `TimelinePanel.vue` (missing)
-**Problem:** `store.deleteLayer()` exists but there is no button, context menu, or keyboard shortcut (Delete/Backspace) to trigger it.
-**Impact:** Users can create layers but cannot remove them without code.
+### Engine Components
+
+| Component | File | Status | Notes |
+|-----------|------|--------|-------|
+| WeylEngine | WeylEngine.ts | YES | Main facade |
+| MotionEngine | MotionEngine.ts | YES | **AUTHORITATIVE** - Pure frame evaluation |
+| LayerManager | LayerManager.ts | YES | Layer CRUD |
+| CameraController | CameraController.ts | YES | 3D camera with DOF |
+| RenderPipeline | RenderPipeline.ts | YES | Post-processing |
+| SceneManager | SceneManager.ts | YES | Three.js scene |
+| ResourceManager | ResourceManager.ts | YES | Asset management |
+| ParticleSimController | ParticleSimulationController.ts | PARTIAL | Determinism issues |
+
+### Services (32 total)
+
+| Service | Status | Notes |
+|---------|--------|-------|
+| interpolation.ts | COMPLETE | Pure keyframe interpolation |
+| easing.ts | COMPLETE | 30+ Penner easing functions |
+| expressions.ts | **NEW** | Expression evaluation system |
+| math3d.ts | COMPLETE | Vec3, Mat4, Quaternion |
+| arcLength.ts | COMPLETE | LUT-based arc length |
+| textOnPath.ts | COMPLETE | Text on bezier paths |
+| particleSystem.ts | PARTIAL | **ISSUE**: Math.random() in spawning |
+| audioFeatures.ts | COMPLETE | Web Worker FFT analysis |
+| audioReactiveMapping.ts | COMPLETE | ATI/Yvann mapping |
+| effectProcessor.ts | COMPLETE | Effect stack evaluation |
+| motionBlur.ts | COMPLETE | Multi-type motion blur |
+| frameCache.ts | COMPLETE | LRU frame caching |
+| gpuDetection.ts | COMPLETE | GPU tier detection |
+| camera3DVisualization.ts | COMPLETE | Frustum visualization |
+| cameraExport.ts | COMPLETE | 6+ export formats |
+| depthflow.ts | COMPLETE | Depth parallax |
+| fontService.ts | COMPLETE | Google Fonts integration |
+| imageTrace.ts | COMPLETE | SVG tracing |
+| matteExporter.ts | COMPLETE | Matte sequence export |
+| projectStorage.ts | COMPLETE | Save/load projects |
+| propertyDriver.ts | **NEW** | Property linking |
+| segmentation.ts | PARTIAL | SAM2 integration |
+| shapeOperations.ts | COMPLETE | Boolean operations |
+| timelineSnap.ts | COMPLETE | Snap calculations |
+| workerPool.ts | COMPLETE | Web Worker management |
 
 ---
 
-## 4. Missing "Must Have" Features
+## 3. Recent Fixes (Dec 2024)
 
-1. **Delete Layer UI** - No button or shortcut to delete selected layer(s)
-2. **Scroll Synchronization** - Left/right panels must scroll together
-3. **Keyframe Dragging** - Must be able to drag keyframes to new frame positions
-4. **Copy/Paste** - No clipboard for layers or keyframes
-5. **Multi-Selection** - Shift-click for multiple layers, box-select for keyframes
-6. **Delete Keyframe UI** - No button/shortcut to delete selected keyframes
-7. **Keyboard Shortcuts for Timeline** - No J/K/L for shuttle, no arrow keys for frame stepping while focused
-8. **Context Menus** - No right-click menus for layers, keyframes, or properties
-9. **Value Editing in Graph** - Cannot type numeric values for keyframes in graph editor
-10. **Snap to Keyframes** - Playhead/keyframe dragging doesn't snap to existing keyframes
+### Session: 2025-12-17
+
+1. **services/index.ts** - Complete rewrite
+   - Fixed 100+ export mismatches
+   - All service exports now verified against actual modules
+
+2. **compositorStore.ts** - API contract fixes
+   - `projectId` → `project_id` (snake_case)
+   - `loadProjectFromBackend()` fixed
+   - `listSavedProjects()` return type fixed
+
+3. **Browser API Mocks** - `__tests__/setup.ts`
+   - MockImageData, MockOffscreenCanvas
+   - mockCreateImageBitmap, mockRequestAnimationFrame
+   - Test utilities: createTestImageData, createTestCanvas
+
+4. **motionBlur.test.ts** - Fixed test API
+   - Changed `angle` → `direction`
+   - Changed `centerX/Y` → `radialCenterX/Y`
+
+5. **CLAUDE.md** - Updated to reflect actual architecture
+   - Removed Fabric.js references (never implemented)
+   - Documented Three.js-based engine
+   - Added timeline architecture docs
+   - Added common issues & solutions
+
+### Previous Sessions (Dec 2024)
+
+- Expression system implementation
+- Motion blur processor
+- Shape layer operations
+- Camera system with store integration
+- Audio worker for non-blocking analysis
+- Effect processor with StackBlur algorithm
 
 ---
 
-**End of Audit.**
+## 4. Critical Bugs (Priority Order)
+
+### P0 - Blocking
+
+| Bug | Location | Status | Notes |
+|-----|----------|--------|-------|
+| Particle Math.random() | particleSystem.ts | **OPEN** | Breaks determinism |
+| Scroll sync incomplete | TimelinePanel.vue | **OPEN** | Sidebar independent |
+| Input bleed to track | PropertyTrack.vue | **INVESTIGATING** | layoutMode not respected |
+
+### P1 - Major
+
+| Bug | Location | Status | Notes |
+|-----|----------|--------|-------|
+| Keyframe drag non-functional | PropertyTrack.vue | **OPEN** | Only selects |
+| No delete layer UI | TimelinePanel.vue | **OPEN** | Action exists, no button |
+| Graph handle drag broken | GraphEditorCanvas.vue | **OPEN** | Direct mutation |
+| Playhead desync | TimelinePanel.vue | **INVESTIGATING** | Separate scroll containers |
+
+### P2 - Minor
+
+| Bug | Location | Status | Notes |
+|-----|----------|--------|-------|
+| Twirl arrow alignment | EnhancedLayerTrack.vue | **OPEN** | CSS issue |
+| Font size too small | Various | **OPEN** | Need 14px/16px |
+| Missing Mode/TrkMat columns | TimelinePanel.vue | **OPEN** | AE parity |
+| Markers not persisted | TimelinePanel.vue | **OPEN** | Local state only |
+
+---
+
+## 5. Missing Features for Full AE Parity
+
+### Timeline
+
+- [ ] Delete layer button/shortcut
+- [ ] Keyframe dragging (time axis)
+- [ ] Multi-keyframe selection (box select)
+- [ ] Copy/paste keyframes
+- [ ] Snap to keyframes
+- [ ] Layer reorder drag-drop
+- [ ] Context menus (right-click)
+- [ ] Mode column (blend modes)
+- [ ] Track Matte column
+- [ ] Timecode display (HH:MM:SS:FF)
+
+### Graph Editor
+
+- [ ] Handle dragging updates store
+- [ ] Value typing in graph
+- [ ] Ease presets (Easy Ease In/Out)
+- [ ] Box selection
+- [ ] Copy/paste curves
+
+### Properties Panel
+
+- [ ] Per-effect controls
+- [ ] Text animators
+- [ ] Shape operation stack
+- [ ] Expression editor
+
+### Canvas/Viewport
+
+- [ ] Select tool click handler
+- [ ] Text tool click handler
+- [ ] Transform handles (move/rotate/scale)
+- [ ] Selection highlighting
+- [ ] Multi-select
+
+### Export
+
+- [ ] SCAIL-Pose integration
+- [ ] Batch export
+- [ ] Export history
+
+---
+
+## 6. Architecture Compliance
+
+### MotionEngine (AUTHORITATIVE)
+
+The `MotionEngine.evaluate(frame, project)` function is the **single source of truth** for frame state. All rendering should flow through:
+
+```typescript
+const frameState = motionEngine.evaluate(frame, project, audioAnalysis);
+engine.applyFrameState(frameState);
+```
+
+**DEPRECATED PATH** (still exists, needs removal):
+```typescript
+engine.setFrame(frame); // Bypasses MotionEngine
+```
+
+### Determinism Requirements
+
+Per `docs/15_DETERMINISM_TESTING.md`:
+- [ ] `evaluate(50)` === `evaluate(50)` always
+- [ ] No Math.random() in render path
+- [ ] No Date.now() in render path
+- [ ] Seeded PRNG for particles
+
+**Current Violations:**
+- `particleSystem.ts:1196,1212,1219-1220` - Math.random() in spawning
+- ID generation uses Math.random() (acceptable for IDs only)
+
+---
+
+## 7. Test Coverage
+
+| Category | Suites | Tests | Status |
+|----------|--------|-------|--------|
+| Stores | 4 | ~60 | All passing |
+| Engine | 4 | ~65 | All passing |
+| Services | 11 | ~726 | All passing |
+| **Total** | **19** | **851** | **100%** |
+
+### Test Gaps
+
+- [ ] MotionEngine determinism tests
+- [ ] Particle scrub-order independence
+- [ ] Effect application verification
+- [ ] Timeline interaction tests
+- [ ] Export pipeline integration
+
+---
+
+## 8. File Counts
+
+```
+ui/src/
+├── components/     45 .vue files
+├── engine/         24 .ts files
+├── services/       32 .ts files
+├── stores/          6 .ts files
+├── types/           6 .ts files
+├── __tests__/      19 test files
+└── Total:         170 source files
+```
+
+---
+
+## 9. Estimated Work Remaining
+
+| Phase | Description | Sessions | Priority |
+|-------|-------------|----------|----------|
+| **P0 Fixes** | Particle determinism, scroll sync | 2-3 | IMMEDIATE |
+| **Timeline UX** | Keyframe drag, delete UI, context menus | 3-4 | HIGH |
+| **Graph Editor** | Handle drag, value editing | 2 | HIGH |
+| **Canvas Tools** | Select/text handlers, transform handles | 3-4 | MEDIUM |
+| **AE Parity** | Mode/TrkMat columns, timecode | 2 | MEDIUM |
+| **Testing** | Determinism suite, integration tests | 3 | FINAL |
+| **Total** | | **15-18** | |
+
+---
+
+## 10. Quality Gates
+
+Before Phase 1 Release:
+
+- [x] TypeScript strict mode compiles (0 errors)
+- [x] All tests pass (851/851)
+- [x] Build succeeds
+- [ ] Particle determinism fixed
+- [ ] Timeline scroll sync working
+- [ ] Keyframe dragging functional
+- [ ] Delete layer UI exists
+- [ ] Determinism tests pass
+
+---
+
+**End of Status Document**
