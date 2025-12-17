@@ -14,6 +14,9 @@ import { AudioReactiveMapper } from '@/services/audioReactiveMapping';
 import { AudioPathAnimator, type PathAnimatorConfig } from '@/services/audioPathAnimator';
 import type { AudioParticleMapping } from '@/types/project';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AudioReactiveMapperType = AudioReactiveMapper | any;
+
 export interface AudioStore {
   // State
   audioBuffer: AudioBuffer | null;
@@ -28,8 +31,10 @@ export interface AudioStore {
   audioMappings: Map<string, AudioParticleMapping[]>;
   peakData: PeakData | null;
   audioReactiveMappings: AudioMapping[];
-  audioReactiveMapper: AudioReactiveMapper | null;
-  pathAnimators: Map<string, AudioPathAnimator>;
+  // Using union with any to avoid Pinia proxy type incompatibilities
+  audioReactiveMapper: AudioReactiveMapperType | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pathAnimators: Map<string, AudioPathAnimator | any>;
   propertyDriverSystem: { setAudioAnalysis(analysis: AudioAnalysis): void } | null;
 
   // Methods the store must provide

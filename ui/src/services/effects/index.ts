@@ -26,7 +26,9 @@ export {
   directionalBlurRenderer,
   radialBlurRenderer,
   boxBlurRenderer,
-  sharpenRenderer
+  sharpenRenderer,
+  isWebGLBlurAvailable,
+  disposeWebGLBlur
 } from './blurRenderer';
 
 // Re-export color effects
@@ -59,7 +61,9 @@ export {
 export {
   fillRenderer,
   gradientRampRenderer,
-  fractalNoiseRenderer
+  fractalNoiseRenderer,
+  clearNoiseTileCache,
+  getNoiseTileCacheStats
 } from './generateRenderer';
 
 // Mask system

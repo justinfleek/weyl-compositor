@@ -17,28 +17,13 @@ import type { AudioAnalysis } from '@/services/audioFeatures';
 import type { AnimatableProperty } from '@/types/project';
 import { interpolateProperty } from '@/services/interpolation';
 
-export interface PropertyDriverStore {
-  // State
-  propertyDriverSystem: PropertyDriverSystem | null;
-  propertyDrivers: PropertyDriver[];
-  audioAnalysis: AudioAnalysis | null;
-
-  // Methods the store must provide
-  project: { meta: { modified: string } };
-  getLayer(layerId: string): {
-    transform: {
-      position: AnimatableProperty<{ x: number; y: number }>;
-      scale: AnimatableProperty<{ x: number; y: number }>;
-      rotation: AnimatableProperty<number>;
-      rotationX?: AnimatableProperty<number>;
-      rotationY?: AnimatableProperty<number>;
-      rotationZ?: AnimatableProperty<number>;
-    };
-    opacity: AnimatableProperty<number>;
-  } | undefined;
-  pushHistory(): void;
-  getPropertyValueAtFrame(layerId: string, propertyPath: string, frame: number): number | null;
-}
+/**
+ * Store interface for property driver actions
+ * Using Record<string, any> to work with Pinia reactive proxies
+ * which wrap class instances and modify their type signatures
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PropertyDriverStore = Record<string, any>;
 
 /**
  * Initialize the property driver system
@@ -47,7 +32,7 @@ export function initializePropertyDriverSystem(store: PropertyDriverStore): void
   store.propertyDriverSystem = new PropertyDriverSystem();
 
   // Set up property getter that reads from store
-  store.propertyDriverSystem.setPropertyGetter((layerId, propertyPath, frame) => {
+  store.propertyDriverSystem.setPropertyGetter((layerId: string, propertyPath: string, frame: number) => {
     return store.getPropertyValueAtFrame(layerId, propertyPath, frame);
   });
 
@@ -69,7 +54,7 @@ export function getEvaluatedLayerProperties(
   store: PropertyDriverStore,
   layerId: string,
   frame: number
-): Map<string, number> {
+): Map<PropertyPath, number> {
   if (!store.propertyDriverSystem) {
     return new Map();
   }
@@ -78,15 +63,16 @@ export function getEvaluatedLayerProperties(
   if (!layer) return new Map();
 
   // Build base values from layer properties
-  const baseValues = new Map<string, number>();
+  // Use PropertyPath type for type safety
+  const baseValues = new Map<PropertyPath, number>();
 
   // Position
-  const pos = interpolateProperty(layer.transform.position, frame);
+  const pos = interpolateProperty(layer.transform.position, frame) as { x: number; y: number };
   baseValues.set('transform.position.x', pos.x);
   baseValues.set('transform.position.y', pos.y);
 
   // Scale
-  const scale = interpolateProperty(layer.transform.scale, frame);
+  const scale = interpolateProperty(layer.transform.scale, frame) as { x: number; y: number };
   baseValues.set('transform.scale.x', scale.x);
   baseValues.set('transform.scale.y', scale.y);
 
@@ -183,7 +169,7 @@ export function removePropertyDriver(
   store: PropertyDriverStore,
   driverId: string
 ): void {
-  const index = store.propertyDrivers.findIndex(d => d.id === driverId);
+  const index = store.propertyDrivers.findIndex((d: PropertyDriver) => d.id === driverId);
   if (index >= 0) {
     store.propertyDrivers.splice(index, 1);
   }
@@ -204,7 +190,7 @@ export function updatePropertyDriver(
   driverId: string,
   updates: Partial<PropertyDriver>
 ): void {
-  const driver = store.propertyDrivers.find(d => d.id === driverId);
+  const driver = store.propertyDrivers.find((d: PropertyDriver) => d.id === driverId);
   if (driver) {
     Object.assign(driver, updates);
   }
@@ -223,7 +209,7 @@ export function getDriversForLayer(
   store: PropertyDriverStore,
   layerId: string
 ): PropertyDriver[] {
-  return store.propertyDrivers.filter(d => d.targetLayerId === layerId);
+  return store.propertyDrivers.filter((d: PropertyDriver) => d.targetLayerId === layerId);
 }
 
 /**
@@ -233,7 +219,7 @@ export function togglePropertyDriver(
   store: PropertyDriverStore,
   driverId: string
 ): void {
-  const driver = store.propertyDrivers.find(d => d.id === driverId);
+  const driver = store.propertyDrivers.find((d: PropertyDriver) => d.id === driverId);
   if (driver) {
     driver.enabled = !driver.enabled;
     if (store.propertyDriverSystem) {

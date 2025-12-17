@@ -12,6 +12,8 @@
             <button @click="createNewText">T New Text</button>
             <button @click="createNewNull">◇ New Null</button>
             <button @click="createNewSpline">✏ New Spline</button>
+            <button @click="createNewModel">🧊 New 3D Model</button>
+            <button @click="createNewPointCloud">☁ New Point Cloud</button>
           </div>
         </div>
         <button @click="showSearch = !showSearch" title="Search">🔍</button>
@@ -274,6 +276,18 @@ function createNewSpline() {
   showNewMenu.value = false;
   const layer = store.createSplineLayer();
   console.log('[ProjectPanel] Created spline layer:', layer.id);
+}
+
+function createNewModel() {
+  showNewMenu.value = false;
+  const layer = store.createLayer('model', '3D Model');
+  console.log('[ProjectPanel] Created model layer:', layer.id);
+}
+
+function createNewPointCloud() {
+  showNewMenu.value = false;
+  const layer = store.createLayer('pointcloud', 'Point Cloud');
+  console.log('[ProjectPanel] Created point cloud layer:', layer.id);
 }
 
 function triggerFileImport() {

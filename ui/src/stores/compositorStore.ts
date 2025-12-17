@@ -1242,7 +1242,8 @@ export const useCompositorStore = defineStore('compositor', {
         return null;
       }
 
-      const layer = await this._createLayerFromMask(
+      const layer = await segmentationActions.createLayerFromMask(
+        this,
         this.sourceImage,
         this.segmentPendingMask,
         layerName,
