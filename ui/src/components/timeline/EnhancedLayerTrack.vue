@@ -131,7 +131,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import PropertyTrack from './PropertyTrack.vue';
 
-const props = defineProps(['layer', 'index', 'layoutMode', 'isExpandedExternal', 'allLayers', 'frameCount', 'pixelsPerFrame', 'timelineWidth', 'gridStyle']);
+const props = defineProps(['layer', 'index', 'layoutMode', 'isExpandedExternal', 'allLayers', 'frameCount', 'pixelsPerFrame', 'gridStyle']);
 const emit = defineEmits(['toggleExpand', 'select', 'updateLayer']);
 const store = useCompositorStore();
 
@@ -200,16 +200,15 @@ const groupedProperties = computed(() => {
 
 const barStyle = computed(() => {
   const frameCount = props.frameCount || 81;
-  const containerWidth = props.timelineWidth || (frameCount * (props.pixelsPerFrame || 10));
 
-  // Proportional positioning: position and width are relative to container
+  // Use CSS percentages - positions relative to parent container width
   // This ensures layer bar fills viewport when layer spans full composition
-  const leftPct = props.layer.inPoint / frameCount;
-  const widthPct = (props.layer.outPoint - props.layer.inPoint + 1) / frameCount;
+  const leftPct = (props.layer.inPoint / frameCount) * 100;
+  const widthPct = ((props.layer.outPoint - props.layer.inPoint + 1) / frameCount) * 100;
 
   return {
-    left: `${leftPct * containerWidth}px`,
-    width: `${widthPct * containerWidth}px`
+    left: `${leftPct}%`,
+    width: `${widthPct}%`
   };
 });
 

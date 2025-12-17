@@ -76,9 +76,9 @@
           <div class="time-ruler" :style="{ width: computedWidthStyle }" @mousedown="startRulerScrub">
              <canvas ref="rulerCanvas" height="30"></canvas>
 
-             <div class="playhead-head" :style="{ left: playheadPosition + 'px' }"></div>
+             <div class="playhead-head" :style="{ left: playheadPositionPct + '%' }"></div>
              <div class="playhead-hit-area"
-                  :style="{ left: playheadPosition + 'px' }"
+                  :style="{ left: playheadPositionPct + '%' }"
                   @mousedown.stop="startRulerScrub"
              ></div>
           </div>
@@ -96,13 +96,12 @@
                 layoutMode="track"
                 :frameCount="store.frameCount"
                 :pixelsPerFrame="pixelsPerFrame"
-                :timelineWidth="timelineWidth"
                 :isExpandedExternal="expandedLayers[layer.id]"
                 @select="selectLayer"
                 @updateLayer="updateLayer"
               />
 
-             <div class="playhead-line" :style="{ left: playheadPosition + 'px' }"></div>
+             <div class="playhead-line" :style="{ left: playheadPositionPct + '%' }"></div>
           </div>
         </div>
       </div>
@@ -137,8 +136,8 @@ let isScrollingTrack = false;
 const viewportWidth = ref(1000); // Default, updated by observer
 
 const filteredLayers = computed(() => store.layers || []);
-// Playhead position is proportional to timeline width
-const playheadPosition = computed(() => (store.currentFrame / store.frameCount) * timelineWidth.value);
+// Playhead position as percentage of timeline
+const playheadPositionPct = computed(() => (store.currentFrame / store.frameCount) * 100);
 
 // Width calculation - always fill at least the viewport
 // When zoomed out, composition fills viewport. When zoomed in, content is larger (scrollable)

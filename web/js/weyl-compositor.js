@@ -76596,7 +76596,7 @@ const _hoisted_17$7 = {
 const _hoisted_18$7 = { key: 0 };
 const _sfc_main$a = /* @__PURE__ */ defineComponent({
   __name: "EnhancedLayerTrack",
-  props: ["layer", "index", "layoutMode", "isExpandedExternal", "allLayers", "frameCount", "pixelsPerFrame", "timelineWidth", "gridStyle"],
+  props: ["layer", "index", "layoutMode", "isExpandedExternal", "allLayers", "frameCount", "pixelsPerFrame", "gridStyle"],
   emits: ["toggleExpand", "select", "updateLayer"],
   setup(__props, { emit: __emit }) {
     const props = __props;
@@ -76652,12 +76652,11 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
     });
     const barStyle = computed(() => {
       const frameCount = props.frameCount || 81;
-      const containerWidth = props.timelineWidth || frameCount * (props.pixelsPerFrame || 10);
-      const leftPct = props.layer.inPoint / frameCount;
-      const widthPct = (props.layer.outPoint - props.layer.inPoint + 1) / frameCount;
+      const leftPct = props.layer.inPoint / frameCount * 100;
+      const widthPct = (props.layer.outPoint - props.layer.inPoint + 1) / frameCount * 100;
       return {
-        left: `${leftPct * containerWidth}px`,
-        width: `${widthPct * containerWidth}px`
+        left: `${leftPct}%`,
+        width: `${widthPct}%`
       };
     });
     function selectLayer() {
@@ -76838,7 +76837,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
                 onMousedown: _cache[2] || (_cache[2] = withModifiers(() => {
                 }, ["stop"]))
               }, [..._cache[5] || (_cache[5] = [
-                createStaticVNode('<optgroup label="Normal" data-v-5b53b81d><option value="normal" data-v-5b53b81d>Normal</option><option value="dissolve" data-v-5b53b81d>Dissolve</option></optgroup><optgroup label="Darken" data-v-5b53b81d><option value="darken" data-v-5b53b81d>Darken</option><option value="multiply" data-v-5b53b81d>Multiply</option><option value="colorBurn" data-v-5b53b81d>Color Burn</option><option value="linearBurn" data-v-5b53b81d>Linear Burn</option></optgroup><optgroup label="Lighten" data-v-5b53b81d><option value="add" data-v-5b53b81d>Add</option><option value="lighten" data-v-5b53b81d>Lighten</option><option value="screen" data-v-5b53b81d>Screen</option><option value="colorDodge" data-v-5b53b81d>Color Dodge</option><option value="linearDodge" data-v-5b53b81d>Linear Dodge</option></optgroup><optgroup label="Contrast" data-v-5b53b81d><option value="overlay" data-v-5b53b81d>Overlay</option><option value="softLight" data-v-5b53b81d>Soft Light</option><option value="hardLight" data-v-5b53b81d>Hard Light</option><option value="vividLight" data-v-5b53b81d>Vivid Light</option><option value="linearLight" data-v-5b53b81d>Linear Light</option><option value="pinLight" data-v-5b53b81d>Pin Light</option><option value="hardMix" data-v-5b53b81d>Hard Mix</option></optgroup><optgroup label="Inversion" data-v-5b53b81d><option value="difference" data-v-5b53b81d>Difference</option><option value="exclusion" data-v-5b53b81d>Exclusion</option><option value="subtract" data-v-5b53b81d>Subtract</option><option value="divide" data-v-5b53b81d>Divide</option></optgroup><optgroup label="Component" data-v-5b53b81d><option value="hue" data-v-5b53b81d>Hue</option><option value="saturation" data-v-5b53b81d>Saturation</option><option value="color" data-v-5b53b81d>Color</option><option value="luminosity" data-v-5b53b81d>Luminosity</option></optgroup>', 6)
+                createStaticVNode('<optgroup label="Normal" data-v-68a3f2ae><option value="normal" data-v-68a3f2ae>Normal</option><option value="dissolve" data-v-68a3f2ae>Dissolve</option></optgroup><optgroup label="Darken" data-v-68a3f2ae><option value="darken" data-v-68a3f2ae>Darken</option><option value="multiply" data-v-68a3f2ae>Multiply</option><option value="colorBurn" data-v-68a3f2ae>Color Burn</option><option value="linearBurn" data-v-68a3f2ae>Linear Burn</option></optgroup><optgroup label="Lighten" data-v-68a3f2ae><option value="add" data-v-68a3f2ae>Add</option><option value="lighten" data-v-68a3f2ae>Lighten</option><option value="screen" data-v-68a3f2ae>Screen</option><option value="colorDodge" data-v-68a3f2ae>Color Dodge</option><option value="linearDodge" data-v-68a3f2ae>Linear Dodge</option></optgroup><optgroup label="Contrast" data-v-68a3f2ae><option value="overlay" data-v-68a3f2ae>Overlay</option><option value="softLight" data-v-68a3f2ae>Soft Light</option><option value="hardLight" data-v-68a3f2ae>Hard Light</option><option value="vividLight" data-v-68a3f2ae>Vivid Light</option><option value="linearLight" data-v-68a3f2ae>Linear Light</option><option value="pinLight" data-v-68a3f2ae>Pin Light</option><option value="hardMix" data-v-68a3f2ae>Hard Mix</option></optgroup><optgroup label="Inversion" data-v-68a3f2ae><option value="difference" data-v-68a3f2ae>Difference</option><option value="exclusion" data-v-68a3f2ae>Exclusion</option><option value="subtract" data-v-68a3f2ae>Subtract</option><option value="divide" data-v-68a3f2ae>Divide</option></optgroup><optgroup label="Component" data-v-68a3f2ae><option value="hue" data-v-68a3f2ae>Hue</option><option value="saturation" data-v-68a3f2ae>Saturation</option><option value="color" data-v-68a3f2ae>Color</option><option value="luminosity" data-v-68a3f2ae>Luminosity</option></optgroup>', 6)
               ])], 40, _hoisted_7$9)
             ]),
             createBaseVNode("div", _hoisted_8$9, [
@@ -76967,7 +76966,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
   }
 });
 
-const EnhancedLayerTrack = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-5b53b81d"]]);
+const EnhancedLayerTrack = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-68a3f2ae"]]);
 
 const _hoisted_1$8 = { class: "composition-tabs" };
 const _hoisted_2$8 = { class: "tabs-container" };
@@ -77211,7 +77210,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
     let isScrollingTrack = false;
     const viewportWidth = ref(1e3);
     const filteredLayers = computed(() => store.layers || []);
-    const playheadPosition = computed(() => store.currentFrame / store.frameCount * timelineWidth.value);
+    const playheadPositionPct = computed(() => store.currentFrame / store.frameCount * 100);
     const timelineWidth = computed(() => {
       const frameWidth = store.frameCount * pixelsPerFrame.value;
       return Math.max(frameWidth, viewportWidth.value);
@@ -77563,7 +77562,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             class: "timeline-sidebar",
             style: normalizeStyle({ width: sidebarWidth.value + "px" })
           }, [
-            _cache[17] || (_cache[17] = createStaticVNode('<div class="sidebar-header-row" data-v-3668b249><div class="col-header col-arrow" data-v-3668b249></div><div class="col-header col-name" data-v-3668b249>Layer Name</div><div class="col-header col-mode" data-v-3668b249>Mode</div><div class="col-header col-parent" data-v-3668b249>Parent</div></div>', 1)),
+            _cache[17] || (_cache[17] = createStaticVNode('<div class="sidebar-header-row" data-v-a7c81696><div class="col-header col-arrow" data-v-a7c81696></div><div class="col-header col-name" data-v-a7c81696>Layer Name</div><div class="col-header col-mode" data-v-a7c81696>Mode</div><div class="col-header col-parent" data-v-a7c81696>Parent</div></div>', 1)),
             createBaseVNode("div", {
               class: "sidebar-scroll-area",
               ref_key: "sidebarScrollRef",
@@ -77613,11 +77612,11 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                 }, null, 512),
                 createBaseVNode("div", {
                   class: "playhead-head",
-                  style: normalizeStyle({ left: playheadPosition.value + "px" })
+                  style: normalizeStyle({ left: playheadPositionPct.value + "%" })
                 }, null, 4),
                 createBaseVNode("div", {
                   class: "playhead-hit-area",
-                  style: normalizeStyle({ left: playheadPosition.value + "px" }),
+                  style: normalizeStyle({ left: playheadPositionPct.value + "%" }),
                   onMousedown: withModifiers(startRulerScrub, ["stop"])
                 }, null, 36)
               ], 36)
@@ -77640,15 +77639,14 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                     layoutMode: "track",
                     frameCount: unref(store).frameCount,
                     pixelsPerFrame: pixelsPerFrame.value,
-                    timelineWidth: timelineWidth.value,
                     isExpandedExternal: expandedLayers.value[layer.id],
                     onSelect: selectLayer,
                     onUpdateLayer: updateLayer
-                  }, null, 8, ["layer", "frameCount", "pixelsPerFrame", "timelineWidth", "isExpandedExternal"]);
+                  }, null, 8, ["layer", "frameCount", "pixelsPerFrame", "isExpandedExternal"]);
                 }), 128)),
                 createBaseVNode("div", {
                   class: "playhead-line",
-                  style: normalizeStyle({ left: playheadPosition.value + "px" })
+                  style: normalizeStyle({ left: playheadPositionPct.value + "%" })
                 }, null, 4)
               ], 4)
             ], 544)
@@ -77659,7 +77657,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-3668b249"]]);
+const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-a7c81696"]]);
 
 const _hoisted_1$6 = { class: "graph-editor" };
 const _hoisted_2$6 = { class: "graph-header" };
