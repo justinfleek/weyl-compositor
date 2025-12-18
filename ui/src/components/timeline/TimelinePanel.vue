@@ -49,6 +49,9 @@
           <button class="comp-settings-btn" @click="emit('openCompositionSettings')" title="Composition Settings (Ctrl+K)">
             ⚙️ Comp Settings
           </button>
+          <button class="ai-btn" @click="emit('openPathSuggestion')" title="AI Path Suggestion">
+            ✨ AI
+          </button>
         </div>
       </div>
 
@@ -155,6 +158,7 @@ import { findNearestSnap } from '@/services/timelineSnap';
 
 const emit = defineEmits<{
   (e: 'openCompositionSettings'): void;
+  (e: 'openPathSuggestion'): void;
 }>();
 
 const store = useCompositorStore();
@@ -487,6 +491,8 @@ watch(() => [computedWidthStyle.value, zoomPercent.value, store.frameCount], () 
 
 .comp-settings-btn { padding: 6px 14px; background: #3a5a8a; border: 1px solid #4a7aba; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .comp-settings-btn:hover { background: #4a6a9a; border-color: #5a8aca; }
+.ai-btn { padding: 6px 12px; background: linear-gradient(135deg, #6a4c93, #4a90d9); border: 1px solid #7a5ca3; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.ai-btn:hover { background: linear-gradient(135deg, #7a5ca3, #5aa0e9); border-color: #8a6cb3; }
 
 .timeline-content { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; }
 .timeline-sidebar { background: #1e1e1e; border-right: 1px solid #000; display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }

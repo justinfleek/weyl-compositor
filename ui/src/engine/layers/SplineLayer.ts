@@ -115,16 +115,17 @@ export class SplineLayer extends BaseLayer {
       const z1 = p1.depth ?? 0;
 
       // Create bezier curve segment
+      // Handles are stored as ABSOLUTE positions, not relative offsets
       const bezier = new THREE.CubicBezierCurve3(
         new THREE.Vector3(p0.x, -p0.y, z0),
         new THREE.Vector3(
-          p0.x + (p0.handleOut?.x ?? 0),
-          -(p0.y + (p0.handleOut?.y ?? 0)),
+          p0.handleOut?.x ?? p0.x,
+          -(p0.handleOut?.y ?? p0.y),
           z0
         ),
         new THREE.Vector3(
-          p1.x + (p1.handleIn?.x ?? 0),
-          -(p1.y + (p1.handleIn?.y ?? 0)),
+          p1.handleIn?.x ?? p1.x,
+          -(p1.handleIn?.y ?? p1.y),
           z1
         ),
         new THREE.Vector3(p1.x, -p1.y, z1)
@@ -141,16 +142,17 @@ export class SplineLayer extends BaseLayer {
       const zLast = lastPoint.depth ?? 0;
       const zFirst = firstPoint.depth ?? 0;
 
+      // Closing bezier also uses absolute handle positions
       const closingBezier = new THREE.CubicBezierCurve3(
         new THREE.Vector3(lastPoint.x, -lastPoint.y, zLast),
         new THREE.Vector3(
-          lastPoint.x + (lastPoint.handleOut?.x ?? 0),
-          -(lastPoint.y + (lastPoint.handleOut?.y ?? 0)),
+          lastPoint.handleOut?.x ?? lastPoint.x,
+          -(lastPoint.handleOut?.y ?? lastPoint.y),
           zLast
         ),
         new THREE.Vector3(
-          firstPoint.x + (firstPoint.handleIn?.x ?? 0),
-          -(firstPoint.y + (firstPoint.handleIn?.y ?? 0)),
+          firstPoint.handleIn?.x ?? firstPoint.x,
+          -(firstPoint.handleIn?.y ?? firstPoint.y),
           zFirst
         ),
         new THREE.Vector3(firstPoint.x, -firstPoint.y, zFirst)
@@ -552,16 +554,17 @@ export class SplineLayer extends BaseLayer {
       const z1 = p1.depth;
 
       // Create bezier curve segment
+      // Handles are stored as ABSOLUTE positions, not relative offsets
       const bezier = new THREE.CubicBezierCurve3(
         new THREE.Vector3(p0.x, -p0.y, z0),
         new THREE.Vector3(
-          p0.x + (p0.handleOut?.x ?? 0),
-          -(p0.y + (p0.handleOut?.y ?? 0)),
+          p0.handleOut?.x ?? p0.x,
+          -(p0.handleOut?.y ?? p0.y),
           z0
         ),
         new THREE.Vector3(
-          p1.x + (p1.handleIn?.x ?? 0),
-          -(p1.y + (p1.handleIn?.y ?? 0)),
+          p1.handleIn?.x ?? p1.x,
+          -(p1.handleIn?.y ?? p1.y),
           z1
         ),
         new THREE.Vector3(p1.x, -p1.y, z1)
@@ -578,16 +581,17 @@ export class SplineLayer extends BaseLayer {
       const zLast = lastPoint.depth;
       const zFirst = firstPoint.depth;
 
+      // Closing bezier also uses absolute handle positions
       const closingBezier = new THREE.CubicBezierCurve3(
         new THREE.Vector3(lastPoint.x, -lastPoint.y, zLast),
         new THREE.Vector3(
-          lastPoint.x + (lastPoint.handleOut?.x ?? 0),
-          -(lastPoint.y + (lastPoint.handleOut?.y ?? 0)),
+          lastPoint.handleOut?.x ?? lastPoint.x,
+          -(lastPoint.handleOut?.y ?? lastPoint.y),
           zLast
         ),
         new THREE.Vector3(
-          firstPoint.x + (firstPoint.handleIn?.x ?? 0),
-          -(firstPoint.y + (firstPoint.handleIn?.y ?? 0)),
+          firstPoint.handleIn?.x ?? firstPoint.x,
+          -(firstPoint.handleIn?.y ?? firstPoint.y),
           zFirst
         ),
         new THREE.Vector3(firstPoint.x, -firstPoint.y, zFirst)

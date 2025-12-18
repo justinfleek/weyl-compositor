@@ -138,9 +138,6 @@
           <span class="icon">↪</span>
         </button>
         <div class="divider"></div>
-        <button @click="showPathSuggestionDialog = true" title="AI Path Suggestion" class="ai-btn">
-          <span class="icon">&#10024;</span> AI
-        </button>
         <button @click="showExportDialog = true" title="Export Matte">
           <span class="icon">📤</span> Matte
         </button>
@@ -276,7 +273,7 @@
               <Splitpanes v-if="showGraphEditor" horizontal class="default-theme">
                 <Pane :size="50" :min-size="20">
                   <div class="panel timeline-panel">
-                    <TimelinePanel @openCompositionSettings="showCompositionSettingsDialog = true" />
+                    <TimelinePanel @openCompositionSettings="showCompositionSettingsDialog = true" @openPathSuggestion="showPathSuggestionDialog = true" />
                   </div>
                 </Pane>
                 <Pane :size="50" :min-size="20">
@@ -286,7 +283,7 @@
                 </Pane>
               </Splitpanes>
               <div v-else class="panel timeline-panel">
-                <TimelinePanel @openCompositionSettings="showCompositionSettingsDialog = true" />
+                <TimelinePanel @openCompositionSettings="showCompositionSettingsDialog = true" @openPathSuggestion="showPathSuggestionDialog = true" />
               </div>
             </Pane>
           </Splitpanes>

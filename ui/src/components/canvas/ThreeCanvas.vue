@@ -1661,12 +1661,11 @@ defineExpose({
 }
 */
 
-/* Viewer Controls (AE-style bottom bar) */
+/* Viewer Controls (AE-style bottom bar) - positioned bottom-left */
 .viewer-controls {
   position: absolute;
   bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 8px;
   display: flex;
   align-items: center;
   gap: 8px;

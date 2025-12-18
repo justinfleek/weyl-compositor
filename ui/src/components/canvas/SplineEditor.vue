@@ -773,20 +773,22 @@ defineExpose({
   to { opacity: 1; }
 }
 
-/* Spline Toolbar Styles */
+/* Spline Toolbar Styles - bottom center popup for spline layers */
 .spline-toolbar {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 6px 10px;
   background: rgba(30, 30, 30, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(0, 255, 100, 0.3);
   border-radius: 6px;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: all;
 }
 
 .toolbar-group {

@@ -647,26 +647,90 @@ export class SceneManager {
       gridGroup.add(line);
     }
 
-    // Center crosshair (brighter)
+    // Center crosshair and XYZ axes at composition center
+    // This is where 3D objects with anchor (0,0,0) should appear
+    const centerX = w / 2;
+    const centerY = -h / 2;
+    const axisLength = Math.min(w, h) / 4; // Proportional axis length
+
+    // X axis (red) - horizontal from center
+    const xAxisMaterial = new THREE.LineBasicMaterial({
+      color: 0xff4444,
+      transparent: true,
+      opacity: 0.9,
+      depthTest: false,
+      linewidth: 2,
+    });
+    const xAxisPoints = [
+      new THREE.Vector3(centerX, centerY, 0),
+      new THREE.Vector3(centerX + axisLength, centerY, 0),
+    ];
+    const xAxisGeom = new THREE.BufferGeometry().setFromPoints(xAxisPoints);
+    gridGroup.add(new THREE.Line(xAxisGeom, xAxisMaterial));
+
+    // Y axis (green) - vertical from center (up is positive)
+    const yAxisMaterial = new THREE.LineBasicMaterial({
+      color: 0x44ff44,
+      transparent: true,
+      opacity: 0.9,
+      depthTest: false,
+      linewidth: 2,
+    });
+    const yAxisPoints = [
+      new THREE.Vector3(centerX, centerY, 0),
+      new THREE.Vector3(centerX, centerY + axisLength, 0),
+    ];
+    const yAxisGeom = new THREE.BufferGeometry().setFromPoints(yAxisPoints);
+    gridGroup.add(new THREE.Line(yAxisGeom, yAxisMaterial));
+
+    // Z axis (blue) - depth from center (toward camera)
+    const zAxisMaterial = new THREE.LineBasicMaterial({
+      color: 0x4444ff,
+      transparent: true,
+      opacity: 0.9,
+      depthTest: false,
+      linewidth: 2,
+    });
+    const zAxisPoints = [
+      new THREE.Vector3(centerX, centerY, 0),
+      new THREE.Vector3(centerX, centerY, axisLength),
+    ];
+    const zAxisGeom = new THREE.BufferGeometry().setFromPoints(zAxisPoints);
+    gridGroup.add(new THREE.Line(zAxisGeom, zAxisMaterial));
+
+    // Origin marker (white dot at center)
+    const originMarkerGeom = new THREE.SphereGeometry(4, 8, 8);
+    const originMarkerMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false,
+    });
+    const originMarker = new THREE.Mesh(originMarkerGeom, originMarkerMat);
+    originMarker.position.set(centerX, centerY, 0);
+    originMarker.renderOrder = 998;
+    gridGroup.add(originMarker);
+
+    // Subtle center crosshair lines (dimmer than axes)
     const centerMaterial = new THREE.LineBasicMaterial({
       color: 0x555555,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.5,
       depthTest: false,
     });
 
-    // Vertical center line
+    // Vertical center line (full height)
     const vCenterPoints = [
-      new THREE.Vector3(w / 2, 0, 0),
-      new THREE.Vector3(w / 2, -h, 0),
+      new THREE.Vector3(centerX, 0, 0),
+      new THREE.Vector3(centerX, -h, 0),
     ];
     const vCenterGeom = new THREE.BufferGeometry().setFromPoints(vCenterPoints);
     gridGroup.add(new THREE.Line(vCenterGeom, centerMaterial));
 
-    // Horizontal center line
+    // Horizontal center line (full width)
     const hCenterPoints = [
-      new THREE.Vector3(0, -h / 2, 0),
-      new THREE.Vector3(w, -h / 2, 0),
+      new THREE.Vector3(0, centerY, 0),
+      new THREE.Vector3(w, centerY, 0),
     ];
     const hCenterGeom = new THREE.BufferGeometry().setFromPoints(hCenterPoints);
     gridGroup.add(new THREE.Line(hCenterGeom, centerMaterial.clone()));
