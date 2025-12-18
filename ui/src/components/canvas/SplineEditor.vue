@@ -1,5 +1,15 @@
 <template>
   <div class="spline-editor">
+    <!-- Tool tip popup (shows guidance for active tool) -->
+    <div v-if="layerId && isPenMode" class="tool-tip-popup">
+      {{ activeToolTip }}
+    </div>
+
+    <!-- Hover feedback (shown when hovering over points with delete/insert tools) -->
+    <div v-if="hoverFeedback" class="hover-feedback" :style="hoverFeedbackStyle">
+      {{ hoverFeedback }}
+    </div>
+
     <!-- Spline toolbar (shown when a spline layer is selected) -->
     <div v-if="layerId" class="spline-toolbar">
       <!-- Pen Tool Options -->
@@ -62,10 +72,10 @@
       <div class="toolbar-group" v-if="hasControlPoints">
         <button
           class="toolbar-btn"
-          @click="smoothSpline"
-          title="Smooth path handles"
+          @click="smoothSelectedPoints"
+          :title="selectedPointIds.length > 0 ? 'Smooth selected points' : 'Smooth all path handles'"
         >
-          Smooth
+          Smooth{{ selectedPointIds.length > 0 ? ` (${selectedPointIds.length})` : '' }}
         </button>
         <button
           class="toolbar-btn"
@@ -98,7 +108,21 @@
         </label>
       </div>
       <div class="toolbar-info" v-if="hasControlPoints">
-        {{ visibleControlPoints.length }} points
+        {{ visibleControlPoints.length }} points{{ selectedPointIds.length > 0 ? ` (${selectedPointIds.length} selected)` : '' }}
+      </div>
+      <!-- Z-Depth controls (shown when 3D layer or when point is selected) -->
+      <div class="toolbar-group z-depth-controls" v-if="selectedPointId">
+        <label class="z-depth-label">
+          Z:
+          <input
+            type="number"
+            :value="selectedPointDepth"
+            @input="updateSelectedPointDepth"
+            class="z-depth-input"
+            step="10"
+          />
+        </label>
+        <span class="z-depth-hint">(↑/↓ keys)</span>
       </div>
     </div>
 
@@ -162,22 +186,26 @@
           v-if="pointHasKeyframes(point.id)"
           :cx="point.x"
           :cy="point.y"
-          r="9"
+          r="8"
           class="keyframe-indicator"
         />
-        <!-- Main control point -->
+        <!-- Main control point (r=5, 15% smaller than 6) -->
         <circle
           :cx="point.x"
           :cy="point.y"
-          r="6"
+          r="5"
           class="control-point"
           :class="{
-            selected: selectedPointId === point.id,
+            selected: selectedPointId === point.id || selectedPointIds.includes(point.id),
             corner: point.type === 'corner',
             smooth: point.type === 'smooth',
-            keyframed: pointHasKeyframes(point.id)
+            keyframed: pointHasKeyframes(point.id),
+            'will-delete': isPenMode && penSubMode === 'delete' && hoveredPointId === point.id,
+            'will-convert': isPenMode && penSubMode === 'convert' && hoveredPointId === point.id
           }"
-          @mousedown.stop="startDragPoint(point.id, $event)"
+          @mousedown.stop="handlePointClick(point.id, $event)"
+          @mouseenter="handlePointHover(point.id)"
+          @mouseleave="handlePointLeave"
         />
 
         <!-- Axis handles (shown when point is selected) -->
@@ -348,6 +376,10 @@ const store = useCompositorStore();
 
 // State
 const selectedPointId = ref<string | null>(null);
+const selectedPointIds = ref<string[]>([]); // Multi-select support
+const hoveredPointId = ref<string | null>(null);
+const hoverFeedback = ref<string | null>(null);
+const hoverFeedbackPos = ref<{ x: number; y: number } | null>(null);
 const previewPoint = ref<{ x: number; y: number } | null>(null);
 const closePathPreview = ref(false);
 const previewCurve = ref<string | null>(null);
@@ -364,6 +396,65 @@ const dragTarget = ref<{
   originalX?: number;
   originalY?: number;
 } | null>(null);
+
+// Computed: active tool tip text
+const activeToolTip = computed(() => {
+  switch (penSubMode.value) {
+    case 'add':
+      return 'Click to add points. Drag after clicking to create curved handles. Right-click to finish drawing.';
+    case 'insert':
+      return 'Click on the path to insert a new point on that segment.';
+    case 'delete':
+      return 'Click on any point to delete it from the path.';
+    case 'convert':
+      return 'Click on a point to toggle between smooth (curved) and corner (sharp) type.';
+    default:
+      return '';
+  }
+});
+
+// Computed: hover feedback style (positioned near mouse)
+const hoverFeedbackStyle = computed(() => {
+  if (!hoverFeedbackPos.value) return { display: 'none' };
+  // Convert composition coords to screen coords
+  const svgStyle = overlayStyle.value;
+  const svgWidth = parseFloat(svgStyle.width);
+  const svgHeight = parseFloat(svgStyle.height);
+  const left = parseFloat(svgStyle.left) + (hoverFeedbackPos.value.x / props.canvasWidth) * svgWidth;
+  const top = parseFloat(svgStyle.top) + (hoverFeedbackPos.value.y / props.canvasHeight) * svgHeight - 25;
+  return {
+    position: 'absolute' as const,
+    left: `${left}px`,
+    top: `${top}px`,
+    transform: 'translateX(-50%)'
+  };
+});
+
+// Computed: selected point's depth value
+const selectedPointDepth = computed(() => {
+  if (!selectedPointId.value) return 0;
+  const point = visibleControlPoints.value.find(p => p.id === selectedPointId.value);
+  return point?.depth ?? 0;
+});
+
+// Update selected point's depth from input
+function updateSelectedPointDepth(event: Event) {
+  if (!selectedPointId.value || !props.layerId) return;
+  const input = event.target as HTMLInputElement;
+  const newDepth = Math.max(0, parseFloat(input.value) || 0);
+  store.updateSplineControlPoint(props.layerId, selectedPointId.value, { depth: newDepth });
+  emit('pathUpdated');
+}
+
+// Adjust depth by delta (used by keyboard shortcuts)
+function adjustSelectedPointDepth(delta: number) {
+  if (!selectedPointId.value || !props.layerId) return;
+  const point = visibleControlPoints.value.find(p => p.id === selectedPointId.value);
+  const currentDepth = point?.depth ?? 0;
+  const newDepth = Math.max(0, currentDepth + delta);
+  store.updateSplineControlPoint(props.layerId, selectedPointId.value, { depth: newDepth });
+  emit('pathUpdated');
+}
 
 // Check if the layer is in 3D mode
 const is3DLayer = computed(() => {
@@ -452,11 +543,81 @@ function setPointType(type: 'smooth' | 'corner') {
   emit('pathUpdated');
 }
 
-// Smooth spline handles
-function smoothSpline() {
+// Smooth spline handles - either selected points or all
+function smoothSelectedPoints() {
   if (!props.layerId) return;
-  store.smoothSplineHandles(props.layerId, smoothTolerance.value * 2); // Map 1-50 to 2-100%
+
+  if (selectedPointIds.value.length > 0) {
+    // Smooth only selected points
+    smoothSpecificPoints(selectedPointIds.value);
+  } else if (selectedPointId.value) {
+    // Smooth only the single selected point
+    smoothSpecificPoints([selectedPointId.value]);
+  } else {
+    // Smooth all points
+    store.smoothSplineHandles(props.layerId, smoothTolerance.value * 2);
+  }
   emit('pathUpdated');
+}
+
+// Smooth specific points by ID
+function smoothSpecificPoints(pointIds: string[]) {
+  if (!props.layerId) return;
+
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline' || !layer.data) return;
+
+  const splineData = layer.data as SplineData;
+  const controlPoints = splineData.controlPoints;
+  if (!controlPoints || controlPoints.length < 2) return;
+
+  const factor = Math.max(0, Math.min(100, smoothTolerance.value * 2)) / 100;
+
+  for (const pointId of pointIds) {
+    const i = controlPoints.findIndex(cp => cp.id === pointId);
+    if (i < 0) continue;
+
+    const cp = controlPoints[i];
+    const prev = controlPoints[(i - 1 + controlPoints.length) % controlPoints.length];
+    const next = controlPoints[(i + 1) % controlPoints.length];
+
+    // Skip first/last point if path is not closed
+    if (!splineData.closed && (i === 0 || i === controlPoints.length - 1)) continue;
+
+    // Calculate direction vectors
+    const toPrev = { x: prev.x - cp.x, y: prev.y - cp.y };
+    const toNext = { x: next.x - cp.x, y: next.y - cp.y };
+
+    // Average direction (tangent)
+    const avgDir = { x: toNext.x - toPrev.x, y: toNext.y - toPrev.y };
+    const avgLength = Math.sqrt(avgDir.x * avgDir.x + avgDir.y * avgDir.y);
+
+    if (avgLength < 0.01) continue;
+
+    const normalized = { x: avgDir.x / avgLength, y: avgDir.y / avgLength };
+
+    // Calculate ideal handle length
+    const distPrev = Math.sqrt(toPrev.x * toPrev.x + toPrev.y * toPrev.y);
+    const distNext = Math.sqrt(toNext.x * toNext.x + toNext.y * toNext.y);
+    const handleLength = (distPrev + distNext) / 6;
+
+    // Calculate ideal smooth handles
+    const idealIn = { x: cp.x - normalized.x * handleLength, y: cp.y - normalized.y * handleLength };
+    const idealOut = { x: cp.x + normalized.x * handleLength, y: cp.y + normalized.y * handleLength };
+
+    // Update handles
+    store.updateSplineControlPoint(props.layerId!, pointId, {
+      type: 'smooth',
+      handleIn: {
+        x: cp.handleIn ? cp.handleIn.x + (idealIn.x - cp.handleIn.x) * factor : idealIn.x * factor + cp.x * (1 - factor),
+        y: cp.handleIn ? cp.handleIn.y + (idealIn.y - cp.handleIn.y) * factor : idealIn.y * factor + cp.y * (1 - factor)
+      },
+      handleOut: {
+        x: cp.handleOut ? cp.handleOut.x + (idealOut.x - cp.handleOut.x) * factor : idealOut.x * factor + cp.x * (1 - factor),
+        y: cp.handleOut ? cp.handleOut.y + (idealOut.y - cp.handleOut.y) * factor : idealOut.y * factor + cp.y * (1 - factor)
+      }
+    });
+  }
 }
 
 // Simplify spline (reduce control points)
@@ -748,16 +909,28 @@ function findClickedPoint(pos: { x: number; y: number }): (ControlPoint | Evalua
   return null;
 }
 
-// Generate curve preview SVG path
-function generateCurvePreview(lastPoint: ControlPoint | EvaluatedControlPoint, handleOut: { x: number; y: number }, newPos: { x: number; y: number }): string {
-  // Create a cubic bezier from last point to new position
-  const h1x = handleOut.x;
-  const h1y = handleOut.y;
-  // Mirror the handle for a symmetric curve
-  const h2x = newPos.x - (handleOut.x - lastPoint.x);
-  const h2y = newPos.y - (handleOut.y - lastPoint.y);
+// Generate curve preview SVG path from previous point to new point
+// prevPoint: the previous control point
+// newPoint: the new point being created
+// dragPos: where the user is dragging (sets the handles)
+function generateCurvePreview(
+  prevPoint: ControlPoint | EvaluatedControlPoint,
+  newPoint: { x: number; y: number },
+  dragPos: { x: number; y: number }
+): string {
+  // Calculate the handle offset from the drag
+  const dx = dragPos.x - newPoint.x;
+  const dy = dragPos.y - newPoint.y;
 
-  return `M ${lastPoint.x},${lastPoint.y} C ${h1x},${h1y} ${h2x},${h2y} ${newPos.x},${newPos.y}`;
+  // Handle coming out of prevPoint (use existing handleOut or calculate default)
+  const h1x = prevPoint.handleOut ? prevPoint.handleOut.x : prevPoint.x + dx;
+  const h1y = prevPoint.handleOut ? prevPoint.handleOut.y : prevPoint.y + dy;
+
+  // Handle coming into newPoint (mirrored from the drag direction)
+  const h2x = newPoint.x - dx;
+  const h2y = newPoint.y - dy;
+
+  return `M ${prevPoint.x},${prevPoint.y} C ${h1x},${h1y} ${h2x},${h2y} ${newPoint.x},${newPoint.y}`;
 }
 
 function handleMouseMove(event: MouseEvent) {
@@ -771,24 +944,50 @@ function handleMouseMove(event: MouseEvent) {
     if (penSubMode.value === 'insert') {
       const closest = findClosestPointOnPath(pos);
       insertPreviewPoint.value = closest;
+
+      // Show hover feedback for insert mode
+      if (closest) {
+        hoverFeedbackPos.value = { x: closest.x, y: closest.y };
+        hoverFeedback.value = 'Click to add point to spline';
+      } else if (!hoveredPointId.value) {
+        hoverFeedback.value = null;
+      }
     } else {
       insertPreviewPoint.value = null;
+      // Only clear hover feedback if not hovering over a point
+      if (!hoveredPointId.value) {
+        hoverFeedback.value = null;
+      }
     }
   }
 
   // Generate curve preview when dragging new point
   if (dragTarget.value?.type === 'newPoint') {
     const points = visibleControlPoints.value;
-    if (points.length >= 2) {
+    if (points.length >= 1) {
       const newPoint = points.find(p => p.id === dragTarget.value!.pointId);
-      const prevPointIndex = points.indexOf(newPoint!) - 1;
+      const newPointIndex = points.indexOf(newPoint!);
+      const prevPointIndex = newPointIndex - 1;
+
       if (newPoint && prevPointIndex >= 0) {
         const prevPoint = points[prevPointIndex];
-        // Create handle based on drag direction
-        const handleOut = { x: pos.x, y: pos.y };
-        previewCurve.value = generateCurvePreview(prevPoint, handleOut, newPoint);
+        // Generate preview showing curve from prev point to new point based on drag
+        previewCurve.value = generateCurvePreview(prevPoint, newPoint, pos);
 
         // Also update the handle in real-time
+        if (props.layerId) {
+          const dx = pos.x - newPoint.x;
+          const dy = pos.y - newPoint.y;
+          if (Math.sqrt(dx * dx + dy * dy) > 5) {
+            store.updateSplineControlPoint(props.layerId, newPoint.id, {
+              handleOut: { x: pos.x, y: pos.y },
+              handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+              type: 'smooth'
+            });
+          }
+        }
+      } else if (newPoint && prevPointIndex < 0) {
+        // First point - no preview curve needed, but show handles being created
         if (props.layerId) {
           const dx = pos.x - newPoint.x;
           const dy = pos.y - newPoint.y;
@@ -959,31 +1158,26 @@ function handleMouseUp() {
   }
 }
 
-// Right-click to close path
+// Right-click to END spline drawing (exit pen mode, NOT close the path)
 function handleRightClick(event: MouseEvent) {
   event.preventDefault();
   event.stopPropagation();
 
-  if (!props.layerId || !canClosePath.value) return;
+  if (!props.layerId) return;
 
-  const pos = getMousePos(event);
+  // Right-click finishes the current spline drawing (exits pen mode)
+  // It does NOT close the path - use the Close button for that
+  if (props.isPenMode) {
+    // Exit pen mode
+    emit('togglePenMode');
 
-  // Check if clicking near first point
-  if (visibleControlPoints.value.length > 0) {
-    const firstPoint = visibleControlPoints.value[0];
-    const dx = pos.x - firstPoint.x;
-    const dy = pos.y - firstPoint.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    if (dist < CLOSE_THRESHOLD) {
-      closePath();
-      return;
-    }
-  }
-
-  // Also allow closing path from anywhere with right-click when in pen mode
-  if (props.isPenMode && visibleControlPoints.value.length >= 3) {
-    closePath();
+    // Clear any preview state
+    previewCurve.value = null;
+    previewPoint.value = null;
+    insertPreviewPoint.value = null;
+    closePathPreview.value = false;
+    hoverFeedback.value = null;
+    hoveredPointId.value = null;
   }
 }
 
@@ -999,6 +1193,106 @@ function closePath() {
 
   emit('pathClosed');
   emit('pathUpdated');
+}
+
+// Handle click on control point - determines action based on pen sub-mode
+function handlePointClick(pointId: string, event: MouseEvent) {
+  const point = visibleControlPoints.value.find(p => p.id === pointId);
+  if (!point) return;
+
+  if (props.isPenMode) {
+    // Handle pen sub-modes
+    if (penSubMode.value === 'delete') {
+      // Delete this point
+      if (props.layerId) {
+        store.deleteSplineControlPoint(props.layerId, pointId);
+        emit('pointDeleted', pointId);
+        emit('pathUpdated');
+        selectedPointId.value = null;
+        hoveredPointId.value = null;
+        hoverFeedback.value = null;
+      }
+      return;
+    } else if (penSubMode.value === 'convert') {
+      // Toggle point type
+      if (props.layerId) {
+        const newType = point.type === 'smooth' ? 'corner' : 'smooth';
+        if (newType === 'corner') {
+          store.updateSplineControlPoint(props.layerId, pointId, {
+            type: 'corner',
+            handleIn: null,
+            handleOut: null
+          });
+        } else {
+          // Create default handles for smooth point
+          const handleOffset = 30;
+          store.updateSplineControlPoint(props.layerId, pointId, {
+            type: 'smooth',
+            handleIn: { x: point.x - handleOffset, y: point.y },
+            handleOut: { x: point.x + handleOffset, y: point.y }
+          });
+        }
+        selectedPointId.value = pointId;
+        emit('pathUpdated');
+      }
+      return;
+    }
+  }
+
+  // Default: select point and start dragging (for move operations)
+  // Handle multi-select with Shift key
+  if (event.shiftKey) {
+    if (selectedPointIds.value.includes(pointId)) {
+      // Remove from selection
+      selectedPointIds.value = selectedPointIds.value.filter(id => id !== pointId);
+    } else {
+      // Add to selection
+      selectedPointIds.value = [...selectedPointIds.value, pointId];
+    }
+    selectedPointId.value = pointId;
+  } else {
+    selectedPointId.value = pointId;
+    selectedPointIds.value = [pointId]; // Reset multi-select to single
+  }
+
+  if (!props.isPenMode) {
+    const pos = getMousePos(event);
+    dragTarget.value = {
+      type: 'point',
+      pointId,
+      startX: pos.x,
+      startY: pos.y
+    };
+  }
+}
+
+// Handle hover over control point - show feedback for delete/convert modes
+function handlePointHover(pointId: string) {
+  hoveredPointId.value = pointId;
+  const point = visibleControlPoints.value.find(p => p.id === pointId);
+
+  if (props.isPenMode && point) {
+    hoverFeedbackPos.value = { x: point.x, y: point.y };
+
+    if (penSubMode.value === 'delete') {
+      hoverFeedback.value = 'Click to delete point';
+    } else if (penSubMode.value === 'convert') {
+      const currentType = point.type === 'smooth' ? 'smooth' : 'corner';
+      const newType = currentType === 'smooth' ? 'corner' : 'smooth';
+      hoverFeedback.value = `Click to convert to ${newType}`;
+    } else {
+      hoverFeedback.value = null;
+    }
+  } else {
+    hoverFeedback.value = null;
+  }
+}
+
+// Handle mouse leave from control point
+function handlePointLeave() {
+  hoveredPointId.value = null;
+  hoverFeedback.value = null;
+  hoverFeedbackPos.value = null;
 }
 
 function startDragPoint(pointId: string, event: MouseEvent) {
@@ -1040,8 +1334,9 @@ function startDragAxis(pointId: string, axis: 'X' | 'Y', event: MouseEvent) {
   };
 }
 
-// Delete selected point on Delete key
+// Handle keyboard shortcuts for spline editing
 function handleKeyDown(event: KeyboardEvent) {
+  // Delete selected point on Delete/Backspace key
   if (event.key === 'Delete' || event.key === 'Backspace') {
     if (selectedPointId.value && props.layerId) {
       const layer = store.layers.find(l => l.id === props.layerId);
@@ -1052,7 +1347,30 @@ function handleKeyDown(event: KeyboardEvent) {
         emit('pointDeleted', pointId);
         emit('pathUpdated');
         selectedPointId.value = null;
+        selectedPointIds.value = [];
       }
+    }
+  }
+
+  // Arrow Up/Down to adjust Z-depth of selected point
+  if (event.key === 'ArrowUp' && selectedPointId.value) {
+    event.preventDefault();
+    const delta = event.shiftKey ? 100 : 10; // Shift for larger increments
+    adjustSelectedPointDepth(delta);
+  }
+  if (event.key === 'ArrowDown' && selectedPointId.value) {
+    event.preventDefault();
+    const delta = event.shiftKey ? -100 : -10;
+    adjustSelectedPointDepth(delta);
+  }
+
+  // Escape to deselect point
+  if (event.key === 'Escape') {
+    selectedPointId.value = null;
+    selectedPointIds.value = [];
+    hoverFeedback.value = null;
+    if (props.isPenMode) {
+      emit('togglePenMode');
     }
   }
 }
@@ -1068,7 +1386,11 @@ onUnmounted(() => {
 // Expose selected point for external access
 defineExpose({
   selectedPointId,
-  clearSelection: () => { selectedPointId.value = null; }
+  selectedPointIds,
+  clearSelection: () => {
+    selectedPointId.value = null;
+    selectedPointIds.value = [];
+  }
 });
 </script>
 
@@ -1417,5 +1739,103 @@ defineExpose({
   color: rgba(255, 255, 255, 0.5);
   padding-left: 8px;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Tool tip popup - guidance text above toolbar */
+.tool-tip-popup {
+  position: absolute;
+  bottom: 55px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 101;
+  pointer-events: none;
+  border: 1px solid rgba(0, 255, 100, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover feedback - text that follows mouse for delete/add feedback */
+.hover-feedback {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffcc00;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  white-space: nowrap;
+  z-index: 102;
+  pointer-events: none;
+  border: 1px solid rgba(255, 204, 0, 0.5);
+}
+
+/* Control point states for delete/convert preview */
+.control-point.will-delete {
+  fill: #ff4444 !important;
+  stroke: #ffffff !important;
+  animation: pulse-delete 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-delete {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+.control-point.will-convert {
+  fill: #ff8800 !important;
+  stroke: #ffffff !important;
+  animation: pulse-convert 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-convert {
+  from { transform: scale(1); }
+  to { transform: scale(1.2); }
+}
+
+/* Multi-select highlight */
+.control-point.selected {
+  stroke-width: 3;
+}
+
+/* Z-depth controls */
+.z-depth-controls {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 8px;
+}
+
+.z-depth-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #0088ff;
+}
+
+.z-depth-input {
+  width: 50px;
+  padding: 2px 4px;
+  background: rgba(0, 136, 255, 0.2);
+  border: 1px solid rgba(0, 136, 255, 0.4);
+  border-radius: 3px;
+  color: #0088ff;
+  font-size: 10px;
+  font-family: monospace;
+  text-align: right;
+}
+
+.z-depth-input:focus {
+  outline: none;
+  border-color: #0088ff;
+  background: rgba(0, 136, 255, 0.3);
+}
+
+.z-depth-hint {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 4px;
 }
 </style>
