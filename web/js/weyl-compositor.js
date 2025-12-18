@@ -47814,7 +47814,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
     const emit = __emit;
     const store = useCompositorStore();
     const zoomPercent = ref(0);
-    const sidebarWidth = ref(380);
+    const sidebarWidth = ref(450);
     const expandedLayers = ref({});
     const showAddLayerMenu = ref(false);
     const addLayerContainer = ref(null);
@@ -47956,7 +47956,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
       const startX = e.clientX;
       const startW = sidebarWidth.value;
       const onMove = (ev) => {
-        sidebarWidth.value = Math.max(400, startW + (ev.clientX - startX));
+        sidebarWidth.value = Math.max(450, startW + (ev.clientX - startX));
       };
       window.addEventListener("mousemove", onMove);
       window.addEventListener("mouseup", () => window.removeEventListener("mousemove", onMove), { once: true });
@@ -48234,14 +48234,14 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             style: normalizeStyle({ width: sidebarWidth.value + "px" })
           }, [
             createBaseVNode("div", _hoisted_15$7, [
-              _cache[25] || (_cache[25] = createStaticVNode('<div class="col-header col-av-features" data-v-24da19d3><span class="header-icon" title="Video" data-v-24da19d3>👁</span><span class="header-icon" title="Audio" data-v-24da19d3>🔊</span><span class="header-icon" title="Solo" data-v-24da19d3>●</span><span class="header-icon" title="Lock" data-v-24da19d3>🔒</span></div><div class="col-header col-number" data-v-24da19d3>#</div><div class="col-header col-name" data-v-24da19d3>Source Name</div>', 3)),
+              _cache[25] || (_cache[25] = createStaticVNode('<div class="col-header col-av-features" data-v-2489f3d9><span class="header-icon" title="Video" data-v-2489f3d9>👁</span><span class="header-icon" title="Audio" data-v-2489f3d9>🔊</span><span class="header-icon" title="Solo" data-v-2489f3d9>●</span><span class="header-icon" title="Lock" data-v-2489f3d9>🔒</span></div><div class="col-header col-number" data-v-2489f3d9>#</div><div class="col-header col-name" data-v-2489f3d9>Source Name</div>', 3)),
               createBaseVNode("div", _hoisted_16$7, [
                 createBaseVNode("span", {
                   class: normalizeClass(["header-icon clickable", { active: unref(store).hideShyLayers }]),
                   title: "Hide Shy Layers",
                   onClick: _cache[13] || (_cache[13] = ($event) => unref(store).toggleHideShyLayers())
                 }, "🙈", 2),
-                _cache[24] || (_cache[24] = createStaticVNode('<span class="header-icon" title="Collapse/Continuously Rasterize" data-v-24da19d3>☀</span><span class="header-icon" title="Quality" data-v-24da19d3>◐</span><span class="header-icon" title="Effects" data-v-24da19d3>fx</span><span class="header-icon" title="Frame Blending" data-v-24da19d3>⊞</span><span class="header-icon" title="Motion Blur" data-v-24da19d3>◔</span><span class="header-icon" title="Adjustment Layer" data-v-24da19d3>◐</span><span class="header-icon" title="3D Layer" data-v-24da19d3>⬡</span>', 7))
+                _cache[24] || (_cache[24] = createStaticVNode('<span class="header-icon" title="Collapse/Continuously Rasterize" data-v-2489f3d9>☀</span><span class="header-icon" title="Quality" data-v-2489f3d9>◐</span><span class="header-icon" title="Effects" data-v-2489f3d9>fx</span><span class="header-icon" title="Frame Blending" data-v-2489f3d9>⊞</span><span class="header-icon" title="Motion Blur" data-v-2489f3d9>◔</span><span class="header-icon" title="Adjustment Layer" data-v-2489f3d9>◐</span><span class="header-icon" title="3D Layer" data-v-2489f3d9>⬡</span>', 7))
               ]),
               _cache[26] || (_cache[26] = createBaseVNode("div", { class: "col-header col-parent" }, "Parent & Link", -1))
             ]),
@@ -48339,7 +48339,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-24da19d3"]]);
+const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-2489f3d9"]]);
 
 const _hoisted_1$6 = { class: "graph-editor" };
 const _hoisted_2$6 = { class: "graph-header" };
