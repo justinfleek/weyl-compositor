@@ -40543,7 +40543,8 @@ class CameraController {
     return this.zoomLevel;
   }
   /**
-   * Set pan offset for viewport navigation
+   * Set pan offset for viewport navigation (in WORLD units, not screen pixels)
+   * Positive X pans right (camera moves left), positive Y pans down (camera moves up)
    */
   setPan(x, y) {
     this.panOffset.set(x, y);
@@ -40557,14 +40558,14 @@ class CameraController {
   }
   /**
    * Update camera position based on zoom and pan
-   * This maintains a PERFECT 2D front view - no rotation whatsoever
+   * Camera always looks straight at the composition plane (perfect 2D front view)
    */
   updateCameraForViewport() {
     const fovRad = MathUtils.degToRad(this.camera.fov);
     const baseDistance = this.height / 2 / Math.tan(fovRad / 2);
     const distance = baseDistance / this.zoomLevel;
-    const centerX = this.width / 2 - this.panOffset.x / this.zoomLevel;
-    const centerY = this.height / 2 - this.panOffset.y / this.zoomLevel;
+    const centerX = this.width / 2 + this.panOffset.x;
+    const centerY = this.height / 2 + this.panOffset.y;
     this.camera.position.set(centerX, -centerY, distance);
     this.target.set(centerX, -centerY, 0);
     this.camera.up.set(0, 1, 0);
@@ -43318,14 +43319,32 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       };
     });
     const safeFrameBounds = computed(() => {
-      const vpt = viewportTransform.value;
+      if (!containerRef.value) {
+        return { left: 0, top: 0, right: 0, bottom: 0 };
+      }
+      const container = containerRef.value;
+      const containerRect = container.getBoundingClientRect();
       const compWidth = store.width || 1920;
       const compHeight = store.height || 1080;
-      const left = vpt[4];
-      const top = vpt[5];
-      const right = compWidth * vpt[0] + vpt[4];
-      const bottom = compHeight * vpt[3] + vpt[5];
-      return { left, top, right, bottom, compWidth, compHeight };
+      const containerAspect = containerRect.width / containerRect.height;
+      const compAspect = compWidth / compHeight;
+      let displayWidth, displayHeight;
+      let offsetX, offsetY;
+      if (compAspect > containerAspect) {
+        displayWidth = containerRect.width * zoom.value;
+        displayHeight = containerRect.width / compAspect * zoom.value;
+      } else {
+        displayHeight = containerRect.height * zoom.value;
+        displayWidth = containerRect.height * compAspect * zoom.value;
+      }
+      offsetX = (containerRect.width - displayWidth) / 2;
+      offsetY = (containerRect.height - displayHeight) / 2;
+      return {
+        left: offsetX,
+        top: offsetY,
+        right: offsetX + displayWidth,
+        bottom: offsetY + displayHeight
+      };
     });
     const safeFrameLeftStyle = computed(() => {
       const bounds = safeFrameBounds.value;
@@ -43630,22 +43649,19 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           e.preventDefault();
         }
       });
+      container.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+      });
       canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
         const delta = e.deltaY;
         let newZoom = zoom.value * (delta > 0 ? 0.9 : 1.1);
         newZoom = Math.min(Math.max(newZoom, 0.1), 10);
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        const scaleFactor = newZoom / zoom.value;
-        viewportTransform.value[4] = mouseX - scaleFactor * (mouseX - viewportTransform.value[4]);
-        viewportTransform.value[5] = mouseY - scaleFactor * (mouseY - viewportTransform.value[5]);
+        zoom.value = newZoom;
         viewportTransform.value[0] = newZoom;
         viewportTransform.value[3] = newZoom;
-        zoom.value = newZoom;
         if (engine.value) {
-          engine.value.setViewportTransform(viewportTransform.value);
+          engine.value.getCameraController().setZoom(newZoom);
         }
       }, { passive: false });
       canvas.addEventListener("mousedown", (e) => {
@@ -43726,28 +43742,36 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         }
       });
       canvas.addEventListener("mousemove", (e) => {
-        if (isPanning) {
+        if (isPanning && engine.value) {
           const dx = e.clientX - lastPosX;
           const dy = e.clientY - lastPosY;
-          viewportTransform.value[4] += dx;
-          viewportTransform.value[5] += dy;
           lastPosX = e.clientX;
           lastPosY = e.clientY;
-          if (engine.value) {
-            engine.value.setViewportTransform(viewportTransform.value);
+          const compWidth = store.width || 1920;
+          const compHeight = store.height || 1080;
+          const container2 = containerRef.value;
+          if (container2) {
+            const rect = container2.getBoundingClientRect();
+            const worldPerPixelX = compWidth / (rect.width * zoom.value);
+            const worldPerPixelY = compHeight / (rect.height * zoom.value);
+            const camera = engine.value.getCameraController();
+            const currentPan = camera.getPan();
+            camera.setPan(
+              currentPan.x - dx * worldPerPixelX,
+              currentPan.y + dy * worldPerPixelY
+              // Y is inverted in world space
+            );
           }
           return;
         }
-        if (isZooming) {
+        if (isZooming && engine.value) {
           const dy = zoomStartY - e.clientY;
           const zoomFactor = 1 + dy * 0.01;
           const newZoom = Math.max(0.1, Math.min(10, zoomStartLevel * zoomFactor));
           zoom.value = newZoom;
           viewportTransform.value[0] = newZoom;
           viewportTransform.value[3] = newZoom;
-          if (engine.value) {
-            engine.value.setViewportTransform(viewportTransform.value);
-          }
+          engine.value.getCameraController().setZoom(newZoom);
           return;
         }
         if (isDrawingSegmentBox.value && store.segmentBoxStart) {
@@ -43942,20 +43966,15 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       const compWidth = store.width || 1920;
       const compHeight = store.height || 1080;
       const containerRect = container.getBoundingClientRect();
-      const padding = 60;
+      const padding = 40;
       const scaleX = (containerRect.width - padding * 2) / compWidth;
       const scaleY = (containerRect.height - padding * 2) / compHeight;
       const scale = Math.min(scaleX, scaleY, 1);
-      viewportTransform.value = [
-        scale,
-        0,
-        0,
-        scale,
-        (containerRect.width - compWidth * scale) / 2,
-        (containerRect.height - compHeight * scale) / 2
-      ];
       zoom.value = scale;
-      engine.value.setViewportTransform(viewportTransform.value);
+      viewportTransform.value = [scale, 0, 0, scale, 0, 0];
+      engine.value.resetCameraToDefault();
+      engine.value.getCameraController().setZoom(scale);
+      engine.value.getCameraController().setPan(0, 0);
     }
     function setRenderMode(mode) {
       renderMode.value = mode;
@@ -44260,7 +44279,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-e8e27660"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-a94bcef0"]]);
 
 const _hoisted_1$a = { class: "prop-wrapper" };
 const _hoisted_2$a = { class: "prop-content" };

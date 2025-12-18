@@ -324,7 +324,8 @@ export class CameraController {
   }
 
   /**
-   * Set pan offset for viewport navigation
+   * Set pan offset for viewport navigation (in WORLD units, not screen pixels)
+   * Positive X pans right (camera moves left), positive Y pans down (camera moves up)
    */
   setPan(x: number, y: number): void {
     this.panOffset.set(x, y);
@@ -340,7 +341,7 @@ export class CameraController {
 
   /**
    * Update camera position based on zoom and pan
-   * This maintains a PERFECT 2D front view - no rotation whatsoever
+   * Camera always looks straight at the composition plane (perfect 2D front view)
    */
   private updateCameraForViewport(): void {
     // Calculate base camera distance for full composition view
@@ -350,20 +351,18 @@ export class CameraController {
     // Adjust distance based on zoom (zoom in = closer)
     const distance = baseDistance / this.zoomLevel;
 
-    // Calculate camera center based on pan
-    const centerX = (this.width / 2) - (this.panOffset.x / this.zoomLevel);
-    const centerY = (this.height / 2) - (this.panOffset.y / this.zoomLevel);
+    // Camera is centered on composition center, offset by pan
+    // Pan offset is in world units (same as composition dimensions)
+    const centerX = (this.width / 2) + this.panOffset.x;
+    const centerY = (this.height / 2) + this.panOffset.y;
 
-    // Update camera position - straight-on view
+    // Update camera position - straight-on view at composition plane
     this.camera.position.set(centerX, -centerY, distance);
     this.target.set(centerX, -centerY, 0);
 
     // CRITICAL: Ensure camera is perfectly aligned with NO rotation
-    // Set up vector first, then look at target
     this.camera.up.set(0, 1, 0);
     this.camera.lookAt(this.target);
-
-    // Zero out any accumulated rotation errors
     this.camera.rotation.z = 0;
 
     this.camera.updateProjectionMatrix();

@@ -251,19 +251,44 @@ const segmentBoxStyle = computed(() => {
 });
 
 // Safe frame guide positions - CSS-based overlays for out-of-frame areas
-// These create the semi-transparent darkening effect outside the composition bounds
+// Calculate where the composition appears on screen based on viewport fit
 const safeFrameBounds = computed(() => {
-  const vpt = viewportTransform.value;
+  if (!containerRef.value) {
+    return { left: 0, top: 0, right: 0, bottom: 0 };
+  }
+
+  const container = containerRef.value;
+  const containerRect = container.getBoundingClientRect();
   const compWidth = store.width || 1920;
   const compHeight = store.height || 1080;
 
-  // Composition bounds in screen space
-  const left = vpt[4];
-  const top = vpt[5];
-  const right = compWidth * vpt[0] + vpt[4];
-  const bottom = compHeight * vpt[3] + vpt[5];
+  // Calculate how the composition fits in the viewport (letterbox/pillarbox)
+  const containerAspect = containerRect.width / containerRect.height;
+  const compAspect = compWidth / compHeight;
 
-  return { left, top, right, bottom, compWidth, compHeight };
+  let displayWidth: number, displayHeight: number;
+  let offsetX: number, offsetY: number;
+
+  if (compAspect > containerAspect) {
+    // Composition is wider - letterbox (black bars top/bottom)
+    displayWidth = containerRect.width * zoom.value;
+    displayHeight = (containerRect.width / compAspect) * zoom.value;
+  } else {
+    // Composition is taller - pillarbox (black bars left/right)
+    displayHeight = containerRect.height * zoom.value;
+    displayWidth = (containerRect.height * compAspect) * zoom.value;
+  }
+
+  // Center the composition
+  offsetX = (containerRect.width - displayWidth) / 2;
+  offsetY = (containerRect.height - displayHeight) / 2;
+
+  return {
+    left: offsetX,
+    top: offsetY,
+    right: offsetX + displayWidth,
+    bottom: offsetY + displayHeight
+  };
 });
 
 const safeFrameLeftStyle = computed(() => {
@@ -690,7 +715,12 @@ function setupInputHandlers() {
     }
   });
 
-  // Wheel zoom
+  // Prevent browser context menu on right-click (we'll use it for orbit)
+  container.addEventListener('contextmenu', (e: Event) => {
+    e.preventDefault();
+  });
+
+  // Wheel zoom - simple zoom centered on composition
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
 
@@ -698,22 +728,14 @@ function setupInputHandlers() {
     let newZoom = zoom.value * (delta > 0 ? 0.9 : 1.1);
     newZoom = Math.min(Math.max(newZoom, 0.1), 10);
 
-    // Zoom towards mouse position
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    // Update viewport transform to zoom towards mouse
-    const scaleFactor = newZoom / zoom.value;
-    viewportTransform.value[4] = mouseX - scaleFactor * (mouseX - viewportTransform.value[4]);
-    viewportTransform.value[5] = mouseY - scaleFactor * (mouseY - viewportTransform.value[5]);
+    // Update zoom (centered on composition)
+    zoom.value = newZoom;
     viewportTransform.value[0] = newZoom;
     viewportTransform.value[3] = newZoom;
 
-    zoom.value = newZoom;
-
     if (engine.value) {
-      engine.value.setViewportTransform(viewportTransform.value);
+      // Only update zoom, keep pan at 0 for centered view
+      engine.value.getCameraController().setZoom(newZoom);
     }
   }, { passive: false });
 
@@ -817,23 +839,35 @@ function setupInputHandlers() {
 
   // Mouse move
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
-    if (isPanning) {
+    if (isPanning && engine.value) {
       const dx = e.clientX - lastPosX;
       const dy = e.clientY - lastPosY;
-
-      viewportTransform.value[4] += dx;
-      viewportTransform.value[5] += dy;
 
       lastPosX = e.clientX;
       lastPosY = e.clientY;
 
-      if (engine.value) {
-        engine.value.setViewportTransform(viewportTransform.value);
+      // Convert screen pixels to world units based on zoom
+      // Pan is inverse - moving mouse right should move view right (camera left)
+      const compWidth = store.width || 1920;
+      const compHeight = store.height || 1080;
+      const container = containerRef.value;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        // Calculate how many world units per pixel
+        const worldPerPixelX = compWidth / (rect.width * zoom.value);
+        const worldPerPixelY = compHeight / (rect.height * zoom.value);
+
+        const camera = engine.value.getCameraController();
+        const currentPan = camera.getPan();
+        camera.setPan(
+          currentPan.x - dx * worldPerPixelX,
+          currentPan.y + dy * worldPerPixelY  // Y is inverted in world space
+        );
       }
       return;
     }
 
-    if (isZooming) {
+    if (isZooming && engine.value) {
       const dy = zoomStartY - e.clientY;
       const zoomFactor = 1 + dy * 0.01;
       const newZoom = Math.max(0.1, Math.min(10, zoomStartLevel * zoomFactor));
@@ -842,9 +876,7 @@ function setupInputHandlers() {
       viewportTransform.value[0] = newZoom;
       viewportTransform.value[3] = newZoom;
 
-      if (engine.value) {
-        engine.value.setViewportTransform(viewportTransform.value);
-      }
+      engine.value.getCameraController().setZoom(newZoom);
       return;
     }
 
@@ -1090,7 +1122,7 @@ function handleResize(entries: ResizeObserverEntry[]) {
   }
 }
 
-// Center viewport on composition
+// Center viewport on composition (fit to screen)
 function centerOnComposition() {
   const container = containerRef.value;
   if (!container || !engine.value) return;
@@ -1098,20 +1130,24 @@ function centerOnComposition() {
   const compWidth = store.width || 1920;
   const compHeight = store.height || 1080;
   const containerRect = container.getBoundingClientRect();
-  const padding = 60;
+  const padding = 40;
 
+  // Calculate scale to fit composition in viewport with padding
   const scaleX = (containerRect.width - padding * 2) / compWidth;
   const scaleY = (containerRect.height - padding * 2) / compHeight;
   const scale = Math.min(scaleX, scaleY, 1);
 
-  viewportTransform.value = [
-    scale, 0, 0, scale,
-    (containerRect.width - compWidth * scale) / 2,
-    (containerRect.height - compHeight * scale) / 2
-  ];
-
+  // Update zoom state
   zoom.value = scale;
-  engine.value.setViewportTransform(viewportTransform.value);
+
+  // Reset viewport transform (no pan offset)
+  viewportTransform.value = [scale, 0, 0, scale, 0, 0];
+
+  // Reset camera to default position (centered on composition)
+  // and apply zoom only (no pan)
+  engine.value.resetCameraToDefault();
+  engine.value.getCameraController().setZoom(scale);
+  engine.value.getCameraController().setPan(0, 0);
 }
 
 // Render mode switching

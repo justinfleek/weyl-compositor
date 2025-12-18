@@ -253,6 +253,13 @@ export function createLayer(
   const comp = store.getActiveComp();
   const layers = store.getActiveCompLayers();
 
+  // Create transform with position centered in composition
+  const compWidth = comp?.settings.width || store.project.composition.width || 1920;
+  const compHeight = comp?.settings.height || store.project.composition.height || 1080;
+  const centeredTransform = createDefaultTransform();
+  // Center the layer in the composition
+  centeredTransform.position.value = { x: compWidth / 2, y: compHeight / 2 };
+
   const layer: Layer = {
     id,
     name: name || `${type.charAt(0).toUpperCase() + type.slice(1)} ${layers.length + 1}`,
@@ -267,7 +274,7 @@ export function createLayer(
     parentId: null,
     blendMode: 'normal',
     opacity: createAnimatableProperty('opacity', 100, 'number'),
-    transform: createDefaultTransform(),
+    transform: centeredTransform,
     audio: audioProps,
     properties: [],
     effects: [],
