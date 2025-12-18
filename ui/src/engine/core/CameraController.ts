@@ -155,15 +155,17 @@ export class CameraController {
    * This is the "Sync to Home" state - as if there's no 3D at all
    */
   resetToDefault(): void {
-    // Calculate the exact distance needed to see full composition
+    // Calculate the exact distance needed to see full composition height
     const fovRad = THREE.MathUtils.degToRad(this.defaultFov);
     const distance = (this.height / 2) / Math.tan(fovRad / 2);
 
-    // Position camera directly in front of composition center
-    // Camera at (centerX, -centerY, distance) looking at (centerX, -centerY, 0)
+    // Composition center in world coordinates
+    // Composition spans (0, 0, 0) to (width, -height, 0)
+    // So center is at (width/2, -height/2, 0)
     const centerX = this.width / 2;
     const centerY = -this.height / 2;
 
+    // Position camera directly in front of composition center
     this.camera.position.set(centerX, centerY, distance);
     this.target.set(centerX, centerY, 0);
     this.camera.fov = this.defaultFov;
@@ -183,7 +185,14 @@ export class CameraController {
     this.zoomLevel = 1;
     this.panOffset.set(0, 0);
 
-    console.log('[CameraController] Camera reset to perfect 2D front view');
+    console.log('[CameraController] resetToDefault:', {
+      composition: { width: this.width, height: this.height },
+      compositionCenter: { x: centerX, y: centerY },
+      cameraPosition: { x: this.camera.position.x, y: this.camera.position.y, z: distance },
+      cameraTarget: { x: this.target.x, y: this.target.y, z: 0 },
+      fov: this.defaultFov,
+      aspect: this.camera.aspect
+    });
   }
 
   /**

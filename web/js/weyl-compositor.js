@@ -40419,7 +40419,14 @@ class CameraController {
     }
     this.zoomLevel = 1;
     this.panOffset.set(0, 0);
-    console.log("[CameraController] Camera reset to perfect 2D front view");
+    console.log("[CameraController] resetToDefault:", {
+      composition: { width: this.width, height: this.height },
+      compositionCenter: { x: centerX, y: centerY },
+      cameraPosition: { x: this.camera.position.x, y: this.camera.position.y, z: distance },
+      cameraTarget: { x: this.target.x, y: this.target.y, z: 0 },
+      fov: this.defaultFov,
+      aspect: this.camera.aspect
+    });
   }
   /**
    * Check if orbit controls are enabled
@@ -43284,8 +43291,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const viewportTransform = ref([1, 0, 0, 1, 0, 0]);
     const transformMode = ref("translate");
     const showGrid = ref(true);
-    const showOutsideOverlay = ref(true);
-    const showSafeFrameGuides = ref(true);
+    const showOutsideOverlay = ref(false);
+    const showSafeFrameGuides = ref(false);
     const isDrawingSegmentBox = ref(false);
     const segmentBoxEnd = ref(null);
     const maskOverlayStyle = computed(() => {
@@ -43320,32 +43327,23 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       };
     });
     const safeFrameBounds = computed(() => {
-      if (!containerRef.value) {
+      if (!containerRef.value || !engine.value) {
         return { left: 0, top: 0, right: 0, bottom: 0 };
       }
       const container = containerRef.value;
       const containerRect = container.getBoundingClientRect();
       const compWidth = store.width || 1920;
       const compHeight = store.height || 1080;
-      const containerAspect = containerRect.width / containerRect.height;
-      const compAspect = compWidth / compHeight;
-      let displayWidth, displayHeight;
-      let offsetX, offsetY;
-      if (compAspect > containerAspect) {
-        displayWidth = containerRect.width * zoom.value;
-        displayHeight = containerRect.width / compAspect * zoom.value;
-      } else {
-        displayHeight = containerRect.height * zoom.value;
-        displayWidth = containerRect.height * compAspect * zoom.value;
-      }
-      offsetX = (containerRect.width - displayWidth) / 2;
-      offsetY = (containerRect.height - displayHeight) / 2;
-      return {
-        left: offsetX,
-        top: offsetY,
-        right: offsetX + displayWidth,
-        bottom: offsetY + displayHeight
-      };
+      const camera = engine.value.getCameraController().camera;
+      const topLeft = new THREE.Vector3(0, 0, 0);
+      const bottomRight = new THREE.Vector3(compWidth, -compHeight, 0);
+      topLeft.project(camera);
+      bottomRight.project(camera);
+      const left = (topLeft.x + 1) / 2 * containerRect.width;
+      const top = (-topLeft.y + 1) / 2 * containerRect.height;
+      const right = (bottomRight.x + 1) / 2 * containerRect.width;
+      const bottom = (-bottomRight.y + 1) / 2 * containerRect.height;
+      return { left, top, right, bottom };
     });
     const safeFrameLeftStyle = computed(() => {
       const bounds = safeFrameBounds.value;
@@ -44290,7 +44288,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-3407885f"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-b580cdd9"]]);
 
 const _hoisted_1$a = { class: "prop-wrapper" };
 const _hoisted_2$a = { class: "prop-content" };

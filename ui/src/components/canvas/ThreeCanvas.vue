@@ -201,8 +201,8 @@ const transformMode = ref<'translate' | 'rotate' | 'scale'>('translate');
 
 // Composition guide toggles
 const showGrid = ref(true);
-const showOutsideOverlay = ref(true);
-const showSafeFrameGuides = ref(true);
+const showOutsideOverlay = ref(false);  // Disabled by default until fixed
+const showSafeFrameGuides = ref(false); // Disabled by default until fixed
 
 // Segmentation state
 const isDrawingSegmentBox = ref(false);
@@ -251,9 +251,9 @@ const segmentBoxStyle = computed(() => {
 });
 
 // Safe frame guide positions - CSS-based overlays for out-of-frame areas
-// Calculate where the composition appears on screen based on viewport fit
+// Project the 3D composition bounds to screen space for accurate overlay positioning
 const safeFrameBounds = computed(() => {
-  if (!containerRef.value) {
+  if (!containerRef.value || !engine.value) {
     return { left: 0, top: 0, right: 0, bottom: 0 };
   }
 
@@ -262,33 +262,24 @@ const safeFrameBounds = computed(() => {
   const compWidth = store.width || 1920;
   const compHeight = store.height || 1080;
 
-  // Calculate how the composition fits in the viewport (letterbox/pillarbox)
-  const containerAspect = containerRect.width / containerRect.height;
-  const compAspect = compWidth / compHeight;
+  // Get the camera to project 3D points to screen
+  const camera = engine.value.getCameraController().camera;
 
-  let displayWidth: number, displayHeight: number;
-  let offsetX: number, offsetY: number;
+  // Composition corners in world space (Y is negated)
+  const topLeft = new THREE.Vector3(0, 0, 0);
+  const bottomRight = new THREE.Vector3(compWidth, -compHeight, 0);
 
-  if (compAspect > containerAspect) {
-    // Composition is wider - letterbox (black bars top/bottom)
-    displayWidth = containerRect.width * zoom.value;
-    displayHeight = (containerRect.width / compAspect) * zoom.value;
-  } else {
-    // Composition is taller - pillarbox (black bars left/right)
-    displayHeight = containerRect.height * zoom.value;
-    displayWidth = (containerRect.height * compAspect) * zoom.value;
-  }
+  // Project to normalized device coordinates (-1 to 1)
+  topLeft.project(camera);
+  bottomRight.project(camera);
 
-  // Center the composition
-  offsetX = (containerRect.width - displayWidth) / 2;
-  offsetY = (containerRect.height - displayHeight) / 2;
+  // Convert to screen pixels
+  const left = (topLeft.x + 1) / 2 * containerRect.width;
+  const top = (-topLeft.y + 1) / 2 * containerRect.height;
+  const right = (bottomRight.x + 1) / 2 * containerRect.width;
+  const bottom = (-bottomRight.y + 1) / 2 * containerRect.height;
 
-  return {
-    left: offsetX,
-    top: offsetY,
-    right: offsetX + displayWidth,
-    bottom: offsetY + displayHeight
-  };
+  return { left, top, right, bottom };
 });
 
 const safeFrameLeftStyle = computed(() => {
