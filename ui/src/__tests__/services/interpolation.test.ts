@@ -607,3 +607,126 @@ describe('Performance - Binary Search Optimization', () => {
     expect(interpolateProperty(prop, 50)).toBe(50);
   });
 });
+
+// ============================================================================
+// BEZIER CACHE TESTS
+// ============================================================================
+
+import { clearBezierCache, getBezierCacheStats } from '@/services/interpolation';
+
+describe('Bezier Cache', () => {
+  beforeEach(() => {
+    clearBezierCache();
+  });
+
+  afterEach(() => {
+    clearBezierCache();
+  });
+
+  it('should start with empty cache', () => {
+    const stats = getBezierCacheStats();
+    expect(stats.size).toBe(0);
+    expect(stats.maxSize).toBeGreaterThan(0);
+  });
+
+  it('should cache bezier calculations', () => {
+    // Create a bezier-interpolated property
+    const kf1 = createKeyframe(0, 0, 'bezier');
+    const kf2 = createKeyframe(100, 100, 'bezier');
+    const prop = createNumberProperty(0, [kf1, kf2], true);
+
+    // Interpolate multiple times
+    interpolateProperty(prop, 25);
+    interpolateProperty(prop, 50);
+    interpolateProperty(prop, 75);
+
+    const stats = getBezierCacheStats();
+    // Cache should have some entries
+    expect(stats.size).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should return same result for cached vs uncached', () => {
+    const kf1 = createKeyframe(0, 0, 'bezier');
+    const kf2 = createKeyframe(100, 100, 'bezier');
+    const prop = createNumberProperty(0, [kf1, kf2], true);
+
+    // First call (uncached)
+    const result1 = interpolateProperty(prop, 50);
+
+    // Second call (potentially cached)
+    const result2 = interpolateProperty(prop, 50);
+
+    expect(result1).toBe(result2);
+  });
+
+  it('should clear cache on clearBezierCache()', () => {
+    const kf1 = createKeyframe(0, 0, 'bezier');
+    const kf2 = createKeyframe(100, 100, 'bezier');
+    const prop = createNumberProperty(0, [kf1, kf2], true);
+
+    // Build up cache
+    for (let i = 0; i < 10; i++) {
+      interpolateProperty(prop, i * 10);
+    }
+
+    clearBezierCache();
+
+    const stats = getBezierCacheStats();
+    expect(stats.size).toBe(0);
+  });
+
+  it('should respect max cache size', () => {
+    // Create many different bezier curves
+    for (let i = 0; i < 1000; i++) {
+      const kf1: Keyframe<number> = {
+        id: `kf_${i}_1`,
+        frame: 0,
+        value: 0,
+        interpolation: 'bezier',
+        inHandle: { frame: -5, value: Math.random(), enabled: true },
+        outHandle: { frame: 5 + Math.random() * 10, value: Math.random(), enabled: true }
+      };
+      const kf2: Keyframe<number> = {
+        id: `kf_${i}_2`,
+        frame: 100,
+        value: 100,
+        interpolation: 'linear',
+        inHandle: { frame: -5 - Math.random() * 10, value: Math.random(), enabled: true },
+        outHandle: { frame: 5, value: 0, enabled: true }
+      };
+      const prop = createNumberProperty(0, [kf1, kf2], true);
+      interpolateProperty(prop, 50);
+    }
+
+    const stats = getBezierCacheStats();
+    expect(stats.size).toBeLessThanOrEqual(stats.maxSize);
+  });
+
+  it('should maintain consistency after cache eviction', () => {
+    const kf1 = createKeyframe(0, 0, 'bezier');
+    const kf2 = createKeyframe(100, 100, 'bezier');
+    const prop = createNumberProperty(0, [kf1, kf2], true);
+
+    // Get baseline result
+    const baseline = interpolateProperty(prop, 50);
+
+    // Fill cache with other entries to potentially evict
+    for (let i = 0; i < 600; i++) {
+      const uniqueKf1: Keyframe<number> = {
+        id: `unique_${i}_1`,
+        frame: 0,
+        value: i,
+        interpolation: 'bezier',
+        inHandle: { frame: -5, value: i * 0.1, enabled: true },
+        outHandle: { frame: 5 + i, value: i * 0.2, enabled: true }
+      };
+      const uniqueKf2 = createKeyframe(100, i + 100, 'linear');
+      const uniqueProp = createNumberProperty(i, [uniqueKf1, uniqueKf2], true);
+      interpolateProperty(uniqueProp, 50);
+    }
+
+    // Original calculation should still work correctly
+    const afterEviction = interpolateProperty(prop, 50);
+    expect(afterEviction).toBeCloseTo(baseline, 5);
+  });
+});

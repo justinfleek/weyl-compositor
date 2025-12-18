@@ -7,6 +7,7 @@
 
 import { storeLogger } from '@/utils/logger';
 import type { Layer, AnimatableProperty, Keyframe, InterpolationType, BezierHandle } from '@/types/project';
+import { markLayerDirty } from '@/services/layerEvaluationCache';
 
 // ============================================================================
 // STORE INTERFACE
@@ -123,6 +124,7 @@ export function addKeyframe<T>(
     storeLogger.debug('addKeyframe: added new keyframe at frame', frame, 'total keyframes:', property.keyframes.length);
   }
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
   return keyframe;
 }
@@ -156,6 +158,7 @@ export function removeKeyframe(
     }
   }
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -176,6 +179,7 @@ export function clearKeyframes(
   property.keyframes = [];
   property.animated = false;
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -291,6 +295,7 @@ export function setKeyframeValue(
   }
 
   keyframe.value = newValue;
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -323,6 +328,7 @@ export function updateKeyframe(
     keyframe.value = updates.value;
   }
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -350,6 +356,7 @@ export function setKeyframeInterpolation(
   if (!keyframe) return;
 
   keyframe.interpolation = interpolation;
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -384,6 +391,7 @@ export function setKeyframeHandle(
     keyframe.interpolation = 'bezier';
   }
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -407,6 +415,7 @@ export function setKeyframeControlMode(
   if (!keyframe) return;
 
   keyframe.controlMode = controlMode;
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -440,6 +449,7 @@ export function setPropertyValue(
     }
   }
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -484,6 +494,7 @@ export function setPropertyAnimated(
     }
   }
 
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 

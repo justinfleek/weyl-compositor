@@ -40,12 +40,39 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        inlineDynamicImports: true,
+        // Allow code splitting for lazy-loaded modules
+        inlineDynamicImports: false,
         assetFileNames: 'weyl-compositor[extname]',
-        // Preserve module structure for better tree shaking
-        preserveModules: false,
-        // Optimize chunk names
-        chunkFileNames: '[name]-[hash].js',
+        // Named chunks for better caching
+        chunkFileNames: 'weyl-[name].js',
+        entryFileNames: 'weyl-compositor.js',
+        // Manual chunks for heavy dependencies
+        manualChunks(id) {
+          // Three.js and related 3D libraries
+          if (id.includes('node_modules/three') ||
+              id.includes('node_modules/troika')) {
+            return 'three-vendor';
+          }
+          // Export/encoding libraries
+          if (id.includes('node_modules/jszip') ||
+              id.includes('node_modules/mp4-muxer') ||
+              id.includes('node_modules/webm-muxer')) {
+            return 'export-vendor';
+          }
+          // Vue ecosystem
+          if (id.includes('node_modules/vue') ||
+              id.includes('node_modules/pinia') ||
+              id.includes('node_modules/@vue') ||
+              id.includes('node_modules/@vueuse')) {
+            return 'vue-vendor';
+          }
+          // UI components
+          if (id.includes('node_modules/splitpanes') ||
+              id.includes('node_modules/primevue') ||
+              id.includes('node_modules/primeicons')) {
+            return 'ui-vendor';
+          }
+        },
       },
       // Tree shaking configuration
       treeshake: {
@@ -101,7 +128,6 @@ export default defineConfig({
     // Pre-bundle these heavy dependencies
     include: [
       'three',
-      'fabric',
       'pinia',
       'vue',
     ],

@@ -9,6 +9,7 @@ import { storeLogger } from '@/utils/logger';
 import type { Layer, AnimatableProperty } from '@/types/project';
 import { createDefaultTransform, createAnimatableProperty } from '@/types/project';
 import { useSelectionStore } from '../selectionStore';
+import { markLayerDirty, clearLayerCache } from '@/services/layerEvaluationCache';
 
 // ============================================================================
 // STORE INTERFACE
@@ -299,6 +300,7 @@ export function deleteLayer(store: LayerStore, layerId: string): void {
 
   layers.splice(index, 1);
   useSelectionStore().removeFromSelection(layerId);
+  clearLayerCache(layerId); // Clear evaluation cache for deleted layer
   store.project.meta.modified = new Date().toISOString();
   store.pushHistory();
 }
@@ -413,6 +415,7 @@ export function updateLayer(store: LayerStore, layerId: string, updates: Partial
   if (!layer) return;
 
   Object.assign(layer, updates);
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 
@@ -424,6 +427,7 @@ export function updateLayerData(store: LayerStore, layerId: string, dataUpdates:
   if (!layer || !layer.data) return;
 
   Object.assign(layer.data, dataUpdates);
+  markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
 

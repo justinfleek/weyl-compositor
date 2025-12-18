@@ -68,6 +68,19 @@ async function renderCompositor(el, base) {
     document.head.appendChild(link);
   }
 
+  // Preload vendor chunks for faster loading
+  const vendorChunks = [
+    'weyl-vue-vendor.js',
+    'weyl-three-vendor.js',
+    'weyl-ui-vendor.js'
+  ];
+  vendorChunks.forEach(chunk => {
+    const preload = document.createElement('link');
+    preload.rel = 'modulepreload';
+    preload.href = `${base}/js/${chunk}`;
+    document.head.appendChild(preload);
+  });
+
   try {
     const module = await import(`${base}/js/weyl-compositor.js`);
     if (module.mountApp) module.mountApp(container);
