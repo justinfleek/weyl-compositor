@@ -47,6 +47,14 @@
         >
           <span class="expand-icon">{{ expandedSections.includes('transform') ? '▼' : '►' }}</span>
           <span class="section-title">Transform</span>
+          <label class="threeD-toggle" @click.stop>
+            <input
+              type="checkbox"
+              :checked="selectedLayer?.threeD"
+              @change="toggle3D"
+            />
+            <span class="toggle-label">3D</span>
+          </label>
         </div>
 
         <div v-if="expandedSections.includes('transform')" class="section-content">
@@ -486,6 +494,19 @@ function updateBlendMode() {
   }
 }
 
+function toggle3D(event: Event) {
+  if (!selectedLayer.value) return;
+  const threeD = (event.target as HTMLInputElement).checked;
+  store.updateLayer(selectedLayer.value.id, { threeD });
+
+  // Initialize Z position if switching to 3D
+  if (threeD && selectedLayer.value.transform?.position) {
+    if (selectedLayer.value.transform.position.value.z === undefined) {
+      selectedLayer.value.transform.position.value.z = 0;
+    }
+  }
+}
+
 function hasKeyframe(property: string): boolean {
   return keyframes.value.includes(property);
 }
@@ -639,6 +660,35 @@ function hasDriver(property: PropertyPath): boolean {
 .section-title {
   font-weight: 500;
   flex: 1;
+}
+
+.threeD-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  background: #333;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.threeD-toggle:hover {
+  background: #444;
+}
+
+.threeD-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.threeD-toggle .toggle-label {
+  color: #888;
+  font-weight: 500;
+}
+
+.threeD-toggle input:checked + .toggle-label {
+  color: #4a90d9;
 }
 
 .section-content {

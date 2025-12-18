@@ -153,6 +153,9 @@ export function deleteCamera(store: CameraStore, cameraId: string): void {
     useSelectionStore().removeFromSelection(layerId);
   }
 
+  // Remove camera keyframes
+  store.cameraKeyframes.delete(cameraId);
+
   // Remove the camera
   store.cameras.delete(cameraId);
 

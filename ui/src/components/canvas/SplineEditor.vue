@@ -8,6 +8,7 @@
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
       @mouseleave="handleMouseUp"
+      @contextmenu="handleRightClick"
     >
       <!-- Handle lines -->
       <template v-for="point in visibleControlPoints" :key="`handles-${point.id}`">
@@ -75,6 +76,15 @@
         r="4"
         class="preview-point"
       />
+
+      <!-- Close path indicator - shows when hovering near first point -->
+      <circle
+        v-if="canClosePath && closePathPreview"
+        :cx="visibleControlPoints[0].x"
+        :cy="visibleControlPoints[0].y"
+        r="10"
+        class="close-indicator"
+      />
     </svg>
   </div>
 </template>
@@ -101,6 +111,7 @@ const emit = defineEmits<{
   (e: 'handleMoved', pointId: string, handleType: 'in' | 'out', x: number, y: number): void;
   (e: 'pointDeleted', pointId: string): void;
   (e: 'pathUpdated'): void;
+  (e: 'pathClosed'): void;
 }>();
 
 const store = useCompositorStore();
@@ -108,6 +119,7 @@ const store = useCompositorStore();
 // State
 const selectedPointId = ref<string | null>(null);
 const previewPoint = ref<{ x: number; y: number } | null>(null);
+const closePathPreview = ref(false);
 const dragTarget = ref<{
   type: 'point' | 'handleIn' | 'handleOut';
   pointId: string;
@@ -125,6 +137,20 @@ const visibleControlPoints = computed<ControlPoint[]>(() => {
   const splineData = layer.data as SplineData;
   return splineData.controlPoints || [];
 });
+
+// Check if path can be closed (at least 3 points, not already closed)
+const canClosePath = computed(() => {
+  if (!props.layerId || visibleControlPoints.value.length < 3) return false;
+
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline' || !layer.data) return false;
+
+  const splineData = layer.data as SplineData;
+  return !splineData.closed;
+});
+
+// Check if we're close to the first point
+const CLOSE_THRESHOLD = 15; // pixels
 
 // Convert screen coords to canvas coords
 function screenToCanvas(screenX: number, screenY: number): { x: number; y: number } {
@@ -189,6 +215,17 @@ function handleMouseMove(event: MouseEvent) {
   // Update preview point in pen mode
   if (props.isPenMode) {
     previewPoint.value = pos;
+  }
+
+  // Check proximity to first point for close path preview
+  if (canClosePath.value && visibleControlPoints.value.length > 0) {
+    const firstPoint = visibleControlPoints.value[0];
+    const dx = pos.x - firstPoint.x;
+    const dy = pos.y - firstPoint.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    closePathPreview.value = dist < CLOSE_THRESHOLD;
+  } else {
+    closePathPreview.value = false;
   }
 
   // Handle dragging
@@ -279,6 +316,48 @@ function handleMouseUp() {
     dragTarget.value = null;
     emit('pathUpdated');
   }
+}
+
+// Right-click to close path
+function handleRightClick(event: MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (!props.layerId || !canClosePath.value) return;
+
+  const pos = getMousePos(event);
+
+  // Check if clicking near first point
+  if (visibleControlPoints.value.length > 0) {
+    const firstPoint = visibleControlPoints.value[0];
+    const dx = pos.x - firstPoint.x;
+    const dy = pos.y - firstPoint.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < CLOSE_THRESHOLD) {
+      closePath();
+      return;
+    }
+  }
+
+  // Also allow closing path from anywhere with right-click when in pen mode
+  if (props.isPenMode && visibleControlPoints.value.length >= 3) {
+    closePath();
+  }
+}
+
+// Close the path
+function closePath() {
+  if (!props.layerId) return;
+
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline' || !layer.data) return;
+
+  // Update the spline data to closed
+  store.updateLayerData(props.layerId, { closed: true });
+
+  emit('pathClosed');
+  emit('pathUpdated');
 }
 
 function startDragPoint(pointId: string, event: MouseEvent) {
@@ -400,5 +479,19 @@ defineExpose({
   stroke: #00ff00;
   stroke-width: 1;
   pointer-events: none;
+}
+
+.close-indicator {
+  fill: rgba(0, 255, 0, 0.2);
+  stroke: #00ff00;
+  stroke-width: 2;
+  stroke-dasharray: 4 2;
+  pointer-events: none;
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
 }
 </style>

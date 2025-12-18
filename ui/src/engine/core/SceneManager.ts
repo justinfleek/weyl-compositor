@@ -621,13 +621,13 @@ export class SceneManager {
       depthTest: false,
     });
 
-    // Vertical lines
+    // Vertical lines - grid at z=0 (composition plane)
     const stepX = w / divisions;
     for (let i = 0; i <= divisions; i++) {
       const x = i * stepX;
       const points = [
-        new THREE.Vector3(x, 0, -1),
-        new THREE.Vector3(x, -h, -1),
+        new THREE.Vector3(x, 0, 0),
+        new THREE.Vector3(x, -h, 0),
       ];
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
       const line = new THREE.Line(geometry, material.clone());
@@ -639,8 +639,8 @@ export class SceneManager {
     for (let i = 0; i <= divisions; i++) {
       const y = -i * stepY;
       const points = [
-        new THREE.Vector3(0, y, -1),
-        new THREE.Vector3(w, y, -1),
+        new THREE.Vector3(0, y, 0),
+        new THREE.Vector3(w, y, 0),
       ];
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
       const line = new THREE.Line(geometry, material.clone());
@@ -657,16 +657,16 @@ export class SceneManager {
 
     // Vertical center line
     const vCenterPoints = [
-      new THREE.Vector3(w / 2, 0, -1),
-      new THREE.Vector3(w / 2, -h, -1),
+      new THREE.Vector3(w / 2, 0, 0),
+      new THREE.Vector3(w / 2, -h, 0),
     ];
     const vCenterGeom = new THREE.BufferGeometry().setFromPoints(vCenterPoints);
     gridGroup.add(new THREE.Line(vCenterGeom, centerMaterial));
 
     // Horizontal center line
     const hCenterPoints = [
-      new THREE.Vector3(0, -h / 2, -1),
-      new THREE.Vector3(w, -h / 2, -1),
+      new THREE.Vector3(0, -h / 2, 0),
+      new THREE.Vector3(w, -h / 2, 0),
     ];
     const hCenterGeom = new THREE.BufferGeometry().setFromPoints(hCenterPoints);
     gridGroup.add(new THREE.Line(hCenterGeom, centerMaterial.clone()));

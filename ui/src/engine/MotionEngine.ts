@@ -440,7 +440,8 @@ export class MotionEngine {
     const evaluatedCamera = this.evaluateCamera(
       frame,
       composition.layers,
-      activeCameraId ?? null
+      activeCameraId ?? null,
+      composition.settings
     );
 
     // Evaluate audio
@@ -641,7 +642,8 @@ export class MotionEngine {
   private evaluateCamera(
     frame: number,
     layers: Layer[],
-    activeCameraId: string | null
+    activeCameraId: string | null,
+    compositionSettings?: CompositionSettings
   ): EvaluatedCamera | null {
     // Find active camera layer
     let cameraLayer: Layer | undefined;
@@ -672,9 +674,14 @@ export class MotionEngine {
     // Evaluate camera transform
     const transform = this.evaluateTransform(frame, cameraLayer.transform, true);
 
-    // Default camera values
+    // Default camera values - use composition center as default target
+    const compWidth = compositionSettings?.width ?? 1024;
+    const compHeight = compositionSettings?.height ?? 1024;
+    const centerX = compWidth / 2;
+    const centerY = compHeight / 2;
+
     let position = { x: transform.position.x, y: transform.position.y, z: 0 };
-    let target = { x: 0, y: 0, z: 0 };
+    let target = { x: centerX, y: centerY, z: 0 };  // Default to composition center
     let fov = 50;
     let focalLength = 50;
 
