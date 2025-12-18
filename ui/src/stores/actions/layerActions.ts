@@ -581,6 +581,23 @@ export function addSplineControlPoint(store: LayerStore, layerId: string, point:
 }
 
 /**
+ * Insert a control point at a specific index in a spline layer
+ */
+export function insertSplineControlPoint(store: LayerStore, layerId: string, point: SplineControlPoint, index: number): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer || layer.type !== 'spline' || !layer.data) return;
+
+  const splineData = layer.data as any;
+  if (!splineData.controlPoints) {
+    splineData.controlPoints = [];
+  }
+  // Clamp index to valid range
+  const insertIndex = Math.max(0, Math.min(index, splineData.controlPoints.length));
+  splineData.controlPoints.splice(insertIndex, 0, point);
+  store.project.meta.modified = new Date().toISOString();
+}
+
+/**
  * Update a spline control point
  */
 export function updateSplineControlPoint(

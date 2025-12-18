@@ -1093,6 +1093,8 @@ export const useCompositorStore = defineStore('compositor', {
           createAnimatableProperty('Trim Start', 0, 'number', 'Trim Paths'),
           createAnimatableProperty('Trim End', 100, 'number', 'Trim Paths'),
           createAnimatableProperty('Trim Offset', 0, 'number', 'Trim Paths'),
+          // Note: "Closed" is stored in layer.data.closed as a boolean, not animatable
+          // It's displayed in the timeline via the Path Options group in EnhancedLayerTrack
         ];
       }
 
@@ -1220,6 +1222,13 @@ export const useCompositorStore = defineStore('compositor', {
      */
     addSplineControlPoint(layerId: string, point: layerActions.SplineControlPoint): void {
       layerActions.addSplineControlPoint(this, layerId, point);
+    },
+
+    /**
+     * Insert a control point at a specific index in a spline layer
+     */
+    insertSplineControlPoint(layerId: string, point: layerActions.SplineControlPoint, index: number): void {
+      layerActions.insertSplineControlPoint(this, layerId, point, index);
     },
 
     /**

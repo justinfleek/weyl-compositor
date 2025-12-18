@@ -168,7 +168,7 @@ const isExpanded = computed(() => props.isExpandedExternal ?? localExpanded.valu
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
 // Only video and audio layers have audio capability
 const hasAudioCapability = computed(() => ['video', 'audio', 'precomp'].includes(props.layer.type));
-const expandedGroups = ref<string[]>(['Transform', 'Text', 'More Options']);
+const expandedGroups = ref<string[]>(['Transform', 'Text', 'More Options', 'Stroke', 'Fill', 'Trim Paths', 'Path Options']);
 const isRenaming = ref(false);
 const renameVal = ref('');
 const renameInput = ref<HTMLInputElement | null>(null);
@@ -272,6 +272,14 @@ const groupedProperties = computed(() => {
       { path: 'materialOptions.specularIntensity', name: 'Specular Intensity', property: { value: mat.specularIntensity, type: 'percent' } },
       { path: 'materialOptions.specularShininess', name: 'Specular Shininess', property: { value: mat.specularShininess, type: 'percent' } },
       { path: 'materialOptions.metal', name: 'Metal', property: { value: mat.metal, type: 'percent' } }
+    ];
+  }
+
+  // Path Options (for spline layers)
+  if (props.layer.type === 'spline' && props.layer.data) {
+    const splineData = props.layer.data as any;
+    groups['Path Options'] = [
+      { path: 'data.closed', name: 'Closed', property: { value: splineData.closed ?? false, type: 'boolean' } }
     ];
   }
 

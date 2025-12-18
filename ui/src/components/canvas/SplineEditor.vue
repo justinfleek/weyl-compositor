@@ -1,56 +1,65 @@
 <template>
   <div class="spline-editor">
     <!-- Spline toolbar (shown when a spline layer is selected) -->
-    <div v-if="layerId && hasControlPoints" class="spline-toolbar">
+    <div v-if="layerId" class="spline-toolbar">
       <!-- Pen Tool Options -->
       <div class="toolbar-group pen-tools">
+        <!-- Pen Tool (add points at end) -->
         <button
           class="toolbar-btn icon-btn"
-          :class="{ active: isPenMode }"
-          @click="emit('togglePenMode')"
-          title="Add Points (P)"
+          :class="{ active: isPenMode && penSubMode === 'add' }"
+          @click="setPenSubMode('add')"
+          title="Pen Tool (P) - Add points at end of path"
         >
           <svg viewBox="0 0 24 24" width="14" height="14">
             <path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
           </svg>
+          <span class="tool-label">Pen</span>
         </button>
+        <!-- Add Point Tool (insert on segment) -->
         <button
           class="toolbar-btn icon-btn"
-          :disabled="!selectedPointId"
-          @click="deleteSelectedPoint"
-          title="Delete Point (Del)"
+          :class="{ active: isPenMode && penSubMode === 'insert' }"
+          @click="setPenSubMode('insert')"
+          title="Add Point (+) - Click on path to insert point"
         >
           <svg viewBox="0 0 24 24" width="14" height="14">
-            <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+            <path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+            <circle cx="18" cy="18" r="5" fill="#1e1e1e"/>
+            <path fill="currentColor" d="M18,15v6M15,18h6" stroke="currentColor" stroke-width="1.5"/>
           </svg>
+          <span class="tool-label">Pen+</span>
         </button>
-        <div class="toolbar-separator"></div>
+        <!-- Delete Point Tool -->
         <button
           class="toolbar-btn icon-btn"
-          :class="{ active: selectedPointType === 'smooth' }"
-          :disabled="!selectedPointId"
-          @click="setPointType('smooth')"
-          title="Smooth Point (bezier handles)"
+          :class="{ active: isPenMode && penSubMode === 'delete' }"
+          @click="setPenSubMode('delete')"
+          title="Delete Point (-) - Click point to remove"
         >
           <svg viewBox="0 0 24 24" width="14" height="14">
-            <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+            <circle cx="18" cy="18" r="5" fill="#1e1e1e"/>
+            <path fill="currentColor" d="M15,18h6" stroke="currentColor" stroke-width="1.5"/>
           </svg>
+          <span class="tool-label">Pen-</span>
         </button>
+        <!-- Convert Point Tool -->
         <button
           class="toolbar-btn icon-btn"
-          :class="{ active: selectedPointType === 'corner' }"
-          :disabled="!selectedPointId"
-          @click="setPointType('corner')"
-          title="Corner Point (linear)"
+          :class="{ active: isPenMode && penSubMode === 'convert' }"
+          @click="setPenSubMode('convert')"
+          title="Convert Point (^) - Click to toggle smooth/corner"
         >
           <svg viewBox="0 0 24 24" width="14" height="14">
-            <rect x="6" y="6" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path fill="currentColor" d="M12,2L6,8H9V14H6L12,20L18,14H15V8H18L12,2Z" transform="rotate(180 12 11)"/>
           </svg>
+          <span class="tool-label">Convert</span>
         </button>
       </div>
       <div class="toolbar-separator"></div>
       <!-- Path Operations -->
-      <div class="toolbar-group">
+      <div class="toolbar-group" v-if="hasControlPoints">
         <button
           class="toolbar-btn"
           @click="smoothSpline"
@@ -65,8 +74,16 @@
         >
           Simplify
         </button>
+        <button
+          class="toolbar-btn"
+          :class="{ active: isClosed }"
+          @click="toggleClosePath"
+          title="Toggle closed path"
+        >
+          {{ isClosed ? 'Open' : 'Close' }}
+        </button>
       </div>
-      <div class="toolbar-group">
+      <div class="toolbar-group" v-if="hasControlPoints">
         <label class="tolerance-label">
           Tolerance:
           <input
@@ -80,7 +97,7 @@
           <span class="tolerance-value">{{ smoothTolerance }}px</span>
         </label>
       </div>
-      <div class="toolbar-info">
+      <div class="toolbar-info" v-if="hasControlPoints">
         {{ visibleControlPoints.length }} points
       </div>
     </div>
@@ -203,6 +220,14 @@
         </g>
       </g>
 
+      <!-- Preview curve when dragging to create bezier -->
+      <path
+        v-if="previewCurve"
+        :d="previewCurve"
+        class="preview-curve"
+        fill="none"
+      />
+
       <!-- Preview point when in pen mode -->
       <circle
         v-if="previewPoint && isPenMode"
@@ -210,6 +235,15 @@
         :cy="previewPoint.y"
         r="4"
         class="preview-point"
+      />
+
+      <!-- Insert point indicator (when hovering over path in insert mode) -->
+      <circle
+        v-if="insertPreviewPoint && penSubMode === 'insert'"
+        :cx="insertPreviewPoint.x"
+        :cy="insertPreviewPoint.y"
+        r="5"
+        class="insert-preview-point"
       />
 
       <!-- Close path indicator - shows when hovering near first point -->
@@ -259,12 +293,17 @@ const store = useCompositorStore();
 const selectedPointId = ref<string | null>(null);
 const previewPoint = ref<{ x: number; y: number } | null>(null);
 const closePathPreview = ref(false);
+const previewCurve = ref<string | null>(null);
+const insertPreviewPoint = ref<{ x: number; y: number; segmentIndex: number } | null>(null);
+const penSubMode = ref<'add' | 'insert' | 'delete' | 'convert'>('add');
 const dragTarget = ref<{
-  type: 'point' | 'handleIn' | 'handleOut' | 'depth';
+  type: 'point' | 'handleIn' | 'handleOut' | 'depth' | 'newPoint';
   pointId: string;
   startX: number;
   startY: number;
   startDepth?: number;
+  newPointX?: number;
+  newPointY?: number;
 } | null>(null);
 
 // Check if the layer is in 3D mode
@@ -272,6 +311,14 @@ const is3DLayer = computed(() => {
   if (!props.layerId) return false;
   const layer = store.layers.find(l => l.id === props.layerId);
   return layer?.threeD ?? false;
+});
+
+// Check if path is closed
+const isClosed = computed(() => {
+  if (!props.layerId) return false;
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline') return false;
+  return (layer.data as SplineData)?.closed ?? false;
 });
 
 // Toolbar state
@@ -286,6 +333,22 @@ const selectedPointType = computed<'smooth' | 'corner' | null>(() => {
   const point = visibleControlPoints.value.find(p => p.id === selectedPointId.value);
   return point?.type ?? null;
 });
+
+// Set pen sub-mode
+function setPenSubMode(mode: 'add' | 'insert' | 'delete' | 'convert') {
+  penSubMode.value = mode;
+  // Activate pen mode if not already active
+  if (!props.isPenMode) {
+    emit('togglePenMode');
+  }
+}
+
+// Toggle closed path
+function toggleClosePath() {
+  if (!props.layerId) return;
+  store.updateLayerData(props.layerId, { closed: !isClosed.value });
+  emit('pathUpdated');
+}
 
 // Delete the selected point
 function deleteSelectedPoint() {
@@ -487,43 +550,155 @@ function getMousePos(event: MouseEvent): { x: number; y: number } {
   return screenToCanvas(screenX, screenY);
 }
 
+// Find closest point on path for insert mode
+function findClosestPointOnPath(pos: { x: number; y: number }): { x: number; y: number; segmentIndex: number; t: number } | null {
+  const points = visibleControlPoints.value;
+  if (points.length < 2) return null;
+
+  let closest: { x: number; y: number; segmentIndex: number; t: number; dist: number } | null = null;
+
+  // Check each segment
+  const numSegments = isClosed.value ? points.length : points.length - 1;
+  for (let i = 0; i < numSegments; i++) {
+    const p0 = points[i];
+    const p1 = points[(i + 1) % points.length];
+
+    // Simple line segment check (could be improved with bezier curve check)
+    // For now, use linear interpolation
+    for (let t = 0; t <= 1; t += 0.05) {
+      const x = p0.x + t * (p1.x - p0.x);
+      const y = p0.y + t * (p1.y - p0.y);
+      const dist = Math.sqrt((pos.x - x) ** 2 + (pos.y - y) ** 2);
+
+      if (!closest || dist < closest.dist) {
+        closest = { x, y, segmentIndex: i, t, dist };
+      }
+    }
+  }
+
+  // Only return if within threshold
+  if (closest && closest.dist < 20) {
+    return { x: closest.x, y: closest.y, segmentIndex: closest.segmentIndex, t: closest.t };
+  }
+  return null;
+}
+
 // Handle mouse events
 function handleMouseDown(event: MouseEvent) {
   if (!props.isPenMode) return;
 
   const pos = getMousePos(event);
 
-  // In pen mode, add new point on click
-  if (props.layerId) {
-    const layer = store.layers.find(l => l.id === props.layerId);
-    if (layer && layer.type === 'spline') {
+  if (!props.layerId) return;
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline') return;
+
+  // Handle different pen sub-modes
+  if (penSubMode.value === 'add') {
+    // Add point at end of path
+    const newPoint: ControlPoint = {
+      id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      x: pos.x,
+      y: pos.y,
+      handleIn: null,
+      handleOut: null,
+      type: 'corner'
+    };
+
+    store.addSplineControlPoint(props.layerId, newPoint);
+    selectedPointId.value = newPoint.id;
+
+    // Start dragging to create handle (for curve preview)
+    dragTarget.value = {
+      type: 'newPoint',
+      pointId: newPoint.id,
+      startX: pos.x,
+      startY: pos.y,
+      newPointX: pos.x,
+      newPointY: pos.y
+    };
+
+    emit('pointAdded', newPoint);
+    emit('pathUpdated');
+
+  } else if (penSubMode.value === 'insert') {
+    // Insert point on path segment
+    const closest = findClosestPointOnPath(pos);
+    if (closest) {
       const newPoint: ControlPoint = {
         id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        x: pos.x,
-        y: pos.y,
+        x: closest.x,
+        y: closest.y,
         handleIn: null,
         handleOut: null,
         type: 'corner'
       };
 
-      // Add point via store action
-      store.addSplineControlPoint(props.layerId, newPoint);
-
-      // Select the new point
+      // Insert after the segment start point
+      store.insertSplineControlPoint(props.layerId, newPoint, closest.segmentIndex + 1);
       selectedPointId.value = newPoint.id;
-
-      // Start dragging to create handle
-      dragTarget.value = {
-        type: 'handleOut',
-        pointId: newPoint.id,
-        startX: pos.x,
-        startY: pos.y
-      };
-
       emit('pointAdded', newPoint);
       emit('pathUpdated');
     }
+
+  } else if (penSubMode.value === 'delete') {
+    // Delete clicked point
+    const clickedPoint = findClickedPoint(pos);
+    if (clickedPoint) {
+      store.deleteSplineControlPoint(props.layerId, clickedPoint.id);
+      emit('pointDeleted', clickedPoint.id);
+      emit('pathUpdated');
+      selectedPointId.value = null;
+    }
+
+  } else if (penSubMode.value === 'convert') {
+    // Convert clicked point type
+    const clickedPoint = findClickedPoint(pos);
+    if (clickedPoint) {
+      const newType = clickedPoint.type === 'smooth' ? 'corner' : 'smooth';
+      if (newType === 'corner') {
+        store.updateSplineControlPoint(props.layerId, clickedPoint.id, {
+          type: 'corner',
+          handleIn: null,
+          handleOut: null
+        });
+      } else {
+        // Create default handles for smooth point
+        const handleOffset = 30;
+        store.updateSplineControlPoint(props.layerId, clickedPoint.id, {
+          type: 'smooth',
+          handleIn: { x: clickedPoint.x - handleOffset, y: clickedPoint.y },
+          handleOut: { x: clickedPoint.x + handleOffset, y: clickedPoint.y }
+        });
+      }
+      selectedPointId.value = clickedPoint.id;
+      emit('pathUpdated');
+    }
   }
+}
+
+// Find point at position
+function findClickedPoint(pos: { x: number; y: number }): (ControlPoint | EvaluatedControlPoint) | null {
+  const threshold = 10;
+  for (const point of visibleControlPoints.value) {
+    const dist = Math.sqrt((pos.x - point.x) ** 2 + (pos.y - point.y) ** 2);
+    if (dist < threshold) {
+      return point;
+    }
+  }
+  return null;
+}
+
+// Generate curve preview SVG path
+function generateCurvePreview(lastPoint: ControlPoint | EvaluatedControlPoint, handleOut: { x: number; y: number }, newPos: { x: number; y: number }): string {
+  // Create a cubic bezier from last point to new position
+  const h1x = handleOut.x;
+  const h1y = handleOut.y;
+  // Mirror the handle for a symmetric curve
+  const h2x = newPos.x - (handleOut.x - lastPoint.x);
+  const h2y = newPos.y - (handleOut.y - lastPoint.y);
+
+  return `M ${lastPoint.x},${lastPoint.y} C ${h1x},${h1y} ${h2x},${h2y} ${newPos.x},${newPos.y}`;
 }
 
 function handleMouseMove(event: MouseEvent) {
@@ -532,6 +707,44 @@ function handleMouseMove(event: MouseEvent) {
   // Update preview point in pen mode
   if (props.isPenMode) {
     previewPoint.value = pos;
+
+    // Show insert preview when in insert mode
+    if (penSubMode.value === 'insert') {
+      const closest = findClosestPointOnPath(pos);
+      insertPreviewPoint.value = closest;
+    } else {
+      insertPreviewPoint.value = null;
+    }
+  }
+
+  // Generate curve preview when dragging new point
+  if (dragTarget.value?.type === 'newPoint') {
+    const points = visibleControlPoints.value;
+    if (points.length >= 2) {
+      const newPoint = points.find(p => p.id === dragTarget.value!.pointId);
+      const prevPointIndex = points.indexOf(newPoint!) - 1;
+      if (newPoint && prevPointIndex >= 0) {
+        const prevPoint = points[prevPointIndex];
+        // Create handle based on drag direction
+        const handleOut = { x: pos.x, y: pos.y };
+        previewCurve.value = generateCurvePreview(prevPoint, handleOut, newPoint);
+
+        // Also update the handle in real-time
+        if (props.layerId) {
+          const dx = pos.x - newPoint.x;
+          const dy = pos.y - newPoint.y;
+          if (Math.sqrt(dx * dx + dy * dy) > 5) {
+            store.updateSplineControlPoint(props.layerId, newPoint.id, {
+              handleOut: { x: pos.x, y: pos.y },
+              handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+              type: 'smooth'
+            });
+          }
+        }
+      }
+    }
+  } else {
+    previewCurve.value = null;
   }
 
   // Check proximity to first point for close path preview
@@ -611,13 +824,23 @@ function handleMouseMove(event: MouseEvent) {
 }
 
 function handleMouseUp() {
+  // Clear curve preview
+  previewCurve.value = null;
+
   if (dragTarget.value && props.layerId) {
+    // Handle newPoint type - just clear the drag target, handles already updated
+    if (dragTarget.value.type === 'newPoint') {
+      dragTarget.value = null;
+      emit('pathUpdated');
+      return;
+    }
+
     // If we were creating a new handle by dragging, convert to smooth point
     const layer = store.layers.find(l => l.id === props.layerId);
     if (layer && layer.type === 'spline') {
       const splineData = layer.data as SplineData;
       const point = splineData.controlPoints?.find(p => p.id === dragTarget.value!.pointId);
-      if (point && point.handleOut) {
+      if (point && point.handleOut && dragTarget.value.type === 'handleOut') {
         // Check if handle was dragged far enough
         const dx = point.handleOut.x - point.x;
         const dy = point.handleOut.y - point.y;
@@ -862,6 +1085,20 @@ defineExpose({
   fill: rgba(0, 255, 0, 0.5);
   stroke: #00ff00;
   stroke-width: 1;
+  pointer-events: none;
+}
+
+.preview-curve {
+  stroke: rgba(0, 255, 0, 0.6);
+  stroke-width: 2;
+  stroke-dasharray: 8 4;
+  pointer-events: none;
+}
+
+.insert-preview-point {
+  fill: rgba(0, 200, 255, 0.6);
+  stroke: #00ccff;
+  stroke-width: 2;
   pointer-events: none;
 }
 

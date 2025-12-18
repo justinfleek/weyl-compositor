@@ -7580,6 +7580,17 @@ function addSplineControlPoint(store, layerId, point) {
   splineData.controlPoints.push(point);
   store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
 }
+function insertSplineControlPoint(store, layerId, point, index) {
+  const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
+  if (!layer || layer.type !== "spline" || !layer.data) return;
+  const splineData = layer.data;
+  if (!splineData.controlPoints) {
+    splineData.controlPoints = [];
+  }
+  const insertIndex = Math.max(0, Math.min(index, splineData.controlPoints.length));
+  splineData.controlPoints.splice(insertIndex, 0, point);
+  store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
+}
 function updateSplineControlPoint(store, layerId, pointId, updates) {
   const layer = store.getActiveCompLayers().find((l) => l.id === layerId);
   if (!layer || layer.type !== "spline" || !layer.data) return;
@@ -12433,6 +12444,8 @@ const useCompositorStore = defineStore("compositor", {
           createAnimatableProperty("Trim Start", 0, "number", "Trim Paths"),
           createAnimatableProperty("Trim End", 100, "number", "Trim Paths"),
           createAnimatableProperty("Trim Offset", 0, "number", "Trim Paths")
+          // Note: "Closed" is stored in layer.data.closed as a boolean, not animatable
+          // It's displayed in the timeline via the Path Options group in EnhancedLayerTrack
         ];
       }
       const layer = {
@@ -12544,6 +12557,12 @@ const useCompositorStore = defineStore("compositor", {
      */
     addSplineControlPoint(layerId, point) {
       addSplineControlPoint(this, layerId, point);
+    },
+    /**
+     * Insert a control point at a specific index in a spline layer
+     */
+    insertSplineControlPoint(layerId, point, index) {
+      insertSplineControlPoint(this, layerId, point, index);
     },
     /**
      * Update a spline control point
@@ -45861,29 +45880,38 @@ const _hoisted_2$c = {
   class: "spline-toolbar"
 };
 const _hoisted_3$c = { class: "toolbar-group pen-tools" };
-const _hoisted_4$c = ["disabled"];
-const _hoisted_5$c = ["disabled"];
-const _hoisted_6$c = ["disabled"];
-const _hoisted_7$c = { class: "toolbar-group" };
-const _hoisted_8$c = { class: "tolerance-label" };
-const _hoisted_9$c = { class: "tolerance-value" };
-const _hoisted_10$c = { class: "toolbar-info" };
-const _hoisted_11$b = ["viewBox"];
-const _hoisted_12$b = ["x1", "y1", "x2", "y2"];
-const _hoisted_13$b = ["x1", "y1", "x2", "y2"];
-const _hoisted_14$a = ["cx", "cy", "onMousedown"];
+const _hoisted_4$c = {
+  key: 0,
+  class: "toolbar-group"
+};
+const _hoisted_5$c = {
+  key: 1,
+  class: "toolbar-group"
+};
+const _hoisted_6$c = { class: "tolerance-label" };
+const _hoisted_7$c = { class: "tolerance-value" };
+const _hoisted_8$c = {
+  key: 2,
+  class: "toolbar-info"
+};
+const _hoisted_9$c = ["viewBox"];
+const _hoisted_10$c = ["x1", "y1", "x2", "y2"];
+const _hoisted_11$b = ["x1", "y1", "x2", "y2"];
+const _hoisted_12$b = ["cx", "cy", "onMousedown"];
+const _hoisted_13$b = ["cx", "cy", "onMousedown"];
+const _hoisted_14$a = ["cx", "cy"];
 const _hoisted_15$a = ["cx", "cy", "onMousedown"];
-const _hoisted_16$a = ["cx", "cy"];
-const _hoisted_17$9 = ["cx", "cy", "onMousedown"];
-const _hoisted_18$9 = {
+const _hoisted_16$a = {
   key: 1,
   class: "z-handle-group"
 };
-const _hoisted_19$9 = ["x1", "y1", "x2", "y2"];
-const _hoisted_20$9 = ["points"];
-const _hoisted_21$8 = ["points"];
-const _hoisted_22$8 = ["points", "onMousedown"];
-const _hoisted_23$8 = ["x", "y"];
+const _hoisted_17$9 = ["x1", "y1", "x2", "y2"];
+const _hoisted_18$9 = ["points"];
+const _hoisted_19$9 = ["points"];
+const _hoisted_20$9 = ["points", "onMousedown"];
+const _hoisted_21$8 = ["x", "y"];
+const _hoisted_22$8 = ["d"];
+const _hoisted_23$8 = ["cx", "cy"];
 const _hoisted_24$6 = ["cx", "cy"];
 const _hoisted_25$6 = ["cx", "cy"];
 const CLOSE_THRESHOLD = 15;
@@ -45908,49 +45936,37 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     const selectedPointId = ref(null);
     const previewPoint = ref(null);
     const closePathPreview = ref(false);
+    const previewCurve = ref(null);
+    const insertPreviewPoint = ref(null);
+    const penSubMode = ref("add");
     const dragTarget = ref(null);
     const is3DLayer = computed(() => {
       if (!props.layerId) return false;
       const layer = store.layers.find((l) => l.id === props.layerId);
       return layer?.threeD ?? false;
     });
+    const isClosed = computed(() => {
+      if (!props.layerId) return false;
+      const layer = store.layers.find((l) => l.id === props.layerId);
+      if (!layer || layer.type !== "spline") return false;
+      return layer.data?.closed ?? false;
+    });
     const smoothTolerance = ref(10);
     const hasControlPoints = computed(() => visibleControlPoints.value.length > 0);
-    const selectedPointType = computed(() => {
+    computed(() => {
       if (!selectedPointId.value) return null;
       const point = visibleControlPoints.value.find((p) => p.id === selectedPointId.value);
       return point?.type ?? null;
     });
-    function deleteSelectedPoint() {
-      if (selectedPointId.value && props.layerId) {
-        const pointId = selectedPointId.value;
-        store.deleteSplineControlPoint(props.layerId, pointId);
-        emit("pointDeleted", pointId);
-        emit("pathUpdated");
-        selectedPointId.value = null;
+    function setPenSubMode(mode) {
+      penSubMode.value = mode;
+      if (!props.isPenMode) {
+        emit("togglePenMode");
       }
     }
-    function setPointType(type) {
-      if (!selectedPointId.value || !props.layerId) return;
-      const point = visibleControlPoints.value.find((p) => p.id === selectedPointId.value);
-      if (!point) return;
-      if (type === "corner") {
-        store.updateSplineControlPoint(props.layerId, selectedPointId.value, {
-          type: "corner",
-          handleIn: null,
-          handleOut: null
-        });
-      } else {
-        const handleOffset = 30;
-        const updates = { type: "smooth" };
-        if (!point.handleIn) {
-          updates.handleIn = { x: point.x - handleOffset, y: point.y };
-        }
-        if (!point.handleOut) {
-          updates.handleOut = { x: point.x + handleOffset, y: point.y };
-        }
-        store.updateSplineControlPoint(props.layerId, selectedPointId.value, updates);
-      }
+    function toggleClosePath() {
+      if (!props.layerId) return;
+      store.updateLayerData(props.layerId, { closed: !isClosed.value });
       emit("pathUpdated");
     }
     function smoothSpline() {
@@ -46051,37 +46067,154 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       const screenY = event.clientY - rect.top;
       return screenToCanvas(screenX, screenY);
     }
+    function findClosestPointOnPath(pos) {
+      const points = visibleControlPoints.value;
+      if (points.length < 2) return null;
+      let closest = null;
+      const numSegments = isClosed.value ? points.length : points.length - 1;
+      for (let i = 0; i < numSegments; i++) {
+        const p0 = points[i];
+        const p1 = points[(i + 1) % points.length];
+        for (let t = 0; t <= 1; t += 0.05) {
+          const x = p0.x + t * (p1.x - p0.x);
+          const y = p0.y + t * (p1.y - p0.y);
+          const dist = Math.sqrt((pos.x - x) ** 2 + (pos.y - y) ** 2);
+          if (!closest || dist < closest.dist) {
+            closest = { x, y, segmentIndex: i, t, dist };
+          }
+        }
+      }
+      if (closest && closest.dist < 20) {
+        return { x: closest.x, y: closest.y, segmentIndex: closest.segmentIndex, t: closest.t };
+      }
+      return null;
+    }
     function handleMouseDown(event) {
       if (!props.isPenMode) return;
       const pos = getMousePos(event);
-      if (props.layerId) {
-        const layer = store.layers.find((l) => l.id === props.layerId);
-        if (layer && layer.type === "spline") {
+      if (!props.layerId) return;
+      const layer = store.layers.find((l) => l.id === props.layerId);
+      if (!layer || layer.type !== "spline") return;
+      if (penSubMode.value === "add") {
+        const newPoint = {
+          id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          x: pos.x,
+          y: pos.y,
+          handleIn: null,
+          handleOut: null,
+          type: "corner"
+        };
+        store.addSplineControlPoint(props.layerId, newPoint);
+        selectedPointId.value = newPoint.id;
+        dragTarget.value = {
+          type: "newPoint",
+          pointId: newPoint.id,
+          startX: pos.x,
+          startY: pos.y,
+          newPointX: pos.x,
+          newPointY: pos.y
+        };
+        emit("pointAdded", newPoint);
+        emit("pathUpdated");
+      } else if (penSubMode.value === "insert") {
+        const closest = findClosestPointOnPath(pos);
+        if (closest) {
           const newPoint = {
             id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            x: pos.x,
-            y: pos.y,
+            x: closest.x,
+            y: closest.y,
             handleIn: null,
             handleOut: null,
             type: "corner"
           };
-          store.addSplineControlPoint(props.layerId, newPoint);
+          store.insertSplineControlPoint(props.layerId, newPoint, closest.segmentIndex + 1);
           selectedPointId.value = newPoint.id;
-          dragTarget.value = {
-            type: "handleOut",
-            pointId: newPoint.id,
-            startX: pos.x,
-            startY: pos.y
-          };
           emit("pointAdded", newPoint);
           emit("pathUpdated");
         }
+      } else if (penSubMode.value === "delete") {
+        const clickedPoint = findClickedPoint(pos);
+        if (clickedPoint) {
+          store.deleteSplineControlPoint(props.layerId, clickedPoint.id);
+          emit("pointDeleted", clickedPoint.id);
+          emit("pathUpdated");
+          selectedPointId.value = null;
+        }
+      } else if (penSubMode.value === "convert") {
+        const clickedPoint = findClickedPoint(pos);
+        if (clickedPoint) {
+          const newType = clickedPoint.type === "smooth" ? "corner" : "smooth";
+          if (newType === "corner") {
+            store.updateSplineControlPoint(props.layerId, clickedPoint.id, {
+              type: "corner",
+              handleIn: null,
+              handleOut: null
+            });
+          } else {
+            const handleOffset = 30;
+            store.updateSplineControlPoint(props.layerId, clickedPoint.id, {
+              type: "smooth",
+              handleIn: { x: clickedPoint.x - handleOffset, y: clickedPoint.y },
+              handleOut: { x: clickedPoint.x + handleOffset, y: clickedPoint.y }
+            });
+          }
+          selectedPointId.value = clickedPoint.id;
+          emit("pathUpdated");
+        }
       }
+    }
+    function findClickedPoint(pos) {
+      const threshold = 10;
+      for (const point of visibleControlPoints.value) {
+        const dist = Math.sqrt((pos.x - point.x) ** 2 + (pos.y - point.y) ** 2);
+        if (dist < threshold) {
+          return point;
+        }
+      }
+      return null;
+    }
+    function generateCurvePreview(lastPoint, handleOut, newPos) {
+      const h1x = handleOut.x;
+      const h1y = handleOut.y;
+      const h2x = newPos.x - (handleOut.x - lastPoint.x);
+      const h2y = newPos.y - (handleOut.y - lastPoint.y);
+      return `M ${lastPoint.x},${lastPoint.y} C ${h1x},${h1y} ${h2x},${h2y} ${newPos.x},${newPos.y}`;
     }
     function handleMouseMove(event) {
       const pos = getMousePos(event);
       if (props.isPenMode) {
         previewPoint.value = pos;
+        if (penSubMode.value === "insert") {
+          const closest = findClosestPointOnPath(pos);
+          insertPreviewPoint.value = closest;
+        } else {
+          insertPreviewPoint.value = null;
+        }
+      }
+      if (dragTarget.value?.type === "newPoint") {
+        const points = visibleControlPoints.value;
+        if (points.length >= 2) {
+          const newPoint = points.find((p) => p.id === dragTarget.value.pointId);
+          const prevPointIndex = points.indexOf(newPoint) - 1;
+          if (newPoint && prevPointIndex >= 0) {
+            const prevPoint = points[prevPointIndex];
+            const handleOut = { x: pos.x, y: pos.y };
+            previewCurve.value = generateCurvePreview(prevPoint, handleOut, newPoint);
+            if (props.layerId) {
+              const dx = pos.x - newPoint.x;
+              const dy = pos.y - newPoint.y;
+              if (Math.sqrt(dx * dx + dy * dy) > 5) {
+                store.updateSplineControlPoint(props.layerId, newPoint.id, {
+                  handleOut: { x: pos.x, y: pos.y },
+                  handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+                  type: "smooth"
+                });
+              }
+            }
+          }
+        }
+      } else {
+        previewCurve.value = null;
       }
       if (canClosePath.value && visibleControlPoints.value.length > 0) {
         const firstPoint = visibleControlPoints.value[0];
@@ -46138,12 +46271,18 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       }
     }
     function handleMouseUp() {
+      previewCurve.value = null;
       if (dragTarget.value && props.layerId) {
+        if (dragTarget.value.type === "newPoint") {
+          dragTarget.value = null;
+          emit("pathUpdated");
+          return;
+        }
         const layer = store.layers.find((l) => l.id === props.layerId);
         if (layer && layer.type === "spline") {
           const splineData = layer.data;
           const point = splineData.controlPoints?.find((p) => p.id === dragTarget.value.pointId);
-          if (point && point.handleOut) {
+          if (point && point.handleOut && dragTarget.value.type === "handleOut") {
             const dx = point.handleOut.x - point.x;
             const dy = point.handleOut.y - point.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -46239,13 +46378,13 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     });
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$c, [
-        __props.layerId && hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_2$c, [
+        __props.layerId ? (openBlock(), createElementBlock("div", _hoisted_2$c, [
           createBaseVNode("div", _hoisted_3$c, [
             createBaseVNode("button", {
-              class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode }]),
-              onClick: _cache[0] || (_cache[0] = ($event) => emit("togglePenMode")),
-              title: "Add Points (P)"
-            }, [..._cache[4] || (_cache[4] = [
+              class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "add" }]),
+              onClick: _cache[0] || (_cache[0] = ($event) => setPenSubMode("add")),
+              title: "Pen Tool (P) - Add points at end of path"
+            }, [..._cache[5] || (_cache[5] = [
               createBaseVNode("svg", {
                 viewBox: "0 0 24 24",
                 width: "14",
@@ -46255,14 +46394,28 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                   fill: "currentColor",
                   d: "M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
                 })
-              ], -1)
+              ], -1),
+              createBaseVNode("span", { class: "tool-label" }, "Pen", -1)
             ])], 2),
             createBaseVNode("button", {
-              class: "toolbar-btn icon-btn",
-              disabled: !selectedPointId.value,
-              onClick: deleteSelectedPoint,
-              title: "Delete Point (Del)"
-            }, [..._cache[5] || (_cache[5] = [
+              class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "insert" }]),
+              onClick: _cache[1] || (_cache[1] = ($event) => setPenSubMode("insert")),
+              title: "Add Point (+) - Click on path to insert point"
+            }, [..._cache[6] || (_cache[6] = [
+              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-01ca1e7f><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-01ca1e7f></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-01ca1e7f></circle><path fill="currentColor" d="M18,15v6M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-01ca1e7f></path></svg><span class="tool-label" data-v-01ca1e7f>Pen+</span>', 2)
+            ])], 2),
+            createBaseVNode("button", {
+              class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "delete" }]),
+              onClick: _cache[2] || (_cache[2] = ($event) => setPenSubMode("delete")),
+              title: "Delete Point (-) - Click point to remove"
+            }, [..._cache[7] || (_cache[7] = [
+              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-01ca1e7f><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-01ca1e7f></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-01ca1e7f></circle><path fill="currentColor" d="M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-01ca1e7f></path></svg><span class="tool-label" data-v-01ca1e7f>Pen-</span>', 2)
+            ])], 2),
+            createBaseVNode("button", {
+              class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "convert" }]),
+              onClick: _cache[3] || (_cache[3] = ($event) => setPenSubMode("convert")),
+              title: "Convert Point (^) - Click to toggle smooth/corner"
+            }, [..._cache[8] || (_cache[8] = [
               createBaseVNode("svg", {
                 viewBox: "0 0 24 24",
                 width: "14",
@@ -46270,57 +46423,15 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
               }, [
                 createBaseVNode("path", {
                   fill: "currentColor",
-                  d: "M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+                  d: "M12,2L6,8H9V14H6L12,20L18,14H15V8H18L12,2Z",
+                  transform: "rotate(180 12 11)"
                 })
-              ], -1)
-            ])], 8, _hoisted_4$c),
-            _cache[8] || (_cache[8] = createBaseVNode("div", { class: "toolbar-separator" }, null, -1)),
-            createBaseVNode("button", {
-              class: normalizeClass(["toolbar-btn icon-btn", { active: selectedPointType.value === "smooth" }]),
-              disabled: !selectedPointId.value,
-              onClick: _cache[1] || (_cache[1] = ($event) => setPointType("smooth")),
-              title: "Smooth Point (bezier handles)"
-            }, [..._cache[6] || (_cache[6] = [
-              createBaseVNode("svg", {
-                viewBox: "0 0 24 24",
-                width: "14",
-                height: "14"
-              }, [
-                createBaseVNode("circle", {
-                  cx: "12",
-                  cy: "12",
-                  r: "6",
-                  fill: "none",
-                  stroke: "currentColor",
-                  "stroke-width": "2"
-                })
-              ], -1)
-            ])], 10, _hoisted_5$c),
-            createBaseVNode("button", {
-              class: normalizeClass(["toolbar-btn icon-btn", { active: selectedPointType.value === "corner" }]),
-              disabled: !selectedPointId.value,
-              onClick: _cache[2] || (_cache[2] = ($event) => setPointType("corner")),
-              title: "Corner Point (linear)"
-            }, [..._cache[7] || (_cache[7] = [
-              createBaseVNode("svg", {
-                viewBox: "0 0 24 24",
-                width: "14",
-                height: "14"
-              }, [
-                createBaseVNode("rect", {
-                  x: "6",
-                  y: "6",
-                  width: "12",
-                  height: "12",
-                  fill: "none",
-                  stroke: "currentColor",
-                  "stroke-width": "2"
-                })
-              ], -1)
-            ])], 10, _hoisted_6$c)
+              ], -1),
+              createBaseVNode("span", { class: "tool-label" }, "Convert", -1)
+            ])], 2)
           ]),
           _cache[10] || (_cache[10] = createBaseVNode("div", { class: "toolbar-separator" }, null, -1)),
-          createBaseVNode("div", { class: "toolbar-group" }, [
+          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_4$c, [
             createBaseVNode("button", {
               class: "toolbar-btn",
               onClick: smoothSpline,
@@ -46330,14 +46441,19 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
               class: "toolbar-btn",
               onClick: simplifySpline,
               title: "Simplify path (reduce control points)"
-            }, " Simplify ")
-          ]),
-          createBaseVNode("div", _hoisted_7$c, [
-            createBaseVNode("label", _hoisted_8$c, [
+            }, " Simplify "),
+            createBaseVNode("button", {
+              class: normalizeClass(["toolbar-btn", { active: isClosed.value }]),
+              onClick: toggleClosePath,
+              title: "Toggle closed path"
+            }, toDisplayString(isClosed.value ? "Open" : "Close"), 3)
+          ])) : createCommentVNode("", true),
+          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_5$c, [
+            createBaseVNode("label", _hoisted_6$c, [
               _cache[9] || (_cache[9] = createTextVNode(" Tolerance: ", -1)),
               withDirectives(createBaseVNode("input", {
                 type: "range",
-                "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => smoothTolerance.value = $event),
+                "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => smoothTolerance.value = $event),
                 min: "1",
                 max: "50",
                 step: "1",
@@ -46350,10 +46466,10 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                   { number: true }
                 ]
               ]),
-              createBaseVNode("span", _hoisted_9$c, toDisplayString(smoothTolerance.value) + "px", 1)
+              createBaseVNode("span", _hoisted_7$c, toDisplayString(smoothTolerance.value) + "px", 1)
             ])
-          ]),
-          createBaseVNode("div", _hoisted_10$c, toDisplayString(visibleControlPoints.value.length) + " points ", 1)
+          ])) : createCommentVNode("", true),
+          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_8$c, toDisplayString(visibleControlPoints.value.length) + " points ", 1)) : createCommentVNode("", true)
         ])) : createCommentVNode("", true),
         (openBlock(), createElementBlock("svg", {
           class: "control-overlay",
@@ -46376,7 +46492,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 x2: point.handleIn.x,
                 y2: point.handleIn.y,
                 class: "handle-line"
-              }, null, 8, _hoisted_12$b)) : createCommentVNode("", true),
+              }, null, 8, _hoisted_10$c)) : createCommentVNode("", true),
               point.handleOut && selectedPointId.value === point.id ? (openBlock(), createElementBlock("line", {
                 key: 1,
                 x1: point.x,
@@ -46384,7 +46500,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 x2: point.handleOut.x,
                 y2: point.handleOut.y,
                 class: "handle-line"
-              }, null, 8, _hoisted_13$b)) : createCommentVNode("", true)
+              }, null, 8, _hoisted_11$b)) : createCommentVNode("", true)
             ], 64);
           }), 128)),
           (openBlock(true), createElementBlock(Fragment, null, renderList(visibleControlPoints.value, (point) => {
@@ -46398,7 +46514,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 r: "4",
                 class: normalizeClass(["handle-point", { active: dragTarget.value?.type === "handleIn" && dragTarget.value.pointId === point.id }]),
                 onMousedown: withModifiers(($event) => startDragHandle(point.id, "in", $event), ["stop"])
-              }, null, 42, _hoisted_14$a)) : createCommentVNode("", true),
+              }, null, 42, _hoisted_12$b)) : createCommentVNode("", true),
               point.handleOut && selectedPointId.value === point.id ? (openBlock(), createElementBlock("circle", {
                 key: 1,
                 cx: point.handleOut.x,
@@ -46406,7 +46522,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 r: "4",
                 class: normalizeClass(["handle-point", { active: dragTarget.value?.type === "handleOut" && dragTarget.value.pointId === point.id }]),
                 onMousedown: withModifiers(($event) => startDragHandle(point.id, "out", $event), ["stop"])
-              }, null, 42, _hoisted_15$a)) : createCommentVNode("", true)
+              }, null, 42, _hoisted_13$b)) : createCommentVNode("", true)
             ], 64);
           }), 128)),
           (openBlock(true), createElementBlock(Fragment, null, renderList(visibleControlPoints.value, (point) => {
@@ -46419,7 +46535,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 cy: point.y,
                 r: "9",
                 class: "keyframe-indicator"
-              }, null, 8, _hoisted_16$a)) : createCommentVNode("", true),
+              }, null, 8, _hoisted_14$a)) : createCommentVNode("", true),
               createBaseVNode("circle", {
                 cx: point.x,
                 cy: point.y,
@@ -46431,57 +46547,70 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                   keyframed: pointHasKeyframes(point.id)
                 }]),
                 onMousedown: withModifiers(($event) => startDragPoint(point.id, $event), ["stop"])
-              }, null, 42, _hoisted_17$9),
-              selectedPointId.value === point.id && is3DLayer.value ? (openBlock(), createElementBlock("g", _hoisted_18$9, [
+              }, null, 42, _hoisted_15$a),
+              selectedPointId.value === point.id && is3DLayer.value ? (openBlock(), createElementBlock("g", _hoisted_16$a, [
                 createBaseVNode("line", {
                   x1: point.x + 15,
                   y1: point.y - 30,
                   x2: point.x + 15,
                   y2: point.y + 30,
                   class: "z-axis-line"
-                }, null, 8, _hoisted_19$9),
+                }, null, 8, _hoisted_17$9),
                 createBaseVNode("polygon", {
                   points: `${point.x + 15},${point.y - 35} ${point.x + 12},${point.y - 28} ${point.x + 18},${point.y - 28}`,
                   class: "z-arrow"
-                }, null, 8, _hoisted_20$9),
+                }, null, 8, _hoisted_18$9),
                 createBaseVNode("polygon", {
                   points: `${point.x + 15},${point.y + 35} ${point.x + 12},${point.y + 28} ${point.x + 18},${point.y + 28}`,
                   class: "z-arrow"
-                }, null, 8, _hoisted_21$8),
+                }, null, 8, _hoisted_19$9),
                 createBaseVNode("polygon", {
                   points: getZHandlePoints(point),
                   class: normalizeClass(["z-handle", { active: dragTarget.value?.type === "depth" && dragTarget.value.pointId === point.id }]),
                   onMousedown: withModifiers(($event) => startDragDepth(point.id, $event), ["stop"])
-                }, null, 42, _hoisted_22$8),
+                }, null, 42, _hoisted_20$9),
                 createBaseVNode("text", {
                   x: point.x + 25,
                   y: point.y + getDepthOffset(point),
                   class: "z-label"
-                }, " Z: " + toDisplayString(getPointDepth(point).toFixed(0)), 9, _hoisted_23$8)
+                }, " Z: " + toDisplayString(getPointDepth(point).toFixed(0)), 9, _hoisted_21$8)
               ])) : createCommentVNode("", true)
             ]);
           }), 128)),
-          previewPoint.value && __props.isPenMode ? (openBlock(), createElementBlock("circle", {
+          previewCurve.value ? (openBlock(), createElementBlock("path", {
             key: 0,
+            d: previewCurve.value,
+            class: "preview-curve",
+            fill: "none"
+          }, null, 8, _hoisted_22$8)) : createCommentVNode("", true),
+          previewPoint.value && __props.isPenMode ? (openBlock(), createElementBlock("circle", {
+            key: 1,
             cx: previewPoint.value.x,
             cy: previewPoint.value.y,
             r: "4",
             class: "preview-point"
+          }, null, 8, _hoisted_23$8)) : createCommentVNode("", true),
+          insertPreviewPoint.value && penSubMode.value === "insert" ? (openBlock(), createElementBlock("circle", {
+            key: 2,
+            cx: insertPreviewPoint.value.x,
+            cy: insertPreviewPoint.value.y,
+            r: "5",
+            class: "insert-preview-point"
           }, null, 8, _hoisted_24$6)) : createCommentVNode("", true),
           canClosePath.value && closePathPreview.value ? (openBlock(), createElementBlock("circle", {
-            key: 1,
+            key: 3,
             cx: visibleControlPoints.value[0].x,
             cy: visibleControlPoints.value[0].y,
             r: "10",
             class: "close-indicator"
           }, null, 8, _hoisted_25$6)) : createCommentVNode("", true)
-        ], 44, _hoisted_11$b))
+        ], 44, _hoisted_9$c))
       ]);
     };
   }
 });
 
-const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-88cbe9ca"]]);
+const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-01ca1e7f"]]);
 
 const _hoisted_1$b = {
   key: 1,
@@ -48065,7 +48194,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
     const isExpanded = computed(() => props.isExpandedExternal ?? localExpanded.value);
     const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
     const hasAudioCapability = computed(() => ["video", "audio", "precomp"].includes(props.layer.type));
-    const expandedGroups = ref(["Transform", "Text", "More Options"]);
+    const expandedGroups = ref(["Transform", "Text", "More Options", "Stroke", "Fill", "Trim Paths", "Path Options"]);
     const isRenaming = ref(false);
     const renameVal = ref("");
     const renameInput = ref(null);
@@ -48165,6 +48294,12 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
           { path: "materialOptions.specularIntensity", name: "Specular Intensity", property: { value: mat.specularIntensity, type: "percent" } },
           { path: "materialOptions.specularShininess", name: "Specular Shininess", property: { value: mat.specularShininess, type: "percent" } },
           { path: "materialOptions.metal", name: "Metal", property: { value: mat.metal, type: "percent" } }
+        ];
+      }
+      if (props.layer.type === "spline" && props.layer.data) {
+        const splineData = props.layer.data;
+        groups["Path Options"] = [
+          { path: "data.closed", name: "Closed", property: { value: splineData.closed ?? false, type: "boolean" } }
         ];
       }
       if (props.layer.properties) {
@@ -48725,7 +48860,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
   }
 });
 
-const EnhancedLayerTrack = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-a64892fa"]]);
+const EnhancedLayerTrack = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-bdfa74cc"]]);
 
 const _hoisted_1$8 = { class: "composition-tabs" };
 const _hoisted_2$8 = {
