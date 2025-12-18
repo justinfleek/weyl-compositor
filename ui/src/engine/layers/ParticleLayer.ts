@@ -361,6 +361,9 @@ export class ParticleLayer extends BaseLayer {
     if (mesh) {
       this.group.add(mesh);
     }
+
+    // Create emitter and force field gizmos for visualization
+    this.createGizmos();
   }
 
   /**

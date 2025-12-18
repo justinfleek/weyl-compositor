@@ -35235,6 +35235,7 @@ class ParticleLayer extends BaseLayer {
     if (mesh) {
       this.group.add(mesh);
     }
+    this.createGizmos();
   }
   /**
    * Set renderer for lazy initialization
