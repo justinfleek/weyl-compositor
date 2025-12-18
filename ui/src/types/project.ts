@@ -1494,9 +1494,25 @@ export interface SplineData {
   pathData: string;     // SVG path commands (M, C, Q, L, Z)
   controlPoints: ControlPoint[];
   closed: boolean;
-  stroke: string;
-  strokeWidth: number;
-  fill: string;
+
+  // Stroke properties
+  stroke: string;              // Stroke color hex
+  strokeWidth: number;         // Stroke width in pixels
+  strokeOpacity?: number;      // Stroke opacity 0-100 (default 100)
+  strokeLineCap?: 'butt' | 'round' | 'square';  // Line cap style
+  strokeLineJoin?: 'miter' | 'round' | 'bevel'; // Line join style
+  strokeMiterLimit?: number;   // Miter limit (default 4)
+  strokeDashArray?: number[];  // Dash pattern [dash, gap, dash, gap, ...]
+  strokeDashOffset?: number;   // Dash offset
+
+  // Fill properties
+  fill: string;                // Fill color hex (empty = no fill)
+  fillOpacity?: number;        // Fill opacity 0-100 (default 100)
+
+  // Trim Paths (like After Effects)
+  trimStart?: number;          // Trim start 0-100%
+  trimEnd?: number;            // Trim end 0-100%
+  trimOffset?: number;         // Trim offset in degrees
 
   // Animated spline support (Phase 1)
   animatedControlPoints?: AnimatableControlPoint[];

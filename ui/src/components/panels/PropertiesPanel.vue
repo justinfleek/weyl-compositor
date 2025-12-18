@@ -294,6 +294,7 @@ import DepthflowProperties from '@/components/properties/DepthflowProperties.vue
 import LightProperties from '@/components/properties/LightProperties.vue';
 import ShapeProperties from '@/components/properties/ShapeProperties.vue';
 import VideoProperties from '@/components/properties/VideoProperties.vue';
+import CameraProperties from '@/components/properties/CameraProperties.vue';
 import Pickwhip from '@/components/controls/Pickwhip.vue';
 import DriverList from '@/components/panels/DriverList.vue';
 import type { PropertyPath } from '@/services/propertyDriver';
@@ -387,6 +388,8 @@ const layerPropertiesComponent = computed<Component | null>(() => {
       return markRaw(ShapeProperties);
     case 'video':
       return markRaw(VideoProperties);
+    case 'camera':
+      return markRaw(CameraProperties);
     default:
       return null;
   }
