@@ -7,9 +7,10 @@
           <div class="icon-col" @mousedown.stop="toggleVis" :title="layer.visible ? 'Hide' : 'Show'">
             <span :class="{ inactive: !layer.visible }">👁</span>
           </div>
-          <div class="icon-col" @mousedown.stop="toggleAudio" :title="layer.audioEnabled !== false ? 'Mute Audio' : 'Enable Audio'">
+          <div class="icon-col" v-if="hasAudioCapability" @mousedown.stop="toggleAudio" :title="layer.audioEnabled !== false ? 'Mute Audio' : 'Enable Audio'">
             <span :class="{ inactive: layer.audioEnabled === false }">🔊</span>
           </div>
+          <div class="icon-col placeholder" v-else></div>
           <div class="icon-col" @mousedown.stop="toggleSolo" :title="layer.solo ? 'Unsolo' : 'Solo'">
             <span :class="{ active: layer.solo }">●</span>
           </div>
@@ -163,6 +164,8 @@ const store = useCompositorStore();
 const localExpanded = ref(false);
 const isExpanded = computed(() => props.isExpandedExternal ?? localExpanded.value);
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
+// Only video and audio layers have audio capability
+const hasAudioCapability = computed(() => ['video', 'audio', 'precomp'].includes(props.layer.type));
 const expandedGroups = ref<string[]>(['Transform', 'Text', 'More Options']);
 const isRenaming = ref(false);
 const renameVal = ref('');
@@ -283,11 +286,13 @@ const groupedProperties = computed(() => {
 
 const barStyle = computed(() => {
   const frameCount = props.frameCount || 81;
+  const inPoint = props.layer.inPoint ?? 0;
+  const outPoint = props.layer.outPoint ?? (frameCount - 1);
 
   // Use CSS percentages - positions relative to parent container width
   // This ensures layer bar fills viewport when layer spans full composition
-  const leftPct = (props.layer.inPoint / frameCount) * 100;
-  const widthPct = ((props.layer.outPoint - props.layer.inPoint + 1) / frameCount) * 100;
+  const leftPct = Math.max(0, (inPoint / frameCount) * 100);
+  const widthPct = Math.max(1, ((outPoint - inPoint + 1) / frameCount) * 100); // Minimum 1% width
 
   return {
     left: `${leftPct}%`,
@@ -513,6 +518,7 @@ onUnmounted(() => {
 .icon-col:hover span { color: #ccc; }
 .icon-col span.active { color: #4a90d9; }
 .icon-col span.inactive { opacity: 0.3; }
+.icon-col.placeholder { cursor: default; }
 
 /* Arrow column */
 .arrow-col {
