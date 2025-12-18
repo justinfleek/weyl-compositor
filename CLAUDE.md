@@ -217,7 +217,18 @@ const barWidth = (layer.outPoint - layer.inPoint + 1) * pixelsPerFrame;
 
 ---
 
-## 10. DETERMINISM REQUIREMENTS
+## 10. SCREENSHOTS & REFERENCE IMAGES
+
+**IMPORTANT**: When looking for screenshots or reference images, ONLY check this repository's folders:
+- `/screenshots/` - Bug reports and current state screenshots
+- `/reference_images/` - After Effects UI reference images
+- `/screenshots/ground-truths/` - Expected UI appearance
+
+**NEVER** search in ~/Downloads, ~/Desktop, /tmp, or other system folders for screenshots.
+
+---
+
+## 11. DETERMINISM REQUIREMENTS
 
 For diffusion model compatibility:
 - `evaluate(frame)` must return identical results every call

@@ -208,14 +208,62 @@
           @mouseleave="handlePointLeave"
         />
 
-        <!-- Selection ring (shown when point is selected, not in pen mode) -->
-        <circle
-          v-if="selectedPointId === point.id && !props.isPenMode"
-          :cx="point.x"
-          :cy="point.y"
-          r="10"
-          class="selection-ring"
-        />
+        <!-- Axis handles (shown when point is selected, not in pen mode) -->
+        <g v-if="selectedPointId === point.id && !props.isPenMode" class="axis-handles">
+          <!-- Selection ring -->
+          <circle
+            :cx="point.x"
+            :cy="point.y"
+            r="10"
+            class="selection-ring"
+          />
+
+          <!-- X-axis handle (red, horizontal arrow) -->
+          <g class="axis-x-group">
+            <line
+              :x1="point.x + 12"
+              :y1="point.y"
+              :x2="point.x + 35"
+              :y2="point.y"
+              class="axis-line axis-x"
+            />
+            <polygon
+              :points="`${point.x + 40},${point.y} ${point.x + 33},${point.y - 4} ${point.x + 33},${point.y + 4}`"
+              class="axis-arrow axis-x"
+            />
+            <rect
+              :x="point.x + 12"
+              :y="point.y - 8"
+              width="30"
+              height="16"
+              class="axis-hit-area"
+              @mousedown.stop="startDragAxis(point.id, 'X', $event)"
+            />
+          </g>
+
+          <!-- Y-axis handle (green, vertical arrow) -->
+          <g class="axis-y-group">
+            <line
+              :x1="point.x"
+              :y1="point.y + 12"
+              :x2="point.x"
+              :y2="point.y + 35"
+              class="axis-line axis-y"
+            />
+            <polygon
+              :points="`${point.x},${point.y + 40} ${point.x - 4},${point.y + 33} ${point.x + 4},${point.y + 33}`"
+              class="axis-arrow axis-y"
+            />
+            <rect
+              :x="point.x - 8"
+              :y="point.y + 12"
+              width="16"
+              height="30"
+              class="axis-hit-area"
+              @mousedown.stop="startDragAxis(point.id, 'Y', $event)"
+            />
+          </g>
+        </g>
 
         <!-- Z-depth handle (shown when point is selected and layer is 3D) -->
         <g
@@ -338,13 +386,15 @@ const previewCurve = ref<string | null>(null);
 const insertPreviewPoint = ref<{ x: number; y: number; segmentIndex: number } | null>(null);
 const penSubMode = ref<'add' | 'insert' | 'delete' | 'convert'>('add');
 const dragTarget = ref<{
-  type: 'point' | 'handleIn' | 'handleOut' | 'depth' | 'newPoint';
+  type: 'point' | 'handleIn' | 'handleOut' | 'depth' | 'newPoint' | 'axisX' | 'axisY';
   pointId: string;
   startX: number;
   startY: number;
   startDepth?: number;
   newPointX?: number;
   newPointY?: number;
+  originalX?: number;
+  originalY?: number;
 } | null>(null);
 
 // Computed: active tool tip text
@@ -726,7 +776,28 @@ function getMousePos(event: MouseEvent): { x: number; y: number } {
   return screenToCanvas(screenX, screenY);
 }
 
-// Find closest point on path for insert mode
+// Evaluate cubic bezier curve at parameter t
+function evaluateBezier(p0: { x: number; y: number }, h0: { x: number; y: number } | null, h1: { x: number; y: number } | null, p1: { x: number; y: number }, t: number): { x: number; y: number } {
+  // Use handles if they exist, otherwise use control points (linear)
+  const cp0 = p0;
+  const cp1 = h0 || p0; // handleOut of p0
+  const cp2 = h1 || p1; // handleIn of p1
+  const cp3 = p1;
+
+  // Cubic bezier formula: B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const mt3 = mt2 * mt;
+  const t2 = t * t;
+  const t3 = t2 * t;
+
+  return {
+    x: mt3 * cp0.x + 3 * mt2 * t * cp1.x + 3 * mt * t2 * cp2.x + t3 * cp3.x,
+    y: mt3 * cp0.y + 3 * mt2 * t * cp1.y + 3 * mt * t2 * cp2.y + t3 * cp3.y
+  };
+}
+
+// Find closest point on path for insert mode (uses proper bezier interpolation)
 function findClosestPointOnPath(pos: { x: number; y: number }): { x: number; y: number; segmentIndex: number; t: number } | null {
   const points = visibleControlPoints.value;
   if (points.length < 2) return null;
@@ -739,15 +810,17 @@ function findClosestPointOnPath(pos: { x: number; y: number }): { x: number; y: 
     const p0 = points[i];
     const p1 = points[(i + 1) % points.length];
 
-    // Simple line segment check (could be improved with bezier curve check)
-    // For now, use linear interpolation
-    for (let t = 0; t <= 1; t += 0.05) {
-      const x = p0.x + t * (p1.x - p0.x);
-      const y = p0.y + t * (p1.y - p0.y);
-      const dist = Math.sqrt((pos.x - x) ** 2 + (pos.y - y) ** 2);
+    // Get handles for bezier curve
+    const h0 = p0.handleOut; // handleOut of p0
+    const h1 = p1.handleIn;  // handleIn of p1
+
+    // Sample the bezier curve at multiple points
+    for (let t = 0; t <= 1; t += 0.02) { // More samples for accuracy
+      const pt = evaluateBezier(p0, h0, h1, p1, t);
+      const dist = Math.sqrt((pos.x - pt.x) ** 2 + (pos.y - pt.y) ** 2);
 
       if (!closest || dist < closest.dist) {
-        closest = { x, y, segmentIndex: i, t, dist };
+        closest = { x: pt.x, y: pt.y, segmentIndex: i, t, dist };
       }
     }
   }
@@ -916,13 +989,33 @@ function handleMouseMove(event: MouseEvent) {
       }
     }
 
-    // Show preview line from last point to mouse in 'add' mode (before clicking)
+    // Show preview curve from last point to mouse in 'add' mode (before clicking)
     if (penSubMode.value === 'add' && !dragTarget.value) {
       const points = visibleControlPoints.value;
       if (points.length > 0) {
         const lastPoint = points[points.length - 1];
-        // Simple straight line preview (curve will form when dragging after click)
-        previewCurve.value = `M ${lastPoint.x},${lastPoint.y} L ${pos.x},${pos.y}`;
+        // Use bezier curve preview that follows the last point's handleOut
+        if (lastPoint.handleOut) {
+          // Create a smooth curve using the existing handleOut
+          // Mirror the handleOut direction for the incoming handle of the preview point
+          const h1x = lastPoint.handleOut.x;
+          const h1y = lastPoint.handleOut.y;
+          // Calculate mirrored handle for the target point
+          const dx = pos.x - lastPoint.x;
+          const dy = pos.y - lastPoint.y;
+          const h2x = pos.x - dx * 0.3;
+          const h2y = pos.y - dy * 0.3;
+          previewCurve.value = `M ${lastPoint.x},${lastPoint.y} C ${h1x},${h1y} ${h2x},${h2y} ${pos.x},${pos.y}`;
+        } else {
+          // No handleOut, show a gentle curve based on direction
+          const dx = pos.x - lastPoint.x;
+          const dy = pos.y - lastPoint.y;
+          const h1x = lastPoint.x + dx * 0.3;
+          const h1y = lastPoint.y + dy * 0.3;
+          const h2x = pos.x - dx * 0.3;
+          const h2y = pos.y - dy * 0.3;
+          previewCurve.value = `M ${lastPoint.x},${lastPoint.y} C ${h1x},${h1y} ${h2x},${h2y} ${pos.x},${pos.y}`;
+        }
       }
     }
   }
@@ -1042,6 +1135,40 @@ function handleMouseMove(event: MouseEvent) {
       const newDepth = Math.max(0, (dragTarget.value.startDepth ?? 0) + dy * depthScale);
 
       store.updateSplineControlPoint(props.layerId, point.id, { depth: newDepth });
+    } else if (dragTarget.value.type === 'axisX') {
+      // Move only along X-axis - use delta from start position
+      const dx = pos.x - dragTarget.value.startX;
+      const newX = (dragTarget.value.originalX ?? point.x) + dx;
+
+      // Move handles along with point
+      const handleDx = newX - point.x;
+      const updates: any = { x: newX };
+      if (point.handleIn) {
+        updates.handleIn = { x: point.handleIn.x + handleDx, y: point.handleIn.y };
+      }
+      if (point.handleOut) {
+        updates.handleOut = { x: point.handleOut.x + handleDx, y: point.handleOut.y };
+      }
+
+      store.updateSplineControlPoint(props.layerId, point.id, updates);
+      emit('pointMoved', point.id, newX, point.y);
+    } else if (dragTarget.value.type === 'axisY') {
+      // Move only along Y-axis - use delta from start position
+      const dy = pos.y - dragTarget.value.startY;
+      const newY = (dragTarget.value.originalY ?? point.y) + dy;
+
+      // Move handles along with point
+      const handleDy = newY - point.y;
+      const updates: any = { y: newY };
+      if (point.handleIn) {
+        updates.handleIn = { x: point.handleIn.x, y: point.handleIn.y + handleDy };
+      }
+      if (point.handleOut) {
+        updates.handleOut = { x: point.handleOut.x, y: point.handleOut.y + handleDy };
+      }
+
+      store.updateSplineControlPoint(props.layerId, point.id, updates);
+      emit('pointMoved', point.id, point.x, newY);
     }
 
     emit('pathUpdated');
@@ -1249,6 +1376,25 @@ function startDragHandle(pointId: string, handleType: 'in' | 'out', event: Mouse
     pointId,
     startX: pos.x,
     startY: pos.y
+  };
+}
+
+// Start axis-constrained drag
+function startDragAxis(pointId: string, axis: 'X' | 'Y', event: MouseEvent) {
+  const point = visibleControlPoints.value.find(p => p.id === pointId);
+  if (!point) return;
+
+  // Get the mouse position in canvas coordinates
+  const pos = getMousePos(event);
+
+  selectedPointId.value = pointId;
+  dragTarget.value = {
+    type: axis === 'X' ? 'axisX' : 'axisY',
+    pointId,
+    startX: pos.x,
+    startY: pos.y,
+    originalX: point.x,
+    originalY: point.y
   };
 }
 
@@ -1472,6 +1618,60 @@ defineExpose({
   stroke-dasharray: 4 2;
   pointer-events: none;
   opacity: 0.8;
+}
+
+/* Axis handles for X/Y movement */
+.axis-handles {
+  pointer-events: none;
+}
+
+.axis-line {
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.axis-line.axis-x {
+  stroke: #ff4444;
+}
+
+.axis-line.axis-y {
+  stroke: #44ff44;
+}
+
+.axis-arrow {
+  pointer-events: none;
+}
+
+.axis-arrow.axis-x {
+  fill: #ff4444;
+}
+
+.axis-arrow.axis-y {
+  fill: #44ff44;
+}
+
+.axis-hit-area {
+  fill: transparent;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.axis-x-group .axis-hit-area {
+  cursor: ew-resize;
+}
+
+.axis-x-group .axis-hit-area:hover ~ .axis-line,
+.axis-x-group .axis-hit-area:hover ~ .axis-arrow {
+  filter: brightness(1.3);
+}
+
+.axis-y-group .axis-hit-area {
+  cursor: ns-resize;
+}
+
+.axis-y-group .axis-hit-area:hover ~ .axis-line,
+.axis-y-group .axis-hit-area:hover ~ .axis-arrow {
+  filter: brightness(1.3);
 }
 
 /* Spline Toolbar Styles - bottom center popup for spline layers */

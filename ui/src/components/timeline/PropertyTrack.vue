@@ -3,14 +3,21 @@
     <div v-if="layoutMode === 'sidebar'" class="prop-sidebar" :class="{ selected: isSelected }" :style="gridStyle" @click="selectProp">
       <div class="indent-spacer"></div>
 
-      <!-- Stopwatch first (left), then keyframe diamond -->
-      <div class="icon-box" @click.stop="toggleAnim">
-        <span class="stopwatch" :class="{ active: property.animated }">⏱</span>
-      </div>
+      <!-- Stopwatch first (left), then keyframe diamond - hidden if property is not animatable -->
+      <template v-if="property.animatable !== false">
+        <div class="icon-box" @click.stop="toggleAnim">
+          <span class="stopwatch" :class="{ active: property.animated }">⏱</span>
+        </div>
 
-      <div class="icon-box" @click.stop="addKeyframeAtCurrent">
-        <span class="kf-btn" :class="{ active: hasKeyframeAtCurrent }">◇</span>
-      </div>
+        <div class="icon-box" @click.stop="addKeyframeAtCurrent">
+          <span class="kf-btn" :class="{ active: hasKeyframeAtCurrent }">◇</span>
+        </div>
+      </template>
+      <!-- Empty spacer when not animatable to maintain alignment -->
+      <template v-else>
+        <div class="icon-box disabled"></div>
+        <div class="icon-box disabled"></div>
+      </template>
 
       <div class="prop-content">
         <span class="prop-name">{{ name }}</span>

@@ -275,11 +275,11 @@ const groupedProperties = computed(() => {
     ];
   }
 
-  // Path Options (for spline layers)
+  // Path Options (for spline layers) - Closed is NOT animatable
   if (props.layer.type === 'spline' && props.layer.data) {
     const splineData = props.layer.data as any;
     groups['Path Options'] = [
-      { path: 'data.closed', name: 'Closed', property: { value: splineData.closed ?? false, type: 'boolean' } }
+      { path: 'data.closed', name: 'Closed', property: { value: splineData.closed ?? false, type: 'boolean', animatable: false } }
     ];
   }
 
