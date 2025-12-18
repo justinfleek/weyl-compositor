@@ -85,10 +85,13 @@ export class CameraController {
 
     this.orbitControls = new OrbitControls(this.camera, domElement);
 
-    // Configure controls for Cinema 4D-like behavior
-    // Right mouse = orbit, Middle mouse = pan, Scroll = dolly
+    // Configure controls for proper 2.5D/3D navigation:
+    // - Left mouse = reserved for selection (handled externally)
+    // - Middle mouse = pan (move camera parallel to view plane)
+    // - Right mouse = orbit (rotate around target)
+    // - Scroll wheel = dolly (zoom in/out along view axis)
     this.orbitControls.mouseButtons = {
-      LEFT: undefined as any,  // Don't use left mouse (reserved for selection/tools)
+      LEFT: undefined as any,  // Reserved for selection/tools
       MIDDLE: THREE.MOUSE.PAN,
       RIGHT: THREE.MOUSE.ROTATE,
     };
@@ -96,29 +99,33 @@ export class CameraController {
     // Set orbit target to composition center
     this.orbitControls.target.copy(this.target);
 
-    // Enable damping for smooth movement
-    this.orbitControls.enableDamping = true;
-    this.orbitControls.dampingFactor = 0.1;
+    // Disable damping - causes unwanted drift and rotation artifacts
+    this.orbitControls.enableDamping = false;
 
-    // Zoom settings
-    this.orbitControls.enableZoom = true;
-    this.orbitControls.zoomSpeed = 1.0;
+    // DISABLE OrbitControls zoom - ThreeCanvas handles zoom via viewportTransform
+    // This prevents the conflict where both systems try to handle scroll wheel
+    // OrbitControls dolly uses spherical coordinates which can cause rotation artifacts
+    this.orbitControls.enableZoom = false;
     this.orbitControls.minDistance = 10;
     this.orbitControls.maxDistance = 50000;
 
-    // Pan settings
+    // Pan settings - middle mouse moves camera in screen space
     this.orbitControls.enablePan = true;
     this.orbitControls.panSpeed = 1.0;
     this.orbitControls.screenSpacePanning = true;
 
-    // Rotation settings
+    // Rotation settings - only on right-click drag, NOT on scroll
     this.orbitControls.enableRotate = true;
     this.orbitControls.rotateSpeed = 0.5;
 
     // Don't auto-rotate
     this.orbitControls.autoRotate = false;
 
-    console.log('[CameraController] Orbit controls enabled');
+    // IMPORTANT: Ensure camera starts perfectly aligned (front view)
+    // Reset to default 2D position to avoid any initial tilt
+    this.resetToDefault();
+
+    console.log('[CameraController] Orbit controls enabled (scroll=zoom only, right-click=orbit)');
   }
 
   /**
@@ -143,23 +150,40 @@ export class CameraController {
   }
 
   /**
-   * Reset camera to default viewing position
-   * Perfect focal length to see full composition
+   * Reset camera to default viewing position - PERFECT 2D FRONT VIEW
+   * Camera looks straight at composition center, no rotation/tilt
+   * This is the "Sync to Home" state - as if there's no 3D at all
    */
   resetToDefault(): void {
-    this.camera.position.copy(this.defaultPosition);
-    this.target.copy(this.defaultTarget);
+    // Calculate the exact distance needed to see full composition
+    const fovRad = THREE.MathUtils.degToRad(this.defaultFov);
+    const distance = (this.height / 2) / Math.tan(fovRad / 2);
+
+    // Position camera directly in front of composition center
+    // Camera at (centerX, -centerY, distance) looking at (centerX, -centerY, 0)
+    const centerX = this.width / 2;
+    const centerY = -this.height / 2;
+
+    this.camera.position.set(centerX, centerY, distance);
+    this.target.set(centerX, centerY, 0);
     this.camera.fov = this.defaultFov;
 
-    if (this.orbitControls) {
-      this.orbitControls.target.copy(this.defaultTarget);
-      this.orbitControls.update();
-    }
-
+    // Reset camera rotation to look straight at target (no roll/pitch)
+    this.camera.up.set(0, 1, 0);
     this.camera.lookAt(this.target);
     this.camera.updateProjectionMatrix();
 
-    console.log('[CameraController] Camera reset to default position');
+    // Sync orbit controls to this exact position
+    if (this.orbitControls) {
+      this.orbitControls.target.copy(this.target);
+      this.orbitControls.update();
+    }
+
+    // Reset viewport zoom/pan state
+    this.zoomLevel = 1;
+    this.panOffset.set(0, 0);
+
+    console.log('[CameraController] Camera reset to perfect 2D front view');
   }
 
   /**

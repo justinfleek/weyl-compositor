@@ -140,6 +140,15 @@
       <div class="segment-spinner"></div>
       <span>Segmenting...</span>
     </div>
+
+    <!-- Safe Frame Guides - CSS-based screen-space overlay -->
+    <!-- These stay fixed regardless of camera movement -->
+    <div v-if="showSafeFrameGuides" class="safe-frame-container">
+      <div class="safe-frame-overlay safe-frame-left" :style="safeFrameLeftStyle"></div>
+      <div class="safe-frame-overlay safe-frame-right" :style="safeFrameRightStyle"></div>
+      <div class="safe-frame-overlay safe-frame-top" :style="safeFrameTopStyle"></div>
+      <div class="safe-frame-overlay safe-frame-bottom" :style="safeFrameBottomStyle"></div>
+    </div>
   </div>
 </template>
 
@@ -193,6 +202,7 @@ const transformMode = ref<'translate' | 'rotate' | 'scale'>('translate');
 // Composition guide toggles
 const showGrid = ref(true);
 const showOutsideOverlay = ref(true);
+const showSafeFrameGuides = ref(true);
 
 // Segmentation state
 const isDrawingSegmentBox = ref(false);
@@ -237,6 +247,62 @@ const segmentBoxStyle = computed(() => {
     top: `${Math.min(y1, y2)}px`,
     width: `${Math.abs(x2 - x1)}px`,
     height: `${Math.abs(y2 - y1)}px`
+  };
+});
+
+// Safe frame guide positions - CSS-based overlays for out-of-frame areas
+// These create the semi-transparent darkening effect outside the composition bounds
+const safeFrameBounds = computed(() => {
+  const vpt = viewportTransform.value;
+  const compWidth = store.width || 1920;
+  const compHeight = store.height || 1080;
+
+  // Composition bounds in screen space
+  const left = vpt[4];
+  const top = vpt[5];
+  const right = compWidth * vpt[0] + vpt[4];
+  const bottom = compHeight * vpt[3] + vpt[5];
+
+  return { left, top, right, bottom, compWidth, compHeight };
+});
+
+const safeFrameLeftStyle = computed(() => {
+  const bounds = safeFrameBounds.value;
+  return {
+    left: '0',
+    top: '0',
+    width: `${Math.max(0, bounds.left)}px`,
+    height: '100%'
+  };
+});
+
+const safeFrameRightStyle = computed(() => {
+  const bounds = safeFrameBounds.value;
+  return {
+    left: `${bounds.right}px`,
+    top: '0',
+    width: `calc(100% - ${bounds.right}px)`,
+    height: '100%'
+  };
+});
+
+const safeFrameTopStyle = computed(() => {
+  const bounds = safeFrameBounds.value;
+  return {
+    left: `${Math.max(0, bounds.left)}px`,
+    top: '0',
+    width: `${bounds.right - Math.max(0, bounds.left)}px`,
+    height: `${Math.max(0, bounds.top)}px`
+  };
+});
+
+const safeFrameBottomStyle = computed(() => {
+  const bounds = safeFrameBounds.value;
+  return {
+    left: `${Math.max(0, bounds.left)}px`,
+    top: `${bounds.bottom}px`,
+    width: `${bounds.right - Math.max(0, bounds.left)}px`,
+    height: `calc(100% - ${bounds.bottom}px)`
   };
 });
 
@@ -1111,12 +1177,14 @@ function toggleGrid() {
 
 /**
  * Toggle outside overlay (safe area) visibility
+ * Uses CSS-based overlays for screen-space guides that stay fixed
  */
 function toggleOutsideOverlay() {
   showOutsideOverlay.value = !showOutsideOverlay.value;
-  if (engine.value) {
-    engine.value.setOutsideOverlayVisible(showOutsideOverlay.value);
-  }
+  showSafeFrameGuides.value = showOutsideOverlay.value;
+  // Note: We no longer use the 3D overlay from engine
+  // The CSS safe frame guides provide the same visual effect
+  // but stay fixed to the screen regardless of camera movement
 }
 
 /**
@@ -1431,4 +1499,30 @@ defineExpose({
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+
+/* Safe Frame Guides - CSS-based screen-space overlays */
+/* These stay fixed regardless of 3D camera movement */
+.safe-frame-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.safe-frame-overlay {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* Alternative: Use subtle border instead of dark overlay */
+/* Uncomment below for border-style guides like C4D */
+/*
+.safe-frame-overlay {
+  position: absolute;
+  background: transparent;
+  border: 1px solid rgba(100, 100, 100, 0.3);
+}
+*/
 </style>
