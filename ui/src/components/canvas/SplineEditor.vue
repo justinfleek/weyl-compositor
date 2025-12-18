@@ -4,6 +4,7 @@
     <svg
       class="control-overlay"
       :viewBox="`0 0 ${canvasWidth} ${canvasHeight}`"
+      :style="overlayStyle"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
@@ -96,8 +97,10 @@ import type { ControlPoint, SplineData } from '@/types/project';
 
 interface Props {
   layerId: string | null;
-  canvasWidth: number;
-  canvasHeight: number;
+  canvasWidth: number;      // Composition width (e.g., 832)
+  canvasHeight: number;     // Composition height (e.g., 480)
+  containerWidth: number;   // DOM container width (CSS pixels)
+  containerHeight: number;  // DOM container height (CSS pixels)
   zoom: number;
   viewportTransform: number[];
   isPenMode: boolean;
@@ -152,12 +155,51 @@ const canClosePath = computed(() => {
 // Check if we're close to the first point
 const CLOSE_THRESHOLD = 15; // pixels
 
-// Convert screen coords to canvas coords
+// Calculate overlay position and size to match Three.js render area
+const overlayStyle = computed(() => {
+  const containerAspect = props.containerWidth / props.containerHeight;
+  const compAspect = props.canvasWidth / props.canvasHeight;
+
+  let width: number;
+  let height: number;
+  let left = 0;
+  let top = 0;
+
+  if (containerAspect > compAspect) {
+    // Container is wider - composition is fit to height
+    height = props.containerHeight;
+    width = props.canvasWidth * (props.containerHeight / props.canvasHeight);
+    left = (props.containerWidth - width) / 2;
+  } else {
+    // Container is taller - composition is fit to width
+    width = props.containerWidth;
+    height = props.canvasHeight * (props.containerWidth / props.canvasWidth);
+    top = (props.containerHeight - height) / 2;
+  }
+
+  return {
+    position: 'absolute' as const,
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${width}px`,
+    height: `${height}px`,
+    pointerEvents: 'all' as const
+  };
+});
+
+// Convert screen coords (relative to SVG) to composition coords
 function screenToCanvas(screenX: number, screenY: number): { x: number; y: number } {
-  const vt = props.viewportTransform;
-  // Inverse transform
-  const x = (screenX - vt[4]) / vt[0];
-  const y = (screenY - vt[5]) / vt[3];
+  // The SVG is now sized to match the composition area
+  // Its viewBox is 0 0 canvasWidth canvasHeight
+  // So we just need to scale from SVG element coords to viewBox coords
+  const svgRect = overlayStyle.value;
+  const svgWidth = parseFloat(svgRect.width);
+  const svgHeight = parseFloat(svgRect.height);
+
+  // Scale from SVG element size to composition (viewBox) size
+  const x = (screenX / svgWidth) * props.canvasWidth;
+  const y = (screenY / svgHeight) * props.canvasHeight;
+
   return { x, y };
 }
 
@@ -424,8 +466,7 @@ defineExpose({
 }
 
 .control-overlay {
-  width: 100%;
-  height: 100%;
+  /* Position and size set via inline styles (overlayStyle) */
   pointer-events: all;
 }
 

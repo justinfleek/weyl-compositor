@@ -5,8 +5,10 @@
     <SplineEditor
       v-if="activeSplineLayerId || isPenMode"
       :layerId="activeSplineLayerId"
-      :canvasWidth="canvasWidth"
-      :canvasHeight="canvasHeight"
+      :canvasWidth="compositionWidth"
+      :canvasHeight="compositionHeight"
+      :containerWidth="canvasWidth"
+      :containerHeight="canvasHeight"
       :zoom="zoom"
       :viewportTransform="viewportTransformArray"
       :isPenMode="isPenMode"
@@ -202,6 +204,9 @@ const loading = ref(false);
 const zoom = ref(1);
 const canvasWidth = ref(800);
 const canvasHeight = ref(600);
+// Composition dimensions (in composition units, not pixels)
+const compositionWidth = computed(() => store.width || 832);
+const compositionHeight = computed(() => store.height || 480);
 const showDepthOverlay = ref(false);
 const depthColormap = ref<'viridis' | 'plasma' | 'grayscale'>('viridis');
 const depthOpacity = ref(50);

@@ -518,10 +518,10 @@ export class ParticleLayer extends BaseLayer {
       // Reset to initial state (restores RNG seed)
       this.particleSystem.reset();
 
-      // Replay from frame 0 to target frame
-      // This ensures identical results regardless of scrub order
+      // Replay from frame 0 to target frame (inclusive)
+      // We step frame+1 times to simulate through the current frame
       const deltaTime = 1 / this.fps;
-      for (let f = 0; f < frame; f++) {
+      for (let f = 0; f <= frame; f++) {
         this.particleSystem.step(deltaTime);
       }
     } else if (isSequential) {
@@ -544,10 +544,12 @@ export class ParticleLayer extends BaseLayer {
   }
 
   protected override onApplyEvaluatedState(state: import('../MotionEngine').EvaluatedLayer): void {
-    // ParticleLayer uses onEvaluateFrame for deterministic simulation
-    // Evaluated properties are applied via the audio reactivity system
-    // since particle config updates require resimulation for determinism
-    this.applyAudioReactivity();
+    // ParticleLayer needs to step the simulation for the current frame
+    // The evaluated state includes the frame number for deterministic simulation
+    const frame = state.frame ?? 0;
+
+    // Step the particle simulation (deterministic replay if needed)
+    this.onEvaluateFrame(frame);
   }
 
   /**
@@ -558,9 +560,9 @@ export class ParticleLayer extends BaseLayer {
     // Reset to initial state
     this.particleSystem.reset();
 
-    // Step to target frame
+    // Step through target frame (inclusive)
     const deltaTime = 1 / this.fps;
-    for (let f = 0; f < frame; f++) {
+    for (let f = 0; f <= frame; f++) {
       this.particleSystem.step(deltaTime);
     }
 

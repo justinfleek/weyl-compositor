@@ -3258,6 +3258,8 @@ class MotionEngine {
         id: layer.id,
         type: layer.type,
         name: layer.name,
+        frame,
+        // Include frame number for layers that need simulation (particles)
         visible,
         inRange,
         opacity,
@@ -35362,7 +35364,7 @@ class ParticleLayer extends BaseLayer {
     if (needsReplay) {
       this.particleSystem.reset();
       const deltaTime = 1 / this.fps;
-      for (let f = 0; f < frame; f++) {
+      for (let f = 0; f <= frame; f++) {
         this.particleSystem.step(deltaTime);
       }
     } else if (isSequential) {
@@ -35377,7 +35379,8 @@ class ParticleLayer extends BaseLayer {
     this.stats.renderTimeMs = state.renderTimeMs;
   }
   onApplyEvaluatedState(state) {
-    this.applyAudioReactivity();
+    const frame = state.frame ?? 0;
+    this.onEvaluateFrame(frame);
   }
   /**
    * Evaluate particles at a specific frame (scrub-safe)
@@ -35386,7 +35389,7 @@ class ParticleLayer extends BaseLayer {
   evaluateAtFrame(frame) {
     this.particleSystem.reset();
     const deltaTime = 1 / this.fps;
-    for (let f = 0; f < frame; f++) {
+    for (let f = 0; f <= frame; f++) {
       this.particleSystem.step(deltaTime);
     }
     this.lastEvaluatedFrame = frame;
@@ -44956,6 +44959,8 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     layerId: {},
     canvasWidth: {},
     canvasHeight: {},
+    containerWidth: {},
+    containerHeight: {},
     zoom: {},
     viewportTransform: {},
     isPenMode: { type: Boolean }
@@ -44983,10 +44988,37 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       const splineData = layer.data;
       return !splineData.closed;
     });
+    const overlayStyle = computed(() => {
+      const containerAspect = props.containerWidth / props.containerHeight;
+      const compAspect = props.canvasWidth / props.canvasHeight;
+      let width;
+      let height;
+      let left = 0;
+      let top = 0;
+      if (containerAspect > compAspect) {
+        height = props.containerHeight;
+        width = props.canvasWidth * (props.containerHeight / props.canvasHeight);
+        left = (props.containerWidth - width) / 2;
+      } else {
+        width = props.containerWidth;
+        height = props.canvasHeight * (props.containerWidth / props.canvasWidth);
+        top = (props.containerHeight - height) / 2;
+      }
+      return {
+        position: "absolute",
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+        pointerEvents: "all"
+      };
+    });
     function screenToCanvas(screenX, screenY) {
-      const vt = props.viewportTransform;
-      const x = (screenX - vt[4]) / vt[0];
-      const y = (screenY - vt[5]) / vt[3];
+      const svgRect = overlayStyle.value;
+      const svgWidth = parseFloat(svgRect.width);
+      const svgHeight = parseFloat(svgRect.height);
+      const x = screenX / svgWidth * props.canvasWidth;
+      const y = screenY / svgHeight * props.canvasHeight;
       return { x, y };
     }
     function getMousePos(event) {
@@ -45182,6 +45214,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
         (openBlock(), createElementBlock("svg", {
           class: "control-overlay",
           viewBox: `0 0 ${__props.canvasWidth} ${__props.canvasHeight}`,
+          style: normalizeStyle(overlayStyle.value),
           onMousedown: handleMouseDown,
           onMousemove: handleMouseMove,
           onMouseup: handleMouseUp,
@@ -45260,13 +45293,13 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
             r: "10",
             class: "close-indicator"
           }, null, 8, _hoisted_9$c)) : createCommentVNode("", true)
-        ], 40, _hoisted_2$c))
+        ], 44, _hoisted_2$c))
       ]);
     };
   }
 });
 
-const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-20914073"]]);
+const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-d18ab409"]]);
 
 const _hoisted_1$b = {
   key: 1,
@@ -45308,6 +45341,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const zoom = ref(1);
     const canvasWidth = ref(800);
     const canvasHeight = ref(600);
+    const compositionWidth = computed(() => store.width || 832);
+    const compositionHeight = computed(() => store.height || 480);
     const showDepthOverlay = ref(false);
     const depthColormap = ref("viridis");
     const depthOpacity = ref(50);
@@ -46200,8 +46235,10 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         activeSplineLayerId.value || isPenMode.value ? (openBlock(), createBlock(SplineEditor, {
           key: 0,
           layerId: activeSplineLayerId.value,
-          canvasWidth: canvasWidth.value,
-          canvasHeight: canvasHeight.value,
+          canvasWidth: compositionWidth.value,
+          canvasHeight: compositionHeight.value,
+          containerWidth: canvasWidth.value,
+          containerHeight: canvasHeight.value,
           zoom: zoom.value,
           viewportTransform: viewportTransformArray.value,
           isPenMode: isPenMode.value,
@@ -46209,7 +46246,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           onPathUpdated,
           ref_key: "splineEditorRef",
           ref: splineEditorRef
-        }, null, 8, ["layerId", "canvasWidth", "canvasHeight", "zoom", "viewportTransform", "isPenMode"])) : createCommentVNode("", true),
+        }, null, 8, ["layerId", "canvasWidth", "canvasHeight", "containerWidth", "containerHeight", "zoom", "viewportTransform", "isPenMode"])) : createCommentVNode("", true),
         hasDepthMap.value ? (openBlock(), createElementBlock("div", _hoisted_1$b, [
           createBaseVNode("label", null, [
             withDirectives(createBaseVNode("input", {
@@ -46324,7 +46361,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
             class: "zoom-dropdown",
             onChange: onZoomSelect
           }, [..._cache[24] || (_cache[24] = [
-            createStaticVNode('<option value="fit" data-v-3c29ec3e>Fit</option><option value="0.25" data-v-3c29ec3e>25%</option><option value="0.33" data-v-3c29ec3e>33%</option><option value="0.5" data-v-3c29ec3e>50%</option><option value="0.75" data-v-3c29ec3e>75%</option><option value="1" data-v-3c29ec3e>100%</option><option value="2" data-v-3c29ec3e>200%</option><option value="4" data-v-3c29ec3e>400%</option>', 8)
+            createStaticVNode('<option value="fit" data-v-5c92af89>Fit</option><option value="0.25" data-v-5c92af89>25%</option><option value="0.33" data-v-5c92af89>33%</option><option value="0.5" data-v-5c92af89>50%</option><option value="0.75" data-v-5c92af89>75%</option><option value="1" data-v-5c92af89>100%</option><option value="2" data-v-5c92af89>200%</option><option value="4" data-v-5c92af89>400%</option>', 8)
           ])], 544), [
             [vModelSelect, zoomLevel.value]
           ]),
@@ -46335,7 +46372,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
             class: "resolution-dropdown",
             onChange: onResolutionChange
           }, [..._cache[25] || (_cache[25] = [
-            createStaticVNode('<option value="full" data-v-3c29ec3e>Full</option><option value="half" data-v-3c29ec3e>Half</option><option value="third" data-v-3c29ec3e>Third</option><option value="quarter" data-v-3c29ec3e>Quarter</option><option value="custom" data-v-3c29ec3e>Custom</option>', 5)
+            createStaticVNode('<option value="full" data-v-5c92af89>Full</option><option value="half" data-v-5c92af89>Half</option><option value="third" data-v-5c92af89>Third</option><option value="quarter" data-v-5c92af89>Quarter</option><option value="custom" data-v-5c92af89>Custom</option>', 5)
           ])], 544), [
             [vModelSelect, resolution.value]
           ])
@@ -46387,7 +46424,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-3c29ec3e"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-5c92af89"]]);
 
 const _hoisted_1$a = { class: "prop-wrapper" };
 const _hoisted_2$a = { class: "prop-content" };

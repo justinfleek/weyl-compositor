@@ -92,6 +92,9 @@ export interface EvaluatedLayer {
   /** Layer name */
   readonly name: string;
 
+  /** Frame number this layer was evaluated at */
+  readonly frame: number;
+
   /** Whether this layer is visible at this frame */
   readonly visible: boolean;
 
@@ -509,6 +512,7 @@ export class MotionEngine {
         id: layer.id,
         type: layer.type,
         name: layer.name,
+        frame, // Include frame number for layers that need simulation (particles)
         visible,
         inRange,
         opacity,
