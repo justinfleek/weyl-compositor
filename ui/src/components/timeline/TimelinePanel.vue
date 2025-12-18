@@ -141,7 +141,7 @@ const emit = defineEmits<{
 
 const store = useCompositorStore();
 const zoomPercent = ref(0); // 0 = fit to viewport, 100 = max zoom
-const sidebarWidth = ref(450);
+const sidebarWidth = ref(350); // Reduced from 450 for less cramped UI
 const expandedLayers = ref<Record<string, boolean>>({});
 const showAddLayerMenu = ref(false);
 const addLayerContainer = ref<HTMLElement | null>(null);

@@ -3,12 +3,13 @@
     <div v-if="layoutMode === 'sidebar'" class="prop-sidebar" :class="{ selected: isSelected }" :style="gridStyle" @click="selectProp">
       <div class="indent-spacer"></div>
 
-      <div class="icon-box" @click.stop="addKeyframeAtCurrent">
-        <span class="kf-btn" :class="{ active: hasKeyframeAtCurrent }">◇</span>
-      </div>
-
+      <!-- Stopwatch first (left), then keyframe diamond -->
       <div class="icon-box" @click.stop="toggleAnim">
         <span class="stopwatch" :class="{ active: property.animated }">⏱</span>
+      </div>
+
+      <div class="icon-box" @click.stop="addKeyframeAtCurrent">
+        <span class="kf-btn" :class="{ active: hasKeyframeAtCurrent }">◇</span>
       </div>
 
       <div class="prop-content">
@@ -24,6 +25,30 @@
                 @update:modelValue="v => updateValByIndex('z', v)"
               />
             </div>
+          </template>
+
+          <!-- Boolean (checkbox) -->
+          <template v-else-if="property.type === 'boolean'">
+            <div class="checkbox-wrapper">
+              <input type="checkbox" :checked="property.value" @change="e => updateValDirect((e.target as HTMLInputElement).checked)" />
+            </div>
+          </template>
+
+          <!-- Dropdown -->
+          <template v-else-if="property.type === 'dropdown'">
+            <select class="prop-dropdown" :value="property.value" @change="e => updateValDirect((e.target as HTMLSelectElement).value)">
+              <option v-if="name === 'Casts Shadows'" value="off">Off</option>
+              <option v-if="name === 'Casts Shadows'" value="on">On</option>
+              <option v-if="name === 'Casts Shadows'" value="only">Only</option>
+              <option v-if="name === 'Renderer'" value="Classic 3D">Classic 3D</option>
+              <option v-if="name === 'Renderer'" value="CINEMA 4D">CINEMA 4D</option>
+              <option v-if="name === 'Renderer'" value="Ray-traced 3D">Ray-traced 3D</option>
+            </select>
+          </template>
+
+          <!-- Percent (0-100) -->
+          <template v-else-if="property.type === 'percent'">
+            <ScrubableNumber :modelValue="property.value" @update:modelValue="updateValDirect" :precision="0" :min="0" :max="100" suffix="%" />
           </template>
 
           <!-- Color input -->
@@ -358,6 +383,37 @@ onUnmounted(() => {
 
 .color-input-wrapper { display: flex; align-items: center; gap: 8px; }
 .color-hex { font-family: monospace; font-size: 11px; color: #aaa; }
+
+/* Checkbox styling */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+}
+.checkbox-wrapper input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #4a90d9;
+}
+
+/* Dropdown styling */
+.prop-dropdown {
+  padding: 2px 8px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  color: #e0e0e0;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  min-width: 80px;
+}
+.prop-dropdown:hover {
+  border-color: #4a90d9;
+}
+.prop-dropdown:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
 
 .prop-track { height: 32px; background: #151515; border-bottom: 1px solid #2a2a2a; position: relative; cursor: pointer; }
 .keyframe {

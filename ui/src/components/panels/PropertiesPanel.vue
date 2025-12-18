@@ -122,22 +122,22 @@
             <div class="property-row">
               <span class="stopwatch" :class="{ active: hasKeyframe('rotationX') }" @click="toggleKeyframe('rotationX')">⏱</span>
               <label>X Rotation</label>
-              <div class="value-group rotation-value">
-                <span class="rotation-display">{{ formatRotation(transform.rotationX) }}</span>
+              <div class="value-group">
+                <ScrubableNumber v-model="transform.rotationX" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
             <div class="property-row">
               <span class="stopwatch" :class="{ active: hasKeyframe('rotationY') }" @click="toggleKeyframe('rotationY')">⏱</span>
               <label>Y Rotation</label>
-              <div class="value-group rotation-value">
-                <span class="rotation-display">{{ formatRotation(transform.rotationY) }}</span>
+              <div class="value-group">
+                <ScrubableNumber v-model="transform.rotationY" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
             <div class="property-row">
               <span class="stopwatch" :class="{ active: hasKeyframe('rotationZ') }" @click="toggleKeyframe('rotationZ')">⏱</span>
               <label>Z Rotation</label>
-              <div class="value-group rotation-value">
-                <span class="rotation-display">{{ formatRotation(transform.rotationZ) }}</span>
+              <div class="value-group">
+                <ScrubableNumber v-model="transform.rotationZ" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
           </template>
@@ -194,6 +194,7 @@ import { ref, computed, watch, markRaw, type Component } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { ScrubableNumber, SliderInput } from '@/components/controls';
 import type { BlendMode } from '@/types/project';
+import { createAnimatableProperty } from '@/types/project';
 
 // Layer-specific property panels
 import TextProperties from '@/components/properties/TextProperties.vue';
@@ -216,9 +217,9 @@ const scaleLocked = ref(true);
 const layerName = ref('');
 const transform = ref({
   position: { x: 0, y: 0, z: 0 },
-  scale: { x: 100, y: 100 },
+  scale: { x: 100, y: 100, z: 100 },
   rotation: 0,
-  anchorPoint: { x: 0, y: 0 },
+  anchorPoint: { x: 0, y: 0, z: 0 },
   opacity: 100,
   // 3D properties
   orientationX: 0,
@@ -314,9 +315,9 @@ watch(selectedLayer, (layer) => {
         y: t?.position?.value?.y || 0,
         z: t?.position?.value?.z || 0
       },
-      scale: { x: t?.scale?.value?.x || 100, y: t?.scale?.value?.y || 100 },
+      scale: { x: t?.scale?.value?.x || 100, y: t?.scale?.value?.y || 100, z: t?.scale?.value?.z || 100 },
       rotation: t?.rotation?.value || 0,
-      anchorPoint: { x: t?.anchorPoint?.value?.x || 0, y: t?.anchorPoint?.value?.y || 0 },
+      anchorPoint: { x: t?.anchorPoint?.value?.x || 0, y: t?.anchorPoint?.value?.y || 0, z: t?.anchorPoint?.value?.z || 0 },
       opacity: layer.opacity?.value || 100,
       // 3D properties
       orientationX: t?.orientation?.value?.x || 0,
@@ -363,13 +364,13 @@ function updateTransform() {
     t.position.value = { x: v.position.x, y: v.position.y, z: v.position.z };
   }
   if (t?.scale) {
-    t.scale.value = { x: v.scale.x, y: v.scale.y };
+    t.scale.value = { x: v.scale.x, y: v.scale.y, z: v.scale.z };
   }
   if (t?.rotation) {
     t.rotation.value = v.rotation;
   }
   if (t?.anchorPoint) {
-    t.anchorPoint.value = { x: v.anchorPoint.x, y: v.anchorPoint.y };
+    t.anchorPoint.value = { x: v.anchorPoint.x, y: v.anchorPoint.y, z: v.anchorPoint.z };
   }
   if (selectedLayer.value.opacity) {
     selectedLayer.value.opacity.value = v.opacity;
@@ -399,10 +400,33 @@ function toggle3D(event: Event) {
   const threeD = (event.target as HTMLInputElement).checked;
   store.updateLayer(selectedLayer.value.id, { threeD });
 
-  // Initialize Z position if switching to 3D
-  if (threeD && selectedLayer.value.transform?.position) {
-    if (selectedLayer.value.transform.position.value.z === undefined) {
-      selectedLayer.value.transform.position.value.z = 0;
+  // Initialize 3D properties when enabling 3D mode
+  if (threeD && selectedLayer.value.transform) {
+    const t = selectedLayer.value.transform;
+
+    // Initialize Z values for position/scale/anchorPoint
+    if (t.position.value.z === undefined) {
+      t.position.value.z = 0;
+    }
+    if (t.scale.value.z === undefined) {
+      t.scale.value.z = 100;
+    }
+    if (t.anchorPoint.value.z === undefined) {
+      t.anchorPoint.value.z = 0;
+    }
+
+    // Initialize 3D rotation properties if they don't exist
+    if (!t.orientation) {
+      t.orientation = createAnimatableProperty('orientation', { x: 0, y: 0, z: 0 }, 'vector3');
+    }
+    if (!t.rotationX) {
+      t.rotationX = createAnimatableProperty('rotationX', 0, 'number');
+    }
+    if (!t.rotationY) {
+      t.rotationY = createAnimatableProperty('rotationY', 0, 'number');
+    }
+    if (!t.rotationZ) {
+      t.rotationZ = createAnimatableProperty('rotationZ', 0, 'number');
     }
   }
 }

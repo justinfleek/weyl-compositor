@@ -1750,10 +1750,15 @@ export function createAnimatableProperty<T>(
  */
 export function createDefaultTransform(): LayerTransform {
   return {
-    position: createAnimatableProperty('position', { x: 0, y: 0 }, 'position'),
-    anchorPoint: createAnimatableProperty('anchorPoint', { x: 0, y: 0 }, 'position'),
-    scale: createAnimatableProperty('scale', { x: 100, y: 100 }, 'position'),
-    rotation: createAnimatableProperty('rotation', 0, 'number')
+    position: createAnimatableProperty('position', { x: 0, y: 0, z: 0 }, 'vector3'),
+    anchorPoint: createAnimatableProperty('anchorPoint', { x: 0, y: 0, z: 0 }, 'vector3'),
+    scale: createAnimatableProperty('scale', { x: 100, y: 100, z: 100 }, 'vector3'),
+    rotation: createAnimatableProperty('rotation', 0, 'number'),
+    // 3D rotation properties (always present for consistent structure)
+    orientation: createAnimatableProperty('orientation', { x: 0, y: 0, z: 0 }, 'vector3'),
+    rotationX: createAnimatableProperty('rotationX', 0, 'number'),
+    rotationY: createAnimatableProperty('rotationY', 0, 'number'),
+    rotationZ: createAnimatableProperty('rotationZ', 0, 'number')
   };
 }
 

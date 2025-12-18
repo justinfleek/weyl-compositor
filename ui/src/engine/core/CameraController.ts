@@ -196,6 +196,30 @@ export class CameraController {
     return this.orbitControls !== null;
   }
 
+  /**
+   * Set the orbit controls target point (the point camera orbits around)
+   * This updates the orbit pivot without moving the camera
+   * @param x - X position (screen coordinates)
+   * @param y - Y position (screen coordinates - will be negated)
+   * @param z - Z position
+   */
+  setOrbitTarget(x: number, y: number, z: number): void {
+    this.target.set(x, -y, z);
+    if (this.orbitControls) {
+      this.orbitControls.target.copy(this.target);
+      this.orbitControls.update();
+    }
+  }
+
+  /**
+   * Reset orbit target to composition center
+   */
+  resetOrbitTargetToCenter(): void {
+    const centerX = this.width / 2;
+    const centerY = this.height / 2;
+    this.setOrbitTarget(centerX, centerY, 0);
+  }
+
   // ============================================================================
   // POSITION & ORIENTATION
   // ============================================================================

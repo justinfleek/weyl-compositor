@@ -810,6 +810,23 @@ export class WeylEngine {
     this.camera.setFOV(fov);
   }
 
+  /**
+   * Set the orbit pivot point (the point the camera orbits around)
+   * @param x - X position in screen coordinates
+   * @param y - Y position in screen coordinates
+   * @param z - Z position
+   */
+  setOrbitTarget(x: number, y: number, z: number): void {
+    this.camera.setOrbitTarget(x, y, z);
+  }
+
+  /**
+   * Reset orbit target to composition center
+   */
+  resetOrbitTargetToCenter(): void {
+    this.camera.resetOrbitTargetToCenter();
+  }
+
   // ============================================================================
   // DEPTH OF FIELD
   // ============================================================================
@@ -1381,18 +1398,37 @@ export class WeylEngine {
     // Add to scene (TransformControls extends Object3D internally)
     this.scene.addUIElement(this.transformControls as unknown as THREE.Object3D);
 
-    // Handle transform changes
+    // Track if we're actively dragging (to avoid spurious updates on selection)
+    let isDragging = false;
+
+    // Disable orbit/pan during transform and track dragging state
+    this.transformControls.addEventListener('dragging-changed', (event: any) => {
+      isDragging = event.value;
+      this.emit('transform-dragging', { dragging: event.value });
+    });
+
+    // Handle transform changes - ONLY when actually dragging
     this.transformControls.addEventListener('change', () => {
+      // Only fire callback during actual drag operations, not on selection/attach
+      if (!isDragging) return;
       if (!this.transformControls || !this.selectedLayerId) return;
 
       const object = this.transformControls.object;
       if (!object) return;
 
+      // Get the layer to access anchor point
+      const layer = this.layers.getLayer(this.selectedLayerId);
+      const anchorX = layer?.getExportData?.()?.transform?.anchorPoint?.x ?? 0;
+      const anchorY = layer?.getExportData?.()?.transform?.anchorPoint?.y ?? 0;
+      const anchorZ = layer?.getExportData?.()?.transform?.anchorPoint?.z ?? 0;
+
+      // Convert 3D position back to layer position by adding anchor point back
+      // The 3D object position is offset by anchor point in applyTransform()
       const transform: LayerTransformUpdate = {
         position: {
-          x: object.position.x,
-          y: object.position.y,
-          z: object.position.z
+          x: object.position.x + anchorX,
+          y: -object.position.y + anchorY,  // Y is negated in 3D space
+          z: object.position.z + anchorZ
         },
         rotationX: THREE.MathUtils.radToDeg(object.rotation.x),
         rotationY: THREE.MathUtils.radToDeg(object.rotation.y),
@@ -1410,12 +1446,6 @@ export class WeylEngine {
       if (this.onTransformChange) {
         this.onTransformChange(this.selectedLayerId, transform);
       }
-    });
-
-    // Disable orbit/pan during transform
-    this.transformControls.addEventListener('dragging-changed', (event: any) => {
-      // Could disable other controls here if needed
-      this.emit('transform-dragging', { dragging: event.value });
     });
 
     // Handle mouseup to finalize transform
@@ -1436,6 +1466,7 @@ export class WeylEngine {
 
   /**
    * Select a layer and attach transform controls
+   * Also updates orbit target to the selected layer's position for right-click orbiting
    * @param layerId - Layer ID to select, or null to deselect
    */
   selectLayer(layerId: string | null): void {
@@ -1454,6 +1485,8 @@ export class WeylEngine {
     this.selectedLayerId = layerId;
 
     if (!layerId || !this.transformControls) {
+      // No layer selected - reset orbit target to composition center
+      this.resetOrbitTargetToCenter();
       return;
     }
 
@@ -1461,6 +1494,13 @@ export class WeylEngine {
     const layerObject = this.getLayerObject(layerId);
     if (layerObject) {
       this.transformControls.attach(layerObject);
+
+      // Update orbit target to selected layer's world position
+      // Get world position (accounts for parent hierarchy)
+      const worldPos = new THREE.Vector3();
+      layerObject.getWorldPosition(worldPos);
+      // Convert back to screen coordinates (negate Y)
+      this.setOrbitTarget(worldPos.x, -worldPos.y, worldPos.z);
     }
   }
 
