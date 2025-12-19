@@ -46028,6 +46028,65 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       const layer = store.layers.find((l) => l.id === props.layerId);
       return layer?.threeD ?? false;
     });
+    const layerTransform = computed(() => {
+      if (!props.layerId) {
+        return { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 100, y: 100 }, anchorPoint: { x: 0, y: 0 } };
+      }
+      const layer = store.layers.find((l) => l.id === props.layerId);
+      if (!layer) {
+        return { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 100, y: 100 }, anchorPoint: { x: 0, y: 0 } };
+      }
+      const t = layer.transform;
+      const getVal = (prop, defaultVal) => {
+        if (!prop) return defaultVal;
+        if (prop.animated && prop.keyframes?.length > 0) {
+          return interpolateProperty(prop, props.currentFrame) ?? defaultVal;
+        }
+        return prop.value ?? defaultVal;
+      };
+      const position = getVal(t.position, { x: props.canvasWidth / 2, y: props.canvasHeight / 2 });
+      const anchorPoint = getVal(t.anchorPoint, { x: 0, y: 0 });
+      const scale = getVal(t.scale, { x: 100, y: 100 });
+      let rotation = 0;
+      if (layer.threeD && t.rotationZ) {
+        rotation = getVal(t.rotationZ, 0);
+      } else if (t.rotation) {
+        rotation = getVal(t.rotation, 0);
+      }
+      return { position, rotation, scale, anchorPoint };
+    });
+    function transformPoint(p) {
+      const { position, rotation, scale, anchorPoint } = layerTransform.value;
+      let x = p.x - anchorPoint.x;
+      let y = p.y - anchorPoint.y;
+      x *= scale.x / 100;
+      y *= scale.y / 100;
+      const rad = rotation * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const rx = x * cos - y * sin;
+      const ry = x * sin + y * cos;
+      return {
+        x: rx + position.x,
+        y: ry + position.y
+      };
+    }
+    function inverseTransformPoint(p) {
+      const { position, rotation, scale, anchorPoint } = layerTransform.value;
+      let x = p.x - position.x;
+      let y = p.y - position.y;
+      const rad = -rotation * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const rx = x * cos - y * sin;
+      const ry = x * sin + y * cos;
+      x = rx / (scale.x / 100);
+      y = ry / (scale.y / 100);
+      return {
+        x: x + anchorPoint.x,
+        y: y + anchorPoint.y
+      };
+    }
     const isClosed = computed(() => {
       if (!props.layerId) return false;
       const layer = store.layers.find((l) => l.id === props.layerId);
@@ -46111,7 +46170,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       store.simplifySpline(props.layerId, smoothTolerance.value);
       emit("pathUpdated");
     }
-    const visibleControlPoints = computed(() => {
+    const rawControlPoints = computed(() => {
       if (!props.layerId) return [];
       const layer = store.layers.find((l) => l.id === props.layerId);
       if (!layer || layer.type !== "spline" || !layer.data) return [];
@@ -46120,6 +46179,26 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
         return store.getEvaluatedSplinePoints(props.layerId, props.currentFrame);
       }
       return splineData.controlPoints || [];
+    });
+    const visibleControlPoints = computed(() => {
+      return rawControlPoints.value.map((cp) => {
+        const transformed = transformPoint({ x: cp.x, y: cp.y });
+        const transformedHandleIn = cp.handleIn ? transformPoint(cp.handleIn) : null;
+        const transformedHandleOut = cp.handleOut ? transformPoint(cp.handleOut) : null;
+        return {
+          id: cp.id,
+          rawX: cp.x,
+          rawY: cp.y,
+          x: transformed.x,
+          y: transformed.y,
+          depth: cp.depth,
+          handleIn: transformedHandleIn,
+          handleOut: transformedHandleOut,
+          rawHandleIn: cp.handleIn ? { ...cp.handleIn } : null,
+          rawHandleOut: cp.handleOut ? { ...cp.handleOut } : null,
+          type: cp.type
+        };
+      });
     });
     function pointHasKeyframes(pointId) {
       if (!props.layerId) return false;
@@ -46250,14 +46329,15 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     function handleMouseDown(event) {
       if (!props.isPenMode) return;
       const pos = getMousePos(event);
+      const layerPos = inverseTransformPoint(pos);
       if (!props.layerId) return;
       const layer = store.layers.find((l) => l.id === props.layerId);
       if (!layer || layer.type !== "spline") return;
       if (penSubMode.value === "add") {
         const newPoint = {
           id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          x: pos.x,
-          y: pos.y,
+          x: layerPos.x,
+          y: layerPos.y,
           handleIn: null,
           handleOut: null,
           type: "corner"
@@ -46277,10 +46357,11 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       } else if (penSubMode.value === "insert") {
         const closest = findClosestPointOnPath(pos);
         if (closest) {
+          const closestLayerPos = inverseTransformPoint({ x: closest.x, y: closest.y });
           const newPoint = {
             id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            x: closest.x,
-            y: closest.y,
+            x: closestLayerPos.x,
+            y: closestLayerPos.y,
             handleIn: null,
             handleOut: null,
             type: "corner"
@@ -46397,28 +46478,31 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
           const newPoint = points.find((p) => p.id === dragTarget.value.pointId);
           const newPointIndex = points.indexOf(newPoint);
           const prevPointIndex = newPointIndex - 1;
+          const layerPos = inverseTransformPoint(pos);
+          const rawNewPointX = newPoint?.rawX ?? newPoint?.x ?? 0;
+          const rawNewPointY = newPoint?.rawY ?? newPoint?.y ?? 0;
           if (newPoint && prevPointIndex >= 0) {
             const prevPoint = points[prevPointIndex];
             previewCurve.value = generateCurvePreview(prevPoint, newPoint, pos);
             if (props.layerId) {
-              const dx = pos.x - newPoint.x;
-              const dy = pos.y - newPoint.y;
+              const dx = layerPos.x - rawNewPointX;
+              const dy = layerPos.y - rawNewPointY;
               if (Math.sqrt(dx * dx + dy * dy) > 5) {
                 store.updateSplineControlPoint(props.layerId, newPoint.id, {
-                  handleOut: { x: pos.x, y: pos.y },
-                  handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+                  handleOut: { x: layerPos.x, y: layerPos.y },
+                  handleIn: { x: rawNewPointX - dx, y: rawNewPointY - dy },
                   type: "smooth"
                 });
               }
             }
           } else if (newPoint && prevPointIndex < 0) {
             if (props.layerId) {
-              const dx = pos.x - newPoint.x;
-              const dy = pos.y - newPoint.y;
+              const dx = layerPos.x - rawNewPointX;
+              const dy = layerPos.y - rawNewPointY;
               if (Math.sqrt(dx * dx + dy * dy) > 5) {
                 store.updateSplineControlPoint(props.layerId, newPoint.id, {
-                  handleOut: { x: pos.x, y: pos.y },
-                  handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+                  handleOut: { x: layerPos.x, y: layerPos.y },
+                  handleIn: { x: rawNewPointX - dx, y: rawNewPointY - dy },
                   type: "smooth"
                 });
               }
@@ -46443,10 +46527,11 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
         const splineData = layer.data;
         const point = splineData.controlPoints?.find((p) => p.id === dragTarget.value.pointId);
         if (!point) return;
+        const layerPos = inverseTransformPoint(pos);
         if (dragTarget.value.type === "point") {
-          const dx = pos.x - point.x;
-          const dy = pos.y - point.y;
-          const updates = { x: pos.x, y: pos.y };
+          const dx = layerPos.x - point.x;
+          const dy = layerPos.y - point.y;
+          const updates = { x: layerPos.x, y: layerPos.y };
           if (point.handleIn) {
             updates.handleIn = { x: point.handleIn.x + dx, y: point.handleIn.y + dy };
           }
@@ -46454,25 +46539,25 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
             updates.handleOut = { x: point.handleOut.x + dx, y: point.handleOut.y + dy };
           }
           store.updateSplineControlPoint(props.layerId, point.id, updates);
-          emit("pointMoved", point.id, pos.x, pos.y);
+          emit("pointMoved", point.id, layerPos.x, layerPos.y);
         } else if (dragTarget.value.type === "handleIn") {
-          const updates = { handleIn: { x: pos.x, y: pos.y } };
+          const updates = { handleIn: { x: layerPos.x, y: layerPos.y } };
           if (point.type === "smooth") {
-            const dx = pos.x - point.x;
-            const dy = pos.y - point.y;
+            const dx = layerPos.x - point.x;
+            const dy = layerPos.y - point.y;
             updates.handleOut = { x: point.x - dx, y: point.y - dy };
           }
           store.updateSplineControlPoint(props.layerId, point.id, updates);
-          emit("handleMoved", point.id, "in", pos.x, pos.y);
+          emit("handleMoved", point.id, "in", layerPos.x, layerPos.y);
         } else if (dragTarget.value.type === "handleOut") {
-          const updates = { handleOut: { x: pos.x, y: pos.y } };
+          const updates = { handleOut: { x: layerPos.x, y: layerPos.y } };
           if (point.type === "smooth") {
-            const dx = pos.x - point.x;
-            const dy = pos.y - point.y;
+            const dx = layerPos.x - point.x;
+            const dy = layerPos.y - point.y;
             updates.handleIn = { x: point.x - dx, y: point.y - dy };
           }
           store.updateSplineControlPoint(props.layerId, point.id, updates);
-          emit("handleMoved", point.id, "out", pos.x, pos.y);
+          emit("handleMoved", point.id, "out", layerPos.x, layerPos.y);
         } else if (dragTarget.value.type === "depth") {
           const screenDy = event.clientY - (dragTarget.value.screenStartY ?? event.clientY);
           const depthScale = 2;
@@ -46742,14 +46827,14 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
               onClick: _cache[1] || (_cache[1] = ($event) => setPenSubMode("insert")),
               title: "Add Point (+) - Click on path to insert point"
             }, [..._cache[6] || (_cache[6] = [
-              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-f65d591c><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-f65d591c></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-f65d591c></circle><path fill="currentColor" d="M18,15v6M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-f65d591c></path></svg><span class="tool-label" data-v-f65d591c>Pen+</span>', 2)
+              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-9ec6a2eb><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-9ec6a2eb></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-9ec6a2eb></circle><path fill="currentColor" d="M18,15v6M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-9ec6a2eb></path></svg><span class="tool-label" data-v-9ec6a2eb>Pen+</span>', 2)
             ])], 2),
             createBaseVNode("button", {
               class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "delete" }]),
               onClick: _cache[2] || (_cache[2] = ($event) => setPenSubMode("delete")),
               title: "Delete Point (-) - Click point to remove"
             }, [..._cache[7] || (_cache[7] = [
-              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-f65d591c><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-f65d591c></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-f65d591c></circle><path fill="currentColor" d="M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-f65d591c></path></svg><span class="tool-label" data-v-f65d591c>Pen-</span>', 2)
+              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-9ec6a2eb><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-9ec6a2eb></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-9ec6a2eb></circle><path fill="currentColor" d="M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-9ec6a2eb></path></svg><span class="tool-label" data-v-9ec6a2eb>Pen-</span>', 2)
             ])], 2),
             createBaseVNode("button", {
               class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "convert" }]),
@@ -47024,7 +47109,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
   }
 });
 
-const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-f65d591c"]]);
+const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-9ec6a2eb"]]);
 
 const _hoisted_1$b = {
   key: 1,

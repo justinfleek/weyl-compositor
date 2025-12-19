@@ -353,6 +353,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+import { interpolateProperty } from '@/services/interpolation';
 import type { ControlPoint, SplineData, EvaluatedControlPoint } from '@/types/project';
 
 interface Props {
@@ -472,6 +473,99 @@ const is3DLayer = computed(() => {
   const layer = store.layers.find(l => l.id === props.layerId);
   return layer?.threeD ?? false;
 });
+
+// ============================================================================
+// LAYER TRANSFORM - Apply layer's position/rotation/scale to control points
+// ============================================================================
+
+// Get layer's transform properties (evaluated at current frame)
+const layerTransform = computed(() => {
+  if (!props.layerId) {
+    return { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 100, y: 100 }, anchorPoint: { x: 0, y: 0 } };
+  }
+
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer) {
+    return { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 100, y: 100 }, anchorPoint: { x: 0, y: 0 } };
+  }
+
+  const t = layer.transform;
+
+  // Get values, checking for animation - use interpolateProperty for animated values
+  const getVal = (prop: any, defaultVal: any) => {
+    if (!prop) return defaultVal;
+    if (prop.animated && prop.keyframes?.length > 0) {
+      return interpolateProperty(prop, props.currentFrame) ?? defaultVal;
+    }
+    return prop.value ?? defaultVal;
+  };
+
+  const position = getVal(t.position, { x: props.canvasWidth / 2, y: props.canvasHeight / 2 });
+  const anchorPoint = getVal(t.anchorPoint, { x: 0, y: 0 });
+  const scale = getVal(t.scale, { x: 100, y: 100 });
+
+  // For 2D layers use rotation, for 3D use rotationZ
+  let rotation = 0;
+  if (layer.threeD && t.rotationZ) {
+    rotation = getVal(t.rotationZ, 0);
+  } else if (t.rotation) {
+    rotation = getVal(t.rotation, 0);
+  }
+
+  return { position, rotation, scale, anchorPoint };
+});
+
+// Transform a point from layer space to composition space
+function transformPoint(p: { x: number; y: number }): { x: number; y: number } {
+  const { position, rotation, scale, anchorPoint } = layerTransform.value;
+
+  // Step 1: Subtract anchor point (move anchor to origin)
+  let x = p.x - anchorPoint.x;
+  let y = p.y - anchorPoint.y;
+
+  // Step 2: Apply scale (convert from percentage)
+  x *= scale.x / 100;
+  y *= scale.y / 100;
+
+  // Step 3: Apply rotation (convert degrees to radians)
+  const rad = (rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const rx = x * cos - y * sin;
+  const ry = x * sin + y * cos;
+
+  // Step 4: Add position (move to composition location)
+  return {
+    x: rx + position.x,
+    y: ry + position.y
+  };
+}
+
+// Inverse transform: from composition space to layer space
+function inverseTransformPoint(p: { x: number; y: number }): { x: number; y: number } {
+  const { position, rotation, scale, anchorPoint } = layerTransform.value;
+
+  // Step 1: Subtract position
+  let x = p.x - position.x;
+  let y = p.y - position.y;
+
+  // Step 2: Inverse rotation (negative angle)
+  const rad = (-rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const rx = x * cos - y * sin;
+  const ry = x * sin + y * cos;
+
+  // Step 3: Inverse scale
+  x = rx / (scale.x / 100);
+  y = ry / (scale.y / 100);
+
+  // Step 4: Add anchor point back
+  return {
+    x: x + anchorPoint.x,
+    y: y + anchorPoint.y
+  };
+}
 
 // Check if path is closed
 const isClosed = computed(() => {
@@ -644,7 +738,8 @@ function simplifySpline() {
 }
 
 // Get control points from active spline layer (evaluated at current frame if animated)
-const visibleControlPoints = computed<(ControlPoint | EvaluatedControlPoint)[]>(() => {
+// These are in LAYER SPACE (raw coordinates)
+const rawControlPoints = computed<(ControlPoint | EvaluatedControlPoint)[]>(() => {
   if (!props.layerId) return [];
 
   const layer = store.layers.find(l => l.id === props.layerId);
@@ -659,6 +754,47 @@ const visibleControlPoints = computed<(ControlPoint | EvaluatedControlPoint)[]>(
 
   // Otherwise return static control points
   return splineData.controlPoints || [];
+});
+
+// Interface for transformed control point (includes both raw and transformed coords)
+interface TransformedControlPoint {
+  id: string;
+  // Raw layer-space coordinates (for editing)
+  rawX: number;
+  rawY: number;
+  // Transformed composition-space coordinates (for display)
+  x: number;
+  y: number;
+  depth?: number;
+  handleIn: { x: number; y: number } | null;
+  handleOut: { x: number; y: number } | null;
+  // Raw handles for editing
+  rawHandleIn: { x: number; y: number } | null;
+  rawHandleOut: { x: number; y: number } | null;
+  type: 'corner' | 'smooth' | 'symmetric';
+}
+
+// Transform control points from layer space to composition space for display
+const visibleControlPoints = computed<TransformedControlPoint[]>(() => {
+  return rawControlPoints.value.map(cp => {
+    const transformed = transformPoint({ x: cp.x, y: cp.y });
+    const transformedHandleIn = cp.handleIn ? transformPoint(cp.handleIn) : null;
+    const transformedHandleOut = cp.handleOut ? transformPoint(cp.handleOut) : null;
+
+    return {
+      id: cp.id,
+      rawX: cp.x,
+      rawY: cp.y,
+      x: transformed.x,
+      y: transformed.y,
+      depth: cp.depth,
+      handleIn: transformedHandleIn,
+      handleOut: transformedHandleOut,
+      rawHandleIn: cp.handleIn ? { ...cp.handleIn } : null,
+      rawHandleOut: cp.handleOut ? { ...cp.handleOut } : null,
+      type: cp.type
+    };
+  });
 });
 
 // Check if a control point has keyframes (for visual indicator)
@@ -862,6 +998,8 @@ function handleMouseDown(event: MouseEvent) {
   if (!props.isPenMode) return;
 
   const pos = getMousePos(event);
+  // Convert composition-space position to layer-space for storing
+  const layerPos = inverseTransformPoint(pos);
 
   if (!props.layerId) return;
   const layer = store.layers.find(l => l.id === props.layerId);
@@ -869,11 +1007,11 @@ function handleMouseDown(event: MouseEvent) {
 
   // Handle different pen sub-modes
   if (penSubMode.value === 'add') {
-    // Add point at end of path
+    // Add point at end of path (in layer space)
     const newPoint: ControlPoint = {
       id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      x: pos.x,
-      y: pos.y,
+      x: layerPos.x,
+      y: layerPos.y,
       handleIn: null,
       handleOut: null,
       type: 'corner'
@@ -883,6 +1021,7 @@ function handleMouseDown(event: MouseEvent) {
     selectedPointId.value = newPoint.id;
 
     // Start dragging to create handle (for curve preview)
+    // Store both composition-space (for preview) and layer-space coords
     dragTarget.value = {
       type: 'newPoint',
       pointId: newPoint.id,
@@ -897,12 +1036,14 @@ function handleMouseDown(event: MouseEvent) {
 
   } else if (penSubMode.value === 'insert') {
     // Insert point on path segment
+    // findClosestPointOnPath works in composition space, so convert result to layer space
     const closest = findClosestPointOnPath(pos);
     if (closest) {
+      const closestLayerPos = inverseTransformPoint({ x: closest.x, y: closest.y });
       const newPoint: ControlPoint = {
         id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        x: closest.x,
-        y: closest.y,
+        x: closestLayerPos.x,
+        y: closestLayerPos.y,
         handleIn: null,
         handleOut: null,
         type: 'corner'
@@ -1066,19 +1207,26 @@ function handleMouseMove(event: MouseEvent) {
       const newPointIndex = points.indexOf(newPoint!);
       const prevPointIndex = newPointIndex - 1;
 
+      // Convert to layer-space for handle updates
+      const layerPos = inverseTransformPoint(pos);
+      // Get raw (layer-space) coordinates of the new point
+      const rawNewPointX = newPoint?.rawX ?? newPoint?.x ?? 0;
+      const rawNewPointY = newPoint?.rawY ?? newPoint?.y ?? 0;
+
       if (newPoint && prevPointIndex >= 0) {
         const prevPoint = points[prevPointIndex];
         // Generate preview showing curve from prev point to new point based on drag
+        // Preview uses composition-space coordinates
         previewCurve.value = generateCurvePreview(prevPoint, newPoint, pos);
 
-        // Also update the handle in real-time
+        // Update the handle in layer-space
         if (props.layerId) {
-          const dx = pos.x - newPoint.x;
-          const dy = pos.y - newPoint.y;
+          const dx = layerPos.x - rawNewPointX;
+          const dy = layerPos.y - rawNewPointY;
           if (Math.sqrt(dx * dx + dy * dy) > 5) {
             store.updateSplineControlPoint(props.layerId, newPoint.id, {
-              handleOut: { x: pos.x, y: pos.y },
-              handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+              handleOut: { x: layerPos.x, y: layerPos.y },
+              handleIn: { x: rawNewPointX - dx, y: rawNewPointY - dy },
               type: 'smooth'
             });
           }
@@ -1086,12 +1234,12 @@ function handleMouseMove(event: MouseEvent) {
       } else if (newPoint && prevPointIndex < 0) {
         // First point - no preview curve needed, but show handles being created
         if (props.layerId) {
-          const dx = pos.x - newPoint.x;
-          const dy = pos.y - newPoint.y;
+          const dx = layerPos.x - rawNewPointX;
+          const dy = layerPos.y - rawNewPointY;
           if (Math.sqrt(dx * dx + dy * dy) > 5) {
             store.updateSplineControlPoint(props.layerId, newPoint.id, {
-              handleOut: { x: pos.x, y: pos.y },
-              handleIn: { x: newPoint.x - dx, y: newPoint.y - dy },
+              handleOut: { x: layerPos.x, y: layerPos.y },
+              handleIn: { x: rawNewPointX - dx, y: rawNewPointY - dy },
               type: 'smooth'
             });
           }
@@ -1123,13 +1271,16 @@ function handleMouseMove(event: MouseEvent) {
     const point = splineData.controlPoints?.find(p => p.id === dragTarget.value!.pointId);
     if (!point) return;
 
-    if (dragTarget.value.type === 'point') {
-      // Move the control point
-      const dx = pos.x - point.x;
-      const dy = pos.y - point.y;
+    // Convert composition-space position to layer-space for storing
+    const layerPos = inverseTransformPoint(pos);
 
-      // Build update with moved handles
-      const updates: any = { x: pos.x, y: pos.y };
+    if (dragTarget.value.type === 'point') {
+      // Move the control point (in layer space)
+      const dx = layerPos.x - point.x;
+      const dy = layerPos.y - point.y;
+
+      // Build update with moved handles (also in layer space)
+      const updates: any = { x: layerPos.x, y: layerPos.y };
       if (point.handleIn) {
         updates.handleIn = { x: point.handleIn.x + dx, y: point.handleIn.y + dy };
       }
@@ -1140,31 +1291,33 @@ function handleMouseMove(event: MouseEvent) {
       // Update via store
       store.updateSplineControlPoint(props.layerId, point.id, updates);
 
-      emit('pointMoved', point.id, pos.x, pos.y);
+      emit('pointMoved', point.id, layerPos.x, layerPos.y);
     } else if (dragTarget.value.type === 'handleIn') {
-      const updates: any = { handleIn: { x: pos.x, y: pos.y } };
+      // Use layer-space coordinates for handle positions
+      const updates: any = { handleIn: { x: layerPos.x, y: layerPos.y } };
 
       // Mirror to handleOut if smooth
       if (point.type === 'smooth') {
-        const dx = pos.x - point.x;
-        const dy = pos.y - point.y;
+        const dx = layerPos.x - point.x;
+        const dy = layerPos.y - point.y;
         updates.handleOut = { x: point.x - dx, y: point.y - dy };
       }
 
       store.updateSplineControlPoint(props.layerId, point.id, updates);
-      emit('handleMoved', point.id, 'in', pos.x, pos.y);
+      emit('handleMoved', point.id, 'in', layerPos.x, layerPos.y);
     } else if (dragTarget.value.type === 'handleOut') {
-      const updates: any = { handleOut: { x: pos.x, y: pos.y } };
+      // Use layer-space coordinates for handle positions
+      const updates: any = { handleOut: { x: layerPos.x, y: layerPos.y } };
 
       // Mirror to handleIn if smooth
       if (point.type === 'smooth') {
-        const dx = pos.x - point.x;
-        const dy = pos.y - point.y;
+        const dx = layerPos.x - point.x;
+        const dy = layerPos.y - point.y;
         updates.handleIn = { x: point.x - dx, y: point.y - dy };
       }
 
       store.updateSplineControlPoint(props.layerId, point.id, updates);
-      emit('handleMoved', point.id, 'out', pos.x, pos.y);
+      emit('handleMoved', point.id, 'out', layerPos.x, layerPos.y);
     } else if (dragTarget.value.type === 'depth') {
       // Update depth based on Y-axis drag (using screen coordinates for zoom independence)
       // Dragging up (negative screenDy) increases depth
