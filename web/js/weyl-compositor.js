@@ -42798,6 +42798,12 @@ class LayerManager {
   getLayerCount() {
     return this.layers.size;
   }
+  /**
+   * Get all layers as an array
+   */
+  getAllLayers() {
+    return Array.from(this.layers.values());
+  }
   // ============================================================================
   // LAYER ORDERING
   // ============================================================================
