@@ -921,12 +921,19 @@ flake.lock - Dependency locks
 Before starting work, verify:
 
 - [ ] Read this entire document (Parts 1-20)
-- [ ] Read SPEC_08_PARTICLE_SYSTEM.md for ready-to-use Vue code
+- [ ] **READ docs/DOCS_REVIEW.md** - HYPER-CRITICAL spec compliance review
+- [ ] Read specs/SPEC_08_PARTICLE_SYSTEM.md for ready-to-use Vue code
 - [ ] Skim docs/ directory for detailed specifications
 - [ ] Check reference_images/ for UI compliance targets
 - [ ] Check git status for uncommitted changes
 - [ ] Run `npm test` to verify test status
 - [ ] Run `npx tsc --noEmit` to see TypeScript errors
+
+## CRITICAL SPEC VIOLATIONS TO FIX FIRST
+
+1. **Text System** - Uses troika-three-text instead of HarfBuzz WASM (07_TEXT_SHAPE violation)
+2. **UI Interpolation** - Audit TimelinePanel.vue and GraphEditor.vue (08_TIMELINE_GRAPH violation)
+3. **Mutable Returns** - Audit Pinia stores for frozen outputs (00_MASTER_GROUND_TRUTH violation)
 
 **This project is for the open source ComfyUI community.** The goal is professional-grade motion graphics capabilities accessible to everyone.
 
