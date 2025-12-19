@@ -1,16 +1,14 @@
 /**
- * Expression System - Comprehensive After Effects-style Expressions
+ * Expression System - Comprehensive Animation Expressions
  *
  * Full expression engine supporting:
  * - All standard easing functions (Penner easing, CSS cubic-bezier)
  * - Motion expressions (inertia, bounce, elastic, overshoot)
- * - Loop expressions (loopIn, loopOut, pingpong, cycle)
- * - Wiggle and noise functions
+ * - Loop expressions (repeatBefore, repeatAfter, pingpong, cycle)
+ * - Jitter and noise functions
  * - Time and math functions
  * - Property references and linking
  * - Data-driven animation (JSON)
- *
- * Reference: After Effects Expression Language
  */
 
 import type { AnimatableProperty, Keyframe, InterpolationType } from '@/types/project';
@@ -547,10 +545,10 @@ export function elastic(
 export type LoopType = 'cycle' | 'pingpong' | 'offset' | 'continue';
 
 /**
- * Loop Out expression
- * Loops animation after last keyframe
+ * Repeat After expression
+ * Repeats animation after last keyframe
  */
-export function loopOut(
+export function repeatAfter(
   ctx: ExpressionContext,
   type: LoopType = 'cycle',
   numKeyframes: number = 0
@@ -606,10 +604,10 @@ export function loopOut(
 }
 
 /**
- * Loop In expression
- * Loops animation before first keyframe
+ * Repeat Before expression
+ * Repeats animation before first keyframe
  */
-export function loopIn(
+export function repeatBefore(
   ctx: ExpressionContext,
   type: LoopType = 'cycle',
   numKeyframes: number = 0
@@ -661,14 +659,14 @@ export function loopIn(
 }
 
 // ============================================================================
-// WIGGLE EXPRESSION
+// JITTER EXPRESSION
 // ============================================================================
 
 /**
- * Wiggle expression
+ * Jitter expression
  * Adds random noise to value
  */
-export function wiggle(
+export function jitter(
   ctx: ExpressionContext,
   frequency: number = 5,
   amplitude: number = 50,
@@ -705,9 +703,9 @@ export function wiggle(
 }
 
 /**
- * Smooth wiggle with temporal correlation
+ * Smooth jitter with temporal correlation
  */
-export function temporalWiggle(
+export function temporalJitter(
   ctx: ExpressionContext,
   frequency: number = 5,
   amplitude: number = 50,
@@ -1057,12 +1055,12 @@ function evaluatePreset(name: string, ctx: ExpressionContext, params: Record<str
       return bounce(ctx, params.elasticity, params.gravity);
     case 'elastic':
       return elastic(ctx, params.amplitude, params.period);
-    case 'wiggle':
-      return wiggle(ctx, params.frequency, params.amplitude, params.octaves);
-    case 'loopOut':
-      return loopOut(ctx, params.type, params.numKeyframes);
-    case 'loopIn':
-      return loopIn(ctx, params.type, params.numKeyframes);
+    case 'jitter':
+      return jitter(ctx, params.frequency, params.amplitude, params.octaves);
+    case 'repeatAfter':
+      return repeatAfter(ctx, params.type, params.numKeyframes);
+    case 'repeatBefore':
+      return repeatBefore(ctx, params.type, params.numKeyframes);
     default:
       return ctx.value;
   }
@@ -1128,42 +1126,42 @@ export const EXPRESSION_PRESETS: Record<string, Expression> = {
     enabled: true,
   },
 
-  // Wiggle presets
-  wiggleSubtle: {
+  // Jitter presets
+  jitterSubtle: {
     type: 'preset',
-    name: 'wiggle',
+    name: 'jitter',
     params: { frequency: 2, amplitude: 10, octaves: 1 },
     enabled: true,
   },
-  wiggleModerate: {
+  jitterModerate: {
     type: 'preset',
-    name: 'wiggle',
+    name: 'jitter',
     params: { frequency: 4, amplitude: 30, octaves: 2 },
     enabled: true,
   },
-  wiggleIntense: {
+  jitterIntense: {
     type: 'preset',
-    name: 'wiggle',
+    name: 'jitter',
     params: { frequency: 8, amplitude: 50, octaves: 3 },
     enabled: true,
   },
 
-  // Loop presets
-  loopCycle: {
+  // Repeat presets
+  repeatCycle: {
     type: 'preset',
-    name: 'loopOut',
+    name: 'repeatAfter',
     params: { type: 'cycle', numKeyframes: 0 },
     enabled: true,
   },
-  loopPingpong: {
+  repeatPingpong: {
     type: 'preset',
-    name: 'loopOut',
+    name: 'repeatAfter',
     params: { type: 'pingpong', numKeyframes: 0 },
     enabled: true,
   },
-  loopOffset: {
+  repeatOffset: {
     type: 'preset',
-    name: 'loopOut',
+    name: 'repeatAfter',
     params: { type: 'offset', numKeyframes: 0 },
     enabled: true,
   },
@@ -1241,16 +1239,16 @@ export const motion = {
   inertia,
   bounce,
   elastic,
-  wiggle,
-  temporalWiggle,
+  jitter,
+  temporalJitter,
 };
 
 /**
  * Loop namespace - loop expression functions
  */
 export const loop = {
-  loopOut,
-  loopIn,
+  repeatAfter,
+  repeatBefore,
 };
 
 /**

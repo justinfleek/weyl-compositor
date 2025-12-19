@@ -1,22 +1,22 @@
 /**
- * PrecompLayer - Nested Composition (Pre-Composition)
+ * NestedCompLayer - Nested Composition
  *
- * Allows compositions to be nested within other compositions,
- * just like After Effects pre-comps. Features:
+ * Allows compositions to be nested within other compositions.
+ * Features:
  *
  * - References another composition by ID
  * - Independent timeline with time remapping
- * - Collapse transformations option
+ * - Flatten transform option (render in parent's 3D space)
  * - Frame rate override
  * - Renders nested comp to texture for parent
  *
  * ComfyUI Integration:
  * - Maps to sub-graphs in ComfyUI workflow
- * - Each precomp can have its own workflow inputs/outputs
+ * - Each nested comp can have its own workflow inputs/outputs
  */
 
 import * as THREE from 'three';
-import type { Layer, PrecompData, Composition, AnimatableProperty } from '@/types/project';
+import type { Layer, NestedCompData, Composition, AnimatableProperty } from '@/types/project';
 import { BaseLayer } from './BaseLayer';
 import { KeyframeEvaluator } from '../animation/KeyframeEvaluator';
 
@@ -24,7 +24,7 @@ import { KeyframeEvaluator } from '../animation/KeyframeEvaluator';
 // TYPES
 // ============================================================================
 
-export interface PrecompRenderContext {
+export interface NestedCompRenderContext {
   /** Function to render a composition to a texture */
   renderComposition: (compositionId: string, frame: number) => THREE.Texture | null;
   /** Function to get composition by ID */
@@ -33,7 +33,10 @@ export interface PrecompRenderContext {
   getCompositionLayers?: (compositionId: string) => import('./BaseLayer').BaseLayer[];
 }
 
-/** Transform values for combining collapsed precomp transforms */
+/** @deprecated Use NestedCompRenderContext instead */
+export type PrecompRenderContext = NestedCompRenderContext;
+
+/** Transform values for combining collapsed nested comp transforms */
 export interface CombinedTransform {
   position: { x: number; y: number; z: number };
   rotation: { x: number; y: number; z: number };
@@ -42,15 +45,15 @@ export interface CombinedTransform {
 }
 
 // ============================================================================
-// PRECOMP LAYER
+// NESTED COMP LAYER
 // ============================================================================
 
-export class PrecompLayer extends BaseLayer {
-  // Precomp data
-  private precompData: PrecompData;
+export class NestedCompLayer extends BaseLayer {
+  // Nested comp data
+  private nestedCompData: NestedCompData;
 
   // Render context (provided by LayerManager)
-  private renderContext: PrecompRenderContext | null = null;
+  private renderContext: NestedCompRenderContext | null = null;
 
   // Display mesh
   private mesh: THREE.Mesh | null = null;
@@ -60,7 +63,7 @@ export class PrecompLayer extends BaseLayer {
   private renderTexture: THREE.Texture | null = null;
 
   // Animation evaluator for time remap
-  private readonly precompEvaluator: KeyframeEvaluator;
+  private readonly nestedCompEvaluator: KeyframeEvaluator;
 
   // Cached composition reference
   private cachedComposition: Composition | null = null;
@@ -68,17 +71,17 @@ export class PrecompLayer extends BaseLayer {
   // Parent composition FPS for frame rate conversion
   private parentFPS: number = 30;
 
-  // Collapse transformations state
+  // Flatten transform state
   private isCollapsed: boolean = false;
   private collapsedLayerIds: string[] = [];
 
   constructor(layerData: Layer) {
     super(layerData);
 
-    this.precompEvaluator = new KeyframeEvaluator();
+    this.nestedCompEvaluator = new KeyframeEvaluator();
 
-    // Extract precomp data
-    this.precompData = this.extractPrecompData(layerData);
+    // Extract nested comp data
+    this.nestedCompData = this.extractNestedCompData(layerData);
 
     // Create placeholder mesh
     this.createMesh();
@@ -92,16 +95,17 @@ export class PrecompLayer extends BaseLayer {
   // ============================================================================
 
   /**
-   * Extract precomp data with defaults
+   * Extract nested comp data with defaults
    */
-  private extractPrecompData(layerData: Layer): PrecompData {
-    const data = layerData.data as PrecompData | null;
+  private extractNestedCompData(layerData: Layer): NestedCompData {
+    const data = layerData.data as NestedCompData | null;
 
     return {
       compositionId: data?.compositionId ?? '',
       timeRemapEnabled: data?.timeRemapEnabled ?? false,
       timeRemap: data?.timeRemap,
-      collapseTransformations: data?.collapseTransformations ?? false,
+      // Support both new flattenTransform and deprecated collapseTransformations
+      flattenTransform: data?.flattenTransform ?? data?.collapseTransformations ?? false,
       overrideFrameRate: data?.overrideFrameRate ?? false,
       frameRate: data?.frameRate,
     };
@@ -120,7 +124,7 @@ export class PrecompLayer extends BaseLayer {
     });
 
     this.mesh = new THREE.Mesh(geometry, this.material);
-    this.mesh.name = `precomp_${this.id}`;
+    this.mesh.name = `nestedComp_${this.id}`;
     this.group.add(this.mesh);
   }
 
@@ -129,10 +133,10 @@ export class PrecompLayer extends BaseLayer {
   // ============================================================================
 
   /**
-   * Set the render context (required for precomp rendering)
+   * Set the render context (required for nested comp rendering)
    * Called by LayerManager after creation
    */
-  setRenderContext(context: PrecompRenderContext): void {
+  setRenderContext(context: NestedCompRenderContext): void {
     this.renderContext = context;
 
     // Try to load composition
@@ -150,12 +154,12 @@ export class PrecompLayer extends BaseLayer {
    * Load and cache the referenced composition
    */
   private loadComposition(): void {
-    if (!this.renderContext || !this.precompData.compositionId) {
+    if (!this.renderContext || !this.nestedCompData.compositionId) {
       return;
     }
 
     this.cachedComposition = this.renderContext.getComposition(
-      this.precompData.compositionId
+      this.nestedCompData.compositionId
     );
 
     if (this.cachedComposition) {
@@ -189,14 +193,14 @@ export class PrecompLayer extends BaseLayer {
     if (!this.cachedComposition) return 0;
 
     // If time remap is enabled, use that
-    if (this.precompData.timeRemapEnabled && this.precompData.timeRemap) {
-      const remappedTime = this.precompData.timeRemap.animated
-        ? this.precompEvaluator.evaluate(this.precompData.timeRemap, parentFrame)
-        : this.precompData.timeRemap.value;
+    if (this.nestedCompData.timeRemapEnabled && this.nestedCompData.timeRemap) {
+      const remappedTime = this.nestedCompData.timeRemap.animated
+        ? this.nestedCompEvaluator.evaluate(this.nestedCompData.timeRemap, parentFrame)
+        : this.nestedCompData.timeRemap.value;
 
       // Convert time (seconds) to frame
-      const fps = this.precompData.overrideFrameRate && this.precompData.frameRate
-        ? this.precompData.frameRate
+      const fps = this.nestedCompData.overrideFrameRate && this.nestedCompData.frameRate
+        ? this.nestedCompData.frameRate
         : this.cachedComposition.settings.fps;
 
       return Math.floor(remappedTime * fps);
@@ -204,9 +208,9 @@ export class PrecompLayer extends BaseLayer {
 
     // Direct mapping - parent frame = child frame
     // Handle frame rate differences if override is set
-    if (this.precompData.overrideFrameRate && this.precompData.frameRate) {
+    if (this.nestedCompData.overrideFrameRate && this.nestedCompData.frameRate) {
       const parentFps = this.parentFPS;
-      const childFps = this.precompData.frameRate;
+      const childFps = this.nestedCompData.frameRate;
       return Math.floor(parentFrame * (childFps / parentFps));
     }
 
@@ -233,7 +237,7 @@ export class PrecompLayer extends BaseLayer {
 
     // Request render of nested composition
     this.renderTexture = this.renderContext.renderComposition(
-      this.precompData.compositionId,
+      this.nestedCompData.compositionId,
       clampedFrame
     );
 
@@ -254,9 +258,9 @@ export class PrecompLayer extends BaseLayer {
     const props = state.properties;
 
     // Apply time remap if evaluated
-    if (props['timeRemap'] !== undefined && this.precompData.timeRemapEnabled && this.precompData.timeRemap) {
+    if (props['timeRemap'] !== undefined && this.nestedCompData.timeRemapEnabled && this.nestedCompData.timeRemap) {
       // Update the time remap value for the next evaluation cycle
-      this.precompData.timeRemap.value = props['timeRemap'] as number;
+      this.nestedCompData.timeRemap.value = props['timeRemap'] as number;
     }
   }
 
@@ -268,7 +272,7 @@ export class PrecompLayer extends BaseLayer {
    * Set the source composition
    */
   setComposition(compositionId: string): void {
-    this.precompData.compositionId = compositionId;
+    this.nestedCompData.compositionId = compositionId;
     this.loadComposition();
   }
 
@@ -276,38 +280,48 @@ export class PrecompLayer extends BaseLayer {
    * Enable/disable time remapping
    */
   setTimeRemapEnabled(enabled: boolean): void {
-    this.precompData.timeRemapEnabled = enabled;
+    this.nestedCompData.timeRemapEnabled = enabled;
   }
 
   /**
    * Set time remap property
    */
   setTimeRemap(timeRemap: AnimatableProperty<number>): void {
-    this.precompData.timeRemap = timeRemap;
+    this.nestedCompData.timeRemap = timeRemap;
   }
 
   /**
-   * Enable/disable collapse transformations
+   * Enable/disable flatten transform
    */
-  setCollapseTransformations(collapse: boolean): void {
-    this.precompData.collapseTransformations = collapse;
-    this.isCollapsed = collapse;
+  setFlattenTransform(flatten: boolean): void {
+    this.nestedCompData.flattenTransform = flatten;
+    this.isCollapsed = flatten;
 
-    // When collapsed, hide this layer's mesh (nested layers render directly in parent scene)
+    // When flattened, hide this layer's mesh (nested layers render directly in parent scene)
     if (this.mesh) {
-      this.mesh.visible = !collapse;
+      this.mesh.visible = !flatten;
     }
   }
 
-  /**
-   * Check if collapse transformations is enabled
-   */
-  isCollapseEnabled(): boolean {
-    return this.precompData.collapseTransformations;
+  /** @deprecated Use setFlattenTransform instead */
+  setCollapseTransformations(collapse: boolean): void {
+    this.setFlattenTransform(collapse);
   }
 
   /**
-   * Get the current transform values of this precomp layer
+   * Check if flatten transform is enabled
+   */
+  isFlattenEnabled(): boolean {
+    return this.nestedCompData.flattenTransform;
+  }
+
+  /** @deprecated Use isFlattenEnabled instead */
+  isCollapseEnabled(): boolean {
+    return this.isFlattenEnabled();
+  }
+
+  /**
+   * Get the current transform values of this nested comp layer
    * Used when combining transforms for collapsed nested layers
    */
   getParentTransform(): CombinedTransform {
@@ -343,8 +357,8 @@ export class PrecompLayer extends BaseLayer {
   }
 
   /**
-   * Combine parent (this precomp) and nested layer transforms
-   * Used when collapse transformations is enabled
+   * Combine parent (this nested comp) and nested layer transforms
+   * Used when flatten transform is enabled
    *
    * @param nestedTransform - The transform of a nested layer
    * @returns Combined transform for rendering in parent scene
@@ -396,8 +410,8 @@ export class PrecompLayer extends BaseLayer {
   }
 
   /**
-   * Check if this precomp contains 3D layers
-   * Collapse is most useful when nested comp has 3D layers
+   * Check if this nested comp contains 3D layers
+   * Flatten transform is most useful when nested comp has 3D layers
    */
   hasNested3DLayers(): boolean {
     if (!this.cachedComposition) {
@@ -410,8 +424,8 @@ export class PrecompLayer extends BaseLayer {
    * Override frame rate
    */
   setFrameRateOverride(override: boolean, fps?: number): void {
-    this.precompData.overrideFrameRate = override;
-    this.precompData.frameRate = fps;
+    this.nestedCompData.overrideFrameRate = override;
+    this.nestedCompData.frameRate = fps;
   }
 
   // ============================================================================
@@ -419,7 +433,7 @@ export class PrecompLayer extends BaseLayer {
   // ============================================================================
 
   protected onUpdate(properties: Partial<Layer>): void {
-    const data = properties.data as Partial<PrecompData> | undefined;
+    const data = properties.data as Partial<NestedCompData> | undefined;
 
     if (data) {
       if (data.compositionId !== undefined) {
@@ -431,13 +445,16 @@ export class PrecompLayer extends BaseLayer {
       if (data.timeRemap !== undefined) {
         this.setTimeRemap(data.timeRemap);
       }
-      if (data.collapseTransformations !== undefined) {
-        this.setCollapseTransformations(data.collapseTransformations);
+      // Support both new flattenTransform and deprecated collapseTransformations
+      if (data.flattenTransform !== undefined) {
+        this.setFlattenTransform(data.flattenTransform);
+      } else if (data.collapseTransformations !== undefined) {
+        this.setFlattenTransform(data.collapseTransformations);
       }
       if (data.overrideFrameRate !== undefined || data.frameRate !== undefined) {
         this.setFrameRateOverride(
-          data.overrideFrameRate ?? this.precompData.overrideFrameRate,
-          data.frameRate ?? this.precompData.frameRate
+          data.overrideFrameRate ?? this.nestedCompData.overrideFrameRate,
+          data.frameRate ?? this.nestedCompData.frameRate
         );
       }
     }
@@ -448,10 +465,17 @@ export class PrecompLayer extends BaseLayer {
   // ============================================================================
 
   /**
-   * Get precomp data
+   * Get nested comp data
    */
-  getPrecompData(): PrecompData {
-    return { ...this.precompData };
+  getNestedCompData(): NestedCompData {
+    return { ...this.nestedCompData };
+  }
+
+  /**
+   * @deprecated Use getNestedCompData() instead
+   */
+  getPrecompData(): NestedCompData {
+    return this.getNestedCompData();
   }
 
   /**
@@ -465,7 +489,7 @@ export class PrecompLayer extends BaseLayer {
    * Get composition ID
    */
   getCompositionId(): string {
-    return this.precompData.compositionId;
+    return this.nestedCompData.compositionId;
   }
 
   // ============================================================================
@@ -487,3 +511,6 @@ export class PrecompLayer extends BaseLayer {
     this.cachedComposition = null;
   }
 }
+
+/** @deprecated Use NestedCompLayer instead */
+export const PrecompLayer = NestedCompLayer;

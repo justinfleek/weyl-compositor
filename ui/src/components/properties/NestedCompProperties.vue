@@ -1,5 +1,5 @@
 <template>
-  <div class="precomp-properties">
+  <div class="nested-comp-properties">
     <!-- Composition Info -->
     <div class="property-section" v-if="compInfo">
       <div class="section-header">Composition Info</div>
@@ -27,7 +27,7 @@
     <div class="property-section">
       <div class="section-header">Actions</div>
       <div class="section-content">
-        <button class="action-btn" @click="enterPrecomp">
+        <button class="action-btn" @click="enterNestedComp">
           Enter Composition
         </button>
       </div>
@@ -38,10 +38,10 @@
       <div class="section-header">
         <span>Time Remap</span>
         <label class="header-toggle">
-          <input type="checkbox" :checked="precompData.timeRemapEnabled" @change="toggleTimeRemap" />
+          <input type="checkbox" :checked="nestedCompData.timeRemapEnabled" @change="toggleTimeRemap" />
         </label>
       </div>
-      <div class="section-content" v-if="precompData.timeRemapEnabled">
+      <div class="section-content" v-if="nestedCompData.timeRemapEnabled">
         <div class="property-row">
           <label>Remap Time</label>
           <div class="control-with-keyframe">
@@ -51,14 +51,14 @@
               :min="0" :step="0.01" :precision="3" unit="s"
             />
             <KeyframeToggle
-              v-if="precompData.timeRemap"
-              :property="precompData.timeRemap"
+              v-if="nestedCompData.timeRemap"
+              :property="nestedCompData.timeRemap"
               :layerId="layer.id"
               propertyPath="data.timeRemap"
             />
           </div>
         </div>
-        <p class="hint">Animate to control precomp playback independently of composition time.</p>
+        <p class="hint">Animate to control nested comp playback independently of composition time.</p>
       </div>
     </div>
 
@@ -67,14 +67,14 @@
       <div class="section-header">
         <span>Frame Rate Override</span>
         <label class="header-toggle">
-          <input type="checkbox" :checked="precompData.overrideFrameRate" @change="toggleFrameRateOverride" />
+          <input type="checkbox" :checked="nestedCompData.overrideFrameRate" @change="toggleFrameRateOverride" />
         </label>
       </div>
-      <div class="section-content" v-if="precompData.overrideFrameRate">
+      <div class="section-content" v-if="nestedCompData.overrideFrameRate">
         <div class="property-row">
           <label>Frame Rate</label>
           <ScrubableNumber
-            :modelValue="precompData.frameRate || compInfo?.fps || 30"
+            :modelValue="nestedCompData.frameRate || compInfo?.fps || 30"
             @update:modelValue="updateFrameRate"
             :min="1" :max="120" :step="1" :precision="0" unit="fps"
           />
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <!-- Collapse Transformations -->
+    <!-- Flatten Transform -->
     <div class="property-section">
       <div class="section-header">Options</div>
       <div class="section-content">
@@ -90,13 +90,13 @@
           <label class="checkbox-row">
             <input
               type="checkbox"
-              :checked="precompData.collapseTransformations"
-              @change="updateCollapseTransform"
+              :checked="nestedCompData.flattenTransform"
+              @change="updateFlattenTransform"
             />
-            <span>Collapse Transformations</span>
+            <span>Flatten Transform</span>
           </label>
         </div>
-        <p class="hint" v-if="precompData.collapseTransformations">
+        <p class="hint" v-if="nestedCompData.flattenTransform">
           3D layers render in parent's 3D space. Effects are rasterized.
         </p>
       </div>
@@ -109,7 +109,7 @@ import { computed } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { ScrubableNumber } from '@/components/controls';
 import KeyframeToggle from './KeyframeToggle.vue';
-import type { Layer, PrecompData, AnimatableProperty } from '@/types/project';
+import type { Layer, NestedCompData, AnimatableProperty } from '@/types/project';
 import { createAnimatableProperty } from '@/types/project';
 
 const props = defineProps<{
@@ -117,19 +117,20 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update', data: Partial<PrecompData>): void;
+  (e: 'update', data: Partial<NestedCompData>): void;
 }>();
 
 const store = useCompositorStore();
 
-// Get precomp data from layer
-const precompData = computed<PrecompData>(() => {
-  const data = props.layer.data as PrecompData | null;
+// Get nested comp data from layer
+const nestedCompData = computed<NestedCompData>(() => {
+  const data = props.layer.data as NestedCompData | null;
   return {
     compositionId: data?.compositionId ?? '',
     timeRemapEnabled: data?.timeRemapEnabled ?? false,
     timeRemap: data?.timeRemap,
-    collapseTransformations: data?.collapseTransformations ?? false,
+    // Support both new flattenTransform and deprecated collapseTransformations
+    flattenTransform: data?.flattenTransform ?? data?.collapseTransformations ?? false,
     overrideFrameRate: data?.overrideFrameRate ?? false,
     frameRate: data?.frameRate,
   };
@@ -137,8 +138,8 @@ const precompData = computed<PrecompData>(() => {
 
 // Get referenced composition info
 const compInfo = computed(() => {
-  if (!precompData.value.compositionId) return null;
-  const comp = store.project.compositions[precompData.value.compositionId];
+  if (!nestedCompData.value.compositionId) return null;
+  const comp = store.project.compositions[nestedCompData.value.compositionId];
   if (!comp) return null;
   return {
     name: comp.name,
@@ -152,8 +153,8 @@ const compInfo = computed(() => {
 
 // Time remap value
 const timeRemapValue = computed(() => {
-  if (!precompData.value.timeRemap) return 0;
-  return precompData.value.timeRemap.value;
+  if (!nestedCompData.value.timeRemap) return 0;
+  return nestedCompData.value.timeRemap.value;
 });
 
 // Format duration as MM:SS.ms
@@ -164,21 +165,21 @@ function formatDuration(seconds: number | undefined): string {
   return `${mins}:${secs.padStart(5, '0')}`;
 }
 
-// Enter the precomp composition
-function enterPrecomp() {
-  if (precompData.value.compositionId) {
-    store.enterPrecomp(precompData.value.compositionId);
+// Enter the nested comp composition
+function enterNestedComp() {
+  if (nestedCompData.value.compositionId) {
+    store.enterNestedComp(nestedCompData.value.compositionId);
   }
 }
 
 // Time remap
 function toggleTimeRemap(e: Event) {
   const enabled = (e.target as HTMLInputElement).checked;
-  const updates: Partial<PrecompData> = { timeRemapEnabled: enabled };
+  const updates: Partial<NestedCompData> = { timeRemapEnabled: enabled };
 
   // Create time remap property if enabling
-  if (enabled && !precompData.value.timeRemap) {
-    updates.timeRemap = createAnimatableProperty(0);
+  if (enabled && !nestedCompData.value.timeRemap) {
+    updates.timeRemap = createAnimatableProperty('Time Remap', 0, 'number');
   }
 
   store.updateLayerData(props.layer.id, updates);
@@ -186,9 +187,9 @@ function toggleTimeRemap(e: Event) {
 }
 
 function updateTimeRemap(value: number) {
-  if (precompData.value.timeRemap) {
+  if (nestedCompData.value.timeRemap) {
     const timeRemap: AnimatableProperty<number> = {
-      ...precompData.value.timeRemap,
+      ...nestedCompData.value.timeRemap,
       value,
     };
     store.updateLayerData(props.layer.id, { timeRemap });
@@ -199,7 +200,7 @@ function updateTimeRemap(value: number) {
 // Frame rate override
 function toggleFrameRateOverride(e: Event) {
   const enabled = (e.target as HTMLInputElement).checked;
-  const updates: Partial<PrecompData> = {
+  const updates: Partial<NestedCompData> = {
     overrideFrameRate: enabled,
     frameRate: enabled ? (compInfo.value?.fps || 30) : undefined,
   };
@@ -212,18 +213,18 @@ function updateFrameRate(value: number) {
   emit('update', { frameRate: value });
 }
 
-// Collapse transformations
-function updateCollapseTransform(e: Event) {
+// Flatten transform
+function updateFlattenTransform(e: Event) {
   const enabled = (e.target as HTMLInputElement).checked;
-  store.updateLayerData(props.layer.id, { collapseTransformations: enabled });
+  store.updateLayerData(props.layer.id, { flattenTransform: enabled });
   // Also update the layer-level flag
-  store.updateLayer(props.layer.id, { collapseTransform: enabled });
-  emit('update', { collapseTransformations: enabled });
+  store.updateLayer(props.layer.id, { flattenTransform: enabled });
+  emit('update', { flattenTransform: enabled });
 }
 </script>
 
 <style scoped>
-.precomp-properties {
+.nested-comp-properties {
   padding: 0;
 }
 

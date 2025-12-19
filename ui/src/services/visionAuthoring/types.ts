@@ -225,6 +225,7 @@ export type VisionModelId =
 export interface VisionModelConfig {
   readonly modelId: VisionModelId;
   readonly apiEndpoint?: string;
+  /** @deprecated API keys are now handled server-side via environment variables */
   readonly apiKey?: string;
   readonly maxTokens?: number;
   readonly temperature?: number;

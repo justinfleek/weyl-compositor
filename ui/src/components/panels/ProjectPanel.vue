@@ -10,7 +10,7 @@
             <button @click="createNewComposition">🎬 New Composition</button>
             <button @click="createNewSolid">⬜ New Solid</button>
             <button @click="createNewText">T New Text</button>
-            <button @click="createNewNull">◇ New Null</button>
+            <button @click="createNewControl">□ New Control</button>
             <button @click="createNewSpline">✏ New Spline</button>
             <button @click="createNewModel">🧊 New 3D Model</button>
             <button @click="createNewPointCloud">☁ New Point Cloud</button>
@@ -277,10 +277,10 @@ function createNewText() {
   console.log('[ProjectPanel] Created text layer:', layer.id);
 }
 
-function createNewNull() {
+function createNewControl() {
   showNewMenu.value = false;
-  const layer = store.createLayer('null', 'Null');
-  console.log('[ProjectPanel] Created null layer:', layer.id);
+  const layer = store.createLayer('control', 'Control');
+  console.log('[ProjectPanel] Created control layer:', layer.id);
 }
 
 function createNewSpline() {

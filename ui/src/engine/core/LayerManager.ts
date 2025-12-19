@@ -29,12 +29,12 @@ import type { EvaluatedLayer } from '../MotionEngine';
 import { BaseLayer } from '../layers/BaseLayer';
 import { ImageLayer } from '../layers/ImageLayer';
 import { SolidLayer } from '../layers/SolidLayer';
-import { NullLayer } from '../layers/NullLayer';
+import { ControlLayer } from '../layers/ControlLayer';
 import { TextLayer } from '../layers/TextLayer';
 import { SplineLayer } from '../layers/SplineLayer';
 import { ParticleLayer } from '../layers/ParticleLayer';
 import { VideoLayer, type VideoMetadata } from '../layers/VideoLayer';
-import { PrecompLayer, type PrecompRenderContext } from '../layers/PrecompLayer';
+import { NestedCompLayer, type NestedCompRenderContext } from '../layers/NestedCompLayer';
 import { AdjustmentLayer, type AdjustmentRenderContext } from '../layers/AdjustmentLayer';
 import { CameraLayer, type CameraGetter, type CameraUpdater } from '../layers/CameraLayer';
 import { LightLayer } from '../layers/LightLayer';
@@ -57,7 +57,7 @@ export class LayerManager {
 
   // Callbacks
   private onVideoMetadataLoaded?: (layerId: string, metadata: VideoMetadata) => void;
-  private precompRenderContext: PrecompRenderContext | null = null;
+  private nestedCompRenderContext: NestedCompRenderContext | null = null;
   private adjustmentRenderContext: AdjustmentRenderContext | null = null;
   private cameraGetter?: CameraGetter;
   private cameraAtFrameGetter?: import('../layers/CameraLayer').CameraAtFrameGetter;
@@ -103,18 +103,23 @@ export class LayerManager {
   }
 
   /**
-   * Set the precomp render context
-   * This allows precomp layers to render nested compositions
+   * Set the nested comp render context
+   * This allows nested comp layers to render nested compositions
    */
-  setPrecompRenderContext(context: PrecompRenderContext): void {
-    this.precompRenderContext = context;
+  setNestedCompRenderContext(context: NestedCompRenderContext): void {
+    this.nestedCompRenderContext = context;
 
-    // Update existing precomp layers
+    // Update existing nested comp layers
     for (const layer of this.layers.values()) {
-      if (layer.type === 'precomp') {
-        (layer as PrecompLayer).setRenderContext(context);
+      if (layer.type === 'nestedComp') {
+        (layer as NestedCompLayer).setRenderContext(context);
       }
     }
+  }
+
+  /** @deprecated Use setNestedCompRenderContext instead */
+  setPrecompRenderContext(context: NestedCompRenderContext): void {
+    this.setNestedCompRenderContext(context);
   }
 
   /**
@@ -181,8 +186,8 @@ export class LayerManager {
       if (layer.type === 'video') {
         (layer as VideoLayer).setFPS(fps);
       }
-      if (layer.type === 'precomp') {
-        (layer as PrecompLayer).setFPS(fps);
+      if (layer.type === 'nestedComp') {
+        (layer as NestedCompLayer).setFPS(fps);
       }
     }
   }
@@ -254,10 +259,10 @@ export class LayerManager {
       });
     }
 
-    // Precomp layer: provide render context
-    if (layer.type === 'precomp' && this.precompRenderContext) {
-      const precompLayer = layer as PrecompLayer;
-      precompLayer.setRenderContext(this.precompRenderContext);
+    // Nested comp layer: provide render context
+    if (layer.type === 'nestedComp' && this.nestedCompRenderContext) {
+      const nestedCompLayer = layer as NestedCompLayer;
+      nestedCompLayer.setRenderContext(this.nestedCompRenderContext);
     }
 
     // Camera layer: provide camera data access and spline provider
@@ -284,10 +289,10 @@ export class LayerManager {
       videoLayer.setFPS(this.compositionFPS);
     }
 
-    // Precomp layer: provide FPS
-    if (layer.type === 'precomp') {
-      const precompLayer = layer as PrecompLayer;
-      precompLayer.setFPS(this.compositionFPS);
+    // Nested comp layer: provide FPS
+    if (layer.type === 'nestedComp') {
+      const nestedCompLayer = layer as NestedCompLayer;
+      nestedCompLayer.setFPS(this.compositionFPS);
     }
 
     // Any layer with adjustmentLayer flag: provide render context
@@ -329,8 +334,9 @@ export class LayerManager {
       case 'solid':
         return new SolidLayer(layerData);
 
-      case 'null':
-        return new NullLayer(layerData);
+      case 'control':
+      case 'null': // Deprecated, use 'control'
+        return new ControlLayer(layerData);
 
       case 'text':
         return new TextLayer(layerData, this.resources);
@@ -344,8 +350,8 @@ export class LayerManager {
       case 'video':
         return new VideoLayer(layerData, this.resources);
 
-      case 'precomp':
-        return new PrecompLayer(layerData);
+      case 'nestedComp':
+        return new NestedCompLayer(layerData);
 
       case 'camera':
         return new CameraLayer(layerData);
@@ -369,8 +375,8 @@ export class LayerManager {
         return new PointCloudLayer(layerData);
 
       default:
-        layerLogger.warn(`LayerManager: Unknown layer type: ${layerData.type}, creating NullLayer`);
-        return new NullLayer(layerData);
+        layerLogger.warn(`LayerManager: Unknown layer type: ${layerData.type}, creating ControlLayer`);
+        return new ControlLayer(layerData);
     }
   }
 
@@ -907,21 +913,31 @@ export class LayerManager {
   }
 
   /**
-   * Solo a layer (hide all others)
+   * Isolate a layer (hide all others)
    */
-  soloLayer(layerId: string): void {
+  isolateLayer(layerId: string): void {
     for (const [id, layer] of this.layers) {
       layer.setVisible(id === layerId);
     }
   }
 
+  /** @deprecated Use isolateLayer instead */
+  soloLayer(layerId: string): void {
+    this.isolateLayer(layerId);
+  }
+
   /**
-   * Unsolo all layers (show all)
+   * Unisolate all layers (show all)
    */
-  unsoloAll(): void {
+  unisolateAll(): void {
     for (const layer of this.layers.values()) {
       layer.setVisible(true);
     }
+  }
+
+  /** @deprecated Use unisolateAll instead */
+  unsoloAll(): void {
+    this.unisolateAll();
   }
 
   // ============================================================================
@@ -931,7 +947,7 @@ export class LayerManager {
   /**
    * Set callback for retrieving cross-composition matte canvases
    *
-   * This enables track mattes from other compositions (precomps)
+   * This enables track mattes from other compositions (nested comps)
    * to be used as matte sources.
    */
   setCrossCompMatteGetter(

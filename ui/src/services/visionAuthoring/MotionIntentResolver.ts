@@ -335,11 +335,6 @@ export class MotionIntentResolver {
     context: SceneContext,
     model: 'gpt-4v' | 'gpt-4o'
   ): Promise<MotionIntentResult> {
-    if (!this.config.apiKey) {
-      logger.warn('OpenAI API key not configured, falling back to rule-based');
-      return this.resolveWithRules(prompt, context);
-    }
-
     const imageBase64 = context.frameImage
       ? this.imageDataToBase64(context.frameImage)
       : null;
@@ -358,11 +353,11 @@ export class MotionIntentResolver {
     ];
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Use backend proxy (API key handled server-side)
+      const response = await fetch('/weyl/api/vision/openai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.apiKey}`,
         },
         body: JSON.stringify({
           model: model === 'gpt-4o' ? 'gpt-4o' : 'gpt-4-vision-preview',
@@ -372,12 +367,13 @@ export class MotionIntentResolver {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+      const result = await response.json();
+
+      if (result.status !== 'success') {
+        throw new Error(result.message || `OpenAI API error: ${response.status}`);
       }
 
-      const data = await response.json();
-      const content = data.choices[0]?.message?.content;
+      const content = result.data.choices[0]?.message?.content;
 
       return this.parseAIResponse(content, prompt);
     } catch (error) {
@@ -394,11 +390,6 @@ export class MotionIntentResolver {
     prompt: string,
     context: SceneContext
   ): Promise<MotionIntentResult> {
-    if (!this.config.apiKey) {
-      logger.warn('Anthropic API key not configured, falling back to rule-based');
-      return this.resolveWithRules(prompt, context);
-    }
-
     const imageBase64 = context.frameImage
       ? this.imageDataToBase64(context.frameImage)
       : null;
@@ -411,27 +402,28 @@ export class MotionIntentResolver {
       : [{ type: 'text', text: prompt }];
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // Use backend proxy (API key handled server-side)
+      const response = await fetch('/weyl/api/vision/anthropic', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.config.apiKey,
-          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
           model: 'claude-3-5-sonnet-20241022',
           max_tokens: this.config.maxTokens,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content }],
+          messages: [
+            { role: 'user', content: SYSTEM_PROMPT + '\n\nUser request: ' + (typeof content === 'string' ? content : JSON.stringify(content)) }
+          ],
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Anthropic API error: ${response.status}`);
+      const result = await response.json();
+
+      if (result.status !== 'success') {
+        throw new Error(result.message || `Anthropic API error: ${response.status}`);
       }
 
-      const data = await response.json();
-      const responseContent = data.content[0]?.text;
+      const responseContent = result.data.content[0]?.text;
 
       return this.parseAIResponse(responseContent, prompt);
     } catch (error) {

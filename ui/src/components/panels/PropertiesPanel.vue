@@ -16,7 +16,7 @@
         <div v-if="expandedSections.includes('transform')" class="section-content">
           <!-- Anchor Point -->
           <div class="property-row">
-            <span class="stopwatch" :class="{ active: hasKeyframe('anchorPoint') }" @click="toggleKeyframe('anchorPoint')">⏱</span>
+            <span class="keyframe-toggle" :class="{ active: hasKeyframe('anchorPoint') }" @click="toggleKeyframe('anchorPoint')">◆</span>
             <label>Anchor Point</label>
             <div class="value-group">
               <ScrubableNumber
@@ -40,7 +40,7 @@
 
           <!-- Position -->
           <div class="property-row" :class="{ 'has-driver': hasDriver('transform.position.x') }">
-            <span class="stopwatch" :class="{ active: hasKeyframe('position') }" @click="toggleKeyframe('position')">⏱</span>
+            <span class="keyframe-toggle" :class="{ active: hasKeyframe('position') }" @click="toggleKeyframe('position')">◆</span>
             <Pickwhip
               v-if="selectedLayer"
               :layerId="selectedLayer.id"
@@ -72,7 +72,7 @@
 
           <!-- Scale -->
           <div class="property-row" :class="{ 'has-driver': hasDriver('transform.scale.x') || hasDriver('transform.scale.y') }">
-            <span class="stopwatch" :class="{ active: hasKeyframe('scale') }" @click="toggleKeyframe('scale')">⏱</span>
+            <span class="keyframe-toggle" :class="{ active: hasKeyframe('scale') }" @click="toggleKeyframe('scale')">◆</span>
             <label>Scale</label>
             <div class="value-group scale-group">
               <button
@@ -111,7 +111,7 @@
           <!-- 3D Rotations -->
           <template v-if="selectedLayer?.threeD">
             <div class="property-row">
-              <span class="stopwatch" :class="{ active: hasKeyframe('orientation') }" @click="toggleKeyframe('orientation')">⏱</span>
+              <span class="keyframe-toggle" :class="{ active: hasKeyframe('orientation') }" @click="toggleKeyframe('orientation')">◆</span>
               <label>Orientation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.orientationX" suffix="°" @update:modelValue="updateTransform" />
@@ -120,21 +120,21 @@
               </div>
             </div>
             <div class="property-row">
-              <span class="stopwatch" :class="{ active: hasKeyframe('rotationX') }" @click="toggleKeyframe('rotationX')">⏱</span>
+              <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotationX') }" @click="toggleKeyframe('rotationX')">◆</span>
               <label>X Rotation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.rotationX" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
             <div class="property-row">
-              <span class="stopwatch" :class="{ active: hasKeyframe('rotationY') }" @click="toggleKeyframe('rotationY')">⏱</span>
+              <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotationY') }" @click="toggleKeyframe('rotationY')">◆</span>
               <label>Y Rotation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.rotationY" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
             <div class="property-row">
-              <span class="stopwatch" :class="{ active: hasKeyframe('rotationZ') }" @click="toggleKeyframe('rotationZ')">⏱</span>
+              <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotationZ') }" @click="toggleKeyframe('rotationZ')">◆</span>
               <label>Z Rotation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.rotationZ" suffix="°" @update:modelValue="updateTransform" />
@@ -144,7 +144,7 @@
           <!-- 2D Rotation -->
           <template v-else>
             <div class="property-row" :class="{ 'has-driver': hasDriver('transform.rotation') }">
-              <span class="stopwatch" :class="{ active: hasKeyframe('rotation') }" @click="toggleKeyframe('rotation')">⏱</span>
+              <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotation') }" @click="toggleKeyframe('rotation')">◆</span>
               <label>Rotation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.rotation" suffix="°" @update:modelValue="updateTransform" />
@@ -154,7 +154,7 @@
 
           <!-- Opacity -->
           <div class="property-row" :class="{ 'has-driver': hasDriver('opacity') }">
-            <span class="stopwatch" :class="{ active: hasKeyframe('opacity') }" @click="toggleKeyframe('opacity')">⏱</span>
+            <span class="keyframe-toggle" :class="{ active: hasKeyframe('opacity') }" @click="toggleKeyframe('opacity')">◆</span>
             <label>Opacity</label>
             <div class="value-group opacity-value">
               <ScrubableNumber
@@ -204,7 +204,7 @@ import LightProperties from '@/components/properties/LightProperties.vue';
 import ShapeProperties from '@/components/properties/ShapeProperties.vue';
 import VideoProperties from '@/components/properties/VideoProperties.vue';
 import CameraProperties from '@/components/properties/CameraProperties.vue';
-import PrecompProperties from '@/components/properties/PrecompProperties.vue';
+import NestedCompProperties from '@/components/properties/NestedCompProperties.vue';
 import Pickwhip from '@/components/controls/Pickwhip.vue';
 import DriverList from '@/components/panels/DriverList.vue';
 import type { PropertyPath } from '@/services/propertyDriver';
@@ -300,8 +300,8 @@ const layerPropertiesComponent = computed<Component | null>(() => {
       return markRaw(VideoProperties);
     case 'camera':
       return markRaw(CameraProperties);
-    case 'precomp':
-      return markRaw(PrecompProperties);
+    case 'nestedComp':
+      return markRaw(NestedCompProperties);
     default:
       return null;
   }
@@ -668,7 +668,7 @@ function hasDriver(property: PropertyPath): boolean {
   text-decoration: underline;
 }
 
-.stopwatch {
+.keyframe-toggle {
   width: 16px;
   font-size: 12px;
   color: #555;
@@ -676,11 +676,11 @@ function hasDriver(property: PropertyPath): boolean {
   flex-shrink: 0;
 }
 
-.stopwatch:hover {
+.keyframe-toggle:hover {
   color: #888;
 }
 
-.stopwatch.active {
+.keyframe-toggle.active {
   color: #f0c040;
 }
 

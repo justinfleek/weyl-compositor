@@ -1,6 +1,6 @@
 <template>
   <div class="composition-tabs">
-    <!-- Breadcrumb navigation for nested precomps -->
+    <!-- Breadcrumb navigation for nested compositions -->
     <div v-if="breadcrumbPath.length > 1" class="breadcrumb-nav">
       <template v-for="(crumb, idx) in breadcrumbPath" :key="crumb.id">
         <span
@@ -22,13 +22,13 @@
         class="tab"
         :class="{
           active: comp.id === activeCompositionId,
-          precomp: comp.isPrecomp
+          nestedComp: comp.isNestedComp
         }"
         @click="switchToComposition(comp.id)"
         @dblclick="startRename(comp)"
         @contextmenu.prevent="showContextMenu($event, comp)"
       >
-        <span v-if="comp.isPrecomp" class="precomp-icon" title="Pre-composition">&#x25A0;</span>
+        <span v-if="comp.isNestedComp" class="nested-comp-icon" title="Nested Composition">&#x25A0;</span>
         <span v-if="editingId === comp.id" class="tab-name">
           <input
             ref="renameInput"
@@ -210,7 +210,7 @@ function duplicateComposition() {
     const newComp = store.createComposition(
       `${original.name} Copy`,
       original.settings,
-      original.isPrecomp
+      original.isNestedComp
     );
     // TODO: Copy layers
     console.log('[CompositionTabs] Duplicated:', newComp.name);
@@ -305,11 +305,11 @@ onUnmounted(() => {
   margin-bottom: -1px;
 }
 
-.tab.precomp {
+.tab.nestedComp {
   font-style: italic;
 }
 
-.precomp-icon {
+.nested-comp-icon {
   font-size: 11px;
   color: #6b8bb8;
 }

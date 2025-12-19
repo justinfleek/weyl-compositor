@@ -231,7 +231,7 @@ export function createLayer(
       };
       break;
 
-    case 'precomp':
+    case 'nestedComp':
       layerData = {
         compositionId: null,
         timeRemap: null
@@ -271,7 +271,7 @@ export function createLayer(
     type,
     visible: true,
     locked: false,
-    solo: false,
+    isolate: false,
     threeD: false,
     motionBlur: false,
     inPoint: 0,

@@ -315,12 +315,17 @@ export class WeylEngine {
   }
 
   /**
-   * Set the precomp render context for LayerManager
-   * Allows precomp layers to render nested compositions
+   * Set the nested comp render context for LayerManager
+   * Allows nested comp layers to render nested compositions
    * @param context - Render context with composition access
    */
-  setPrecompRenderContext(context: import('./layers/PrecompLayer').PrecompRenderContext): void {
-    this.layers.setPrecompRenderContext(context);
+  setNestedCompRenderContext(context: import('./layers/NestedCompLayer').NestedCompRenderContext): void {
+    this.layers.setNestedCompRenderContext(context);
+  }
+
+  /** @deprecated Use setNestedCompRenderContext instead */
+  setPrecompRenderContext(context: import('./layers/NestedCompLayer').NestedCompRenderContext): void {
+    this.setNestedCompRenderContext(context);
   }
 
   /**
@@ -665,6 +670,7 @@ export class WeylEngine {
 
     const loop = () => {
       if (!this.state.isRendering || this.state.isDisposed) {
+        this.animationFrameId = null; // Clear ID when loop exits
         return;
       }
 
@@ -1763,21 +1769,21 @@ export class WeylEngine {
   }
 
   // ============================================================================
-  // PRECOMP RENDER-TO-TEXTURE
+  // NESTED COMP RENDER-TO-TEXTURE
   // ============================================================================
 
-  /** Cache of layer managers for precomp compositions */
-  private precompLayerManagers: Map<string, LayerManager> = new Map();
+  /** Cache of layer managers for nested compositions */
+  private nestedCompLayerManagers: Map<string, LayerManager> = new Map();
 
-  /** Cache of scenes for precomp compositions */
-  private precompScenes: Map<string, SceneManager> = new Map();
+  /** Cache of scenes for nested compositions */
+  private nestedCompScenes: Map<string, SceneManager> = new Map();
 
   /** Cache of last rendered frame per composition (for texture caching) */
-  private precompLastFrame: Map<string, number> = new Map();
+  private nestedCompLastFrame: Map<string, number> = new Map();
 
   /**
    * Render a composition to a texture
-   * Used by PrecompLayer to render nested compositions
+   * Used by NestedCompLayer to render nested compositions
    *
    * @param compositionId - The composition ID to render
    * @param layers - The layers in that composition
@@ -1795,8 +1801,8 @@ export class WeylEngine {
 
     try {
       // Check if we already rendered this frame (texture caching)
-      const lastFrame = this.precompLastFrame.get(compositionId);
-      const target = this.renderer.getPrecompRenderTarget(
+      const lastFrame = this.nestedCompLastFrame.get(compositionId);
+      const target = this.renderer.getNestedCompRenderTarget(
         compositionId,
         settings.width,
         settings.height
@@ -1808,48 +1814,48 @@ export class WeylEngine {
       }
 
       // Get or create scene for this composition
-      let precompScene = this.precompScenes.get(compositionId);
-      if (!precompScene) {
-        precompScene = new SceneManager(null);
-        precompScene.setCompositionSize(settings.width, settings.height);
-        this.precompScenes.set(compositionId, precompScene);
+      let nestedCompScene = this.nestedCompScenes.get(compositionId);
+      if (!nestedCompScene) {
+        nestedCompScene = new SceneManager(null);
+        nestedCompScene.setCompositionSize(settings.width, settings.height);
+        this.nestedCompScenes.set(compositionId, nestedCompScene);
       }
 
       // Get or create layer manager for this composition
-      let precompLayers = this.precompLayerManagers.get(compositionId);
-      if (!precompLayers) {
-        precompLayers = new LayerManager(precompScene, this.resources);
-        precompLayers.setRenderer(this.renderer.getWebGLRenderer());
-        precompLayers.setCompositionFPS(settings.fps);
-        precompLayers.setCamera(this.camera.camera);
-        this.precompLayerManagers.set(compositionId, precompLayers);
+      let nestedCompLayers = this.nestedCompLayerManagers.get(compositionId);
+      if (!nestedCompLayers) {
+        nestedCompLayers = new LayerManager(nestedCompScene, this.resources);
+        nestedCompLayers.setRenderer(this.renderer.getWebGLRenderer());
+        nestedCompLayers.setCompositionFPS(settings.fps);
+        nestedCompLayers.setCamera(this.camera.camera);
+        this.nestedCompLayerManagers.set(compositionId, nestedCompLayers);
       }
 
       // Sync layers - add new, update existing, remove deleted
-      const currentLayerIds = new Set(precompLayers.getLayerIds());
+      const currentLayerIds = new Set(nestedCompLayers.getLayerIds());
       const targetLayerIds = new Set(layers.map(l => l.id));
 
       // Remove layers that are no longer in the composition
       for (const id of currentLayerIds) {
         if (!targetLayerIds.has(id)) {
-          precompLayers.remove(id);
+          nestedCompLayers.remove(id);
         }
       }
 
       // Add or update layers
       for (const layerData of layers) {
         if (currentLayerIds.has(layerData.id)) {
-          precompLayers.update(layerData.id, layerData);
+          nestedCompLayers.update(layerData.id, layerData);
         } else {
-          precompLayers.create(layerData);
+          nestedCompLayers.create(layerData);
         }
       }
 
       // Evaluate layers at the given frame
-      precompLayers.evaluateFrame(frame, this.audioReactiveGetter);
+      nestedCompLayers.evaluateFrame(frame, this.audioReactiveGetter);
 
       // Create a camera for this composition size
-      const precompCamera = new THREE.OrthographicCamera(
+      const nestedCompCamera = new THREE.OrthographicCamera(
         -settings.width / 2,
         settings.width / 2,
         settings.height / 2,
@@ -1857,18 +1863,18 @@ export class WeylEngine {
         0.1,
         10000
       );
-      precompCamera.position.set(0, 0, 1000);
-      precompCamera.lookAt(0, 0, 0);
+      nestedCompCamera.position.set(0, 0, 1000);
+      nestedCompCamera.lookAt(0, 0, 0);
 
       // Render to texture
       const texture = this.renderer.renderSceneToTexture(
-        precompScene.scene,
-        precompCamera,
+        nestedCompScene.scene,
+        nestedCompCamera,
         target
       );
 
       // Cache the frame number
-      this.precompLastFrame.set(compositionId, frame);
+      this.nestedCompLastFrame.set(compositionId, frame);
 
       return texture;
     } catch (error) {
@@ -1878,34 +1884,44 @@ export class WeylEngine {
   }
 
   /**
-   * Clear precomp cache for a specific composition
+   * Clear nested composition cache for a specific composition
    * Call when a composition is deleted or significantly changed
    */
+  clearNestedCompCache(compositionId: string): void {
+    const nestedCompLayers = this.nestedCompLayerManagers.get(compositionId);
+    if (nestedCompLayers) {
+      nestedCompLayers.dispose();
+      this.nestedCompLayerManagers.delete(compositionId);
+    }
+
+    const nestedCompScene = this.nestedCompScenes.get(compositionId);
+    if (nestedCompScene) {
+      nestedCompScene.dispose();
+      this.nestedCompScenes.delete(compositionId);
+    }
+
+    this.nestedCompLastFrame.delete(compositionId);
+    this.renderer.disposeNestedCompTarget(compositionId);
+  }
+
+  /** @deprecated Use clearNestedCompCache instead */
   clearPrecompCache(compositionId: string): void {
-    const precompLayers = this.precompLayerManagers.get(compositionId);
-    if (precompLayers) {
-      precompLayers.dispose();
-      this.precompLayerManagers.delete(compositionId);
-    }
-
-    const precompScene = this.precompScenes.get(compositionId);
-    if (precompScene) {
-      precompScene.dispose();
-      this.precompScenes.delete(compositionId);
-    }
-
-    this.precompLastFrame.delete(compositionId);
-    this.renderer.disposePrecompTarget(compositionId);
+    this.clearNestedCompCache(compositionId);
   }
 
   /**
-   * Clear all precomp caches
+   * Clear all nested composition caches
    */
-  clearAllPrecompCaches(): void {
-    for (const [id] of this.precompLayerManagers) {
-      this.clearPrecompCache(id);
+  clearAllNestedCompCaches(): void {
+    for (const [id] of this.nestedCompLayerManagers) {
+      this.clearNestedCompCache(id);
     }
-    this.renderer.disposeAllPrecompTargets();
+    this.renderer.disposeAllNestedCompTargets();
+  }
+
+  /** @deprecated Use clearAllNestedCompCaches instead */
+  clearAllPrecompCaches(): void {
+    this.clearAllNestedCompCaches();
   }
 
   // ============================================================================
@@ -1923,8 +1939,8 @@ export class WeylEngine {
 
     this.stopRenderLoop();
 
-    // Clear precomp caches
-    this.clearAllPrecompCaches();
+    // Clear nested composition caches
+    this.clearAllNestedCompCaches();
 
     // Remove WebGL context event listeners
     const canvas = this.config.canvas;

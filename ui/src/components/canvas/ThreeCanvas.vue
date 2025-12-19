@@ -405,7 +405,7 @@ onMounted(async () => {
     loading.value = true;
     engine.value = new WeylEngine(config);
 
-    // Wire up callbacks for video/precomp/camera integration
+    // Wire up callbacks for video/nested composition/camera integration
     engine.value.setAssetGetter((assetId: string) => store.assets[assetId]);
     engine.value.setVideoMetadataCallback((layerId, metadata) => {
       store.onVideoMetadataLoaded(layerId, metadata);
@@ -416,25 +416,25 @@ onMounted(async () => {
       (cameraId: string, frame: number) => store.getCameraAtFrame(cameraId, frame)
     );
 
-    // Wire up precomp rendering - allows precomp layers to render nested compositions
+    // Wire up nested comp rendering - allows nested comp layers to render nested compositions
     // The engine maintains a cache of layer managers and scenes per composition
     // and renders them to offscreen textures when requested.
-    engine.value.setPrecompRenderContext({
+    engine.value.setNestedCompRenderContext({
       renderComposition: (compositionId: string, frame: number) => {
         // Get the composition data from store
         const comp = store.getComposition(compositionId);
         if (!comp) {
-          console.warn('[ThreeCanvas] Precomp composition not found:', compositionId);
+          console.warn('[ThreeCanvas] Nested comp not found:', compositionId);
           return null;
         }
 
         // Get layers for this composition (they're stored directly on the composition)
         if (!comp.layers || comp.layers.length === 0) {
-          // Empty composition - return null (precomp will show placeholder)
+          // Empty composition - return null (nested comp will show placeholder)
           return null;
         }
 
-        // Render the composition to a texture using the engine's precomp system
+        // Render the composition to a texture using the engine's nested comp system
         return engine.value!.renderCompositionToTexture(
           compositionId,
           comp.layers,

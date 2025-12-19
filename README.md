@@ -192,6 +192,49 @@ Click the video icon in the sidebar, or add the **Weyl Motion Compositor** node 
 3. Create your motion graphics
 4. Export back to ComfyUI for video generation
 
+---
+
+## Features
+
+### AI Compositor Agent
+
+The **AI Agent** tab in the right panel provides a natural language interface for creating motion graphics. Simply describe what you want:
+
+- *"Fade in the title over 1 second"*
+- *"Create floating particles that drift upward"*
+- *"Make the selected layer bounce in from the left"*
+- *"Add a glow effect to all text layers"*
+
+The agent understands the full compositor schema and can:
+- Create, modify, and delete any layer type
+- Set keyframes with proper easing curves
+- Apply expressions (jitter, repeatAfter, bounce, inertia)
+- Add and configure effects
+- Handle iterative refinement ("make it faster", "move it higher")
+
+**Requirements:** Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` environment variable for GPT-4o or Claude Sonnet support.
+
+### HD Preview Window
+
+Click **HD** in the toolbar (or press `` ` ``) to open a fullscreen preview window with:
+- Full resolution rendering
+- Playback controls and scrubbing
+- Scalable preview (50% - 200%)
+- Fullscreen mode (F11)
+- Frame timing display
+
+### Core Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Layer Types** | Solid, Text, Shape, Spline, Particles, Image, Video, Camera, Control, Nested Comp |
+| **Animation** | Keyframes with 20+ interpolation types, expressions, time remapping |
+| **Effects** | Blur, Glow, Color correction, Distortion, and more |
+| **3D** | Full 3D camera with orbit/dolly/pan/zoom, depth-based parallax |
+| **Audio** | Audio reactivity with beat detection, stem separation, amplitude curves |
+| **AI** | SAM segmentation, AI path suggestions, natural language agent |
+| **Export** | Matte sequences, camera data, ComfyUI workflow integration |
+
 ## Keyboard Shortcuts
 
 | Key | Action |
@@ -202,10 +245,13 @@ Click the video icon in the sidebar, or add the **Weyl Motion Compositor** node 
 | **Space** | Play/Pause |
 | **Home** | Go to start |
 | **End** | Go to end |
+| **`** (backtick) | Open HD Preview |
+| **Escape** | Close HD Preview |
 | V | Select tool |
 | P | Pen tool |
 | T | Text tool |
 | H | Hand tool |
+| S | AI Segment tool |
 | Space+drag | Pan canvas |
 
 ## Development

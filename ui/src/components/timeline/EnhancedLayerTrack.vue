@@ -2,7 +2,7 @@
   <div class="track-wrapper" v-if="layer">
     <template v-if="layoutMode === 'sidebar'">
       <div class="sidebar-row" :class="{ selected: isSelected }" @mousedown="selectLayer" @contextmenu.prevent="showContextMenu">
-        <!-- AV Features (visibility, audio, solo, lock) -->
+        <!-- AV Features (visibility, audio, isolate, lock) -->
         <div class="av-features">
           <div class="icon-col" @mousedown.stop="toggleVis" :title="layer.visible ? 'Hide' : 'Show'">
             <span :class="{ inactive: !layer.visible }">👁</span>
@@ -11,8 +11,8 @@
             <span :class="{ inactive: layer.audioEnabled === false }">🔊</span>
           </div>
           <div class="icon-col placeholder" v-else></div>
-          <div class="icon-col" @mousedown.stop="toggleSolo" :title="layer.solo ? 'Unsolo' : 'Solo'">
-            <span :class="{ active: layer.solo }">●</span>
+          <div class="icon-col" @mousedown.stop="toggleIsolate" :title="layer.isolate ? 'Unisolate' : 'Isolate'">
+            <span :class="{ active: layer.isolate }">●</span>
           </div>
           <div class="icon-col" @mousedown.stop="toggleLock" :title="layer.locked ? 'Unlock' : 'Lock'">
             <span :class="{ active: layer.locked }">🔒</span>
@@ -33,13 +33,13 @@
           </div>
         </div>
 
-        <!-- Switches (shy, collapse, quality, fx, frame blend, motion blur, adjustment, 3D) -->
+        <!-- Switches (minimized, collapse, quality, fx, frame blend, motion blur, adjustment, 3D) -->
         <div class="layer-switches">
-          <div class="icon-col" @mousedown.stop="toggleShy" :title="layer.shy ? 'Unhide when shy enabled' : 'Hide when shy enabled'">
-            <span :class="{ active: layer.shy }">🙈</span>
+          <div class="icon-col" @mousedown.stop="toggleMinimized" :title="layer.minimized ? 'Unminimize' : 'Minimize (hide when filter enabled)'">
+            <span :class="{ active: layer.minimized }">🙈</span>
           </div>
-          <div class="icon-col" @mousedown.stop="toggleCollapse" :title="layer.collapseTransform ? 'Disable Collapse' : 'Collapse Transformations'">
-            <span :class="{ active: layer.collapseTransform }">☀</span>
+          <div class="icon-col" @mousedown.stop="toggleFlattenTransform" :title="layer.flattenTransform ? 'Disable Flatten Transform' : 'Flatten Transform'">
+            <span :class="{ active: layer.flattenTransform }">☀</span>
           </div>
           <div class="icon-col" @mousedown.stop="toggleQuality" :title="layer.quality === 'best' ? 'Draft Quality' : 'Best Quality'">
             <span :class="{ active: layer.quality === 'best' }">◐</span>
@@ -125,7 +125,7 @@
         <button @click="toggleLayerLock">{{ layer.locked ? 'Unlock' : 'Lock' }} Layer</button>
         <button @click="toggleLayer3D">{{ layer.threeD ? 'Make 2D' : 'Make 3D' }}</button>
         <hr />
-        <button @click="precomposeLayer">Pre-compose...</button>
+        <button @click="nestLayer">Nest Layers...</button>
         <hr />
         <button @click="deleteLayer" class="danger">Delete Layer</button>
       </div>
@@ -167,7 +167,7 @@ const localExpanded = ref(false);
 const isExpanded = computed(() => props.isExpandedExternal ?? localExpanded.value);
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
 // Only video and audio layers have audio capability
-const hasAudioCapability = computed(() => ['video', 'audio', 'precomp'].includes(props.layer.type));
+const hasAudioCapability = computed(() => ['video', 'audio', 'nestedComp'].includes(props.layer.type));
 const expandedGroups = ref<string[]>(['Transform', 'Text', 'More Options', 'Stroke', 'Fill', 'Trim Paths', 'Path Options']);
 const isRenaming = ref(false);
 const renameVal = ref('');
@@ -324,13 +324,13 @@ function toggleGroup(g: string) {
     if(expandedGroups.value.includes(g)) expandedGroups.value = expandedGroups.value.filter(x => x !== g);
     else expandedGroups.value.push(g);
 }
-function getLayerIcon(t: string) { return { text: 'T', solid: '■', camera: '📷', precomp: '📦', image: '🖼', video: '🎬' }[t] || '•'; }
+function getLayerIcon(t: string) { return { text: 'T', solid: '■', camera: '📷', nestedComp: '📦', image: '🖼', video: '🎬' }[t] || '•'; }
 
-// Double-click: enter precomp or start rename
+// Double-click: enter nested comp or start rename
 function handleDoubleClick() {
-  if (props.layer.type === 'precomp' && props.layer.data?.compositionId) {
-    // Enter the precomp composition
-    store.enterPrecomp(props.layer.data.compositionId);
+  if (props.layer.type === 'nestedComp' && props.layer.data?.compositionId) {
+    // Enter the nested composition
+    store.enterNestedComp(props.layer.data.compositionId);
   } else {
     // Start rename for other layer types
     startRename();
@@ -431,9 +431,9 @@ function stopDrag() {
 function toggleVis() { emit('updateLayer', props.layer.id, { visible: !props.layer.visible }); }
 function toggleLock() { emit('updateLayer', props.layer.id, { locked: !props.layer.locked }); }
 function toggleAudio() { emit('updateLayer', props.layer.id, { audioEnabled: props.layer.audioEnabled === false ? true : false }); }
-function toggleSolo() { emit('updateLayer', props.layer.id, { solo: !props.layer.solo }); }
-function toggleShy() { emit('updateLayer', props.layer.id, { shy: !props.layer.shy }); }
-function toggleCollapse() { emit('updateLayer', props.layer.id, { collapseTransform: !props.layer.collapseTransform }); }
+function toggleIsolate() { emit('updateLayer', props.layer.id, { isolate: !props.layer.isolate }); }
+function toggleMinimized() { emit('updateLayer', props.layer.id, { minimized: !props.layer.minimized }); }
+function toggleFlattenTransform() { emit('updateLayer', props.layer.id, { flattenTransform: !props.layer.flattenTransform }); }
 function toggleQuality() { emit('updateLayer', props.layer.id, { quality: props.layer.quality === 'best' ? 'draft' : 'best' }); }
 function toggleEffects() { emit('updateLayer', props.layer.id, { effectsEnabled: props.layer.effectsEnabled === false ? true : false }); }
 function toggleFrameBlend() { emit('updateLayer', props.layer.id, { frameBlending: !props.layer.frameBlending }); }
@@ -535,9 +535,9 @@ function toggleLayer3D() {
   hideContextMenu();
 }
 
-function precomposeLayer() {
+function nestLayer() {
   store.selectLayer(props.layer.id);
-  store.precomposeSelectedLayers(props.layer.name + ' Precomp');
+  store.nestSelectedLayers(props.layer.name + ' Nested');
   hideContextMenu();
 }
 
@@ -582,7 +582,7 @@ onUnmounted(() => {
 }
 .sidebar-row.selected { background: #333; color: #fff; border-left: 2px solid #4a90d9; }
 
-/* AV Features section (visibility, audio, solo, lock) */
+/* AV Features section (visibility, audio, isolate, lock) */
 .av-features {
   display: flex;
   align-items: center;

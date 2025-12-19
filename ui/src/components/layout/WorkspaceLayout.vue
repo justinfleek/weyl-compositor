@@ -144,6 +144,9 @@
           <span class="icon">↪</span>
         </button>
         <div class="divider"></div>
+        <button @click="showHDPreview = true" title="HD Preview (`)">
+          <span class="icon">🖥</span> HD
+        </button>
         <button @click="showExportDialog = true" title="Export Matte">
           <span class="icon">📤</span> Matte
         </button>
@@ -335,6 +338,13 @@
               >
                 Preview
               </button>
+              <button
+                :class="{ active: rightTab === 'ai' }"
+                @click="rightTab = 'ai'"
+                title="AI Compositor Agent"
+              >
+                AI
+              </button>
             </div>
             <div class="panel-content">
               <EffectControlsPanel v-if="rightTab === 'effects'" />
@@ -347,6 +357,7 @@
               <AudioPanel v-else-if="rightTab === 'audio'" />
               <ExportPanel v-else-if="rightTab === 'export'" />
               <PreviewPanel v-else-if="rightTab === 'preview'" :engine="canvasEngine" />
+              <AIChatPanel v-else-if="rightTab === 'ai'" />
             </div>
           </div>
         </Pane>
@@ -405,6 +416,13 @@
       @preview="onPathSuggestionPreview"
     />
 
+    <!-- HD Preview Window -->
+    <HDPreviewWindow
+      :visible="showHDPreview"
+      :engine="canvasEngine"
+      @close="showHDPreview = false"
+    />
+
     <!-- Path Preview Overlay (shown in viewport when suggestions exist) -->
     <Teleport to=".viewport-content" v-if="pathSuggestions.length > 0">
       <PathPreviewOverlay
@@ -438,6 +456,7 @@ import AudioPanel from '@/components/panels/AudioPanel.vue';
 import AssetsPanel from '@/components/panels/AssetsPanel.vue';
 import ExportPanel from '@/components/panels/ExportPanel.vue';
 import PreviewPanel from '@/components/panels/PreviewPanel.vue';
+import AIChatPanel from '@/components/panels/AIChatPanel.vue';
 
 // Viewport
 import ViewportRenderer from '@/components/viewport/ViewportRenderer.vue';
@@ -455,6 +474,9 @@ import PathSuggestionDialog from '@/components/dialogs/PathSuggestionDialog.vue'
 
 // Canvas overlays
 import PathPreviewOverlay from '@/components/canvas/PathPreviewOverlay.vue';
+
+// Preview
+import HDPreviewWindow from '@/components/preview/HDPreviewWindow.vue';
 
 // Stores
 const store = useCompositorStore();
@@ -486,7 +508,7 @@ function clearSegmentMask() {
 
 const activeWorkspace = ref('standard');
 const leftTab = ref<'project' | 'effects' | 'assets'>('project');
-const rightTab = ref<'effects' | 'properties' | 'camera' | 'audio' | 'export' | 'preview'>('properties');
+const rightTab = ref<'effects' | 'properties' | 'camera' | 'audio' | 'export' | 'preview' | 'ai'>('properties');
 const viewportTab = ref<'composition' | 'layer' | 'footage'>('composition');
 
 const viewZoom = ref('fit');
@@ -495,6 +517,7 @@ const showExportDialog = ref(false);
 const showComfyUIExportDialog = ref(false);
 const showCompositionSettingsDialog = ref(false);
 const showPathSuggestionDialog = ref(false);
+const showHDPreview = ref(false);
 
 // Vision authoring state
 const pathSuggestions = ref<any[]>([]);

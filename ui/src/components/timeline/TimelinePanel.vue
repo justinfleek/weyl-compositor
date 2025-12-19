@@ -34,7 +34,7 @@
             <button @mousedown="addLayer('shape')" role="menuitem"><span class="icon" aria-hidden="true">◇</span> Shape</button>
             <button @mousedown="addLayer('spline')" role="menuitem"><span class="icon" aria-hidden="true">〰</span> Spline/Path</button>
             <button @mousedown="addLayer('particles')" role="menuitem"><span class="icon" aria-hidden="true">✨</span> Particles</button>
-            <button @mousedown="addLayer('null')" role="menuitem"><span class="icon" aria-hidden="true">□</span> Null</button>
+            <button @mousedown="addLayer('control')" role="menuitem"><span class="icon" aria-hidden="true">□</span> Control</button>
             <button @mousedown="addLayer('camera')" role="menuitem"><span class="icon" aria-hidden="true">📷</span> Camera</button>
             <button @mousedown="addLayer('light')" role="menuitem"><span class="icon" aria-hidden="true">💡</span> Light</button>
             <button @mousedown="addLayer('video')" role="menuitem"><span class="icon" aria-hidden="true">🎞️</span> Video</button>
@@ -63,11 +63,11 @@
     <div class="timeline-content">
       <div class="timeline-sidebar" :style="{ width: sidebarWidth + 'px' }">
         <div class="sidebar-header-row">
-          <!-- AV Features (visibility, audio, solo, lock) -->
+          <!-- AV Features (visibility, audio, isolate, lock) -->
           <div class="col-header col-av-features">
             <span class="header-icon" title="Video">👁</span>
             <span class="header-icon" title="Audio">🔊</span>
-            <span class="header-icon" title="Solo">●</span>
+            <span class="header-icon" title="Isolate">●</span>
             <span class="header-icon" title="Lock">🔒</span>
           </div>
           <!-- Layer info -->
@@ -77,11 +77,11 @@
           <div class="col-header col-switches">
             <span
               class="header-icon clickable"
-              :class="{ active: store.hideShyLayers }"
-              title="Hide Shy Layers"
-              @click="store.toggleHideShyLayers()"
+              :class="{ active: store.hideMinimizedLayers }"
+              title="Hide Minimized Layers"
+              @click="store.toggleHideMinimizedLayers()"
             >🙈</span>
-            <span class="header-icon" title="Collapse/Continuously Rasterize">☀</span>
+            <span class="header-icon" title="Flatten Transform">☀</span>
             <span class="header-icon" title="Quality">◐</span>
             <span class="header-icon" title="Effects">fx</span>
             <span class="header-icon" title="Frame Blending">⊞</span>

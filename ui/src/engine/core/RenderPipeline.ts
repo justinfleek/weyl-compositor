@@ -1066,19 +1066,19 @@ export class RenderPipeline {
   }
 
   // ============================================================================
-  // PRECOMP RENDER-TO-TEXTURE
+  // NESTED COMPOSITION RENDER-TO-TEXTURE
   // ============================================================================
 
-  /** Cache of render targets for precomps (keyed by compositionId) */
-  private precompTargets: Map<string, THREE.WebGLRenderTarget> = new Map();
+  /** Cache of render targets for nested compositions (keyed by compositionId) */
+  private nestedCompTargets: Map<string, THREE.WebGLRenderTarget> = new Map();
 
   /**
-   * Create or get a render target for a precomp composition
+   * Create or get a render target for a nested composition
    */
-  getPrecompRenderTarget(compositionId: string, width: number, height: number): THREE.WebGLRenderTarget {
+  getNestedCompRenderTarget(compositionId: string, width: number, height: number): THREE.WebGLRenderTarget {
     const key = `${compositionId}_${width}_${height}`;
 
-    let target = this.precompTargets.get(key);
+    let target = this.nestedCompTargets.get(key);
     if (!target) {
       target = new THREE.WebGLRenderTarget(width, height, {
         minFilter: THREE.LinearFilter,
@@ -1089,15 +1089,20 @@ export class RenderPipeline {
         depthBuffer: true,
         stencilBuffer: false,
       });
-      this.precompTargets.set(key, target);
+      this.nestedCompTargets.set(key, target);
     }
 
     return target;
   }
 
+  /** @deprecated Use getNestedCompRenderTarget instead */
+  getPrecompRenderTarget(compositionId: string, width: number, height: number): THREE.WebGLRenderTarget {
+    return this.getNestedCompRenderTarget(compositionId, width, height);
+  }
+
   /**
    * Render a scene to an offscreen target and return the texture
-   * Used for precomp rendering
+   * Used for nested composition rendering
    */
   renderSceneToTexture(
     scene: THREE.Scene,
@@ -1115,26 +1120,36 @@ export class RenderPipeline {
   }
 
   /**
-   * Dispose a precomp render target
+   * Dispose a nested composition render target
    */
-  disposePrecompTarget(compositionId: string): void {
+  disposeNestedCompTarget(compositionId: string): void {
     // Find and dispose all targets for this composition
-    for (const [key, target] of this.precompTargets.entries()) {
+    for (const [key, target] of this.nestedCompTargets.entries()) {
       if (key.startsWith(compositionId + '_')) {
         target.dispose();
-        this.precompTargets.delete(key);
+        this.nestedCompTargets.delete(key);
       }
     }
   }
 
+  /** @deprecated Use disposeNestedCompTarget instead */
+  disposePrecompTarget(compositionId: string): void {
+    this.disposeNestedCompTarget(compositionId);
+  }
+
   /**
-   * Dispose all precomp render targets
+   * Dispose all nested composition render targets
    */
-  disposeAllPrecompTargets(): void {
-    for (const target of this.precompTargets.values()) {
+  disposeAllNestedCompTargets(): void {
+    for (const target of this.nestedCompTargets.values()) {
       target.dispose();
     }
-    this.precompTargets.clear();
+    this.nestedCompTargets.clear();
+  }
+
+  /** @deprecated Use disposeAllNestedCompTargets instead */
+  disposeAllPrecompTargets(): void {
+    this.disposeAllNestedCompTargets();
   }
 
   // ============================================================================
@@ -1172,8 +1187,8 @@ export class RenderPipeline {
       this.bloomPass = null;
     }
 
-    // Dispose precomp targets
-    this.disposeAllPrecompTargets();
+    // Dispose nested composition targets
+    this.disposeAllNestedCompTargets();
 
     this.colorTarget.dispose();
     this.depthTarget.dispose();

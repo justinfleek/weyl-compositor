@@ -205,6 +205,9 @@ export class FrameCache {
   private currentMemory: number = 0;
   private stats = { hits: 0, misses: 0 };
 
+  // Secondary index: compositionId -> Set of cache keys (for O(1) clearComposition)
+  private compositionKeyMap: Map<string, Set<string>> = new Map();
+
   // Pre-caching state
   private preCacheQueue: Array<{ frame: number; compositionId: string; priority: number }> = [];
   private isPreCaching: boolean = false;
@@ -359,6 +362,14 @@ export class FrameCache {
     this.cache.set(key, cachedFrame);
     this.lru.add(key); // O(1) LRU tracking
     this.currentMemory += size;
+
+    // Track key in composition index for O(1) clearComposition
+    let keySet = this.compositionKeyMap.get(compositionId);
+    if (!keySet) {
+      keySet = new Set();
+      this.compositionKeyMap.set(compositionId, keySet);
+    }
+    keySet.add(key);
   }
 
   /**
@@ -372,6 +383,15 @@ export class FrameCache {
       this.currentMemory -= cached.size;
       this.cache.delete(key);
       this.lru.remove(key); // O(1)
+
+      // Remove from composition index
+      const keySet = this.compositionKeyMap.get(compositionId);
+      if (keySet) {
+        keySet.delete(key);
+        if (keySet.size === 0) {
+          this.compositionKeyMap.delete(compositionId);
+        }
+      }
     }
   }
 
@@ -383,18 +403,15 @@ export class FrameCache {
   }
 
   /**
-   * Clear all cached frames for a composition
+   * Clear all cached frames for a composition - O(k) where k = frames for this composition
+   * Uses secondary index for direct lookup instead of O(n) iteration
    */
   clearComposition(compositionId: string): void {
-    const keysToRemove: string[] = [];
+    const keySet = this.compositionKeyMap.get(compositionId);
+    if (!keySet) return;
 
-    for (const key of this.cache.keys()) {
-      if (key.startsWith(`${compositionId}:`)) {
-        keysToRemove.push(key);
-      }
-    }
-
-    for (const key of keysToRemove) {
+    // Copy keys to array since we're modifying the set during iteration
+    for (const key of Array.from(keySet)) {
       const cached = this.cache.get(key);
       if (cached) {
         this.currentMemory -= cached.size;
@@ -402,6 +419,9 @@ export class FrameCache {
       this.cache.delete(key);
       this.lru.remove(key); // O(1) per removal
     }
+
+    // Clear the composition's key set
+    this.compositionKeyMap.delete(compositionId);
   }
 
   /**
@@ -410,6 +430,7 @@ export class FrameCache {
   clear(): void {
     this.cache.clear();
     this.lru.clear();
+    this.compositionKeyMap.clear();
     this.currentMemory = 0;
     this.stats = { hits: 0, misses: 0 };
     this.abortPreCache();
@@ -553,6 +574,16 @@ export class FrameCache {
       if (cached) {
         this.currentMemory -= cached.size;
         this.cache.delete(oldestKey);
+
+        // Update composition index
+        const compositionId = oldestKey.split(':')[0];
+        const keySet = this.compositionKeyMap.get(compositionId);
+        if (keySet) {
+          keySet.delete(oldestKey);
+          if (keySet.size === 0) {
+            this.compositionKeyMap.delete(compositionId);
+          }
+        }
       }
       this.lru.remove(oldestKey);
     }

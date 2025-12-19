@@ -366,7 +366,7 @@ export function createDefaultProject(): WeylProject {
         },
         layers: [],
         currentFrame: 0,
-        isPrecomp: false
+        isNestedComp: false
       }
     },
     mainCompositionId: mainCompId,

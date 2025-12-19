@@ -161,10 +161,10 @@ describe('Motion Expressions', () => {
     });
   });
 
-  describe('wiggle', () => {
+  describe('jitter', () => {
     it('should add noise to value', () => {
       const ctx = createFullContext(0.5, 100);
-      const result = motion.wiggle(ctx, 5, 50, 1);
+      const result = motion.jitter(ctx, 5, 50, 1);
       expect(typeof result).toBe('number');
       // Should be within amplitude of original
       expect(result as number).toBeGreaterThanOrEqual(50);
@@ -195,43 +195,43 @@ describe('Loop Expressions', () => {
     ],
   });
 
-  describe('loopOut cycle', () => {
+  describe('repeatAfter cycle', () => {
     it('should cycle keyframes after last', () => {
       const ctx = createLoopContext(1.5);
-      const result = loop.loopOut(ctx, 'cycle');
+      const result = loop.repeatAfter(ctx, 'cycle');
       expect(typeof result).toBe('number');
     });
 
     it('should return original value when before keyframes end', () => {
       const ctx = createLoopContext(0.5);
-      const result = loop.loopOut(ctx, 'cycle');
+      const result = loop.repeatAfter(ctx, 'cycle');
       expect(typeof result).toBe('number');
     });
   });
 
-  describe('loopOut pingpong', () => {
+  describe('repeatAfter pingpong', () => {
     it('should reverse direction each cycle', () => {
       const ctx60 = createLoopContext(2);
-      const result = loop.loopOut(ctx60, 'pingpong');
+      const result = loop.repeatAfter(ctx60, 'pingpong');
       expect(typeof result).toBe('number');
     });
   });
 
-  describe('loopOut offset', () => {
+  describe('repeatAfter offset', () => {
     it('should add offset each cycle', () => {
       const ctx = createLoopContext(2);
-      const result = loop.loopOut(ctx, 'offset');
+      const result = loop.repeatAfter(ctx, 'offset');
       expect(typeof result).toBe('number');
     });
   });
 
-  describe('loopIn', () => {
+  describe('repeatBefore', () => {
     it('should loop before first keyframe', () => {
       const ctx = {
         ...createLoopContext(-0.5),
         value: 0,
       };
-      const result = loop.loopIn(ctx, 'cycle');
+      const result = loop.repeatBefore(ctx, 'cycle');
       expect(typeof result).toBe('number');
     });
   });
@@ -388,7 +388,7 @@ describe('Math Functions', () => {
 });
 
 describe('evaluateExpression', () => {
-  it('should evaluate wiggle expression', () => {
+  it('should evaluate jitter expression', () => {
     const context: ExpressionContext = {
       time: 0.5,
       frame: 15,
@@ -408,7 +408,7 @@ describe('evaluateExpression', () => {
 
     const expression: Expression = {
       type: 'preset',
-      name: 'wiggle',
+      name: 'jitter',
       params: { frequency: 2, amplitude: 10, octaves: 1 },
       enabled: true,
     };
@@ -416,7 +416,7 @@ describe('evaluateExpression', () => {
     const result = evaluateExpression(expression, context);
 
     expect(typeof result).toBe('number');
-    // Wiggle should be within amplitude of original value
+    // Jitter should be within amplitude of original value
     expect(result as number).toBeGreaterThanOrEqual(90);
     expect(result as number).toBeLessThanOrEqual(110);
   });
@@ -441,7 +441,7 @@ describe('evaluateExpression', () => {
 
     const expression: Expression = {
       type: 'preset',
-      name: 'wiggle',
+      name: 'jitter',
       params: {},
       enabled: false,
     };

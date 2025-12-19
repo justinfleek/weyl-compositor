@@ -28,16 +28,13 @@
               </select>
             </div>
 
-            <!-- API Key (for cloud models) -->
-            <div v-if="requiresApiKey" class="form-row api-key-row">
-              <label>API Key:</label>
-              <input
-                type="password"
-                v-model="apiKey"
-                class="text-input"
-                :placeholder="apiKeyPlaceholder"
-              />
-              <button class="btn btn-small" @click="testConnection">Test</button>
+            <!-- API Status (for cloud models) -->
+            <div v-if="isCloudModel" class="form-row api-status-row">
+              <span class="api-status" :class="{ available: apiKeyStatus[selectedProvider], unavailable: !apiKeyStatus[selectedProvider] }">
+                <span class="status-dot"></span>
+                {{ apiKeyStatus[selectedProvider] ? 'API key configured on server' : 'API key not configured' }}
+              </span>
+              <button class="btn btn-small" @click="checkApiStatus">Refresh</button>
             </div>
 
             <!-- Local Endpoint (for local models) -->
@@ -186,8 +183,10 @@ const store = useCompositorStore();
 
 // Model configuration
 const selectedModel = ref<VisionModelId>('rule-based');
-const apiKey = ref('');
 const localEndpoint = ref('http://localhost:8188/api/vlm');
+
+// API key status (from backend)
+const apiKeyStatus = ref<{ openai: boolean; anthropic: boolean }>({ openai: false, anthropic: false });
 
 // Prompt
 const prompt = ref('');
@@ -213,7 +212,7 @@ const promptPresets: PromptPreset[] = [
 ];
 
 // Computed
-const requiresApiKey = computed(() => {
+const isCloudModel = computed(() => {
   return ['gpt-4v', 'gpt-4o', 'claude-vision'].includes(selectedModel.value);
 });
 
@@ -221,10 +220,28 @@ const isLocalModel = computed(() => {
   return ['qwen-vl', 'qwen2-vl', 'llava', 'local-vlm'].includes(selectedModel.value);
 });
 
-const apiKeyPlaceholder = computed(() => {
-  if (selectedModel.value.startsWith('gpt-')) return 'sk-...';
-  if (selectedModel.value === 'claude-vision') return 'sk-ant-...';
-  return 'API Key';
+const selectedProvider = computed(() => {
+  if (selectedModel.value.startsWith('gpt-')) return 'openai';
+  if (selectedModel.value === 'claude-vision') return 'anthropic';
+  return 'openai';
+});
+
+// Check API key status from backend
+async function checkApiStatus() {
+  try {
+    const response = await fetch('/weyl/api/status');
+    const result = await response.json();
+    if (result.status === 'success') {
+      apiKeyStatus.value = result.providers;
+    }
+  } catch (error) {
+    console.warn('Failed to check API status:', error);
+  }
+}
+
+// Check status on mount
+onMounted(() => {
+  checkApiStatus();
 });
 
 // Methods
@@ -238,10 +255,9 @@ async function testConnection() {
   statusMessage.value = 'Testing connection...';
 
   try {
-    // Configure the resolver
+    // Configure the resolver (API key handled server-side)
     motionIntentResolver.setConfig({
       modelId: selectedModel.value,
-      apiKey: apiKey.value || undefined,
       apiEndpoint: isLocalModel.value ? localEndpoint.value : undefined,
     });
 
@@ -365,10 +381,9 @@ async function suggestPaths() {
   selectedSuggestion.value = null;
 
   try {
-    // Configure the resolver
+    // Configure the resolver (API key handled server-side)
     motionIntentResolver.setConfig({
       modelId: selectedModel.value,
-      apiKey: apiKey.value || undefined,
       apiEndpoint: isLocalModel.value ? localEndpoint.value : undefined,
     });
 
@@ -608,8 +623,42 @@ onUnmounted(() => {
   border-color: #4a90d9;
 }
 
-.api-key-row {
+.api-status-row {
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #888;
+}
+
+.api-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+}
+
+.api-status.available .status-dot {
+  background: #4caf50;
+}
+
+.api-status.unavailable .status-dot {
+  background: #f44336;
+}
+
+.api-status.available {
+  color: #4caf50;
+}
+
+.api-status.unavailable {
+  color: #f44336;
 }
 
 /* Prompt presets */

@@ -66,7 +66,7 @@ export function createCameraLayer(
     type: 'camera',
     visible: true,
     locked: false,
-    solo: false,
+    isolate: false,
     threeD: true,
     motionBlur: false,
     inPoint: 0,

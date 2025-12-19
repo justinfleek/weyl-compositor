@@ -1,7 +1,7 @@
 /**
- * NullLayer - Transform-Only Layer
+ * ControlLayer - Transform-Only Layer
  *
- * A null object layer that provides transform hierarchy without visual content.
+ * A control layer that provides transform hierarchy without visual content.
  * Used for:
  * - Grouping layers
  * - Parent transforms
@@ -13,11 +13,11 @@ import * as THREE from 'three';
 import type { Layer } from '@/types/project';
 import { BaseLayer } from './BaseLayer';
 
-export class NullLayer extends BaseLayer {
+export class ControlLayer extends BaseLayer {
   /** Visual indicator (crosshair) for editor visibility */
   private indicator: THREE.Group | null = null;
 
-  /** Whether to show the null indicator */
+  /** Whether to show the control indicator */
   private showIndicator: boolean;
 
   /** Indicator size */
@@ -35,11 +35,11 @@ export class NullLayer extends BaseLayer {
   }
 
   /**
-   * Create visual indicator (crosshair) for the null object
+   * Create visual indicator (crosshair) for the control layer
    */
   private createIndicator(): void {
     this.indicator = new THREE.Group();
-    this.indicator.name = `null_indicator_${this.id}`;
+    this.indicator.name = `control_indicator_${this.id}`;
 
     const size = this.indicatorSize;
     const color = 0xff6600; // Orange for visibility
@@ -151,12 +151,12 @@ export class NullLayer extends BaseLayer {
   // ============================================================================
 
   protected onEvaluateFrame(_frame: number): void {
-    // Null layers have no frame-specific content
+    // Control layers have no frame-specific content
     // Transform is handled by BaseLayer
   }
 
   protected override onApplyEvaluatedState(_state: import('../MotionEngine').EvaluatedLayer): void {
-    // Null layers have no type-specific properties
+    // Control layers have no type-specific properties
     // All transforms are handled by BaseLayer
   }
 
@@ -178,3 +178,6 @@ export class NullLayer extends BaseLayer {
     this.disposeIndicator();
   }
 }
+
+/** @deprecated Use ControlLayer instead */
+export const NullLayer = ControlLayer;

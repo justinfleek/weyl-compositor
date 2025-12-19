@@ -52,7 +52,7 @@ const iconClass = computed(() => {
   if (props.property.animated) {
     return 'pi-circle'; // Empty circle for animated but no keyframe here
   }
-  return 'pi-stopwatch'; // Stopwatch for not animated
+  return 'pi-times'; // X for not animated (no PrimeVue diamond icon available)
 });
 
 // Button title

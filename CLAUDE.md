@@ -17,13 +17,14 @@
 9. [Audio Reactivity](#audio-reactivity)
 10. [3D Camera System](#3d-camera-system)
 11. [Effect Pipeline](#effect-pipeline)
-12. [Key File Locations](#key-file-locations)
-13. [Common Tasks Guide](#common-tasks-guide)
-14. [Troubleshooting](#troubleshooting)
-15. [Known Issues & Workarounds](#known-issues--workarounds)
-16. [Documentation Index](#documentation-index)
-17. [Git Status & Recent Changes](#git-status--recent-changes)
-18. [Tech Stack Reference](#tech-stack-reference)
+12. [AI Compositor Agent](#ai-compositor-agent)
+13. [Key File Locations](#key-file-locations)
+14. [Common Tasks Guide](#common-tasks-guide)
+15. [Troubleshooting](#troubleshooting)
+16. [Known Issues & Workarounds](#known-issues--workarounds)
+17. [Documentation Index](#documentation-index)
+18. [Git Status & Recent Changes](#git-status--recent-changes)
+19. [Tech Stack Reference](#tech-stack-reference)
 
 ---
 
@@ -949,6 +950,146 @@ const blurEffect: EffectInstance = {
   }
 };
 ```
+
+---
+
+## AI COMPOSITOR AGENT
+
+### Overview
+
+The AI Compositor Agent is a fully autonomous LLM-powered system that understands natural language instructions and executes complex motion graphics tasks without manual intervention.
+
+**Location:** `ui/src/services/ai/`
+
+### Architecture
+
+```
+User Instruction ("Fade in the title over 1 second")
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   AICompositorAgent.ts                       │
+│  - Conversation memory (multi-turn context)                  │
+│  - Tool execution loop (max 10 iterations)                  │
+│  - Model selection (GPT-4o / Claude Sonnet)                 │
+└─────────────────────────────────────────────────────────────┘
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+┌───────────┐ ┌───────────┐ ┌───────────┐
+│ System    │ │   Tool    │ │  State    │
+│ Prompt    │ │   Defs    │ │ Serializer│
+│ (400+     │ │ (30+ tools│ │ (Project  │
+│  lines)   │ │  for all  │ │  → JSON)  │
+└───────────┘ │  actions) │ └───────────┘
+              └───────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    actionExecutor.ts                         │
+│  - Maps tool calls to compositorStore actions               │
+│  - Error handling with informative messages                 │
+│  - Returns verification data                                │
+└─────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Backend API Proxy                         │
+│          /weyl/api/ai/agent (nodes/weyl_api_proxy.py)       │
+│  - OpenAI & Anthropic support with tool calling             │
+│  - API keys from environment variables                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `AICompositorAgent.ts` | Main agent class with conversation memory and tool loop |
+| `systemPrompt.ts` | Comprehensive 400+ line system prompt |
+| `toolDefinitions.ts` | 30+ tool definitions for all compositor actions |
+| `actionExecutor.ts` | Executes tool calls against the store |
+| `stateSerializer.ts` | Serializes project state for LLM context |
+| `index.ts` | Module exports |
+
+### Available Tools (30+)
+
+| Category | Tools |
+|----------|-------|
+| **Layer Management** | createLayer, deleteLayer, duplicateLayer, renameLayer, setLayerParent, reorderLayers |
+| **Properties** | setLayerProperty, setLayerTransform |
+| **Keyframes** | addKeyframe, removeKeyframe, setKeyframeEasing, scaleKeyframeTiming |
+| **Expressions** | setExpression (jitter, repeatAfter, repeatBefore, inertia, bounce, elastic), removeExpression |
+| **Effects** | addEffect, updateEffect, removeEffect |
+| **Specialized** | configureParticles, setTextContent, setTextPath, setSplinePoints, setTimeRemap |
+| **Playback** | setCurrentFrame, playPreview, getLayerInfo, findLayers, getProjectState |
+
+### Usage Example
+
+```typescript
+import { getAIAgent } from '@/services/ai';
+
+const agent = getAIAgent();
+
+// Simple instruction
+const response = await agent.processInstruction('Fade in the title over 1 second');
+// Agent: "I've added opacity keyframes: frame 0 = 0%, frame 16 = 100% with easeOut"
+
+// Iterative refinement (uses conversation memory)
+const response2 = await agent.processInstruction('Make it faster');
+// Agent: "Scaled keyframe timing by 0.5x - animation now completes in 0.5 seconds"
+
+// Complex multi-step
+const response3 = await agent.processInstruction(
+  'Create cherry blossom petals that spiral from left to right'
+);
+// Agent creates spline path, configures particle emitter, sets colors
+```
+
+### Chain of Thought Process
+
+The agent follows a 5-step reasoning process:
+
+1. **Understand** - Parse the user's intent
+2. **Break Down** - Identify required steps
+3. **Plan** - Determine tool sequence
+4. **Execute** - Call tools with correct parameters
+5. **Verify** - Confirm changes were applied
+
+### Configuration
+
+```typescript
+import { AICompositorAgent } from '@/services/ai';
+
+const agent = new AICompositorAgent({
+  model: 'gpt-4o',        // or 'claude-sonnet'
+  maxTokens: 4096,
+  temperature: 0.3,       // Lower = more deterministic
+  maxIterations: 10,      // Max tool calls per request
+  autoVerify: true,       // Verify changes after applying
+});
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT-4o |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude Sonnet |
+
+At least one must be set for the AI agent to function.
+
+### UI Component
+
+The `AIChatPanel.vue` component provides:
+- Chat interface with conversation history
+- Model selector (GPT-4o / Claude Sonnet)
+- Example prompts for quick start
+- Processing indicators
+- Tool call visualization
+- API status indicator
+
+Access via the **AI** tab in the right panel.
 
 ---
 

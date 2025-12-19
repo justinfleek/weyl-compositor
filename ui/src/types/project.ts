@@ -3,9 +3,9 @@
 // ============================================================
 //
 // Architecture Overview:
-// - Projects contain multiple Compositions (like After Effects)
+// - Projects contain multiple Compositions
 // - One composition is the "main" composition for export
-// - Layers can reference other compositions (pre-comps)
+// - Layers can reference other compositions (nested compositions)
 // - Video assets store duration metadata for auto-sizing
 // - ComfyUI sub-graph mapping via workflowId references
 // ============================================================
@@ -51,9 +51,9 @@ export interface Composition {
   layers: Layer[];
   currentFrame: number;
 
-  // Pre-comp metadata
-  isPrecomp: boolean;
-  parentCompositionId?: string;  // If this is used as a precomp
+  // Nested composition metadata
+  isNestedComp: boolean;
+  parentCompositionId?: string;  // If this is used as a nested comp
 
   // ComfyUI sub-graph mapping
   workflowId?: string;           // Maps to ComfyUI sub-graph ID
@@ -192,12 +192,18 @@ export interface Layer {
   type: LayerType;
   visible: boolean;
   locked: boolean;
-  solo: boolean;
-  shy?: boolean;              // Shy layer (hide when shy mode enabled)
+  isolate: boolean;         // Isolate layer (show only this layer)
+  /** @deprecated Use isolate instead */
+  solo?: boolean;
+  minimized?: boolean;        // Minimized layer (hide when minimized mode enabled)
+  /** @deprecated Use minimized instead */
+  shy?: boolean;
   threeD: boolean;            // 3D Layer Switch
   motionBlur: boolean;        // Motion Blur Switch
   motionBlurSettings?: LayerMotionBlurSettings;  // Detailed motion blur configuration
-  collapseTransform?: boolean;  // Collapse Transformations / Continuously Rasterize
+  flattenTransform?: boolean;   // Flatten Transform / Continuously Rasterize
+  /** @deprecated Use flattenTransform instead */
+  collapseTransform?: boolean;
   quality?: 'draft' | 'best';   // Quality switch
   effectsEnabled?: boolean;     // Enable/disable all effects
   frameBlending?: boolean;      // Frame blending for time-remapped footage
@@ -229,7 +235,7 @@ export interface Layer {
 
   properties: AnimatableProperty<any>[];
   effects: EffectInstance[];  // Effect stack - processed top to bottom
-  data: SplineData | TextData | ParticleData | ParticleLayerData | DepthflowLayerData | GeneratedMapData | CameraLayerData | ImageLayerData | VideoData | PrecompData | ProceduralMatteData | ShapeLayerData | ModelLayerData | PointCloudLayerData | null;
+  data: SplineData | TextData | ParticleData | ParticleLayerData | DepthflowLayerData | GeneratedMapData | CameraLayerData | ImageLayerData | VideoData | NestedCompData | ProceduralMatteData | ShapeLayerData | ModelLayerData | PointCloudLayerData | null;
 }
 
 export type LayerType =
@@ -248,9 +254,10 @@ export type LayerType =
   | 'camera'     // 2.5D/3D camera layer
   | 'light'      // 3D Light layer
   | 'solid'      // Solid color plane
-  | 'null'       // Null object
+  | 'control'    // Control layer (transform-only)
+  | 'null'       // @deprecated Use 'control' instead
   | 'group'      // Layer group
-  | 'precomp'    // Pre-composition (nested composition)
+  | 'nestedComp' // Nested composition
   | 'matte'      // Procedural matte (animated patterns for track mattes)
   | 'model'      // 3D model (GLTF, OBJ, FBX, USD)
   | 'pointcloud'; // Point cloud (PLY, PCD, LAS)
@@ -328,7 +335,7 @@ export type LayerDataMap = {
   generated: GeneratedMapData;
   camera: CameraLayerData;
   video: VideoData;
-  precomp: PrecompData;
+  nestedComp: NestedCompData;
   matte: ProceduralMatteData;
   shape: ShapeLayerData;
   model: ModelLayerData;
@@ -599,23 +606,28 @@ export interface VideoData {
 }
 
 // ============================================================
-// PRECOMP DATA - Nested composition reference
+// NESTED COMP DATA - Nested composition reference
 // ============================================================
 
-export interface PrecompData {
+export interface NestedCompData {
   compositionId: string;      // Reference to composition in project.compositions
 
   // Time mapping
   timeRemapEnabled: boolean;
-  timeRemap?: AnimatableProperty<number>;  // Maps parent time to precomp time
+  timeRemap?: AnimatableProperty<number>;  // Maps parent time to nested comp time
 
-  // Collapse transformations (like AE)
-  collapseTransformations: boolean;
+  // Flatten transform (render nested layers in parent's 3D space)
+  flattenTransform: boolean;
+  /** @deprecated Use flattenTransform instead */
+  collapseTransformations?: boolean;
 
-  // Override precomp settings
+  // Override nested comp settings
   overrideFrameRate: boolean;
   frameRate?: number;
 }
+
+/** @deprecated Use NestedCompData instead */
+export type PrecompData = NestedCompData;
 
 // ============================================================
 // GENERATED MAP DATA (AI-powered layer generation)
@@ -1479,7 +1491,7 @@ export interface PropertyExpression {
   enabled: boolean;
   /** Expression type: 'preset' for named expressions, 'custom' for user scripts */
   type: 'preset' | 'custom';
-  /** Expression name (for presets: 'wiggle', 'loopOut', 'inertia', etc.) */
+  /** Expression name (for presets: 'jitter', 'repeatAfter', 'inertia', etc.) */
   name: string;
   /** Expression parameters */
   params: Record<string, number | string | boolean>;
@@ -1792,7 +1804,7 @@ export function createEmptyProject(width: number, height: number): WeylProject {
         settings: compositionSettings,
         layers: [],
         currentFrame: 0,
-        isPrecomp: false
+        isNestedComp: false
       }
     },
     mainCompositionId: mainCompId,

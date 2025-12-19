@@ -71,11 +71,11 @@
               <div class="param-header">
                 <span class="param-name" :title="String(key)">{{ param.name }}</span>
                 <button
-                  class="stopwatch"
+                  class="keyframe-toggle"
                   :class="{ active: param.animated }"
                   @click="toggleParamAnim(effect.id, String(key))"
                   title="Toggle Animation"
-                >⏱</button>
+                >◆</button>
               </div>
 
               <div class="param-control">
@@ -459,7 +459,7 @@ h3 { margin: 0; font-size: 13px; font-weight: 600; color: #888; text-transform: 
 
 .param-name { color: #aaa; }
 
-.stopwatch {
+.keyframe-toggle {
   background: transparent;
   border: none;
   color: #444;
@@ -467,8 +467,8 @@ h3 { margin: 0; font-size: 13px; font-weight: 600; color: #888; text-transform: 
   font-size: 12px;
   padding: 0;
 }
-.stopwatch:hover { color: #888; }
-.stopwatch.active { color: #4a90d9; }
+.keyframe-toggle:hover { color: #888; }
+.keyframe-toggle.active { color: #4a90d9; }
 
 .control-group {
   display: flex;

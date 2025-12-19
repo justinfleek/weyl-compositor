@@ -3,10 +3,10 @@
     <div v-if="layoutMode === 'sidebar'" class="prop-sidebar" :class="{ selected: isSelected }" :style="gridStyle" @click="selectProp">
       <div class="indent-spacer"></div>
 
-      <!-- Stopwatch first (left), then keyframe diamond - hidden if property is not animatable -->
+      <!-- Animation toggle (left), then keyframe diamond - hidden if property is not animatable -->
       <template v-if="property.animatable !== false">
         <div class="icon-box" @click.stop="toggleAnim">
-          <span class="stopwatch" :class="{ active: property.animated }">⏱</span>
+          <span class="keyframe-toggle" :class="{ active: property.animated }">◆</span>
         </div>
 
         <div class="icon-box" @click.stop="addKeyframeAtCurrent">
@@ -420,7 +420,7 @@ onUnmounted(() => {
 .indent-spacer { grid-column: span 3; }
 .icon-box { display: flex; justify-content: center; cursor: pointer; }
 .kf-btn.active { color: #f1c40f; }
-.stopwatch.active { color: #3498db; }
+.keyframe-toggle.active { color: #3498db; }
 
 /* Content spans from column 7 (Name) to the end */
 .prop-content {

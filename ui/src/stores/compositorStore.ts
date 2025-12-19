@@ -43,7 +43,7 @@ import type {
   CameraLayerData,
   ImageLayerData,
   VideoData,
-  PrecompData,
+  NestedCompData,
   InterpolationType
 } from '@/types/project';
 import type { VideoMetadata } from '@/engine/layers/VideoLayer';
@@ -103,7 +103,7 @@ interface CompositorState {
   // Active composition (for multi-composition support)
   activeCompositionId: string;
   openCompositionIds: string[];  // Tabs - which comps are open
-  compositionBreadcrumbs: string[];  // Navigation history for nested precomps
+  compositionBreadcrumbs: string[];  // Navigation history for nested compositions
 
   // ComfyUI connection
   comfyuiNodeId: string | null;
@@ -132,7 +132,7 @@ interface CompositorState {
 
   // UI state
   graphEditorVisible: boolean;
-  hideShyLayers: boolean;  // Toggle to hide layers marked as shy
+  hideMinimizedLayers: boolean;  // Toggle to hide layers marked as minimized
 
   // History for undo/redo
   historyStack: WeylProject[];
@@ -209,7 +209,7 @@ export const useCompositorStore = defineStore('compositor', {
     segmentBoxStart: null,
     segmentIsLoading: false,
     graphEditorVisible: false,
-    hideShyLayers: false,
+    hideMinimizedLayers: false,
     historyStack: [],
     historyIndex: -1,
     audioBuffer: null,
@@ -309,12 +309,13 @@ export const useCompositorStore = defineStore('compositor', {
       const comp = state.project.compositions[state.activeCompositionId];
       return (comp?.layers || []).filter((l: Layer) => l.visible);
     },
-    // Layers displayed in timeline (respects shy filter)
+    // Layers displayed in timeline (respects minimized filter)
     displayedLayers(state): Layer[] {
       const comp = state.project.compositions[state.activeCompositionId];
       const allLayers = comp?.layers || [];
-      if (state.hideShyLayers) {
-        return allLayers.filter((l: Layer) => !l.shy);
+      if (state.hideMinimizedLayers) {
+        // Support both minimized and deprecated shy property
+        return allLayers.filter((l: Layer) => !l.minimized && !l.shy);
       }
       return allLayers;
     },
@@ -355,7 +356,7 @@ export const useCompositorStore = defineStore('compositor', {
         .filter(Boolean);
     },
 
-    // Breadcrumb navigation path for nested precomps
+    // Breadcrumb navigation path for nested compositions
     breadcrumbPath(state): Array<{ id: string; name: string }> {
       return state.compositionBreadcrumbs
         .map((id: string) => {
@@ -414,7 +415,7 @@ export const useCompositorStore = defineStore('compositor', {
     createComposition(
       name: string,
       settings?: Partial<CompositionSettings>,
-      isPrecomp: boolean = false
+      isNestedComp: boolean = false
     ): Composition {
       const id = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -437,7 +438,7 @@ export const useCompositorStore = defineStore('compositor', {
         settings: defaultSettings,
         layers: [],
         currentFrame: 0,
-        isPrecomp
+        isNestedComp
       };
 
       this.project.compositions[id] = composition;
@@ -528,12 +529,12 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
-     * Enter a precomp (e.g., double-click on precomp layer)
+     * Enter a nested comp (e.g., double-click on nested comp layer)
      * Pushes the composition to the breadcrumb trail
      */
-    enterPrecomp(compId: string): void {
+    enterNestedComp(compId: string): void {
       if (!this.project.compositions[compId]) {
-        storeLogger.warn('Precomp not found:', compId);
+        storeLogger.warn('Nested comp not found:', compId);
         return;
       }
 
@@ -543,7 +544,12 @@ export const useCompositorStore = defineStore('compositor', {
       // Switch to the composition
       this.switchComposition(compId);
 
-      storeLogger.debug('Entered precomp:', compId, 'breadcrumbs:', this.compositionBreadcrumbs);
+      storeLogger.debug('Entered nested comp:', compId, 'breadcrumbs:', this.compositionBreadcrumbs);
+    },
+
+    /** @deprecated Use enterNestedComp instead */
+    enterPrecomp(compId: string): void {
+      this.enterNestedComp(compId);
     },
 
     /**
@@ -647,11 +653,11 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
-     * Pre-compose selected layers into a new composition
+     * Nest selected layers into a new composition
      */
-    precomposeSelectedLayers(name?: string): Composition | null {
+    nestSelectedLayers(name?: string): Composition | null {
       if (this.selectedLayerIds.length === 0) {
-        storeLogger.warn('No layers selected for pre-compose');
+        storeLogger.warn('No layers selected for nesting');
         return null;
       }
 
@@ -659,13 +665,13 @@ export const useCompositorStore = defineStore('compositor', {
       if (!activeComp) return null;
 
       // Create new composition with same settings
-      const precomp = this.createComposition(
-        name || 'Pre-comp',
+      const nestedComp = this.createComposition(
+        name || 'Nested Comp',
         activeComp.settings,
         true
       );
 
-      // Move selected layers to precomp
+      // Move selected layers to nested comp
       const selectedLayers = activeComp.layers.filter(l =>
         this.selectedLayerIds.includes(l.id)
       );
@@ -673,9 +679,9 @@ export const useCompositorStore = defineStore('compositor', {
       // Find earliest inPoint to normalize timing
       const earliestIn = Math.min(...selectedLayers.map(l => l.inPoint));
 
-      // Move layers to precomp and adjust timing
+      // Move layers to nested comp and adjust timing
       for (const layer of selectedLayers) {
-        // Adjust timing relative to precomp start
+        // Adjust timing relative to nested comp start
         layer.inPoint -= earliestIn;
         layer.outPoint -= earliestIn;
 
@@ -685,26 +691,26 @@ export const useCompositorStore = defineStore('compositor', {
           activeComp.layers.splice(idx, 1);
         }
 
-        // Add to precomp
-        precomp.layers.push(layer);
+        // Add to nested comp
+        nestedComp.layers.push(layer);
       }
 
-      // Update precomp duration to fit layers
-      const maxOut = Math.max(...precomp.layers.map(l => l.outPoint));
-      precomp.settings.frameCount = maxOut + 1;
-      precomp.settings.duration = precomp.settings.frameCount / precomp.settings.fps;
+      // Update nested comp duration to fit layers
+      const maxOut = Math.max(...nestedComp.layers.map(l => l.outPoint));
+      nestedComp.settings.frameCount = maxOut + 1;
+      nestedComp.settings.duration = nestedComp.settings.frameCount / nestedComp.settings.fps;
 
-      // Create precomp layer in parent composition
-      const precompLayer: Layer = {
+      // Create nested comp layer in parent composition
+      const nestedCompLayer: Layer = {
         id: `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: precomp.name,
-        type: 'precomp',
+        name: nestedComp.name,
+        type: 'nestedComp',
         visible: true,
         locked: false,
-        solo: false,
+        isolate: false,
         threeD: false,
         inPoint: earliestIn,
-        outPoint: earliestIn + precomp.settings.frameCount - 1,
+        outPoint: earliestIn + nestedComp.settings.frameCount - 1,
         parentId: null,
         transform: createDefaultTransform(),
         opacity: createAnimatableProperty('opacity', 100, 'number'),
@@ -713,13 +719,13 @@ export const useCompositorStore = defineStore('compositor', {
         blendMode: 'normal',
         motionBlur: false,
         data: {
-          compositionId: precomp.id,
+          compositionId: nestedComp.id,
           timeRemapEnabled: false,
-          collapseTransformations: false
-        } as PrecompData
+          flattenTransform: false
+        } as NestedCompData
       };
 
-      activeComp.layers.push(precompLayer);
+      activeComp.layers.push(nestedCompLayer);
 
       // Clear selection
       useSelectionStore().clearLayerSelection();
@@ -727,8 +733,13 @@ export const useCompositorStore = defineStore('compositor', {
       // Switch back to parent composition
       this.activeCompositionId = activeComp.id;
 
-      storeLogger.debug('Pre-composed layers into:', precomp.name);
-      return precomp;
+      storeLogger.debug('Nested layers into:', nestedComp.name);
+      return nestedComp;
+    },
+
+    /** @deprecated Use nestSelectedLayers instead */
+    precomposeSelectedLayers(name?: string): Composition | null {
+      return this.nestSelectedLayers(name);
     },
 
     // ============================================================
@@ -1109,7 +1120,7 @@ export const useCompositorStore = defineStore('compositor', {
         type,
         visible: true,
         locked: false,
-        solo: false,
+        isolate: false,
         threeD: false,
         motionBlur: false,
         inPoint: 0,
@@ -1630,17 +1641,27 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
-     * Toggle hide shy layers in timeline
+     * Toggle hide minimized layers in timeline
      */
+    toggleHideMinimizedLayers(): void {
+      this.hideMinimizedLayers = !this.hideMinimizedLayers;
+    },
+
+    /** @deprecated Use toggleHideMinimizedLayers instead */
     toggleHideShyLayers(): void {
-      this.hideShyLayers = !this.hideShyLayers;
+      this.toggleHideMinimizedLayers();
     },
 
     /**
-     * Set hide shy layers state
+     * Set hide minimized layers state
      */
+    setHideMinimizedLayers(hide: boolean): void {
+      this.hideMinimizedLayers = hide;
+    },
+
+    /** @deprecated Use setHideMinimizedLayers instead */
     setHideShyLayers(hide: boolean): void {
-      this.hideShyLayers = hide;
+      this.setHideMinimizedLayers(hide);
     },
 
     /**
@@ -2283,26 +2304,25 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     // ============================================================
-    // PRECOMP LAYER ACTIONS
+    // NESTED COMP LAYER ACTIONS
     // ============================================================
 
     /**
-     * Create a precomp layer referencing another composition
-     * (For future multi-composition architecture)
+     * Create a nested comp layer referencing another composition
      */
-    createPrecompLayer(compositionId: string, name?: string): Layer {
-      const layer = this.createLayer('precomp', name || 'Precomp');
+    createNestedCompLayer(compositionId: string, name?: string): Layer {
+      const layer = this.createLayer('nestedComp', name || 'Nested Comp');
 
-      const precompData: PrecompData = {
+      const nestedCompData: NestedCompData = {
         compositionId,
         timeRemapEnabled: false,
         timeRemap: undefined,
-        collapseTransformations: false,
+        flattenTransform: false,
         overrideFrameRate: false,
         frameRate: undefined
       };
 
-      layer.data = precompData;
+      layer.data = nestedCompData;
 
       this.project.meta.modified = new Date().toISOString();
       this.pushHistory();
@@ -2310,16 +2330,26 @@ export const useCompositorStore = defineStore('compositor', {
       return layer;
     },
 
-    /**
-     * Update precomp layer data
-     */
-    updatePrecompLayerData(layerId: string, updates: Partial<PrecompData>): void {
-      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
-      if (!layer || layer.type !== 'precomp') return;
+    /** @deprecated Use createNestedCompLayer instead */
+    createPrecompLayer(compositionId: string, name?: string): Layer {
+      return this.createNestedCompLayer(compositionId, name);
+    },
 
-      const data = layer.data as PrecompData;
+    /**
+     * Update nested comp layer data
+     */
+    updateNestedCompLayerData(layerId: string, updates: Partial<NestedCompData>): void {
+      const layer = this.getActiveCompLayers().find(l => l.id === layerId);
+      if (!layer || layer.type !== 'nestedComp') return;
+
+      const data = layer.data as NestedCompData;
       Object.assign(data, updates);
       this.project.meta.modified = new Date().toISOString();
+    },
+
+    /** @deprecated Use updateNestedCompLayerData instead */
+    updatePrecompLayerData(layerId: string, updates: Partial<NestedCompData>): void {
+      this.updateNestedCompLayerData(layerId, updates);
     },
 
     // ============================================================
