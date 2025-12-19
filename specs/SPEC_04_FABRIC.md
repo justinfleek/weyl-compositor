@@ -1,4 +1,74 @@
-# 6. FABRIC.JS CUSTOM CLASSES
+# 6. CANVAS/RENDERING IMPLEMENTATION
+
+---
+
+# IMPLEMENTATION STATUS (Updated December 2024)
+
+## ⚠️ MAJOR ARCHITECTURE CHANGE
+
+**The implementation pivoted from Fabric.js to Three.js** for the following reasons:
+
+1. **3D Support** - Three.js provides native 3D rendering needed for cameras, lights, depth
+2. **GPU Acceleration** - WebGL2 with Transform Feedback for particle physics
+3. **Performance** - Better handling of complex scenes with many objects
+4. **Extensibility** - Easier to add 3D features like model import, point clouds
+
+## Original Spec vs Implementation
+
+| Specified | Actual Implementation | Reason for Change |
+|-----------|----------------------|-------------------|
+| Fabric.js Canvas2D | Three.js WebGL2 | 3D support, GPU acceleration |
+| SplinePath class | SplineLayer.ts | Layer-based architecture |
+| AnimatedText class | TextLayer.ts | Full 3D text with outlines |
+| DepthMapImage class | DepthflowLayer.ts | 2.5D parallax rendering |
+| ParticleEmitter fabric class | GPUParticleSystem.ts | Transform Feedback GPU compute |
+
+## Current Rendering Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WeylEngine.ts (2400+ lines)                                │
+│  ├── Three.js Scene Graph                                   │
+│  ├── WebGL2 Renderer with antialiasing                      │
+│  ├── Post-processing pipeline (EffectComposer)             │
+│  └── Frame caching for timeline scrubbing                   │
+├─────────────────────────────────────────────────────────────┤
+│  Layer System (engine/layers/)                              │
+│  ├── BaseLayer.ts - Abstract base (54KB)                    │
+│  ├── 17 specialized layer implementations                   │
+│  └── Each layer creates/manages Three.js objects           │
+├─────────────────────────────────────────────────────────────┤
+│  GPU Systems                                                │
+│  ├── GPUParticleSystem.ts - Transform Feedback particles    │
+│  ├── Depth/Normal shaders for effects                       │
+│  └── Motion blur post-processing                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Key Implementation Files
+
+| Fabric.js Concept | Three.js Implementation | File |
+|-------------------|------------------------|------|
+| Canvas | Three.js WebGLRenderer | `WeylEngine.ts` |
+| SplinePath | Bezier curves with THREE.Line | `SplineLayer.ts` |
+| AnimatedText | THREE.Mesh with TextGeometry | `TextLayer.ts` |
+| Custom controls | Transform controls + gizmos | `CameraController.ts` |
+| Object selection | Raycaster + selection store | `selectionStore.ts` |
+
+## Spline Editing Implementation
+
+The spline editor now uses a hybrid approach:
+- **Canvas overlay** (`SplineEditor.vue`) - Vue component for control point editing
+- **Three.js rendering** (`SplineLayer.ts`) - GPU-rendered bezier curves
+- **Arc-length service** (`arcLength.ts`) - Mathematical parameterization
+
+## What This Spec Section Now Represents
+
+This section documents the **original design** using Fabric.js. The code examples below are **historical reference only**. See `ui/src/engine/layers/` for actual implementations.
+
+---
+
+# ORIGINAL SPEC (Historical Reference - Not Implemented)
 
 ## 6.1 SplinePath Class (ui/src/fabric/SplinePath.ts)
 

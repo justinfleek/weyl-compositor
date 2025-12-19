@@ -1,5 +1,56 @@
 # 5. COMFYUI INTEGRATION
 
+---
+
+# IMPLEMENTATION STATUS (Updated December 2024)
+
+## ComfyUI Integration Overview
+
+| Feature | Specified | Implemented | Status |
+|---------|-----------|-------------|--------|
+| Sidebar Tab Registration | Yes | Yes | ✅ Complete |
+| Python Node System | 3 nodes | 5+ nodes | ✅ Exceeded |
+| WebSocket Communication | Yes | Yes | ✅ Complete |
+| Custom HTTP Routes | Yes | Yes | ✅ Complete |
+| Project Save/Load | Planned | Yes | ✅ Complete |
+
+## Node Implementation Status
+
+| Specified Node | Actual Implementation | Status |
+|----------------|----------------------|--------|
+| WeylCompositorEditor | CompositorNode | ✅ Complete |
+| WeylMatteExport | MatteExportNode | ✅ Complete |
+| WeylDepthInput | DepthInputNode | ✅ Complete |
+| N/A | AudioInputNode | ✅ Added |
+| N/A | ModelInputNode | ✅ Added |
+
+## Route Implementation
+
+| Specified Route | Status | Notes |
+|-----------------|--------|-------|
+| `/weyl/compositor/set_output` | ✅ | Works as specified |
+| `/weyl/compositor/save_project` | ✅ | Full implementation |
+| `/weyl/compositor/load_project` | ✅ | Full implementation |
+| `/weyl/generate/depth` | ⚠️ | Backend ready, needs model bridge |
+| `/weyl/generate/texture` | ⚠️ | Backend ready, needs SDXL bridge |
+
+## Key Files
+
+| Purpose | Specified Location | Actual Location |
+|---------|-------------------|-----------------|
+| Node Registration | `__init__.py` | `__init__.py` |
+| Main Node | `nodes/compositor_node.py` | `nodes/compositor_node.py` |
+| Extension JS | `web/js/extension.js` | `web/js/extension.js` |
+| Project Storage | `server/project_storage.py` | `ui/src/services/projectStorage.ts` |
+
+## Changes from Spec
+
+1. **Project storage moved to frontend** - TypeScript implementation in services/projectStorage.ts with IndexedDB support
+2. **Additional nodes added** - Audio and Model input nodes for extended functionality
+3. **WebSocket events expanded** - More granular event types for better state sync
+
+---
+
 ## 5.1 Python Node Registration (__init__.py)
 
 ```python
