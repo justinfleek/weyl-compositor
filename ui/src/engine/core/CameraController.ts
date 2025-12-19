@@ -3,23 +3,35 @@
  *
  * Controls the Three.js camera for 2.5D/3D compositing:
  * - Perspective camera for 3D depth
- * - OrbitControls for 3D navigation (right-click orbit, middle-click pan)
+ * - camera-controls for smooth 3D navigation (better than OrbitControls)
  * - Animation support via keyframe evaluation
  * - Screen-space coordinate conversion
+ *
+ * Uses camera-controls (https://github.com/yomotsu/camera-controls) which provides:
+ * - SmoothDamp for natural transitions
+ * - Smooth zoom (unlike OrbitControls)
+ * - Programmatic setLookAt(), dollyTo(), rotateTo()
+ * - Rest/sleep events for knowing when camera stops
  */
 
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import CameraControls from 'camera-controls';
 import type { AnimatableProperty } from '@/types/project';
 import type { CameraState, CameraAnimationProps } from '../types';
 import { KeyframeEvaluator } from '../animation/KeyframeEvaluator';
+
+// Install camera-controls with Three.js subset
+CameraControls.install({ THREE });
 
 export class CameraController {
   /** The main camera */
   public readonly camera: THREE.PerspectiveCamera;
 
-  /** OrbitControls for 3D navigation */
-  public orbitControls: OrbitControls | null = null;
+  /** Camera controls for 3D navigation (camera-controls library) */
+  public cameraControls: CameraControls | null = null;
+
+  /** Clock for camera-controls delta time */
+  private clock: THREE.Clock = new THREE.Clock();
 
   /** Keyframe evaluator for animations */
   private readonly evaluator: KeyframeEvaluator;
@@ -72,82 +84,83 @@ export class CameraController {
   }
 
   // ============================================================================
-  // ORBIT CONTROLS (3D Navigation)
+  // CAMERA CONTROLS (3D Navigation)
   // ============================================================================
 
   /**
-   * Enable orbit controls for 3D navigation
+   * Enable camera controls for 3D navigation
+   * Uses camera-controls library for smooth transitions
    * @param domElement The canvas element to attach controls to
    */
   enableOrbitControls(domElement: HTMLCanvasElement): void {
-    if (this.orbitControls) {
-      this.orbitControls.dispose();
+    if (this.cameraControls) {
+      this.cameraControls.dispose();
     }
 
-    this.orbitControls = new OrbitControls(this.camera, domElement);
+    this.cameraControls = new CameraControls(this.camera, domElement);
 
     // Configure controls for proper 2.5D/3D navigation:
     // - Left mouse = reserved for selection (handled externally)
     // - Middle mouse = pan (move camera parallel to view plane)
     // - Right mouse = orbit (rotate around target)
     // - Scroll wheel = dolly (zoom in/out along view axis)
-    this.orbitControls.mouseButtons = {
-      LEFT: undefined as any,  // Reserved for selection/tools
-      MIDDLE: THREE.MOUSE.PAN,
-      RIGHT: THREE.MOUSE.ROTATE,
-    };
+    this.cameraControls.mouseButtons.left = CameraControls.ACTION.NONE;
+    this.cameraControls.mouseButtons.middle = CameraControls.ACTION.TRUCK;
+    this.cameraControls.mouseButtons.right = CameraControls.ACTION.ROTATE;
+    this.cameraControls.mouseButtons.wheel = CameraControls.ACTION.NONE; // Handled by ThreeCanvas
 
-    // Set orbit target to composition center
-    this.orbitControls.target.copy(this.target);
+    // Set target to composition center
+    this.cameraControls.setTarget(this.target.x, this.target.y, this.target.z, false);
 
-    // Disable damping - causes unwanted drift and rotation artifacts
-    this.orbitControls.enableDamping = false;
+    // Configure smooth damping (camera-controls uses SmoothDamp, much better than OrbitControls)
+    this.cameraControls.smoothTime = 0.15; // ~150ms transition time
+    this.cameraControls.draggingSmoothTime = 0.1; // Faster while dragging
 
-    // DISABLE OrbitControls zoom - ThreeCanvas handles zoom via viewportTransform
-    // This prevents the conflict where both systems try to handle scroll wheel
-    // OrbitControls dolly uses spherical coordinates which can cause rotation artifacts
-    this.orbitControls.enableZoom = false;
-    this.orbitControls.minDistance = 10;
-    this.orbitControls.maxDistance = 50000;
+    // Distance limits
+    this.cameraControls.minDistance = 10;
+    this.cameraControls.maxDistance = 50000;
 
-    // Pan settings - middle mouse moves camera in screen space
-    this.orbitControls.enablePan = true;
-    this.orbitControls.panSpeed = 1.0;
-    this.orbitControls.screenSpacePanning = true;
+    // Polar angle limits (prevent flipping over poles)
+    this.cameraControls.minPolarAngle = 0.01;
+    this.cameraControls.maxPolarAngle = Math.PI - 0.01;
 
-    // Rotation settings - only on right-click drag, NOT on scroll
-    this.orbitControls.enableRotate = true;
-    this.orbitControls.rotateSpeed = 0.5;
+    // Rotation speed
+    this.cameraControls.azimuthRotateSpeed = 0.5;
+    this.cameraControls.polarRotateSpeed = 0.5;
 
-    // Don't auto-rotate
-    this.orbitControls.autoRotate = false;
+    // Pan/truck speed
+    this.cameraControls.truckSpeed = 2.0;
 
     // IMPORTANT: Ensure camera starts perfectly aligned (front view)
-    // Reset to default 2D position to avoid any initial tilt
     this.resetToDefault();
 
-    console.log('[CameraController] Orbit controls enabled (scroll=zoom only, right-click=orbit)');
+    console.log('[CameraController] Camera controls enabled (camera-controls library, smooth transitions)');
   }
 
   /**
-   * Disable orbit controls
+   * Disable camera controls
    */
   disableOrbitControls(): void {
-    if (this.orbitControls) {
-      this.orbitControls.dispose();
-      this.orbitControls = null;
+    if (this.cameraControls) {
+      this.cameraControls.dispose();
+      this.cameraControls = null;
     }
   }
 
   /**
-   * Update orbit controls (call in animation loop)
+   * Update camera controls (call in animation loop)
+   * Returns true if camera is still moving (for render optimization)
    */
-  updateOrbitControls(): void {
-    if (this.orbitControls) {
-      this.orbitControls.update();
-      // Sync target from orbit controls
-      this.target.copy(this.orbitControls.target);
+  updateOrbitControls(): boolean {
+    if (this.cameraControls) {
+      const delta = this.clock.getDelta();
+      const hasUpdated = this.cameraControls.update(delta);
+      // Sync target from camera controls
+      const target = this.cameraControls.getTarget(new THREE.Vector3());
+      this.target.copy(target);
+      return hasUpdated;
     }
+    return false;
   }
 
   /**
@@ -176,10 +189,13 @@ export class CameraController {
     this.camera.lookAt(this.target);
     this.camera.updateProjectionMatrix();
 
-    // Sync orbit controls to this exact position
-    if (this.orbitControls) {
-      this.orbitControls.target.copy(this.target);
-      this.orbitControls.update();
+    // Sync camera controls to this exact position (instant, no animation)
+    if (this.cameraControls) {
+      this.cameraControls.setLookAt(
+        this.camera.position.x, this.camera.position.y, this.camera.position.z,
+        this.target.x, this.target.y, this.target.z,
+        false // No animation
+      );
     }
 
     // Reset viewport zoom/pan state
@@ -190,24 +206,24 @@ export class CameraController {
   }
 
   /**
-   * Check if orbit controls are enabled
+   * Check if camera controls are enabled
    */
   hasOrbitControls(): boolean {
-    return this.orbitControls !== null;
+    return this.cameraControls !== null;
   }
 
   /**
-   * Set the orbit controls target point (the point camera orbits around)
+   * Set the camera controls target point (the point camera orbits around)
    * This updates the orbit pivot without moving the camera
    * @param x - X position (screen coordinates)
    * @param y - Y position (screen coordinates - will be negated)
    * @param z - Z position
+   * @param animate - Whether to animate the transition (default: false)
    */
-  setOrbitTarget(x: number, y: number, z: number): void {
+  setOrbitTarget(x: number, y: number, z: number, animate = false): void {
     this.target.set(x, -y, z);
-    if (this.orbitControls) {
-      this.orbitControls.target.copy(this.target);
-      this.orbitControls.update();
+    if (this.cameraControls) {
+      this.cameraControls.setTarget(this.target.x, this.target.y, this.target.z, animate);
     }
   }
 
@@ -368,12 +384,12 @@ export class CameraController {
 
   /**
    * Update camera position based on zoom and pan
-   * When orbit controls are active and user has rotated, preserve the rotation.
+   * When camera controls are active and user has rotated, preserve the rotation.
    * Otherwise, use straight-on 2D view.
    */
   private updateCameraForViewport(): void {
-    // If orbit controls are active and user has rotated the view, preserve it
-    if (this.orbitControls && this.orbitEnabled) {
+    // If camera controls are active and user has rotated the view, preserve it
+    if (this.cameraControls && this.orbitEnabled) {
       // Just update the spherical radius for zoom
       const fovRad = THREE.MathUtils.degToRad(this.camera.fov);
       const baseDistance = (this.height / 2) / Math.tan(fovRad / 2);
