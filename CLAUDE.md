@@ -63,8 +63,8 @@ ComfyUI users need to create **conditioning data** (depth maps, masks, motion ve
 | **Lines of Code** | 128,114 | - | TypeScript + Vue |
 | **Source Files** | 215 | - | .ts + .vue |
 | **Test Files** | 29 | - | Vitest framework |
-| **Tests Passing** | 1011/1055 | 1055/1055 | 96% pass rate |
-| **TypeScript Errors** | 26 | 0 | All in test files |
+| **Tests Passing** | 1012/1055 | 1055/1055 | 96% pass rate |
+| **TypeScript Errors** | 0 | 0 | All fixed! |
 | **Services** | 42 | - | Business logic modules |
 | **Vue Components** | 55 | - | UI components |
 | **Layer Types** | 17 | - | More than AE! |
@@ -1114,15 +1114,11 @@ console.log('cache hits:', stats.hits, 'misses:', stats.misses);
 
 ## KNOWN ISSUES & WORKAROUNDS
 
-### TypeScript Errors (26 in test files)
+### TypeScript Errors
 
-All errors are in test files due to missing required fields:
-
-| File | Fix |
-|------|-----|
-| `effectProcessor.test.ts` | Add `category: 'blur'` to effect instances |
-| `interpolation.test.ts` | Add `controlMode: 'linked'` to keyframes |
-| `matteExporter.test.ts` | Use `ControlPoint` import, add required fields |
+**All fixed!** Previous issues were:
+- `arcLength.ts`: Bezier import syntax (fixed: use default import)
+- `LayerManager.ts`: Missing `getAllLayers()` method (fixed: added method)
 
 ### Security Issues (6 total)
 
@@ -1187,11 +1183,11 @@ All errors are in test files due to missing required fields:
 
 ### Recent Commits
 ```
+e99b2d2 Fix TypeScript errors: Bezier import and getAllLayers method
+87e4e5b CLAUDE.md v5.0 FINAL: Comprehensive handoff guide (~1200 lines)
 cfead8f CLAUDE.md v4.0: Comprehensive update with accurate metrics
 5e19f17 Split SERVICE_API_REFERENCE.md and add comprehensive handoff documentation
 d4300de Add comprehensive documentation suite for handoff
-08efce1 3D System and Particle Overhaul
-e7044be Sprint 2: Store refactoring, testing infrastructure
 ```
 
 ### Modified (Uncommitted)
@@ -1242,8 +1238,8 @@ ui/src/__tests__/engine/ParticleSimulationController.test.ts
 
 1. **Read this file completely** - It contains everything you need
 2. **Check HANDOFF.md** for detailed issue lists and fixes
-3. **Run `npm test`** to verify current state
-4. **Run `npx tsc --noEmit`** to see TypeScript errors (all in tests)
+3. **Run `npm test`** to verify current state (1012 passing, 43 skipped)
+4. **Run `npx tsc --noEmit`** to verify 0 TypeScript errors
 5. **Focus on determinism** - This is the #1 priority
 
 ### For Human Developers
