@@ -6,6 +6,9 @@ Weyl is a professional-grade **AI motion graphics compositor** that brings indus
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Extension-green.svg)](https://github.com/comfyanonymous/ComfyUI)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Vue 3](https://img.shields.io/badge/Vue-3.x-brightgreen.svg)](https://vuejs.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-r170-black.svg)](https://threejs.org/)
 
 ---
 
