@@ -281,6 +281,14 @@ const groupedProperties = computed(() => {
     groups['Path Options'] = [
       { path: 'data.closed', name: 'Closed', property: { value: splineData.closed ?? false, type: 'boolean', animatable: false } }
     ];
+
+    // More Options: Line Cap, Line Join, Dashes (non-animatable)
+    groups['More Options'] = [
+      { path: 'data.lineCap', name: 'Line Cap', property: { value: splineData.lineCap ?? 'round', type: 'dropdown', options: ['butt', 'round', 'square'], animatable: false } },
+      { path: 'data.lineJoin', name: 'Line Join', property: { value: splineData.lineJoin ?? 'round', type: 'dropdown', options: ['miter', 'round', 'bevel'], animatable: false } },
+      { path: 'data.dashArray', name: 'Dashes', property: { value: splineData.dashArray ?? '', type: 'string', placeholder: '10, 5', animatable: false } },
+      { path: 'data.dashOffset', name: 'Dash Offset', property: { value: splineData.dashOffset ?? 0, type: 'number', animatable: false } }
+    ];
   }
 
   // Custom Properties (Text, etc.)

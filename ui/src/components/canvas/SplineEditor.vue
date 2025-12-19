@@ -146,6 +146,7 @@
           :x2="point.handleIn.x"
           :y2="point.handleIn.y"
           class="handle-line"
+          :style="{ stroke: strokeColor }"
         />
         <line
           v-if="point.handleOut && selectedPointId === point.id"
@@ -154,6 +155,7 @@
           :x2="point.handleOut.x"
           :y2="point.handleOut.y"
           class="handle-line"
+          :style="{ stroke: strokeColor }"
         />
       </template>
 
@@ -166,6 +168,7 @@
           r="4"
           class="handle-point"
           :class="{ active: dragTarget?.type === 'handleIn' && dragTarget.pointId === point.id }"
+          :style="{ fill: strokeColor }"
           @mousedown.stop="startDragHandle(point.id, 'in', $event)"
         />
         <circle
@@ -175,6 +178,7 @@
           r="4"
           class="handle-point"
           :class="{ active: dragTarget?.type === 'handleOut' && dragTarget.pointId === point.id }"
+          :style="{ fill: strokeColor }"
           @mousedown.stop="startDragHandle(point.id, 'out', $event)"
         />
       </template>
@@ -188,6 +192,7 @@
           :cy="point.y"
           r="8"
           class="keyframe-indicator"
+          :style="{ stroke: strokeColor }"
         />
         <!-- Main control point (r=5, 15% smaller than 6) -->
         <circle
@@ -203,6 +208,7 @@
             'will-delete': isPenMode && penSubMode === 'delete' && hoveredPointId === point.id,
             'will-convert': isPenMode && penSubMode === 'convert' && hoveredPointId === point.id
           }"
+          :style="{ fill: strokeColor, stroke: '#ffffff' }"
           @mousedown.stop="handlePointClick(point.id, $event)"
           @mouseenter="handlePointHover(point.id)"
           @mouseleave="handlePointLeave"
@@ -216,6 +222,7 @@
             :cy="point.y"
             r="10"
             class="selection-ring"
+            :style="{ stroke: strokeColor }"
           />
 
           <!-- X-axis handle (red, horizontal arrow) -->
@@ -395,6 +402,9 @@ const dragTarget = ref<{
   newPointY?: number;
   originalX?: number;
   originalY?: number;
+  // Screen coordinates for axis dragging (zoom-independent)
+  screenStartX?: number;
+  screenStartY?: number;
 } | null>(null);
 
 // Computed: active tool tip text
@@ -692,7 +702,10 @@ function startDragDepth(pointId: string, event: MouseEvent) {
     pointId,
     startX: pos.x,
     startY: pos.y,
-    startDepth: getPointDepth(point)
+    startDepth: getPointDepth(point),
+    // Store screen coordinates for zoom-independent movement
+    screenStartX: event.clientX,
+    screenStartY: event.clientY
   };
 
   selectedPointId.value = pointId;
@@ -707,6 +720,18 @@ const canClosePath = computed(() => {
 
   const splineData = layer.data as SplineData;
   return !splineData.closed;
+});
+
+// Get the stroke color from the layer data (for point colors)
+const strokeColor = computed(() => {
+  if (!props.layerId) return '#00ff66'; // default green
+
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline' || !layer.data) return '#00ff66';
+
+  const splineData = layer.data as SplineData;
+  // Use 'stroke' (the actual property name) or 'strokeColor' for compatibility
+  return (splineData as any).stroke || (splineData as any).strokeColor || '#00ff66';
 });
 
 // Check if we're close to the first point
@@ -948,14 +973,27 @@ function generateCurvePreview(
   dragPos: { x: number; y: number }
 ): string {
   // Calculate the handle offset from the drag
+  // The drag position defines where handleOut of newPoint will be
   const dx = dragPos.x - newPoint.x;
   const dy = dragPos.y - newPoint.y;
+  const dragDist = Math.sqrt(dx * dx + dy * dy);
 
-  // Handle coming out of prevPoint (use existing handleOut or calculate default)
-  const h1x = prevPoint.handleOut ? prevPoint.handleOut.x : prevPoint.x + dx;
-  const h1y = prevPoint.handleOut ? prevPoint.handleOut.y : prevPoint.y + dy;
+  // h1 = handleOut of prevPoint (how curve LEAVES prevPoint)
+  // If prevPoint has handleOut, use it. Otherwise use a default based on direction to newPoint.
+  let h1x: number, h1y: number;
+  if (prevPoint.handleOut) {
+    h1x = prevPoint.handleOut.x;
+    h1y = prevPoint.handleOut.y;
+  } else {
+    // Default: 1/3 of the way toward newPoint
+    const dirX = newPoint.x - prevPoint.x;
+    const dirY = newPoint.y - prevPoint.y;
+    h1x = prevPoint.x + dirX * 0.33;
+    h1y = prevPoint.y + dirY * 0.33;
+  }
 
-  // Handle coming into newPoint (mirrored from the drag direction)
+  // h2 = handleIn of newPoint (how curve ARRIVES at newPoint)
+  // This is the MIRROR of the drag direction (opposite of handleOut)
   const h2x = newPoint.x - dx;
   const h2y = newPoint.y - dy;
 
@@ -1128,16 +1166,18 @@ function handleMouseMove(event: MouseEvent) {
       store.updateSplineControlPoint(props.layerId, point.id, updates);
       emit('handleMoved', point.id, 'out', pos.x, pos.y);
     } else if (dragTarget.value.type === 'depth') {
-      // Update depth based on Y-axis drag
-      // Dragging up increases depth, dragging down decreases
-      const dy = dragTarget.value.startY - pos.y;
-      const depthScale = 10; // How much depth changes per pixel of drag
-      const newDepth = Math.max(0, (dragTarget.value.startDepth ?? 0) + dy * depthScale);
+      // Update depth based on Y-axis drag (using screen coordinates for zoom independence)
+      // Dragging up (negative screenDy) increases depth
+      const screenDy = event.clientY - (dragTarget.value.screenStartY ?? event.clientY);
+      const depthScale = 2; // How much depth changes per screen pixel of drag
+      const newDepth = Math.max(0, (dragTarget.value.startDepth ?? 0) - screenDy * depthScale);
 
       store.updateSplineControlPoint(props.layerId, point.id, { depth: newDepth });
     } else if (dragTarget.value.type === 'axisX') {
-      // Move only along X-axis - use delta from start position
-      const dx = pos.x - dragTarget.value.startX;
+      // Move only along X-axis using SCREEN pixel deltas for consistent feel
+      // This ensures 1 screen pixel = 1 canvas unit regardless of zoom
+      const screenDx = event.clientX - (dragTarget.value.screenStartX ?? event.clientX);
+      const dx = screenDx; // 1:1 screen-to-canvas movement
       const newX = (dragTarget.value.originalX ?? point.x) + dx;
 
       // Move handles along with point
@@ -1153,8 +1193,9 @@ function handleMouseMove(event: MouseEvent) {
       store.updateSplineControlPoint(props.layerId, point.id, updates);
       emit('pointMoved', point.id, newX, point.y);
     } else if (dragTarget.value.type === 'axisY') {
-      // Move only along Y-axis - use delta from start position
-      const dy = pos.y - dragTarget.value.startY;
+      // Move only along Y-axis using SCREEN pixel deltas
+      const screenDy = event.clientY - (dragTarget.value.screenStartY ?? event.clientY);
+      const dy = screenDy; // 1:1 screen-to-canvas movement
       const newY = (dragTarget.value.originalY ?? point.y) + dy;
 
       // Move handles along with point
@@ -1384,7 +1425,7 @@ function startDragAxis(pointId: string, axis: 'X' | 'Y', event: MouseEvent) {
   const point = visibleControlPoints.value.find(p => p.id === pointId);
   if (!point) return;
 
-  // Get the mouse position in canvas coordinates
+  // Get both canvas and screen coordinates
   const pos = getMousePos(event);
 
   selectedPointId.value = pointId;
@@ -1394,7 +1435,10 @@ function startDragAxis(pointId: string, axis: 'X' | 'Y', event: MouseEvent) {
     startX: pos.x,
     startY: pos.y,
     originalX: point.x,
-    originalY: point.y
+    originalY: point.y,
+    // Store screen coordinates for zoom-independent movement
+    screenStartX: event.clientX,
+    screenStartY: event.clientY
   };
 }
 

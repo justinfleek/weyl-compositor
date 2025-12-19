@@ -41,16 +41,35 @@
             </div>
           </template>
 
-          <!-- Dropdown -->
+          <!-- Dropdown (dynamic options from property.options or hardcoded for legacy) -->
           <template v-else-if="property.type === 'dropdown'">
-            <select class="prop-dropdown" :value="property.value" @change="e => updateValDirect((e.target as HTMLSelectElement).value)">
-              <option v-if="name === 'Casts Shadows'" value="off">Off</option>
-              <option v-if="name === 'Casts Shadows'" value="on">On</option>
-              <option v-if="name === 'Casts Shadows'" value="only">Only</option>
-              <option v-if="name === 'Renderer'" value="Classic 3D">Classic 3D</option>
-              <option v-if="name === 'Renderer'" value="CINEMA 4D">CINEMA 4D</option>
-              <option v-if="name === 'Renderer'" value="Ray-traced 3D">Ray-traced 3D</option>
+            <select class="prop-dropdown" :value="property.value" @change="e => updateValDirect((e.target as HTMLSelectElement).value)" :title="getDropdownTitle()">
+              <!-- Dynamic options from property.options array -->
+              <template v-if="property.options && Array.isArray(property.options)">
+                <option v-for="opt in property.options" :key="opt" :value="opt">{{ formatOptionLabel(opt) }}</option>
+              </template>
+              <!-- Legacy hardcoded options for backwards compatibility -->
+              <template v-else>
+                <option v-if="name === 'Casts Shadows'" value="off">Off</option>
+                <option v-if="name === 'Casts Shadows'" value="on">On</option>
+                <option v-if="name === 'Casts Shadows'" value="only">Only</option>
+                <option v-if="name === 'Renderer'" value="Classic 3D">Classic 3D</option>
+                <option v-if="name === 'Renderer'" value="CINEMA 4D">CINEMA 4D</option>
+                <option v-if="name === 'Renderer'" value="Ray-traced 3D">Ray-traced 3D</option>
+              </template>
             </select>
+          </template>
+
+          <!-- String input (for things like dash patterns) -->
+          <template v-else-if="property.type === 'string'">
+            <input
+              type="text"
+              class="prop-string-input"
+              :value="property.value"
+              :placeholder="property.placeholder || ''"
+              :title="getStringTitle()"
+              @change="e => updateValDirect((e.target as HTMLInputElement).value)"
+            />
           </template>
 
           <!-- Percent (0-100) -->
@@ -175,12 +194,42 @@ const isSelected = computed(() => store.selectedPropertyPath === props.propertyP
 
 function toggleAnim() { store.setPropertyAnimated(props.layerId, props.propertyPath, !props.property.animated); }
 function addKeyframeAtCurrent() { store.addKeyframe(props.layerId, props.propertyPath, props.property.value); }
-function updateValDirect(v: any) { store.setPropertyValue(props.layerId, props.propertyPath, v); }
+function updateValDirect(v: any) {
+  // Handle data.* properties differently - they're stored directly on layer.data
+  if (props.propertyPath.startsWith('data.')) {
+    const dataKey = props.propertyPath.replace('data.', '');
+    store.updateLayerData(props.layerId, { [dataKey]: v });
+  } else {
+    store.setPropertyValue(props.layerId, props.propertyPath, v);
+  }
+}
 function updateValByIndex(axis: string, v: number) {
   const newVal = { ...props.property.value, [axis]: v };
   store.setPropertyValue(props.layerId, props.propertyPath, newVal);
 }
 function selectProp() { store.selectProperty(props.propertyPath); }
+
+// Format dropdown option label (capitalize first letter)
+function formatOptionLabel(opt: string): string {
+  return opt.charAt(0).toUpperCase() + opt.slice(1);
+}
+
+// Get tooltip for dropdown based on property name
+function getDropdownTitle(): string {
+  switch (props.name) {
+    case 'Line Cap': return 'Butt: flat end, Round: rounded end, Square: extends end';
+    case 'Line Join': return 'Miter: sharp corner, Round: rounded corner, Bevel: flat corner';
+    default: return '';
+  }
+}
+
+// Get tooltip for string input based on property name
+function getStringTitle(): string {
+  switch (props.name) {
+    case 'Dashes': return 'Dash pattern: comma-separated values (e.g., 10, 5 for 10px dash, 5px gap)';
+    default: return '';
+  }
+}
 
 // Handle mouse down on track - start box selection or navigate
 function handleTrackMouseDown(e: MouseEvent) {
@@ -410,9 +459,10 @@ onUnmounted(() => {
   border: 1px solid #3a3a3a;
   color: #e0e0e0;
   border-radius: 3px;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
-  min-width: 80px;
+  min-width: 60px;
+  max-width: 80px;
 }
 .prop-dropdown:hover {
   border-color: #4a90d9;
@@ -420,6 +470,30 @@ onUnmounted(() => {
 .prop-dropdown:focus {
   outline: none;
   border-color: #4a90d9;
+}
+
+/* String input styling */
+.prop-string-input {
+  padding: 2px 6px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  color: #e0e0e0;
+  border-radius: 3px;
+  font-size: 12px;
+  min-width: 60px;
+  max-width: 80px;
+}
+.prop-string-input::placeholder {
+  color: #666;
+  font-size: 11px;
+}
+.prop-string-input:hover {
+  border-color: #4a90d9;
+}
+.prop-string-input:focus {
+  outline: none;
+  border-color: #4a90d9;
+  background: #222;
 }
 
 .prop-track { height: 32px; background: #151515; border-bottom: 1px solid #2a2a2a; position: relative; cursor: pointer; }

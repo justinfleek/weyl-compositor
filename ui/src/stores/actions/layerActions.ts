@@ -94,7 +94,11 @@ export function createLayer(
         closed: false,
         stroke: '#00ff00',
         strokeWidth: 2,
-        fill: ''
+        // Stroke options (shown in More Options group)
+        lineCap: 'round',    // butt, round, square
+        lineJoin: 'round',   // miter, round, bevel
+        dashArray: '',       // e.g., "10, 5" for dashed lines
+        dashOffset: 0
       };
       break;
 

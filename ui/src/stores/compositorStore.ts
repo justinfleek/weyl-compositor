@@ -874,7 +874,11 @@ export const useCompositorStore = defineStore('compositor', {
             closed: false,
             stroke: '#00ff00',
             strokeWidth: 2,
-            fill: ''
+            // Stroke options (shown in More Options group)
+            lineCap: 'round',    // butt, round, square
+            lineJoin: 'round',   // miter, round, bevel
+            dashArray: '',       // e.g., "10, 5" for dashed lines
+            dashOffset: 0
           };
           break;
 
@@ -1085,11 +1089,12 @@ export const useCompositorStore = defineStore('compositor', {
       let layerProperties: AnimatableProperty<any>[] = [];
 
       // Spline layer properties for timeline
+      // Note: Splines don't have Fill (only shapes/text do) - they only have stroke
       if (type === 'spline') {
         layerProperties = [
           createAnimatableProperty('Stroke Width', layerData?.strokeWidth ?? 2, 'number', 'Stroke'),
           createAnimatableProperty('Stroke Opacity', layerData?.strokeOpacity ?? 100, 'number', 'Stroke'),
-          createAnimatableProperty('Fill Opacity', layerData?.fillOpacity ?? 100, 'number', 'Fill'),
+          // Line Cap, Line Join, Dashes are stored in layer.data and shown in More Options
           createAnimatableProperty('Trim Start', 0, 'number', 'Trim Paths'),
           createAnimatableProperty('Trim End', 100, 'number', 'Trim Paths'),
           createAnimatableProperty('Trim Offset', 0, 'number', 'Trim Paths'),
