@@ -117,6 +117,18 @@
             @dblclick.stop="deleteKeyframe(kf.id)"
             @contextmenu.prevent.stop="showContextMenu($event, kf)"
        >
+         <svg
+           class="keyframe-shape"
+           :viewBox="getKeyframeShapeViewBox(kf.interpolation)"
+           preserveAspectRatio="xMidYMid meet"
+         >
+           <path
+             :d="getKeyframeShapePath(kf.interpolation)"
+             :fill="isStrokeShape(kf.interpolation) ? 'none' : 'currentColor'"
+             :stroke="isStrokeShape(kf.interpolation) ? 'currentColor' : 'none'"
+             stroke-width="1.5"
+           />
+         </svg>
        </div>
 
        <!-- Context Menu -->
@@ -149,6 +161,24 @@ import { useCompositorStore } from '@/stores/compositorStore';
 import ScrubableNumber from '@/components/controls/ScrubableNumber.vue';
 import type { Keyframe } from '@/types/project';
 import { findNearestSnap } from '@/services/timelineSnap';
+import { getShapeForEasing, KEYFRAME_SHAPES } from '@/styles/keyframe-shapes';
+
+// Get keyframe shape path for a given interpolation type
+function getKeyframeShapePath(interpolation: string = 'linear'): string {
+  const shapeKey = getShapeForEasing(interpolation);
+  return KEYFRAME_SHAPES[shapeKey]?.path || KEYFRAME_SHAPES.diamond.path;
+}
+
+function getKeyframeShapeViewBox(interpolation: string = 'linear'): string {
+  const shapeKey = getShapeForEasing(interpolation);
+  const shape = KEYFRAME_SHAPES[shapeKey] || KEYFRAME_SHAPES.diamond;
+  return `0 0 ${shape.width} ${shape.height}`;
+}
+
+function isStrokeShape(interpolation: string = 'linear'): boolean {
+  const shapeKey = getShapeForEasing(interpolation);
+  return KEYFRAME_SHAPES[shapeKey]?.stroke || false;
+}
 
 const props = defineProps(['name', 'property', 'layerId', 'propertyPath', 'layoutMode', 'pixelsPerFrame', 'gridStyle']);
 const emit = defineEmits(['selectKeyframe', 'deleteKeyframe', 'moveKeyframe']);
@@ -496,25 +526,38 @@ onUnmounted(() => {
   background: #222;
 }
 
-.prop-track { height: 32px; background: #151515; border-bottom: 1px solid #2a2a2a; position: relative; cursor: pointer; }
+.prop-track {
+  height: 32px;
+  background: var(--weyl-surface-0, #0a0a0a);
+  border-bottom: 1px solid var(--weyl-surface-3, #222222);
+  position: relative;
+  cursor: pointer;
+}
+
 .keyframe {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: #f1c40f;
-  transform: rotate(45deg);
-  top: 11px;
-  border: 1px solid #000;
+  width: 14px;
+  height: 24px;
+  top: 4px;
+  transform: translateX(-7px);
   cursor: ew-resize;
-  transition: transform 0.1s;
+  transition: transform 0.1s, filter 0.1s;
+  color: var(--weyl-accent, #8B5CF6);
 }
+
+.keyframe-shape {
+  width: 100%;
+  height: 100%;
+}
+
 .keyframe:hover {
-  transform: rotate(45deg) scale(1.2);
+  transform: translateX(-7px) scale(1.15);
+  filter: brightness(1.2);
 }
+
 .keyframe.selected {
-  background: #fff;
-  border-color: #4a90d9;
-  box-shadow: 0 0 4px #4a90d9;
+  color: white;
+  filter: drop-shadow(0 0 4px var(--weyl-accent, #8B5CF6));
 }
 
 /* Selection box for marquee select */
@@ -522,8 +565,8 @@ onUnmounted(() => {
   position: absolute;
   top: 2px;
   bottom: 2px;
-  background: rgba(74, 144, 217, 0.2);
-  border: 1px solid rgba(74, 144, 217, 0.6);
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.6);
   pointer-events: none;
   z-index: 5;
 }
@@ -531,69 +574,75 @@ onUnmounted(() => {
 /* Context Menu */
 .keyframe-context-menu {
   position: absolute;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  min-width: 140px;
+  background: var(--weyl-surface-1, #121212);
+  border: none;
+  border-radius: var(--weyl-radius-lg, 6px);
+  box-shadow: var(--weyl-shadow-dropdown, 0 4px 16px rgba(0, 0, 0, 0.3));
+  min-width: 150px;
   z-index: 100;
-  padding: 4px 0;
-  font-size: 12px;
+  padding: 6px 0;
+  font-size: var(--weyl-text-sm, 11px);
 }
 
 .menu-header {
-  padding: 4px 12px;
-  color: #888;
-  font-size: 12px;
+  padding: 6px 12px;
+  color: var(--weyl-text-muted, #6B7280);
+  font-size: var(--weyl-text-xs, 10px);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--weyl-surface-3, #222222);
   margin-bottom: 4px;
 }
 
 .menu-item {
-  padding: 6px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ddd;
-  transition: background 0.1s;
+  color: var(--weyl-text-primary, #e5e5e5);
+  transition: var(--weyl-transition-fast, 100ms ease);
 }
 
 .menu-item:hover {
-  background: #3a3a3a;
+  background: var(--weyl-surface-3, #222222);
 }
 
 .menu-item.active {
-  background: #4a90d9;
-  color: #fff;
+  background: var(--weyl-accent, #8B5CF6);
+  color: white;
 }
 
 .menu-item.delete {
-  color: #e74c3c;
+  color: var(--weyl-error, #F43F5E);
 }
 
 .menu-item.delete:hover {
-  background: rgba(231, 76, 60, 0.2);
+  background: var(--weyl-error-bg, rgba(244, 63, 94, 0.15));
 }
 
 .menu-item .icon {
-  font-size: 14px;
+  font-size: var(--weyl-text-lg, 14px);
 }
 
 .menu-divider {
   height: 1px;
-  background: #333;
+  background: var(--weyl-surface-3, #222222);
   margin: 4px 0;
 }
 
-/* Keyframe interpolation visual styles */
-.keyframe.bezier {
-  border-radius: 2px;
+/* Keyframe interpolation color variants */
+.keyframe.hold {
+  color: var(--weyl-error, #F43F5E);
 }
 
-.keyframe.hold {
-  background: #e74c3c;
+.keyframe.bezier {
+  color: var(--weyl-warning, #F59E0B);
+}
+
+.keyframe.spring,
+.keyframe.elastic,
+.keyframe.bounce {
+  color: var(--weyl-success, #10B981);
 }
 </style>

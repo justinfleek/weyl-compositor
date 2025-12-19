@@ -2,6 +2,7 @@ import { createApp, App as VueApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import 'splitpanes/dist/splitpanes.css'
+import './styles/design-tokens.css'
 import { initializeEffects } from './services/effects'
 
 let appInstance: VueApp | null = null;
