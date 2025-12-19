@@ -1553,21 +1553,138 @@ export interface SplineData {
   strokeLineCap?: 'butt' | 'round' | 'square';  // Line cap style
   strokeLineJoin?: 'miter' | 'round' | 'bevel'; // Line join style
   strokeMiterLimit?: number;   // Miter limit (default 4)
-  strokeDashArray?: number[];  // Dash pattern [dash, gap, dash, gap, ...]
-  strokeDashOffset?: number;   // Dash offset
+
+  // Animated Dash properties
+  strokeDashArray?: number[] | AnimatableProperty<number[]>;  // Dash pattern [dash, gap, ...]
+  strokeDashOffset?: number | AnimatableProperty<number>;     // Animated dash offset
 
   // Fill properties
   fill: string;                // Fill color hex (empty = no fill)
   fillOpacity?: number;        // Fill opacity 0-100 (default 100)
 
-  // Trim Paths (path trimming)
-  trimStart?: number;          // Trim start 0-100%
-  trimEnd?: number;            // Trim end 0-100%
-  trimOffset?: number;         // Trim offset in degrees
+  // Animated Trim Paths (for draw-on effects)
+  trimStart?: number | AnimatableProperty<number>;    // Trim start 0-100%
+  trimEnd?: number | AnimatableProperty<number>;      // Trim end 0-100%
+  trimOffset?: number | AnimatableProperty<number>;   // Trim offset in degrees
+
+  // Path Effects (applied in order before trim)
+  pathEffects?: SplinePathEffect[];
 
   // Animated spline support (Phase 1)
   animatedControlPoints?: AnimatableControlPoint[];
   animated?: boolean;   // True if using animatedControlPoints
+
+  // Level of Detail (for complex vectors)
+  lod?: SplineLODSettings;
+
+  // Mesh Warp deformation pins (primary property)
+  warpPins?: import('./meshWarp').WarpPin[];
+
+  /** @deprecated Use warpPins instead */
+  puppetPins?: import('./meshWarp').WarpPin[];
+}
+
+/**
+ * Path effect base interface
+ */
+export interface SplinePathEffect {
+  id: string;
+  type: SplinePathEffectType;
+  enabled: boolean;
+  order: number;  // Execution order (lower = first)
+}
+
+export type SplinePathEffectType =
+  | 'offsetPath'
+  | 'roughen'
+  | 'wiggle'
+  | 'zigzag'
+  | 'wave';
+
+/**
+ * Offset Path Effect - grow/shrink paths
+ */
+export interface OffsetPathEffect extends SplinePathEffect {
+  type: 'offsetPath';
+  amount: AnimatableProperty<number>;       // Positive = expand, negative = contract
+  lineJoin: 'miter' | 'round' | 'bevel';
+  miterLimit: AnimatableProperty<number>;
+}
+
+/**
+ * Roughen Effect - organic hand-drawn look
+ */
+export interface RoughenEffect extends SplinePathEffect {
+  type: 'roughen';
+  size: AnimatableProperty<number>;         // Roughness magnitude
+  detail: AnimatableProperty<number>;       // Points per segment
+  seed: number;                             // Deterministic randomness
+}
+
+/**
+ * Wiggle Path Effect - animated jitter
+ */
+export interface WigglePathEffect extends SplinePathEffect {
+  type: 'wiggle';
+  size: AnimatableProperty<number>;
+  detail: AnimatableProperty<number>;
+  temporalPhase: AnimatableProperty<number>;  // Animated offset for motion
+  spatialPhase: AnimatableProperty<number>;
+  correlation: AnimatableProperty<number>;    // 0-100%
+  seed: number;
+}
+
+/**
+ * ZigZag Effect - decorative zigzag pattern
+ */
+export interface ZigZagEffect extends SplinePathEffect {
+  type: 'zigzag';
+  size: AnimatableProperty<number>;
+  ridgesPerSegment: AnimatableProperty<number>;
+  pointType: 'corner' | 'smooth';
+}
+
+/**
+ * Wave Effect - sine/triangle/square wave distortion
+ */
+export interface WaveEffect extends SplinePathEffect {
+  type: 'wave';
+  amplitude: AnimatableProperty<number>;
+  frequency: AnimatableProperty<number>;
+  phase: AnimatableProperty<number>;        // Animated phase for wave motion
+  waveType: 'sine' | 'triangle' | 'square';
+}
+
+/**
+ * Union type for all path effects
+ */
+export type SplinePathEffectInstance =
+  | OffsetPathEffect
+  | RoughenEffect
+  | WigglePathEffect
+  | ZigZagEffect
+  | WaveEffect;
+
+/**
+ * Level of Detail settings for complex vectors
+ */
+export interface SplineLODSettings {
+  enabled: boolean;
+  mode: 'zoom' | 'playback' | 'both';
+  levels: LODLevel[];
+  maxPointsForPreview: number;
+  simplificationTolerance: number;
+  cullingEnabled: boolean;
+  cullMargin: number;
+}
+
+/**
+ * Single LOD level with pre-simplified points
+ */
+export interface LODLevel {
+  tolerance: number;
+  controlPoints: ControlPoint[];
+  pointCount: number;
 }
 
 /**
@@ -1581,6 +1698,7 @@ export interface ControlPoint {
   handleIn: { x: number; y: number } | null;
   handleOut: { x: number; y: number } | null;
   type: 'corner' | 'smooth' | 'symmetric';
+  group?: string;       // Group ID for grouped animations (e.g., "head", "arm_left")
 }
 
 /**
@@ -1595,6 +1713,7 @@ export interface AnimatableControlPoint {
   handleIn: AnimatableHandle | null;   // Handles can be animated too
   handleOut: AnimatableHandle | null;
   type: 'corner' | 'smooth' | 'symmetric';
+  group?: string;       // Group ID for grouped animations
 }
 
 /**
@@ -1617,6 +1736,7 @@ export interface EvaluatedControlPoint {
   handleIn: { x: number; y: number } | null;
   handleOut: { x: number; y: number } | null;
   type: 'corner' | 'smooth' | 'symmetric';
+  group?: string;       // Group ID for grouped animations
 }
 
 /**
@@ -1640,6 +1760,7 @@ export function controlPointToAnimatable(cp: ControlPoint): AnimatableControlPoi
       y: createAnimatableProperty('handleOut.y', cp.handleOut.y, 'number'),
     } : null,
     type: cp.type,
+    group: cp.group,
   };
 }
 
@@ -1662,6 +1783,7 @@ export function animatableToControlPoint(acp: AnimatableControlPoint): ControlPo
       y: acp.handleOut.y.value,
     } : null,
     type: acp.type,
+    group: acp.group,
   };
 }
 

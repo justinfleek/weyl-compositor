@@ -79,10 +79,32 @@ Weyl is a professional-grade **AI motion graphics compositor** that brings indus
 
 ## Installation
 
+### Standard Installation
+
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/justinfleek/weyl-compositor.git
 pip install -r weyl-compositor/requirements.txt
+```
+
+### Portable/Embedded Python Installation (Windows)
+
+For ComfyUI portable installations with embedded Python (e.g., ComfyUI-Easy-Install):
+
+```powershell
+# Clone into custom_nodes folder
+cd "C:\path\to\ComfyUI\custom_nodes"
+git clone https://github.com/justinfleek/weyl-compositor.git
+
+# Install requirements using embedded Python
+& "C:\path\to\python_embeded\python.exe" -m pip install -r "C:\path\to\ComfyUI\custom_nodes\weyl-compositor\requirements.txt"
+```
+
+**Example** for typical portable install structure:
+```powershell
+cd "C:\ComfyUI-Easy-Install\ComfyUI\custom_nodes"
+git clone https://github.com/justinfleek/weyl-compositor.git
+& "C:\ComfyUI-Easy-Install\python_embeded\python.exe" -m pip install -r "C:\ComfyUI-Easy-Install\ComfyUI\custom_nodes\weyl-compositor\requirements.txt"
 ```
 
 Restart ComfyUI. **No build step required** — pre-built files included.

@@ -1,5 +1,5 @@
-import { m as defineStore, t as toRaw, c as computed, r as ref, q as reactive, s as defineComponent, w as watch, o as onMounted, a as createElementBlock, d as openBlock, v as withModifiers, x as createBaseVNode, y as createCommentVNode, z as normalizeClass, A as toDisplayString, B as withDirectives, F as Fragment, C as renderList, D as createTextVNode, E as vModelSelect, G as vModelText, H as vModelCheckbox, g as createBlock, n as normalizeStyle, I as onUnmounted, J as withKeys, T as Teleport, u as unref, K as createVNode, L as createStaticVNode, M as markRaw, h as resolveDynamicComponent, N as vShow, O as storeToRefs, k as nextTick, P as shallowRef, Q as withCtx, R as createApp, S as createPinia } from './weyl-vue-vendor.js';
-import { g as ge, P as Pe } from './weyl-ui-vendor.js';
+import { H as defineStore, I as toRaw, c as computed, r as ref, J as reactive, K as defineComponent, w as watch, o as onMounted, a as createElementBlock, d as openBlock, L as withModifiers, t as createBaseVNode, C as createCommentVNode, D as normalizeClass, x as toDisplayString, A as withDirectives, F as Fragment, M as renderList, v as createTextVNode, N as vModelSelect, O as vModelText, P as vModelCheckbox, g as createBlock, u as unref, B as withCtx, n as normalizeStyle, Q as vModelRadio, E as createVNode, R as onUnmounted, S as withKeys, T as Teleport, U as createStaticVNode, V as markRaw, h as resolveDynamicComponent, W as vShow, X as storeToRefs, k as nextTick, Y as shallowRef, Z as createApp, _ as createPinia } from './weyl-vue-vendor.js';
+import { s as script, g as ge, P as Pe } from './weyl-ui-vendor.js';
 import { G as Group, M as MathUtils, a as Mesh, N as NormalBlending, A as AddEquation, S as SrcAlphaFactor, O as OneMinusSrcAlphaFactor, b as OneFactor, C as CustomBlending, c as MaxEquation, d as MinEquation, e as OneMinusDstColorFactor, f as OneMinusSrcColorFactor, g as SubtractEquation, h as SubtractiveBlending, i as AdditiveBlending, j as MultiplyBlending, V as Vector3, k as CatmullRomCurve3, B as BufferGeometry, L as LineBasicMaterial, l as Line, m as OctahedronGeometry, n as MeshBasicMaterial, o as SphereGeometry, p as Box3, P as PlaneGeometry, D as DoubleSide, q as VideoTexture, r as LinearFilter, R as RGBAFormat, s as SRGBColorSpace, t as SVGLoader, u as Color, v as Matrix4, E as ExtrudeGeometry, w as ShapeGeometry, x as BufferAttribute, y as MeshStandardMaterial, z as MeshPhysicalMaterial, F as BackSide, H as FrontSide, I as Float32BufferAttribute, T as TubeGeometry, J as TextureLoader, K as BoxGeometry, Q as IcosahedronGeometry, U as TetrahedronGeometry, W as TorusGeometry, X as CylinderGeometry, Y as ConeGeometry, Z as InstancedMesh, _ as DynamicDrawUsage, $ as Euler, a0 as Quaternion, a1 as Scene, a2 as PerspectiveCamera, a3 as AmbientLight, a4 as DirectionalLight, a5 as WebGLRenderer, a6 as NearestFilter, a7 as SpriteMaterial, a8 as RGBELoader, a9 as EXRLoader, aa as PMREMGenerator, ab as RepeatWrapping, ac as LinearMipmapLinearFilter, ad as LinearSRGBColorSpace, ae as Vector2, af as AxesHelper, ag as GridHelper, ah as EquirectangularReflectionMapping, ai as LineLoop, aj as Shape, ak as Path, al as ACESFilmicToneMapping, am as PCFSoftShadowMap, an as EffectComposer, ao as MeshNormalMaterial, ap as WebGLRenderTarget, aq as HalfFloatType, ar as DepthTexture, as as DepthFormat, at as UnsignedIntType, au as FloatType, av as ShaderMaterial, aw as RenderPass, ax as OutputPass, ay as BokehPass, az as SSAOPass, aA as UnrealBloomPass, aB as ShaderPass, aC as UnsignedByteType, aD as CircleGeometry, aE as CurvePath, aF as CubicBezierCurve3, aG as Text, aH as LineGeometry, aI as LineMaterial, aJ as Line2, aK as DataTexture, aL as RedFormat, aM as InstancedBufferGeometry, aN as InstancedBufferAttribute, aO as RingGeometry, aP as PointLight, aQ as RectAreaLight, aR as SpotLight, aS as RectAreaLightHelper, aT as DirectionalLightHelper, aU as SpotLightHelper, aV as PointLightHelper, aW as RectAreaLightUniformsLib, aX as CanvasTexture, aY as GLTFLoader, aZ as DRACOLoader, a_ as MeshoptDecoder, a$ as OBJLoader, b0 as FBXLoader, b1 as ColladaLoader, b2 as AnimationMixer, b3 as LoopRepeat, b4 as LoopOnce, b5 as MeshDepthMaterial, b6 as RGBADepthPacking, b7 as BoxHelper, b8 as SkeletonHelper, b9 as SkinnedMesh, ba as PLYLoader, bb as PCDLoader, bc as Points, bd as Raycaster, be as Clock, bf as OrthographicCamera, bg as THREE$1, bh as Texture, bi as TransformControls } from './weyl-three-vendor.js';
 import { M as Muxer, A as ArrayBufferTarget, a as Muxer$1, b as ArrayBufferTarget$1 } from './weyl-export-vendor.js';
 
@@ -725,6 +725,358 @@ function evaluateFunction(name, ctx, params) {
   return ctx.value;
 }
 
+const logger$9 = createLogger("PathMorphing");
+const DEFAULT_MORPH_CONFIG = {
+  pointMatchingStrategy: "subdivide-shorter",
+  correspondenceMethod: "nearest-rotation"
+};
+function clonePoint$1(p) {
+  return { x: p.x, y: p.y };
+}
+function cloneVertex$1(v) {
+  return {
+    point: clonePoint$1(v.point),
+    inHandle: clonePoint$1(v.inHandle),
+    outHandle: clonePoint$1(v.outHandle)
+  };
+}
+function clonePath$1(path) {
+  return {
+    vertices: path.vertices.map(cloneVertex$1),
+    closed: path.closed
+  };
+}
+function distance$2(a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+function lerp$1(a, b, t) {
+  return a + (b - a) * t;
+}
+function lerpPoint$1(a, b, t) {
+  return {
+    x: lerp$1(a.x, b.x, t),
+    y: lerp$1(a.y, b.y, t)
+  };
+}
+function addPoints$1(a, b) {
+  return { x: a.x + b.x, y: a.y + b.y };
+}
+function subtractPoints$1(a, b) {
+  return { x: a.x - b.x, y: a.y - b.y };
+}
+function scalePoint$2(p, s) {
+  return { x: p.x * s, y: p.y * s };
+}
+function cubicBezierPoint$1(p0, p1, p2, p3, t) {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const mt3 = mt2 * mt;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return {
+    x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
+    y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+  };
+}
+function splitCubicBezier$1(p0, p1, p2, p3, t) {
+  const q0 = lerpPoint$1(p0, p1, t);
+  const q1 = lerpPoint$1(p1, p2, t);
+  const q2 = lerpPoint$1(p2, p3, t);
+  const r0 = lerpPoint$1(q0, q1, t);
+  const r1 = lerpPoint$1(q1, q2, t);
+  const s = lerpPoint$1(r0, r1, t);
+  return [
+    [p0, q0, r0, s],
+    // Left segment
+    [s, r1, q2, p3]
+    // Right segment
+  ];
+}
+function estimateSegmentLength(p0, p1, p2, p3, samples = 10) {
+  let length = 0;
+  let prev = p0;
+  for (let i = 1; i <= samples; i++) {
+    const t = i / samples;
+    const curr = cubicBezierPoint$1(p0, p1, p2, p3, t);
+    length += distance$2(prev, curr);
+    prev = curr;
+  }
+  return length;
+}
+function getSegmentControlPoints(path, segmentIndex) {
+  const v0 = path.vertices[segmentIndex];
+  const v1 = path.vertices[(segmentIndex + 1) % path.vertices.length];
+  return {
+    p0: v0.point,
+    p1: addPoints$1(v0.point, v0.outHandle),
+    p2: addPoints$1(v1.point, v1.inHandle),
+    p3: v1.point
+  };
+}
+function getSegmentLengths(path, samplesPerSegment = 10) {
+  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
+  const lengths = [];
+  for (let i = 0; i < numSegments; i++) {
+    const { p0, p1, p2, p3 } = getSegmentControlPoints(path, i);
+    lengths.push(estimateSegmentLength(p0, p1, p2, p3, samplesPerSegment));
+  }
+  return lengths;
+}
+function getPointAtArcLength(path, targetLength, segmentLengths) {
+  let accumulated = 0;
+  for (let i = 0; i < segmentLengths.length; i++) {
+    const segmentLength = segmentLengths[i];
+    if (accumulated + segmentLength >= targetLength || i === segmentLengths.length - 1) {
+      const localT = segmentLength > 0 ? (targetLength - accumulated) / segmentLength : 0;
+      const { p0, p1, p2, p3 } = getSegmentControlPoints(path, i);
+      const point = cubicBezierPoint$1(p0, p1, p2, p3, Math.max(0, Math.min(1, localT)));
+      return { point, segmentIndex: i, t: localT };
+    }
+    accumulated += segmentLength;
+  }
+  const lastVertex = path.vertices[path.vertices.length - 1];
+  return {
+    point: clonePoint$1(lastVertex.point),
+    segmentIndex: segmentLengths.length - 1,
+    t: 1
+  };
+}
+function subdivideSegmentAt(path, segmentIndex, t) {
+  const result = clonePath$1(path);
+  const v0 = result.vertices[segmentIndex];
+  const nextIdx = (segmentIndex + 1) % result.vertices.length;
+  const v1 = result.vertices[nextIdx];
+  const p0 = v0.point;
+  const p1 = addPoints$1(v0.point, v0.outHandle);
+  const p2 = addPoints$1(v1.point, v1.inHandle);
+  const p3 = v1.point;
+  const [left, right] = splitCubicBezier$1(p0, p1, p2, p3, t);
+  v0.outHandle = subtractPoints$1(left[1], left[0]);
+  const newVertex = {
+    point: clonePoint$1(left[3]),
+    inHandle: subtractPoints$1(left[2], left[3]),
+    outHandle: subtractPoints$1(right[1], right[0])
+  };
+  v1.inHandle = subtractPoints$1(right[2], right[3]);
+  result.vertices.splice(segmentIndex + 1, 0, newVertex);
+  return result;
+}
+function subdivideToVertexCount(path, targetCount) {
+  if (path.vertices.length >= targetCount) {
+    return clonePath$1(path);
+  }
+  let current = clonePath$1(path);
+  const segmentLengths = getSegmentLengths(current);
+  segmentLengths.reduce((sum, l) => sum + l, 0);
+  while (current.vertices.length < targetCount) {
+    const currentLengths = getSegmentLengths(current);
+    let maxLength = 0;
+    let maxIndex = 0;
+    for (let i = 0; i < currentLengths.length; i++) {
+      if (currentLengths[i] > maxLength) {
+        maxLength = currentLengths[i];
+        maxIndex = i;
+      }
+    }
+    current = subdivideSegmentAt(current, maxIndex, 0.5);
+  }
+  return current;
+}
+function resamplePath(path, vertexCount) {
+  if (vertexCount < 2) {
+    return clonePath$1(path);
+  }
+  const segmentLengths = getSegmentLengths(path);
+  const totalLength = segmentLengths.reduce((sum, l) => sum + l, 0);
+  if (totalLength === 0) {
+    const vertices2 = [];
+    for (let i = 0; i < vertexCount; i++) {
+      const srcIdx = Math.floor(i * path.vertices.length / vertexCount);
+      vertices2.push(cloneVertex$1(path.vertices[srcIdx]));
+    }
+    return { vertices: vertices2, closed: path.closed };
+  }
+  const spacing = totalLength / (path.closed ? vertexCount : vertexCount - 1);
+  const vertices = [];
+  for (let i = 0; i < vertexCount; i++) {
+    const targetLength = i * spacing;
+    const { point } = getPointAtArcLength(path, targetLength, segmentLengths);
+    const prevLength = Math.max(0, targetLength - spacing * 0.33);
+    const nextLength = Math.min(totalLength, targetLength + spacing * 0.33);
+    const prevPoint = getPointAtArcLength(path, prevLength, segmentLengths).point;
+    const nextPoint = getPointAtArcLength(path, nextLength, segmentLengths).point;
+    const tangent = {
+      x: (nextPoint.x - prevPoint.x) * 0.5,
+      y: (nextPoint.y - prevPoint.y) * 0.5
+    };
+    const handleScale = 0.33;
+    vertices.push({
+      point: clonePoint$1(point),
+      inHandle: scalePoint$2(tangent, -handleScale),
+      outHandle: scalePoint$2(tangent, handleScale)
+    });
+  }
+  return { vertices, closed: path.closed };
+}
+function calculateTravelDistance(source, target, rotationOffset = 0, reversed = false) {
+  const n = source.vertices.length;
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const srcIdx = i;
+    let tgtIdx = (i + rotationOffset + n) % n;
+    if (reversed) {
+      tgtIdx = (n - 1 - i + rotationOffset + n) % n;
+    }
+    total += distance$2(source.vertices[srcIdx].point, target.vertices[tgtIdx].point);
+  }
+  return total;
+}
+function findOptimalRotation(source, target) {
+  const n = source.vertices.length;
+  let bestOffset = 0;
+  let bestReversed = false;
+  let bestDistance = Infinity;
+  for (let offset = 0; offset < n; offset++) {
+    const dist = calculateTravelDistance(source, target, offset, false);
+    if (dist < bestDistance) {
+      bestDistance = dist;
+      bestOffset = offset;
+      bestReversed = false;
+    }
+    if (source.closed && target.closed) {
+      const distRev = calculateTravelDistance(source, target, offset, true);
+      if (distRev < bestDistance) {
+        bestDistance = distRev;
+        bestOffset = offset;
+        bestReversed = true;
+      }
+    }
+  }
+  return { offset: bestOffset, reversed: bestReversed };
+}
+function rotateVertices(path, offset, reverse = false) {
+  const n = path.vertices.length;
+  const vertices = [];
+  for (let i = 0; i < n; i++) {
+    let srcIdx = (i + offset + n) % n;
+    if (reverse) {
+      srcIdx = (n - 1 - i + offset + n) % n;
+    }
+    const srcVertex = path.vertices[srcIdx];
+    if (reverse) {
+      vertices.push({
+        point: clonePoint$1(srcVertex.point),
+        inHandle: clonePoint$1(srcVertex.outHandle),
+        outHandle: clonePoint$1(srcVertex.inHandle)
+      });
+    } else {
+      vertices.push(cloneVertex$1(srcVertex));
+    }
+  }
+  return { vertices, closed: path.closed };
+}
+function prepareMorphPaths(source, target, config = {}) {
+  const cfg = { ...DEFAULT_MORPH_CONFIG, ...config };
+  if (source.vertices.length === 0 || target.vertices.length === 0) {
+    logger$9.warn("Cannot morph empty paths");
+    return {
+      source: clonePath$1(source),
+      target: clonePath$1(target),
+      rotationOffset: 0,
+      reversed: false
+    };
+  }
+  let preparedSource = clonePath$1(source);
+  let preparedTarget = clonePath$1(target);
+  const sourceCount = preparedSource.vertices.length;
+  const targetCount = preparedTarget.vertices.length;
+  if (sourceCount !== targetCount) {
+    switch (cfg.pointMatchingStrategy) {
+      case "subdivide-shorter":
+        if (sourceCount < targetCount) {
+          preparedSource = subdivideToVertexCount(preparedSource, targetCount);
+        } else {
+          preparedTarget = subdivideToVertexCount(preparedTarget, sourceCount);
+        }
+        break;
+      case "subdivide-both": {
+        const maxCount = Math.max(sourceCount, targetCount);
+        preparedSource = subdivideToVertexCount(preparedSource, maxCount);
+        preparedTarget = subdivideToVertexCount(preparedTarget, maxCount);
+        break;
+      }
+      case "resample": {
+        const count = cfg.resampleCount ?? Math.max(sourceCount, targetCount);
+        preparedSource = resamplePath(preparedSource, count);
+        preparedTarget = resamplePath(preparedTarget, count);
+        break;
+      }
+    }
+  }
+  let rotationOffset = 0;
+  let reversed = false;
+  if (preparedSource.closed && preparedTarget.closed) {
+    switch (cfg.correspondenceMethod) {
+      case "nearest-rotation":
+      case "nearest-distance": {
+        const result = findOptimalRotation(preparedSource, preparedTarget);
+        rotationOffset = result.offset;
+        reversed = result.reversed;
+        break;
+      }
+    }
+  }
+  if (rotationOffset !== 0 || reversed) {
+    preparedTarget = rotateVertices(preparedTarget, rotationOffset, reversed);
+  }
+  return {
+    source: preparedSource,
+    target: preparedTarget,
+    rotationOffset,
+    reversed
+  };
+}
+function morphPaths(source, target, t) {
+  t = Math.max(0, Math.min(1, t));
+  if (t === 0) return clonePath$1(source);
+  if (t === 1) return clonePath$1(target);
+  if (source.vertices.length !== target.vertices.length) {
+    logger$9.warn("Paths have different vertex counts - use prepareMorphPaths() first");
+    const count = Math.min(source.vertices.length, target.vertices.length);
+    source = { vertices: source.vertices.slice(0, count), closed: source.closed };
+    target = { vertices: target.vertices.slice(0, count), closed: target.closed };
+  }
+  const vertices = [];
+  for (let i = 0; i < source.vertices.length; i++) {
+    const srcV = source.vertices[i];
+    const tgtV = target.vertices[i];
+    vertices.push({
+      point: lerpPoint$1(srcV.point, tgtV.point, t),
+      inHandle: lerpPoint$1(srcV.inHandle, tgtV.inHandle, t),
+      outHandle: lerpPoint$1(srcV.outHandle, tgtV.outHandle, t)
+    });
+  }
+  return { vertices, closed: source.closed };
+}
+function isBezierPath(value) {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const obj = value;
+  if (!Array.isArray(obj.vertices) || typeof obj.closed !== "boolean") {
+    return false;
+  }
+  if (obj.vertices.length > 0) {
+    const v = obj.vertices[0];
+    if (typeof v !== "object" || v === null) return false;
+    if (typeof v.point?.x !== "number") return false;
+    if (typeof v.point?.y !== "number") return false;
+  }
+  return true;
+}
+
 class BezierCache {
   cache = /* @__PURE__ */ new Map();
   maxSize = 500;
@@ -960,6 +1312,9 @@ function interpolateValue$1(v1, v2, t) {
   if (typeof v1 === "string" && typeof v2 === "string" && v1.startsWith("#") && v2.startsWith("#")) {
     return interpolateColor(v1, v2, t);
   }
+  if (isBezierPath(v1) && isBezierPath(v2)) {
+    return interpolatePath(v1, v2, t);
+  }
   return t < 0.5 ? v1 : v2;
 }
 function interpolateColor(c1, c2, t) {
@@ -973,6 +1328,30 @@ function interpolateColor(c1, c2, t) {
   const g = Math.round(g1 + (g2 - g1) * t);
   const b = Math.round(b1 + (b2 - b1) * t);
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+const pathMorphCache = /* @__PURE__ */ new Map();
+const PATH_MORPH_CACHE_MAX = 100;
+function hashBezierPath(path) {
+  const v = path.vertices;
+  if (v.length === 0) return "empty";
+  const first = v[0];
+  const last = v[v.length - 1];
+  return `${v.length}_${first.point.x.toFixed(1)}_${first.point.y.toFixed(1)}_${last.point.x.toFixed(1)}_${last.point.y.toFixed(1)}_${path.closed ? "c" : "o"}`;
+}
+function interpolatePath(p1, p2, t) {
+  if (t <= 0) return p1;
+  if (t >= 1) return p2;
+  const key = `${hashBezierPath(p1)}|${hashBezierPath(p2)}`;
+  let prepared = pathMorphCache.get(key);
+  if (!prepared) {
+    prepared = prepareMorphPaths(p1, p2);
+    if (pathMorphCache.size >= PATH_MORPH_CACHE_MAX) {
+      const firstKey = pathMorphCache.keys().next().value;
+      if (firstKey) pathMorphCache.delete(firstKey);
+    }
+    pathMorphCache.set(key, prepared);
+  }
+  return morphPaths(prepared.source, prepared.target, t);
 }
 const EASING_PRESETS_NORMALIZED = {
   linear: {
@@ -6735,7 +7114,8 @@ function controlPointToAnimatable(cp) {
       x: createAnimatableProperty("handleOut.x", cp.handleOut.x, "number"),
       y: createAnimatableProperty("handleOut.y", cp.handleOut.y, "number")
     } : null,
-    type: cp.type
+    type: cp.type,
+    group: cp.group
   };
 }
 function animatableToControlPoint(acp) {
@@ -6752,7 +7132,8 @@ function animatableToControlPoint(acp) {
       x: acp.handleOut.x.value,
       y: acp.handleOut.y.value
     } : null,
-    type: acp.type
+    type: acp.type,
+    group: acp.group
   };
 }
 function createAnimatableProperty(name, value, type = "number", group) {
@@ -7282,7 +7663,9 @@ function getPeakFrames(peakData) {
 const useSelectionStore = defineStore("selection", {
   state: () => ({
     selectedLayerIds: [],
+    lastSelectedLayerId: null,
     selectedKeyframeIds: [],
+    selectedControlPoints: [],
     selectedPropertyPath: null,
     currentTool: "select"
   }),
@@ -7290,7 +7673,9 @@ const useSelectionStore = defineStore("selection", {
     hasSelection: (state) => state.selectedLayerIds.length > 0,
     hasMultipleSelected: (state) => state.selectedLayerIds.length > 1,
     hasKeyframeSelection: (state) => state.selectedKeyframeIds.length > 0,
-    singleSelectedLayerId: (state) => state.selectedLayerIds.length === 1 ? state.selectedLayerIds[0] : null
+    hasControlPointSelection: (state) => state.selectedControlPoints.length > 0,
+    singleSelectedLayerId: (state) => state.selectedLayerIds.length === 1 ? state.selectedLayerIds[0] : null,
+    selectedControlPointCount: (state) => state.selectedControlPoints.length
   },
   actions: {
     // ============================================================
@@ -7301,6 +7686,7 @@ const useSelectionStore = defineStore("selection", {
      */
     selectLayer(layerId) {
       this.selectedLayerIds = [layerId];
+      this.lastSelectedLayerId = layerId;
       storeLogger.debug("Selected layer:", layerId);
     },
     /**
@@ -7308,6 +7694,9 @@ const useSelectionStore = defineStore("selection", {
      */
     selectLayers(layerIds) {
       this.selectedLayerIds = [...layerIds];
+      if (layerIds.length > 0) {
+        this.lastSelectedLayerId = layerIds[layerIds.length - 1];
+      }
       storeLogger.debug("Selected layers:", layerIds.length);
     },
     /**
@@ -7316,6 +7705,7 @@ const useSelectionStore = defineStore("selection", {
     addToSelection(layerId) {
       if (!this.selectedLayerIds.includes(layerId)) {
         this.selectedLayerIds.push(layerId);
+        this.lastSelectedLayerId = layerId;
       }
     },
     /**
@@ -7338,10 +7728,48 @@ const useSelectionStore = defineStore("selection", {
       }
     },
     /**
+     * Select layer with keyboard modifiers (Ctrl/Shift+Click behavior)
+     *
+     * @param layerId The layer to select
+     * @param modifiers Modifier keys state
+     * @param orderedLayerIds All layer IDs in order (for shift+click range selection)
+     */
+    selectLayerWithModifiers(layerId, modifiers, orderedLayerIds) {
+      if (modifiers.shift && this.lastSelectedLayerId && orderedLayerIds) {
+        this.selectRange(this.lastSelectedLayerId, layerId, orderedLayerIds);
+      } else if (modifiers.ctrl) {
+        this.toggleLayerSelection(layerId);
+        this.lastSelectedLayerId = layerId;
+      } else {
+        this.selectLayer(layerId);
+      }
+    },
+    /**
+     * Select a range of layers between two layer IDs
+     *
+     * @param startLayerId First layer in range
+     * @param endLayerId Last layer in range
+     * @param orderedLayerIds All layer IDs in display order
+     */
+    selectRange(startLayerId, endLayerId, orderedLayerIds) {
+      const startIndex = orderedLayerIds.indexOf(startLayerId);
+      const endIndex = orderedLayerIds.indexOf(endLayerId);
+      if (startIndex === -1 || endIndex === -1) {
+        this.selectLayer(endLayerId);
+        return;
+      }
+      const minIndex = Math.min(startIndex, endIndex);
+      const maxIndex = Math.max(startIndex, endIndex);
+      this.selectedLayerIds = orderedLayerIds.slice(minIndex, maxIndex + 1);
+      this.lastSelectedLayerId = endLayerId;
+      storeLogger.debug("Range selected layers:", this.selectedLayerIds.length);
+    },
+    /**
      * Clear layer selection
      */
     clearLayerSelection() {
       this.selectedLayerIds = [];
+      this.lastSelectedLayerId = null;
     },
     /**
      * Check if layer is selected
@@ -7404,6 +7832,110 @@ const useSelectionStore = defineStore("selection", {
       return this.selectedKeyframeIds.includes(keyframeId);
     },
     // ============================================================
+    // CONTROL POINT SELECTION
+    // ============================================================
+    /**
+     * Select a single control point
+     */
+    selectControlPoint(layerId, pointIndex, groupId) {
+      this.selectedControlPoints = [{ layerId, pointIndex, groupId }];
+    },
+    /**
+     * Select multiple control points
+     */
+    selectControlPoints(points) {
+      this.selectedControlPoints = [...points];
+    },
+    /**
+     * Add control point to selection
+     */
+    addControlPointToSelection(layerId, pointIndex, groupId) {
+      const exists = this.selectedControlPoints.some(
+        (p) => p.layerId === layerId && p.pointIndex === pointIndex
+      );
+      if (!exists) {
+        this.selectedControlPoints.push({ layerId, pointIndex, groupId });
+      }
+    },
+    /**
+     * Remove control point from selection
+     */
+    removeControlPointFromSelection(layerId, pointIndex) {
+      this.selectedControlPoints = this.selectedControlPoints.filter(
+        (p) => !(p.layerId === layerId && p.pointIndex === pointIndex)
+      );
+    },
+    /**
+     * Toggle control point selection
+     */
+    toggleControlPointSelection(layerId, pointIndex, groupId) {
+      const index = this.selectedControlPoints.findIndex(
+        (p) => p.layerId === layerId && p.pointIndex === pointIndex
+      );
+      if (index >= 0) {
+        this.selectedControlPoints.splice(index, 1);
+      } else {
+        this.selectedControlPoints.push({ layerId, pointIndex, groupId });
+      }
+    },
+    /**
+     * Select control point with keyboard modifiers
+     */
+    selectControlPointWithModifiers(layerId, pointIndex, modifiers, groupId) {
+      if (modifiers.ctrl) {
+        this.toggleControlPointSelection(layerId, pointIndex, groupId);
+      } else {
+        this.selectControlPoint(layerId, pointIndex, groupId);
+      }
+    },
+    /**
+     * Select all control points in a group
+     * @param groupId The group ID to select
+     * @param layerId The layer containing the group
+     * @param pointIndicesInGroup All point indices that belong to this group
+     */
+    selectControlPointGroup(groupId, layerId, pointIndicesInGroup) {
+      this.selectedControlPoints = pointIndicesInGroup.map((pointIndex) => ({
+        layerId,
+        pointIndex,
+        groupId
+      }));
+      storeLogger.debug("Selected control point group:", groupId, "points:", pointIndicesInGroup.length);
+    },
+    /**
+     * Add all control points in a group to selection
+     */
+    addControlPointGroupToSelection(groupId, layerId, pointIndicesInGroup) {
+      for (const pointIndex of pointIndicesInGroup) {
+        const exists = this.selectedControlPoints.some(
+          (p) => p.layerId === layerId && p.pointIndex === pointIndex
+        );
+        if (!exists) {
+          this.selectedControlPoints.push({ layerId, pointIndex, groupId });
+        }
+      }
+    },
+    /**
+     * Clear control point selection
+     */
+    clearControlPointSelection() {
+      this.selectedControlPoints = [];
+    },
+    /**
+     * Check if control point is selected
+     */
+    isControlPointSelected(layerId, pointIndex) {
+      return this.selectedControlPoints.some(
+        (p) => p.layerId === layerId && p.pointIndex === pointIndex
+      );
+    },
+    /**
+     * Get selected control points for a specific layer
+     */
+    getSelectedControlPointsForLayer(layerId) {
+      return this.selectedControlPoints.filter((p) => p.layerId === layerId);
+    },
+    // ============================================================
     // PROPERTY SELECTION
     // ============================================================
     /**
@@ -7429,7 +7961,9 @@ const useSelectionStore = defineStore("selection", {
      */
     clearAll() {
       this.selectedLayerIds = [];
+      this.lastSelectedLayerId = null;
       this.selectedKeyframeIds = [];
+      this.selectedControlPoints = [];
       this.selectedPropertyPath = null;
     }
   }
@@ -8468,7 +9002,7 @@ function secureUUID() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-const logger$4 = createLogger("ProjectStorage");
+const logger$8 = createLogger("ProjectStorage");
 const API_BASE = "/weyl/compositor";
 function isValidProjectId(projectId) {
   const uuidPattern = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
@@ -8477,7 +9011,7 @@ function isValidProjectId(projectId) {
 }
 async function saveProject(project, projectId) {
   try {
-    logger$4.info(`Saving project${projectId ? ` (${projectId})` : ""}...`);
+    logger$8.info(`Saving project${projectId ? ` (${projectId})` : ""}...`);
     const response = await fetch(`${API_BASE}/save_project`, {
       method: "POST",
       headers: {
@@ -8490,13 +9024,13 @@ async function saveProject(project, projectId) {
     });
     const result = await response.json();
     if (result.status === "success") {
-      logger$4.info(`Project saved: ${result.project_id}`);
+      logger$8.info(`Project saved: ${result.project_id}`);
     } else {
-      logger$4.error(`Failed to save project: ${result.message}`);
+      logger$8.error(`Failed to save project: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$4.error("Error saving project:", error);
+    logger$8.error("Error saving project:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -8505,24 +9039,24 @@ async function saveProject(project, projectId) {
 }
 async function loadProject(projectId) {
   if (!isValidProjectId(projectId)) {
-    logger$4.error(`Invalid project ID format: ${projectId}`);
+    logger$8.error(`Invalid project ID format: ${projectId}`);
     return {
       status: "error",
       message: "Invalid project ID format"
     };
   }
   try {
-    logger$4.info(`Loading project: ${projectId}...`);
+    logger$8.info(`Loading project: ${projectId}...`);
     const response = await fetch(`${API_BASE}/load_project/${encodeURIComponent(projectId)}`);
     const result = await response.json();
     if (result.status === "success") {
-      logger$4.info(`Project loaded: ${projectId}`);
+      logger$8.info(`Project loaded: ${projectId}`);
     } else {
-      logger$4.error(`Failed to load project: ${result.message}`);
+      logger$8.error(`Failed to load project: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$4.error("Error loading project:", error);
+    logger$8.error("Error loading project:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -8531,17 +9065,17 @@ async function loadProject(projectId) {
 }
 async function listProjects() {
   try {
-    logger$4.info("Listing projects...");
+    logger$8.info("Listing projects...");
     const response = await fetch(`${API_BASE}/list_projects`);
     const result = await response.json();
     if (result.status === "success") {
-      logger$4.info(`Found ${result.projects?.length || 0} projects`);
+      logger$8.info(`Found ${result.projects?.length || 0} projects`);
     } else {
-      logger$4.error(`Failed to list projects: ${result.message}`);
+      logger$8.error(`Failed to list projects: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$4.error("Error listing projects:", error);
+    logger$8.error("Error listing projects:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -8550,19 +9084,19 @@ async function listProjects() {
 }
 async function deleteProject(projectId) {
   try {
-    logger$4.info(`Deleting project: ${projectId}...`);
+    logger$8.info(`Deleting project: ${projectId}...`);
     const response = await fetch(`${API_BASE}/delete_project/${encodeURIComponent(projectId)}`, {
       method: "DELETE"
     });
     const result = await response.json();
     if (result.status === "success") {
-      logger$4.info(`Project deleted: ${projectId}`);
+      logger$8.info(`Project deleted: ${projectId}`);
     } else {
-      logger$4.error(`Failed to delete project: ${result.message}`);
+      logger$8.error(`Failed to delete project: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$4.error("Error deleting project:", error);
+    logger$8.error("Error deleting project:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -14599,10 +15133,11 @@ function getComfyUIClient(serverAddress) {
   return defaultClient;
 }
 
-const logger$3 = createLogger("MemoryBudget");
+const logger$7 = createLogger("MemoryBudget");
 const VRAM_ESTIMATES = {
   // AI Models
-  "model:qwen-image-layered": 28800};
+  "model:qwen-image-layered": 28800,
+  "model:starvector": 4e3};
 const THRESHOLDS = {
   info: 0.5,
   // 50% - getting busy
@@ -14673,7 +15208,7 @@ async function initializeGPUDetection() {
         estimatedVRAM,
         tier
       };
-      logger$3.info(`GPU detected: ${renderer} (~${estimatedVRAM}MB VRAM, tier: ${tier})`);
+      logger$7.info(`GPU detected: ${renderer} (~${estimatedVRAM}MB VRAM, tier: ${tier})`);
     } else {
       gpuInfo.value = {
         vendor: "Unknown",
@@ -14682,11 +15217,11 @@ async function initializeGPUDetection() {
         // Conservative 4GB
         tier: "low"
       };
-      logger$3.warn("WebGL not available, using conservative estimates");
+      logger$7.warn("WebGL not available, using conservative estimates");
     }
     isInitialized.value = true;
   } catch (error) {
-    logger$3.error("GPU detection failed:", error);
+    logger$7.error("GPU detection failed:", error);
     gpuInfo.value = {
       vendor: "Unknown",
       renderer: "Unknown",
@@ -14703,18 +15238,18 @@ function registerAllocation(id, name, category, estimatedMB, options) {
     category,
     estimatedMB,
     timestamp: Date.now(),
-    canUnload: options?.canUnload,
+    canUnload: options?.canUnload ?? false,
     unloadFn: options?.unloadFn
   };
   allocations.set(id, allocation);
-  logger$3.debug(`Registered: ${name} (${estimatedMB}MB) - Total: ${totalUsageMB.value}MB`);
+  logger$7.debug(`Registered: ${name} (${estimatedMB}MB) - Total: ${totalUsageMB.value}MB`);
   checkAndLogWarning();
 }
 function unregisterAllocation(id) {
   const alloc = allocations.get(id);
   if (alloc) {
     allocations.delete(id);
-    logger$3.debug(`Unregistered: ${alloc.name} - Total: ${totalUsageMB.value}MB`);
+    logger$7.debug(`Unregistered: ${alloc.name} - Total: ${totalUsageMB.value}MB`);
   }
 }
 function getWarning() {
@@ -14793,9 +15328,9 @@ async function freeMemory(targetMB) {
         await item.unloadFn();
         freed += item.estimatedMB;
         unregisterAllocation(item.id);
-        logger$3.info(`Freed ${formatMB(item.estimatedMB)} by unloading "${item.name}"`);
+        logger$7.info(`Freed ${formatMB(item.estimatedMB)} by unloading "${item.name}"`);
       } catch (error) {
-        logger$3.error(`Failed to unload "${item.name}":`, error);
+        logger$7.error(`Failed to unload "${item.name}":`, error);
       }
     }
   }
@@ -14851,9 +15386,9 @@ function checkAndLogWarning() {
   const warning = getWarning();
   if (warning) {
     if (warning.level === "critical") {
-      logger$3.error(warning.message);
+      logger$7.error(warning.message);
     } else if (warning.level === "warning") {
-      logger$3.warn(warning.message);
+      logger$7.warn(warning.message);
     }
   }
 }
@@ -14865,7 +15400,7 @@ const memoryState = {
   usageByCategory,
   gpuInfo};
 
-const logger$2 = createLogger("LayerDecomposition");
+const logger$6 = createLogger("LayerDecomposition");
 const MODEL_ALLOCATION_ID = "model:qwen-image-layered";
 class LayerDecompositionService {
   baseUrl;
@@ -14885,7 +15420,7 @@ class LayerDecompositionService {
       }
       throw new Error(result.message || "Failed to get model status");
     } catch (error) {
-      logger$2.error("Failed to get model status:", error);
+      logger$6.error("Failed to get model status:", error);
       throw error;
     }
   }
@@ -14905,9 +15440,9 @@ class LayerDecompositionService {
         throw new Error(result.message);
       }
       onProgress?.("complete", 100);
-      logger$2.info("Model download complete");
+      logger$6.info("Model download complete");
     } catch (error) {
-      logger$2.error("Model download failed:", error);
+      logger$6.error("Model download failed:", error);
       throw error;
     }
   }
@@ -14937,9 +15472,9 @@ class LayerDecompositionService {
           unloadFn: () => this.unloadModel()
         }
       );
-      logger$2.info("Model loaded:", result.message);
+      logger$6.info("Model loaded:", result.message);
     } catch (error) {
-      logger$2.error("Model load failed:", error);
+      logger$6.error("Model load failed:", error);
       throw error;
     }
   }
@@ -14956,9 +15491,9 @@ class LayerDecompositionService {
         throw new Error(result.message);
       }
       unregisterAllocation(MODEL_ALLOCATION_ID);
-      logger$2.info("Model unloaded");
+      logger$6.info("Model unloaded");
     } catch (error) {
-      logger$2.error("Model unload failed:", error);
+      logger$6.error("Model unload failed:", error);
       throw error;
     }
   }
@@ -14986,10 +15521,10 @@ class LayerDecompositionService {
       if (result.status === "error") {
         throw new Error(result.message);
       }
-      logger$2.info(`Decomposition complete: ${result.layers.length} layers`);
+      logger$6.info(`Decomposition complete: ${result.layers.length} layers`);
       return result.layers;
     } catch (error) {
-      logger$2.error("Decomposition failed:", error);
+      logger$6.error("Decomposition failed:", error);
       throw error;
     }
   }
@@ -15027,9 +15562,9 @@ class LayerDecompositionService {
         onProgress?.("cleanup", "Freeing GPU memory...");
         try {
           await this.unloadModel();
-          logger$2.info("Model auto-unloaded to free GPU memory");
+          logger$6.info("Model auto-unloaded to free GPU memory");
         } catch (unloadError) {
-          logger$2.warn("Failed to auto-unload model:", unloadError);
+          logger$6.warn("Failed to auto-unload model:", unloadError);
         }
       }
     }
@@ -15052,17 +15587,17 @@ class LayerDecompositionService {
         const analysis = analyzeLayerContent(imageData);
         layer.label = generateLabelFromAnalysis(analysis, i, layers.length);
       } catch (error) {
-        logger$2.warn(`Failed to analyze layer ${i}:`, error);
+        logger$6.warn(`Failed to analyze layer ${i}:`, error);
       }
     }
   }
 }
-let defaultService = null;
+let defaultService$1 = null;
 function getLayerDecompositionService(serverAddress) {
-  if (!defaultService) {
-    defaultService = new LayerDecompositionService(serverAddress);
+  if (!defaultService$1) {
+    defaultService$1 = new LayerDecompositionService(serverAddress);
   }
-  return defaultService;
+  return defaultService$1;
 }
 function dataUrlToImage(dataUrl) {
   return new Promise((resolve, reject) => {
@@ -15162,67 +15697,67 @@ function generateLabelFromAnalysis(analysis, index, totalLayers) {
   return `Mid Elements (${index + 1})`;
 }
 
-const _hoisted_1$K = { class: "decompose-dialog" };
-const _hoisted_2$J = { class: "dialog-header" };
-const _hoisted_3$H = ["disabled"];
-const _hoisted_4$G = { class: "dialog-content" };
-const _hoisted_5$G = { class: "status-section" };
-const _hoisted_6$G = {
+const _hoisted_1$L = { class: "decompose-dialog" };
+const _hoisted_2$K = { class: "dialog-header" };
+const _hoisted_3$I = ["disabled"];
+const _hoisted_4$H = { class: "dialog-content" };
+const _hoisted_5$H = { class: "status-section" };
+const _hoisted_6$H = {
   key: 0,
   class: "model-info"
 };
-const _hoisted_7$G = { class: "form-group" };
-const _hoisted_8$F = { class: "source-options" };
-const _hoisted_9$F = ["disabled"];
-const _hoisted_10$F = {
+const _hoisted_7$H = { class: "form-group" };
+const _hoisted_8$G = { class: "source-options" };
+const _hoisted_9$G = ["disabled"];
+const _hoisted_10$G = {
   key: 0,
   class: "layer-select"
 };
-const _hoisted_11$E = ["disabled"];
-const _hoisted_12$C = ["value"];
-const _hoisted_13$C = {
+const _hoisted_11$F = ["disabled"];
+const _hoisted_12$D = ["value"];
+const _hoisted_13$D = {
   key: 0,
   class: "upload-placeholder"
 };
-const _hoisted_14$z = ["src"];
-const _hoisted_15$y = { class: "form-group" };
-const _hoisted_16$y = { class: "slider-row" };
-const _hoisted_17$w = ["disabled"];
-const _hoisted_18$v = { class: "slider-value" };
-const _hoisted_19$v = { class: "form-group options-group" };
-const _hoisted_20$v = { class: "checkbox-row" };
-const _hoisted_21$u = { class: "checkbox-label" };
-const _hoisted_22$t = ["disabled"];
-const _hoisted_23$s = { class: "checkbox-row" };
-const _hoisted_24$p = { class: "checkbox-label" };
-const _hoisted_25$o = ["disabled"];
-const _hoisted_26$n = { class: "checkbox-row" };
-const _hoisted_27$k = { class: "checkbox-label" };
-const _hoisted_28$k = ["disabled"];
-const _hoisted_29$k = {
+const _hoisted_14$A = ["src"];
+const _hoisted_15$z = { class: "form-group" };
+const _hoisted_16$z = { class: "slider-row" };
+const _hoisted_17$x = ["disabled"];
+const _hoisted_18$w = { class: "slider-value" };
+const _hoisted_19$w = { class: "form-group options-group" };
+const _hoisted_20$w = { class: "checkbox-row" };
+const _hoisted_21$v = { class: "checkbox-label" };
+const _hoisted_22$u = ["disabled"];
+const _hoisted_23$t = { class: "checkbox-row" };
+const _hoisted_24$q = { class: "checkbox-label" };
+const _hoisted_25$p = ["disabled"];
+const _hoisted_26$o = { class: "checkbox-row" };
+const _hoisted_27$m = { class: "checkbox-label" };
+const _hoisted_28$m = ["disabled"];
+const _hoisted_29$m = {
   key: 0,
   class: "form-group collapsed-params"
 };
-const _hoisted_30$j = { class: "param-row" };
-const _hoisted_31$g = ["disabled"];
-const _hoisted_32$g = { class: "param-row" };
-const _hoisted_33$g = ["disabled"];
-const _hoisted_34$f = { class: "param-row" };
-const _hoisted_35$e = ["disabled"];
-const _hoisted_36$d = {
+const _hoisted_30$l = { class: "param-row" };
+const _hoisted_31$h = ["disabled"];
+const _hoisted_32$h = { class: "param-row" };
+const _hoisted_33$h = ["disabled"];
+const _hoisted_34$g = { class: "param-row" };
+const _hoisted_35$f = ["disabled"];
+const _hoisted_36$e = {
   key: 1,
   class: "progress-section"
 };
-const _hoisted_37$d = { class: "progress-bar" };
-const _hoisted_38$d = { class: "progress-text" };
-const _hoisted_39$c = {
+const _hoisted_37$e = { class: "progress-bar" };
+const _hoisted_38$e = { class: "progress-text" };
+const _hoisted_39$e = {
   key: 2,
   class: "error-section"
 };
-const _hoisted_40$b = { class: "dialog-footer" };
-const _hoisted_41$9 = ["disabled"];
-const _hoisted_42$8 = ["disabled"];
-const _sfc_main$L = /* @__PURE__ */ defineComponent({
+const _hoisted_40$d = { class: "dialog-footer" };
+const _hoisted_41$b = ["disabled"];
+const _hoisted_42$a = ["disabled"];
+const _sfc_main$M = /* @__PURE__ */ defineComponent({
   __name: "DecomposeDialog",
   emits: ["close", "decomposed"],
   setup(__props, { emit: __emit }) {
@@ -15476,8 +16011,8 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
         class: "decompose-dialog-overlay",
         onClick: _cache[14] || (_cache[14] = withModifiers(($event) => emit("close"), ["self"]))
       }, [
-        createBaseVNode("div", _hoisted_1$K, [
-          createBaseVNode("div", _hoisted_2$J, [
+        createBaseVNode("div", _hoisted_1$L, [
+          createBaseVNode("div", _hoisted_2$K, [
             _cache[16] || (_cache[16] = createBaseVNode("h3", null, "AI Layer Decomposition", -1)),
             createBaseVNode("button", {
               class: "close-btn",
@@ -15485,10 +16020,10 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
               disabled: isProcessing.value
             }, [..._cache[15] || (_cache[15] = [
               createBaseVNode("i", { class: "pi pi-times" }, null, -1)
-            ])], 8, _hoisted_3$H)
+            ])], 8, _hoisted_3$I)
           ]),
-          createBaseVNode("div", _hoisted_4$G, [
-            createBaseVNode("div", _hoisted_5$G, [
+          createBaseVNode("div", _hoisted_4$H, [
+            createBaseVNode("div", _hoisted_5$H, [
               createBaseVNode("div", {
                 class: normalizeClass(["status-indicator", statusClass.value])
               }, [
@@ -15497,13 +16032,13 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                 }, null, 2),
                 createBaseVNode("span", null, toDisplayString(statusText.value), 1)
               ], 2),
-              modelStatus.value && !modelStatus.value.downloaded ? (openBlock(), createElementBlock("div", _hoisted_6$G, [
+              modelStatus.value && !modelStatus.value.downloaded ? (openBlock(), createElementBlock("div", _hoisted_6$H, [
                 createBaseVNode("small", null, "Model size: " + toDisplayString(modelStatus.value.model_size_gb) + "GB", 1)
               ])) : createCommentVNode("", true)
             ]),
-            createBaseVNode("div", _hoisted_7$G, [
+            createBaseVNode("div", _hoisted_7$H, [
               _cache[21] || (_cache[21] = createBaseVNode("label", null, "Source Image", -1)),
-              createBaseVNode("div", _hoisted_8$F, [
+              createBaseVNode("div", _hoisted_8$G, [
                 createBaseVNode("button", {
                   class: normalizeClass(["source-btn", { active: sourceType.value === "layer" }]),
                   onClick: _cache[1] || (_cache[1] = ($event) => sourceType.value = "layer"),
@@ -15511,7 +16046,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                 }, [..._cache[17] || (_cache[17] = [
                   createBaseVNode("i", { class: "pi pi-images" }, null, -1),
                   createBaseVNode("span", null, "From Layer", -1)
-                ])], 10, _hoisted_9$F),
+                ])], 10, _hoisted_9$G),
                 createBaseVNode("button", {
                   class: normalizeClass(["source-btn", { active: sourceType.value === "upload" }]),
                   onClick: _cache[2] || (_cache[2] = ($event) => sourceType.value = "upload")
@@ -15520,7 +16055,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   createBaseVNode("span", null, "Upload", -1)
                 ])], 2)
               ]),
-              sourceType.value === "layer" ? (openBlock(), createElementBlock("div", _hoisted_10$F, [
+              sourceType.value === "layer" ? (openBlock(), createElementBlock("div", _hoisted_10$G, [
                 withDirectives(createBaseVNode("select", {
                   "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => selectedLayerId.value = $event),
                   disabled: isProcessing.value
@@ -15530,9 +16065,9 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                     return openBlock(), createElementBlock("option", {
                       key: layer.id,
                       value: layer.id
-                    }, toDisplayString(layer.name), 9, _hoisted_12$C);
+                    }, toDisplayString(layer.name), 9, _hoisted_12$D);
                   }), 128))
-                ], 8, _hoisted_11$E), [
+                ], 8, _hoisted_11$F), [
                   [vModelSelect, selectedLayerId.value]
                 ])
               ])) : (openBlock(), createElementBlock("div", {
@@ -15551,7 +16086,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   onChange: handleFileSelect,
                   style: { "display": "none" }
                 }, null, 544),
-                !uploadedImage.value ? (openBlock(), createElementBlock("div", _hoisted_13$C, [..._cache[20] || (_cache[20] = [
+                !uploadedImage.value ? (openBlock(), createElementBlock("div", _hoisted_13$D, [..._cache[20] || (_cache[20] = [
                   createBaseVNode("i", { class: "pi pi-cloud-upload" }, null, -1),
                   createBaseVNode("span", null, "Click or drop image here", -1)
                 ])])) : (openBlock(), createElementBlock("img", {
@@ -15559,12 +16094,12 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   src: uploadedImage.value,
                   class: "upload-preview",
                   alt: "Uploaded image"
-                }, null, 8, _hoisted_14$z))
+                }, null, 8, _hoisted_14$A))
               ], 32))
             ]),
-            createBaseVNode("div", _hoisted_15$y, [
+            createBaseVNode("div", _hoisted_15$z, [
               _cache[22] || (_cache[22] = createBaseVNode("label", null, "Number of Layers", -1)),
-              createBaseVNode("div", _hoisted_16$y, [
+              createBaseVNode("div", _hoisted_16$z, [
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => numLayers.value = $event),
                   type: "range",
@@ -15572,7 +16107,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   max: "16",
                   step: "1",
                   disabled: isProcessing.value
-                }, null, 8, _hoisted_17$w), [
+                }, null, 8, _hoisted_17$x), [
                   [
                     vModelText,
                     numLayers.value,
@@ -15580,45 +16115,45 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                     { number: true }
                   ]
                 ]),
-                createBaseVNode("span", _hoisted_18$v, toDisplayString(numLayers.value), 1)
+                createBaseVNode("span", _hoisted_18$w, toDisplayString(numLayers.value), 1)
               ]),
               _cache[23] || (_cache[23] = createBaseVNode("small", { class: "param-hint" }, "More layers = finer separation (3-16)", -1))
             ]),
-            createBaseVNode("div", _hoisted_19$v, [
+            createBaseVNode("div", _hoisted_19$w, [
               _cache[30] || (_cache[30] = createBaseVNode("label", null, "Organization", -1)),
-              createBaseVNode("div", _hoisted_20$v, [
-                createBaseVNode("label", _hoisted_21$u, [
+              createBaseVNode("div", _hoisted_20$w, [
+                createBaseVNode("label", _hoisted_21$v, [
                   withDirectives(createBaseVNode("input", {
                     type: "checkbox",
                     "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => groupIntoComp.value = $event),
                     disabled: isProcessing.value
-                  }, null, 8, _hoisted_22$t), [
+                  }, null, 8, _hoisted_22$u), [
                     [vModelCheckbox, groupIntoComp.value]
                   ]),
                   _cache[24] || (_cache[24] = createBaseVNode("span", null, "Group into nested composition", -1))
                 ]),
                 _cache[25] || (_cache[25] = createBaseVNode("small", null, "Keeps layers organized, reduces clutter", -1))
               ]),
-              createBaseVNode("div", _hoisted_23$s, [
-                createBaseVNode("label", _hoisted_24$p, [
+              createBaseVNode("div", _hoisted_23$t, [
+                createBaseVNode("label", _hoisted_24$q, [
                   withDirectives(createBaseVNode("input", {
                     type: "checkbox",
                     "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => semanticLabels.value = $event),
                     disabled: isProcessing.value
-                  }, null, 8, _hoisted_25$o), [
+                  }, null, 8, _hoisted_25$p), [
                     [vModelCheckbox, semanticLabels.value]
                   ]),
                   _cache[26] || (_cache[26] = createBaseVNode("span", null, "Generate semantic labels", -1))
                 ]),
                 _cache[27] || (_cache[27] = createBaseVNode("small", null, "AI-friendly names based on content analysis", -1))
               ]),
-              createBaseVNode("div", _hoisted_26$n, [
-                createBaseVNode("label", _hoisted_27$k, [
+              createBaseVNode("div", _hoisted_26$o, [
+                createBaseVNode("label", _hoisted_27$m, [
                   withDirectives(createBaseVNode("input", {
                     type: "checkbox",
                     "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => autoUnload.value = $event),
                     disabled: isProcessing.value
-                  }, null, 8, _hoisted_28$k), [
+                  }, null, 8, _hoisted_28$m), [
                     [vModelCheckbox, autoUnload.value]
                   ]),
                   _cache[28] || (_cache[28] = createBaseVNode("span", null, "Free GPU memory after", -1))
@@ -15626,9 +16161,9 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                 _cache[29] || (_cache[29] = createBaseVNode("small", null, "Recommended for complex projects", -1))
               ])
             ]),
-            showAdvanced.value ? (openBlock(), createElementBlock("div", _hoisted_29$k, [
+            showAdvanced.value ? (openBlock(), createElementBlock("div", _hoisted_29$m, [
               _cache[34] || (_cache[34] = createBaseVNode("label", null, "Advanced Settings", -1)),
-              createBaseVNode("div", _hoisted_30$j, [
+              createBaseVNode("div", _hoisted_30$l, [
                 _cache[31] || (_cache[31] = createBaseVNode("span", null, "Guidance Scale", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => guidanceScale.value = $event),
@@ -15637,7 +16172,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   max: "10",
                   step: "0.5",
                   disabled: isProcessing.value
-                }, null, 8, _hoisted_31$g), [
+                }, null, 8, _hoisted_31$h), [
                   [
                     vModelText,
                     guidanceScale.value,
@@ -15646,7 +16181,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   ]
                 ])
               ]),
-              createBaseVNode("div", _hoisted_32$g, [
+              createBaseVNode("div", _hoisted_32$h, [
                 _cache[32] || (_cache[32] = createBaseVNode("span", null, "Inference Steps", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => numInferenceSteps.value = $event),
@@ -15655,7 +16190,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   max: "100",
                   step: "10",
                   disabled: isProcessing.value
-                }, null, 8, _hoisted_33$g), [
+                }, null, 8, _hoisted_33$h), [
                   [
                     vModelText,
                     numInferenceSteps.value,
@@ -15664,7 +16199,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   ]
                 ])
               ]),
-              createBaseVNode("div", _hoisted_34$f, [
+              createBaseVNode("div", _hoisted_34$g, [
                 _cache[33] || (_cache[33] = createBaseVNode("span", null, "Seed (optional)", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => seed.value = $event),
@@ -15672,7 +16207,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                   min: "0",
                   placeholder: "Random",
                   disabled: isProcessing.value
-                }, null, 8, _hoisted_35$e), [
+                }, null, 8, _hoisted_35$f), [
                   [
                     vModelText,
                     seed.value,
@@ -15691,25 +16226,25 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
               }, null, 2),
               createTextVNode(" " + toDisplayString(showAdvanced.value ? "Hide" : "Show") + " Advanced Settings ", 1)
             ]),
-            isProcessing.value ? (openBlock(), createElementBlock("div", _hoisted_36$d, [
-              createBaseVNode("div", _hoisted_37$d, [
+            isProcessing.value ? (openBlock(), createElementBlock("div", _hoisted_36$e, [
+              createBaseVNode("div", _hoisted_37$e, [
                 createBaseVNode("div", {
                   class: normalizeClass(["progress-fill", { indeterminate: progressIndeterminate.value }])
                 }, null, 2)
               ]),
-              createBaseVNode("p", _hoisted_38$d, toDisplayString(progressMessage.value), 1)
+              createBaseVNode("p", _hoisted_38$e, toDisplayString(progressMessage.value), 1)
             ])) : createCommentVNode("", true),
-            errorMessage.value ? (openBlock(), createElementBlock("div", _hoisted_39$c, [
+            errorMessage.value ? (openBlock(), createElementBlock("div", _hoisted_39$e, [
               _cache[35] || (_cache[35] = createBaseVNode("i", { class: "pi pi-exclamation-triangle" }, null, -1)),
               createBaseVNode("span", null, toDisplayString(errorMessage.value), 1)
             ])) : createCommentVNode("", true)
           ]),
-          createBaseVNode("div", _hoisted_40$b, [
+          createBaseVNode("div", _hoisted_40$d, [
             createBaseVNode("button", {
               class: "cancel-btn",
               onClick: _cache[13] || (_cache[13] = ($event) => emit("close")),
               disabled: isProcessing.value
-            }, " Cancel ", 8, _hoisted_41$9),
+            }, " Cancel ", 8, _hoisted_41$b),
             createBaseVNode("button", {
               class: "decompose-btn",
               onClick: startDecomposition,
@@ -15717,7 +16252,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
             }, [
               _cache[36] || (_cache[36] = createBaseVNode("i", { class: "pi pi-sparkles" }, null, -1)),
               createTextVNode(" " + toDisplayString(buttonText.value), 1)
-            ], 8, _hoisted_42$8)
+            ], 8, _hoisted_42$a)
           ])
         ])
       ]);
@@ -15733,7 +16268,1076 @@ const _export_sfc = (sfc, props) => {
   return target;
 };
 
-const DecomposeDialog = /* @__PURE__ */ _export_sfc(_sfc_main$L, [["__scopeId", "data-v-7dd86d9c"]]);
+const DecomposeDialog = /* @__PURE__ */ _export_sfc(_sfc_main$M, [["__scopeId", "data-v-7dd86d9c"]]);
+
+const logger$5 = createLogger("Vectorize");
+const STARVECTOR_ALLOCATION_ID = "model:starvector-1b";
+const DEFAULT_VTRACE_OPTIONS = {
+  mode: "spline",
+  colorMode: "color",
+  hierarchical: "stacked",
+  filterSpeckle: 4,
+  colorPrecision: 6,
+  layerDifference: 16,
+  cornerThreshold: 60,
+  lengthThreshold: 4,
+  maxIterations: 10,
+  spliceThreshold: 45,
+  pathPrecision: 3
+};
+const DEFAULT_STARVECTOR_OPTIONS = {
+  maxLength: 4e3
+};
+class VectorizeService {
+  baseUrl;
+  constructor(serverAddress) {
+    const client = getComfyUIClient(serverAddress);
+    this.baseUrl = `http://${client.server}`;
+  }
+  /**
+   * Get vectorization service status
+   */
+  async getStatus() {
+    try {
+      const response = await fetch(`${this.baseUrl}/weyl/vectorize/status`);
+      const result = await response.json();
+      if (result.status === "success") {
+        return result.data;
+      }
+      throw new Error(result.message || "Failed to get status");
+    } catch (error) {
+      logger$5.error("Failed to get vectorize status:", error);
+      throw error;
+    }
+  }
+  /**
+   * Trace an image to vector paths using VTracer (fast, any image type)
+   *
+   * @param imageDataUrl - Image as data URL (data:image/...;base64,...)
+   * @param options - Tracing options
+   * @returns Array of vector paths with control points
+   */
+  async trace(imageDataUrl, options = {}) {
+    const opts = { ...DEFAULT_VTRACE_OPTIONS, ...options };
+    try {
+      const response = await fetch(`${this.baseUrl}/weyl/vectorize/trace`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: imageDataUrl,
+          mode: opts.mode,
+          color_mode: opts.colorMode,
+          hierarchical: opts.hierarchical,
+          filter_speckle: opts.filterSpeckle,
+          color_precision: opts.colorPrecision,
+          layer_difference: opts.layerDifference,
+          corner_threshold: opts.cornerThreshold,
+          length_threshold: opts.lengthThreshold,
+          max_iterations: opts.maxIterations,
+          splice_threshold: opts.spliceThreshold,
+          path_precision: opts.pathPrecision
+        })
+      });
+      const result = await response.json();
+      if (result.status === "error") {
+        throw new Error(result.message);
+      }
+      logger$5.info(`Traced image: ${result.pathCount} paths`);
+      return result;
+    } catch (error) {
+      logger$5.error("Image tracing failed:", error);
+      throw error;
+    }
+  }
+  /**
+   * Vectorize an icon/logo using StarVector AI
+   * Note: Only works for simple graphics, not photos
+   *
+   * @param imageDataUrl - Image as data URL
+   * @param options - StarVector options
+   */
+  async vectorizeWithAI(imageDataUrl, options = {}) {
+    const opts = { ...DEFAULT_STARVECTOR_OPTIONS, ...options };
+    const memCheck = canAllocate(VRAM_ESTIMATES["model:starvector"] || 2500);
+    if (!memCheck.canProceed) {
+      throw new Error(memCheck.warning?.message || "Insufficient GPU memory for StarVector");
+    }
+    try {
+      const response = await fetch(`${this.baseUrl}/weyl/vectorize/ai`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: imageDataUrl,
+          max_length: opts.maxLength
+        })
+      });
+      const result = await response.json();
+      if (result.status === "error") {
+        throw new Error(result.message);
+      }
+      logger$5.info(`AI vectorized: ${result.pathCount} paths`);
+      return result;
+    } catch (error) {
+      logger$5.error("AI vectorization failed:", error);
+      throw error;
+    }
+  }
+  /**
+   * Download and load StarVector model
+   */
+  async loadStarVectorModel(onProgress) {
+    const memCheck = canAllocate(VRAM_ESTIMATES["model:starvector"] || 2500);
+    if (!memCheck.canProceed) {
+      throw new Error(memCheck.warning?.message || "Insufficient GPU memory");
+    }
+    try {
+      onProgress?.("downloading", "Downloading StarVector model (~2.5GB)...");
+      const response = await fetch(`${this.baseUrl}/weyl/vectorize/download-starvector`, {
+        method: "POST"
+      });
+      const result = await response.json();
+      if (result.status === "error") {
+        throw new Error(result.message);
+      }
+      registerAllocation(
+        STARVECTOR_ALLOCATION_ID,
+        "StarVector 1B Model",
+        "model",
+        VRAM_ESTIMATES["model:starvector"] || 2500,
+        {
+          canUnload: true,
+          unloadFn: () => this.unloadStarVectorModel()
+        }
+      );
+      onProgress?.("complete", "StarVector model loaded");
+      logger$5.info("StarVector model loaded");
+    } catch (error) {
+      logger$5.error("Failed to load StarVector:", error);
+      throw error;
+    }
+  }
+  /**
+   * Unload StarVector model to free GPU memory
+   */
+  async unloadStarVectorModel() {
+    try {
+      const response = await fetch(`${this.baseUrl}/weyl/vectorize/unload-starvector`, {
+        method: "POST"
+      });
+      const result = await response.json();
+      if (result.status === "error") {
+        throw new Error(result.message);
+      }
+      unregisterAllocation(STARVECTOR_ALLOCATION_ID);
+      logger$5.info("StarVector model unloaded");
+    } catch (error) {
+      logger$5.error("Failed to unload StarVector:", error);
+      throw error;
+    }
+  }
+  /**
+   * One-click vectorization with automatic mode selection
+   *
+   * For icons/logos (simple graphics): Uses StarVector AI
+   * For photos/complex images: Uses VTracer
+   *
+   * @param imageDataUrl - Image to vectorize
+   * @param options - Options (mode can be 'auto', 'trace', or 'ai')
+   * @param onProgress - Progress callback
+   */
+  async vectorize(imageDataUrl, options = {}, onProgress) {
+    const mode = options.mode ?? "trace";
+    if (mode === "ai") {
+      onProgress?.("checking", "Checking StarVector model...");
+      const status = await this.getStatus();
+      if (!status.starvector.loaded) {
+        if (!status.starvector.downloaded) {
+          onProgress?.("downloading", "Downloading StarVector model...");
+        }
+        await this.loadStarVectorModel(onProgress);
+      }
+      onProgress?.("vectorizing", "Running AI vectorization...");
+      return await this.vectorizeWithAI(imageDataUrl, options.aiOptions);
+    }
+    onProgress?.("tracing", "Tracing image to vectors...");
+    return await this.trace(imageDataUrl, options.traceOptions);
+  }
+}
+let defaultService = null;
+function getVectorizeService(serverAddress) {
+  if (!defaultService) {
+    defaultService = new VectorizeService(serverAddress);
+  }
+  return defaultService;
+}
+function normalizeControlPoints(paths, options = {}) {
+  const { groupByPath = false, prefix = "vec" } = options;
+  return paths.map((path, pathIdx) => {
+    const groupId = groupByPath ? `${prefix}_path_${pathIdx}` : void 0;
+    return {
+      ...path,
+      controlPoints: path.controlPoints.map((cp, cpIdx) => ({
+        ...cp,
+        id: cp.id || `${prefix}_${pathIdx}_${cpIdx}`,
+        group: groupId,
+        // Ensure handles are in correct format (absolute positions)
+        handleIn: cp.handleIn ? { x: cp.handleIn.x, y: cp.handleIn.y } : null,
+        handleOut: cp.handleOut ? { x: cp.handleOut.x, y: cp.handleOut.y } : null
+      }))
+    };
+  });
+}
+function filterSmallPaths(paths, minPoints = 3) {
+  return paths.filter((path) => path.controlPoints.length >= minPoints);
+}
+function autoGroupPoints(controlPoints, options = {}) {
+  const { method = "quadrant", gridSize = 100, numGroups = 4 } = options;
+  if (controlPoints.length === 0) return [];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const cp of controlPoints) {
+    minX = Math.min(minX, cp.x);
+    minY = Math.min(minY, cp.y);
+    maxX = Math.max(maxX, cp.x);
+    maxY = Math.max(maxY, cp.y);
+  }
+  const width = maxX - minX || 1;
+  const height = maxY - minY || 1;
+  return controlPoints.map((cp) => {
+    let group;
+    switch (method) {
+      case "grid": {
+        const gridX = Math.floor((cp.x - minX) / gridSize);
+        const gridY = Math.floor((cp.y - minY) / gridSize);
+        group = `grid_${gridX}_${gridY}`;
+        break;
+      }
+      case "quadrant": {
+        const normX = (cp.x - minX) / width;
+        const normY = (cp.y - minY) / height;
+        if (normX < 0.5 && normY < 0.5) group = "top_left";
+        else if (normX >= 0.5 && normY < 0.5) group = "top_right";
+        else if (normX < 0.5 && normY >= 0.5) group = "bottom_left";
+        else group = "bottom_right";
+        break;
+      }
+      case "proximity":
+      default: {
+        const normX = (cp.x - minX) / width;
+        const groupIdx = Math.floor(normX * numGroups) % numGroups;
+        group = `region_${groupIdx}`;
+        break;
+      }
+    }
+    return { ...cp, group };
+  });
+}
+if (typeof VRAM_ESTIMATES === "object") {
+  VRAM_ESTIMATES["model:starvector"] = 2500;
+}
+
+const _hoisted_1$K = { class: "vectorize-dialog" };
+const _hoisted_2$J = { class: "section" };
+const _hoisted_3$H = { class: "source-options" };
+const _hoisted_4$G = { class: "option-group" };
+const _hoisted_5$G = ["disabled"];
+const _hoisted_6$G = ["disabled"];
+const _hoisted_7$G = ["value"];
+const _hoisted_8$F = { class: "option-group" };
+const _hoisted_9$F = ["disabled"];
+const _hoisted_10$F = ["disabled"];
+const _hoisted_11$E = {
+  key: 0,
+  class: "preview-container"
+};
+const _hoisted_12$C = ["src"];
+const _hoisted_13$C = { class: "preview-size" };
+const _hoisted_14$z = { class: "section" };
+const _hoisted_15$y = { class: "mode-options" };
+const _hoisted_16$y = ["disabled"];
+const _hoisted_17$w = ["disabled"];
+const _hoisted_18$v = { class: "mode-info" };
+const _hoisted_19$v = {
+  key: 0,
+  class: "mode-warning"
+};
+const _hoisted_20$v = {
+  key: 0,
+  class: "section options-section"
+};
+const _hoisted_21$u = { class: "options-grid" };
+const _hoisted_22$t = { class: "option-row" };
+const _hoisted_23$s = ["disabled"];
+const _hoisted_24$p = { class: "option-row" };
+const _hoisted_25$o = ["disabled"];
+const _hoisted_26$n = { class: "value" };
+const _hoisted_27$l = { class: "option-row" };
+const _hoisted_28$l = ["disabled"];
+const _hoisted_29$l = { class: "value" };
+const _hoisted_30$k = { class: "option-row" };
+const _hoisted_31$g = ["disabled"];
+const _hoisted_32$g = { class: "value" };
+const _hoisted_33$g = { class: "option-row" };
+const _hoisted_34$f = ["disabled"];
+const _hoisted_35$e = { class: "value" };
+const _hoisted_36$d = { class: "section" };
+const _hoisted_37$d = { class: "output-options" };
+const _hoisted_38$d = ["disabled"];
+const _hoisted_39$d = ["disabled"];
+const _hoisted_40$c = ["disabled"];
+const _hoisted_41$a = ["disabled"];
+const _hoisted_42$9 = {
+  key: 1,
+  class: "progress-section"
+};
+const _hoisted_43$9 = { class: "progress-bar" };
+const _hoisted_44$9 = { class: "progress-text" };
+const _hoisted_45$9 = {
+  key: 2,
+  class: "result-section"
+};
+const _hoisted_46$9 = { class: "result-header" };
+const _hoisted_47$9 = { class: "result-count" };
+const _hoisted_48$9 = ["innerHTML"];
+const _hoisted_49$9 = {
+  key: 3,
+  class: "error-message"
+};
+const _hoisted_50$8 = { class: "dialog-footer" };
+const _hoisted_51$8 = ["disabled"];
+const _hoisted_52$8 = ["disabled"];
+const _sfc_main$L = /* @__PURE__ */ defineComponent({
+  __name: "VectorizeDialog",
+  props: {
+    visible: { type: Boolean }
+  },
+  emits: ["close", "created"],
+  setup(__props, { emit: __emit }) {
+    const emit = __emit;
+    const store = useCompositorStore();
+    const vectorizeService = getVectorizeService();
+    const sourceType = ref("layer");
+    const selectedLayerId = ref("");
+    const uploadedImage = ref(null);
+    const fileInput = ref(null);
+    const previewUrl = ref(null);
+    const previewWidth = ref(0);
+    const previewHeight = ref(0);
+    const mode = ref("trace");
+    const starVectorAvailable = ref(false);
+    const traceOptions = ref({ ...DEFAULT_VTRACE_OPTIONS });
+    const createSeparateLayers = ref(true);
+    const groupByPath = ref(true);
+    const autoGroupByRegion = ref(false);
+    const enableAnimation = ref(true);
+    const isProcessing = ref(false);
+    const progressPercent = ref(0);
+    const progressMessage = ref("");
+    const result = ref(null);
+    const showSvgPreview = ref(false);
+    const errorMessage = ref("");
+    const availableLayers = computed(() => {
+      return store.layers.filter(
+        (l) => l.type === "image" || l.type === "video" || l.type === "solid"
+      );
+    });
+    const canVectorize = computed(() => {
+      if (sourceType.value === "layer") {
+        return !!selectedLayerId.value;
+      }
+      return !!uploadedImage.value;
+    });
+    const sanitizedSvg = computed(() => {
+      if (!result.value?.svg) return "";
+      return result.value.svg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/on\w+="[^"]*"/gi, "").replace(/on\w+='[^']*'/gi, "");
+    });
+    watch([sourceType, selectedLayerId], async () => {
+      if (sourceType.value === "layer" && selectedLayerId.value) {
+        await loadLayerPreview();
+      }
+    });
+    onMounted(async () => {
+      try {
+        const status = await vectorizeService.getStatus();
+        starVectorAvailable.value = status.starvector.available || status.starvector.downloaded;
+      } catch {
+        starVectorAvailable.value = false;
+      }
+    });
+    async function loadLayerPreview() {
+      const layer = store.layers.find((l) => l.id === selectedLayerId.value);
+      if (!layer) return;
+      try {
+        const layerData = layer.data;
+        if (layerData?.source) {
+          previewUrl.value = layerData.source;
+        } else if (layerData?.assetId) {
+          const asset = store.project?.assets[layerData.assetId];
+          if (asset?.data) {
+            previewUrl.value = asset.data;
+          }
+        }
+        if (previewUrl.value) {
+          const img = new Image();
+          img.onload = () => {
+            previewWidth.value = img.naturalWidth;
+            previewHeight.value = img.naturalHeight;
+          };
+          img.src = previewUrl.value;
+        }
+      } catch (error) {
+        console.error("Failed to load layer preview:", error);
+      }
+    }
+    function onFileSelect(event) {
+      const input = event.target;
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedImage.value = e.target?.result;
+        previewUrl.value = uploadedImage.value;
+        const img = new Image();
+        img.onload = () => {
+          previewWidth.value = img.naturalWidth;
+          previewHeight.value = img.naturalHeight;
+        };
+        img.src = uploadedImage.value;
+      };
+      reader.readAsDataURL(file);
+    }
+    async function startVectorize() {
+      errorMessage.value = "";
+      result.value = null;
+      isProcessing.value = true;
+      progressPercent.value = 0;
+      try {
+        let imageDataUrl;
+        if (sourceType.value === "layer") {
+          const layer = store.layers.find((l) => l.id === selectedLayerId.value);
+          if (!layer) throw new Error("Layer not found");
+          const layerData = layer.data;
+          if (layerData?.source) {
+            imageDataUrl = layerData.source;
+          } else if (layerData?.assetId) {
+            const asset = store.project?.assets[layerData.assetId];
+            if (!asset?.data) throw new Error("Asset data not found");
+            imageDataUrl = asset.data;
+          } else {
+            throw new Error("Could not get image data from layer");
+          }
+        } else {
+          if (!uploadedImage.value) throw new Error("No image uploaded");
+          imageDataUrl = uploadedImage.value;
+        }
+        progressMessage.value = "Vectorizing image...";
+        progressPercent.value = 30;
+        result.value = await vectorizeService.vectorize(
+          imageDataUrl,
+          {
+            mode: mode.value,
+            traceOptions: traceOptions.value
+          },
+          (stage, message) => {
+            progressMessage.value = message;
+            if (stage === "downloading") progressPercent.value = 20;
+            else if (stage === "tracing" || stage === "vectorizing") progressPercent.value = 60;
+            else if (stage === "complete") progressPercent.value = 100;
+          }
+        );
+        progressPercent.value = 100;
+        progressMessage.value = `Found ${result.value.pathCount} paths`;
+      } catch (error) {
+        errorMessage.value = error instanceof Error ? error.message : "Vectorization failed";
+      } finally {
+        isProcessing.value = false;
+      }
+    }
+    function createLayers() {
+      if (!result.value) return;
+      const createdLayerIds = [];
+      let paths = filterSmallPaths(result.value.paths, 2);
+      paths = normalizeControlPoints(paths, {
+        groupByPath: groupByPath.value,
+        prefix: "vec"
+      });
+      if (createSeparateLayers.value) {
+        for (let i = 0; i < paths.length; i++) {
+          const path = paths[i];
+          let controlPoints = path.controlPoints;
+          if (autoGroupByRegion.value) {
+            controlPoints = autoGroupPoints(controlPoints, { method: "quadrant" });
+          }
+          const layer = store.createSplineLayer();
+          store.renameLayer(layer.id, `Vector Path ${i + 1}`);
+          store.updateLayerData(layer.id, {
+            controlPoints,
+            closed: path.closed,
+            stroke: path.stroke || "#00ff00",
+            strokeWidth: 2,
+            fill: path.fill || "",
+            animated: enableAnimation.value
+          });
+          createdLayerIds.push(layer.id);
+        }
+      } else {
+        const allPoints = [];
+        let pointIdx = 0;
+        for (let pathIdx = 0; pathIdx < paths.length; pathIdx++) {
+          const path = paths[pathIdx];
+          for (const cp of path.controlPoints) {
+            allPoints.push({
+              ...cp,
+              id: `vec_${pointIdx++}`,
+              group: `path_${pathIdx}`
+            });
+          }
+        }
+        let controlPoints = allPoints;
+        if (autoGroupByRegion.value) {
+          controlPoints = autoGroupPoints(allPoints, { method: "quadrant" });
+        }
+        const layer = store.createSplineLayer();
+        store.renameLayer(layer.id, "Vectorized Paths");
+        store.updateLayerData(layer.id, {
+          controlPoints,
+          closed: false,
+          stroke: "#00ff00",
+          strokeWidth: 2,
+          fill: "",
+          animated: enableAnimation.value
+        });
+        createdLayerIds.push(layer.id);
+      }
+      emit("created", createdLayerIds);
+      emit("close");
+    }
+    return (_ctx, _cache) => {
+      return openBlock(), createBlock(unref(script), {
+        visible: __props.visible,
+        modal: "",
+        header: "Vectorize Image",
+        style: { width: "700px" },
+        closable: !isProcessing.value,
+        "onUpdate:visible": _cache[16] || (_cache[16] = ($event) => _ctx.$emit("close"))
+      }, {
+        footer: withCtx(() => [
+          createBaseVNode("div", _hoisted_50$8, [
+            createBaseVNode("button", {
+              class: "btn-secondary",
+              onClick: _cache[15] || (_cache[15] = ($event) => _ctx.$emit("close")),
+              disabled: isProcessing.value
+            }, " Cancel ", 8, _hoisted_51$8),
+            createBaseVNode("button", {
+              class: "btn-primary",
+              onClick: startVectorize,
+              disabled: !canVectorize.value || isProcessing.value
+            }, toDisplayString(isProcessing.value ? "Processing..." : "Vectorize"), 9, _hoisted_52$8),
+            result.value && !isProcessing.value ? (openBlock(), createElementBlock("button", {
+              key: 0,
+              class: "btn-success",
+              onClick: createLayers
+            }, " Create Layers (" + toDisplayString(result.value.pathCount) + ") ", 1)) : createCommentVNode("", true)
+          ])
+        ]),
+        default: withCtx(() => [
+          createBaseVNode("div", _hoisted_1$K, [
+            createBaseVNode("div", _hoisted_2$J, [
+              _cache[20] || (_cache[20] = createBaseVNode("h4", null, "Source", -1)),
+              createBaseVNode("div", _hoisted_3$H, [
+                createBaseVNode("div", _hoisted_4$G, [
+                  createBaseVNode("label", null, [
+                    withDirectives(createBaseVNode("input", {
+                      type: "radio",
+                      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => sourceType.value = $event),
+                      value: "layer",
+                      disabled: isProcessing.value || !availableLayers.value.length
+                    }, null, 8, _hoisted_5$G), [
+                      [vModelRadio, sourceType.value]
+                    ]),
+                    _cache[17] || (_cache[17] = createTextVNode(" From Layer ", -1))
+                  ]),
+                  withDirectives(createBaseVNode("select", {
+                    "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => selectedLayerId.value = $event),
+                    disabled: sourceType.value !== "layer" || isProcessing.value,
+                    class: "layer-select"
+                  }, [
+                    _cache[18] || (_cache[18] = createBaseVNode("option", { value: "" }, "Select a layer...", -1)),
+                    (openBlock(true), createElementBlock(Fragment, null, renderList(availableLayers.value, (layer) => {
+                      return openBlock(), createElementBlock("option", {
+                        key: layer.id,
+                        value: layer.id
+                      }, toDisplayString(layer.name), 9, _hoisted_7$G);
+                    }), 128))
+                  ], 8, _hoisted_6$G), [
+                    [vModelSelect, selectedLayerId.value]
+                  ])
+                ]),
+                createBaseVNode("div", _hoisted_8$F, [
+                  createBaseVNode("label", null, [
+                    withDirectives(createBaseVNode("input", {
+                      type: "radio",
+                      "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => sourceType.value = $event),
+                      value: "upload",
+                      disabled: isProcessing.value
+                    }, null, 8, _hoisted_9$F), [
+                      [vModelRadio, sourceType.value]
+                    ]),
+                    _cache[19] || (_cache[19] = createTextVNode(" Upload Image ", -1))
+                  ]),
+                  createBaseVNode("input", {
+                    ref_key: "fileInput",
+                    ref: fileInput,
+                    type: "file",
+                    accept: "image/*",
+                    onChange: onFileSelect,
+                    disabled: sourceType.value !== "upload" || isProcessing.value,
+                    class: "file-input"
+                  }, null, 40, _hoisted_10$F)
+                ])
+              ]),
+              previewUrl.value ? (openBlock(), createElementBlock("div", _hoisted_11$E, [
+                createBaseVNode("img", {
+                  src: previewUrl.value,
+                  alt: "Source preview",
+                  class: "preview-image"
+                }, null, 8, _hoisted_12$C),
+                createBaseVNode("span", _hoisted_13$C, toDisplayString(previewWidth.value) + " x " + toDisplayString(previewHeight.value), 1)
+              ])) : createCommentVNode("", true)
+            ]),
+            createBaseVNode("div", _hoisted_14$z, [
+              _cache[24] || (_cache[24] = createBaseVNode("h4", null, "Vectorization Mode", -1)),
+              createBaseVNode("div", _hoisted_15$y, [
+                createBaseVNode("label", {
+                  class: normalizeClass(["mode-option", { selected: mode.value === "trace" }])
+                }, [
+                  withDirectives(createBaseVNode("input", {
+                    type: "radio",
+                    "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => mode.value = $event),
+                    value: "trace",
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_16$y), [
+                    [vModelRadio, mode.value]
+                  ]),
+                  _cache[21] || (_cache[21] = createBaseVNode("div", { class: "mode-info" }, [
+                    createBaseVNode("span", { class: "mode-title" }, "VTracer (Fast)"),
+                    createBaseVNode("span", { class: "mode-desc" }, "Works with any image. Fast tracing to bezier curves.")
+                  ], -1))
+                ], 2),
+                createBaseVNode("label", {
+                  class: normalizeClass(["mode-option", { selected: mode.value === "ai" }])
+                }, [
+                  withDirectives(createBaseVNode("input", {
+                    type: "radio",
+                    "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => mode.value = $event),
+                    value: "ai",
+                    disabled: isProcessing.value || !starVectorAvailable.value
+                  }, null, 8, _hoisted_17$w), [
+                    [vModelRadio, mode.value]
+                  ]),
+                  createBaseVNode("div", _hoisted_18$v, [
+                    _cache[22] || (_cache[22] = createBaseVNode("span", { class: "mode-title" }, "StarVector AI", -1)),
+                    _cache[23] || (_cache[23] = createBaseVNode("span", { class: "mode-desc" }, "Best for icons/logos. Requires ~2.5GB VRAM.", -1)),
+                    !starVectorAvailable.value ? (openBlock(), createElementBlock("span", _hoisted_19$v, "Model not available")) : createCommentVNode("", true)
+                  ])
+                ], 2)
+              ])
+            ]),
+            mode.value === "trace" ? (openBlock(), createElementBlock("div", _hoisted_20$v, [
+              _cache[31] || (_cache[31] = createBaseVNode("h4", null, "Tracing Options", -1)),
+              createBaseVNode("div", _hoisted_21$u, [
+                createBaseVNode("div", _hoisted_22$t, [
+                  _cache[26] || (_cache[26] = createBaseVNode("label", null, "Color Mode", -1)),
+                  withDirectives(createBaseVNode("select", {
+                    "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => traceOptions.value.colorMode = $event),
+                    disabled: isProcessing.value
+                  }, [..._cache[25] || (_cache[25] = [
+                    createBaseVNode("option", { value: "color" }, "Color", -1),
+                    createBaseVNode("option", { value: "binary" }, "Black & White", -1)
+                  ])], 8, _hoisted_23$s), [
+                    [vModelSelect, traceOptions.value.colorMode]
+                  ])
+                ]),
+                createBaseVNode("div", _hoisted_24$p, [
+                  _cache[27] || (_cache[27] = createBaseVNode("label", null, "Filter Speckle", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    type: "range",
+                    "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => traceOptions.value.filterSpeckle = $event),
+                    min: "0",
+                    max: "100",
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_25$o), [
+                    [
+                      vModelText,
+                      traceOptions.value.filterSpeckle,
+                      void 0,
+                      { number: true }
+                    ]
+                  ]),
+                  createBaseVNode("span", _hoisted_26$n, toDisplayString(traceOptions.value.filterSpeckle), 1)
+                ]),
+                createBaseVNode("div", _hoisted_27$l, [
+                  _cache[28] || (_cache[28] = createBaseVNode("label", null, "Corner Threshold", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    type: "range",
+                    "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => traceOptions.value.cornerThreshold = $event),
+                    min: "0",
+                    max: "180",
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_28$l), [
+                    [
+                      vModelText,
+                      traceOptions.value.cornerThreshold,
+                      void 0,
+                      { number: true }
+                    ]
+                  ]),
+                  createBaseVNode("span", _hoisted_29$l, toDisplayString(traceOptions.value.cornerThreshold) + "°", 1)
+                ]),
+                createBaseVNode("div", _hoisted_30$k, [
+                  _cache[29] || (_cache[29] = createBaseVNode("label", null, "Color Precision", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    type: "range",
+                    "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => traceOptions.value.colorPrecision = $event),
+                    min: "1",
+                    max: "10",
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_31$g), [
+                    [
+                      vModelText,
+                      traceOptions.value.colorPrecision,
+                      void 0,
+                      { number: true }
+                    ]
+                  ]),
+                  createBaseVNode("span", _hoisted_32$g, toDisplayString(traceOptions.value.colorPrecision), 1)
+                ]),
+                createBaseVNode("div", _hoisted_33$g, [
+                  _cache[30] || (_cache[30] = createBaseVNode("label", null, "Layer Difference", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    type: "range",
+                    "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => traceOptions.value.layerDifference = $event),
+                    min: "1",
+                    max: "256",
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_34$f), [
+                    [
+                      vModelText,
+                      traceOptions.value.layerDifference,
+                      void 0,
+                      { number: true }
+                    ]
+                  ]),
+                  createBaseVNode("span", _hoisted_35$e, toDisplayString(traceOptions.value.layerDifference), 1)
+                ])
+              ])
+            ])) : createCommentVNode("", true),
+            createBaseVNode("div", _hoisted_36$d, [
+              _cache[36] || (_cache[36] = createBaseVNode("h4", null, "Output Options", -1)),
+              createBaseVNode("div", _hoisted_37$d, [
+                createBaseVNode("label", null, [
+                  withDirectives(createBaseVNode("input", {
+                    type: "checkbox",
+                    "onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => createSeparateLayers.value = $event),
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_38$d), [
+                    [vModelCheckbox, createSeparateLayers.value]
+                  ]),
+                  _cache[32] || (_cache[32] = createTextVNode(" Create separate layer for each path ", -1))
+                ]),
+                createBaseVNode("label", null, [
+                  withDirectives(createBaseVNode("input", {
+                    type: "checkbox",
+                    "onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => groupByPath.value = $event),
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_39$d), [
+                    [vModelCheckbox, groupByPath.value]
+                  ]),
+                  _cache[33] || (_cache[33] = createTextVNode(" Assign group IDs to control points (for group animation) ", -1))
+                ]),
+                createBaseVNode("label", null, [
+                  withDirectives(createBaseVNode("input", {
+                    type: "checkbox",
+                    "onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => autoGroupByRegion.value = $event),
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_40$c), [
+                    [vModelCheckbox, autoGroupByRegion.value]
+                  ]),
+                  _cache[34] || (_cache[34] = createTextVNode(" Auto-group points by region (quadrants) ", -1))
+                ]),
+                createBaseVNode("label", null, [
+                  withDirectives(createBaseVNode("input", {
+                    type: "checkbox",
+                    "onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => enableAnimation.value = $event),
+                    disabled: isProcessing.value
+                  }, null, 8, _hoisted_41$a), [
+                    [vModelCheckbox, enableAnimation.value]
+                  ]),
+                  _cache[35] || (_cache[35] = createTextVNode(" Enable keyframe animation on created layers ", -1))
+                ])
+              ])
+            ]),
+            isProcessing.value ? (openBlock(), createElementBlock("div", _hoisted_42$9, [
+              createBaseVNode("div", _hoisted_43$9, [
+                createBaseVNode("div", {
+                  class: "progress-fill",
+                  style: normalizeStyle({ width: progressPercent.value + "%" })
+                }, null, 4)
+              ]),
+              createBaseVNode("span", _hoisted_44$9, toDisplayString(progressMessage.value), 1)
+            ])) : createCommentVNode("", true),
+            result.value && !isProcessing.value ? (openBlock(), createElementBlock("div", _hoisted_45$9, [
+              createBaseVNode("div", _hoisted_46$9, [
+                createBaseVNode("span", _hoisted_47$9, toDisplayString(result.value.pathCount) + " paths found", 1),
+                createBaseVNode("button", {
+                  class: "preview-svg-btn",
+                  onClick: _cache[14] || (_cache[14] = ($event) => showSvgPreview.value = !showSvgPreview.value)
+                }, toDisplayString(showSvgPreview.value ? "Hide" : "Show") + " SVG Preview ", 1)
+              ]),
+              showSvgPreview.value && result.value.svg ? (openBlock(), createElementBlock("div", {
+                key: 0,
+                class: "svg-preview",
+                innerHTML: sanitizedSvg.value
+              }, null, 8, _hoisted_48$9)) : createCommentVNode("", true)
+            ])) : createCommentVNode("", true),
+            errorMessage.value ? (openBlock(), createElementBlock("div", _hoisted_49$9, toDisplayString(errorMessage.value), 1)) : createCommentVNode("", true)
+          ])
+        ]),
+        _: 1
+      }, 8, ["visible", "closable"]);
+    };
+  }
+});
+
+const VectorizeDialog = /* @__PURE__ */ _export_sfc(_sfc_main$L, [["__scopeId", "data-v-bdfd2d6e"]]);
+
+const logger$4 = createLogger("SVGExport");
+const DEFAULT_SVG_OPTIONS = {
+  includeStrokes: true,
+  includeFills: true,
+  precision: 2,
+  includeTransforms: true,
+  standalone: true,
+  includeIds: true,
+  optimize: false,
+  includeMetadata: true
+};
+function round(value, precision) {
+  const multiplier = Math.pow(10, precision);
+  return Math.round(value * multiplier) / multiplier;
+}
+function formatNumber(value, precision) {
+  const rounded = round(value, precision);
+  return rounded.toString();
+}
+function sanitizeId(str) {
+  return str.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/^([0-9])/, "_$1");
+}
+function controlPointsToPathData(points, closed, precision = 2) {
+  if (points.length === 0) {
+    return "";
+  }
+  const fmt = (n) => formatNumber(n, precision);
+  const parts = [];
+  parts.push(`M${fmt(points[0].x)},${fmt(points[0].y)}`);
+  for (let i = 0; i < points.length - 1; i++) {
+    const curr = points[i];
+    const next = points[i + 1];
+    const cp1x = curr.handleOut ? curr.handleOut.x : curr.x;
+    const cp1y = curr.handleOut ? curr.handleOut.y : curr.y;
+    const cp2x = next.handleIn ? next.handleIn.x : next.x;
+    const cp2y = next.handleIn ? next.handleIn.y : next.y;
+    const isLine = Math.abs(cp1x - curr.x) < 0.01 && Math.abs(cp1y - curr.y) < 0.01 && Math.abs(cp2x - next.x) < 0.01 && Math.abs(cp2y - next.y) < 0.01;
+    if (isLine) {
+      parts.push(`L${fmt(next.x)},${fmt(next.y)}`);
+    } else {
+      parts.push(
+        `C${fmt(cp1x)},${fmt(cp1y)} ${fmt(cp2x)},${fmt(cp2y)} ${fmt(next.x)},${fmt(next.y)}`
+      );
+    }
+  }
+  if (closed && points.length > 1) {
+    const last = points[points.length - 1];
+    const first = points[0];
+    const cp1x = last.handleOut ? last.handleOut.x : last.x;
+    const cp1y = last.handleOut ? last.handleOut.y : last.y;
+    const cp2x = first.handleIn ? first.handleIn.x : first.x;
+    const cp2y = first.handleIn ? first.handleIn.y : first.y;
+    const isLine = Math.abs(cp1x - last.x) < 0.01 && Math.abs(cp1y - last.y) < 0.01 && Math.abs(cp2x - first.x) < 0.01 && Math.abs(cp2y - first.y) < 0.01;
+    if (!isLine) {
+      parts.push(
+        `C${fmt(cp1x)},${fmt(cp1y)} ${fmt(cp2x)},${fmt(cp2y)} ${fmt(first.x)},${fmt(first.y)}`
+      );
+    }
+    parts.push("Z");
+  }
+  return parts.join(" ");
+}
+function getStrokeAttributes(splineData, precision) {
+  const attrs = [];
+  const hasStroke = splineData.stroke && splineData.strokeWidth > 0;
+  if (hasStroke) {
+    attrs.push(`stroke="${splineData.stroke}"`);
+    if (splineData.strokeOpacity !== void 0 && splineData.strokeOpacity < 100) {
+      attrs.push(`stroke-opacity="${(splineData.strokeOpacity / 100).toFixed(2)}"`);
+    }
+    attrs.push(`stroke-width="${formatNumber(splineData.strokeWidth, precision)}"`);
+    const lineCap = splineData.strokeLineCap ?? "round";
+    const lineJoin = splineData.strokeLineJoin ?? "round";
+    if (lineCap !== "butt") attrs.push(`stroke-linecap="${lineCap}"`);
+    if (lineJoin !== "miter") attrs.push(`stroke-linejoin="${lineJoin}"`);
+    const dashArray = splineData.strokeDashArray;
+    if (dashArray) {
+      const dashValues = Array.isArray(dashArray) ? dashArray : dashArray.value;
+      if (dashValues && dashValues.length > 0) {
+        attrs.push(`stroke-dasharray="${dashValues.join(" ")}"`);
+        const dashOffset = splineData.strokeDashOffset;
+        if (dashOffset !== void 0) {
+          const offsetValue = typeof dashOffset === "number" ? dashOffset : dashOffset.value;
+          if (offsetValue !== 0) {
+            attrs.push(`stroke-dashoffset="${offsetValue}"`);
+          }
+        }
+      }
+    }
+  } else {
+    attrs.push('stroke="none"');
+  }
+  return attrs.join(" ");
+}
+function getFillAttributes(splineData, _precision) {
+  const attrs = [];
+  const hasFill = splineData.fill && splineData.fill !== "";
+  if (hasFill) {
+    attrs.push(`fill="${splineData.fill}"`);
+    if (splineData.fillOpacity !== void 0 && splineData.fillOpacity < 100) {
+      attrs.push(`fill-opacity="${(splineData.fillOpacity / 100).toFixed(2)}"`);
+    }
+  } else {
+    attrs.push('fill="none"');
+  }
+  return attrs.join(" ");
+}
+function exportSplineLayer(layer, options = {}) {
+  const opts = { ...DEFAULT_SVG_OPTIONS, ...options };
+  if (layer.type !== "spline" || !layer.data) {
+    logger$4.warn("exportSplineLayer: Not a spline layer");
+    return "";
+  }
+  const splineData = layer.data;
+  const points = splineData.controlPoints || [];
+  if (points.length === 0) {
+    return "";
+  }
+  const pathData = controlPointsToPathData(points, splineData.closed || false, opts.precision);
+  const attrs = [];
+  if (opts.includeIds) {
+    attrs.push(`id="${sanitizeId(layer.name)}"`);
+  }
+  attrs.push(`d="${pathData}"`);
+  if (opts.includeStrokes) {
+    attrs.push(getStrokeAttributes(splineData, opts.precision));
+  }
+  if (opts.includeFills) {
+    attrs.push(getFillAttributes(splineData));
+  }
+  if (opts.includeTransforms && layer.transform) {
+    const transforms = [];
+    const posValue = layer.transform.position?.value;
+    if (posValue && (posValue.x !== 0 || posValue.y !== 0)) {
+      transforms.push(
+        `translate(${formatNumber(posValue.x, opts.precision)}, ${formatNumber(posValue.y, opts.precision)})`
+      );
+    }
+    const rotValue = layer.transform.rotation?.value;
+    if (rotValue && rotValue !== 0) {
+      const anchorValue = layer.transform.anchorPoint?.value;
+      const anchorX = anchorValue?.x ?? 0;
+      const anchorY = anchorValue?.y ?? 0;
+      transforms.push(
+        `rotate(${formatNumber(rotValue, opts.precision)}, ${formatNumber(anchorX, opts.precision)}, ${formatNumber(anchorY, opts.precision)})`
+      );
+    }
+    const scaleValue = layer.transform.scale?.value;
+    if (scaleValue && (scaleValue.x !== 100 || scaleValue.y !== 100)) {
+      const sx = scaleValue.x / 100;
+      const sy = scaleValue.y / 100;
+      transforms.push(`scale(${formatNumber(sx, opts.precision)}, ${formatNumber(sy, opts.precision)})`);
+    }
+    if (transforms.length > 0) {
+      attrs.push(`transform="${transforms.join(" ")}"`);
+    }
+  }
+  return `<path ${attrs.join(" ")}/>`;
+}
+function calculateBounds(layers) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const layer of layers) {
+    if (layer.type !== "spline" || !layer.data) continue;
+    const splineData = layer.data;
+    const points = splineData.controlPoints || [];
+    for (const point of points) {
+      minX = Math.min(minX, point.x);
+      minY = Math.min(minY, point.y);
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
+      if (point.handleIn) {
+        minX = Math.min(minX, point.handleIn.x);
+        minY = Math.min(minY, point.handleIn.y);
+        maxX = Math.max(maxX, point.handleIn.x);
+        maxY = Math.max(maxY, point.handleIn.y);
+      }
+      if (point.handleOut) {
+        minX = Math.min(minX, point.handleOut.x);
+        minY = Math.min(minY, point.handleOut.y);
+        maxX = Math.max(maxX, point.handleOut.x);
+        maxY = Math.max(maxY, point.handleOut.y);
+      }
+    }
+  }
+  if (!isFinite(minX)) {
+    return { x: 0, y: 0, width: 100, height: 100 };
+  }
+  const padding = 10;
+  return {
+    x: minX - padding,
+    y: minY - padding,
+    width: maxX - minX + padding * 2,
+    height: maxY - minY + padding * 2
+  };
+}
+function exportLayers(layers, options = {}) {
+  const opts = { ...DEFAULT_SVG_OPTIONS, ...options };
+  const splineLayers = layers.filter((l) => l.type === "spline" && l.data);
+  if (splineLayers.length === 0) {
+    logger$4.warn("exportLayers: No spline layers to export");
+    return "";
+  }
+  const viewBox = opts.viewBox ?? calculateBounds(splineLayers);
+  const lines = [];
+  if (opts.standalone) {
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  }
+  if (opts.includeMetadata) {
+    lines.push("<!-- Generated by Weyl Compositor -->");
+  }
+  const viewBoxStr = `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`;
+  lines.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBoxStr}" width="${viewBox.width}" height="${viewBox.height}">`
+  );
+  for (const layer of splineLayers) {
+    if (!layer.visible) continue;
+    const pathElement = exportSplineLayer(layer, opts);
+    if (pathElement) {
+      lines.push(`  ${pathElement}`);
+    }
+  }
+  lines.push("</svg>");
+  let output = lines.join(opts.optimize ? "" : "\n");
+  return output;
+}
 
 const _hoisted_1$J = { class: "project-panel" };
 const _hoisted_2$I = { class: "panel-header" };
@@ -15743,52 +17347,69 @@ const _hoisted_5$F = {
   key: 0,
   class: "dropdown-menu"
 };
-const _hoisted_6$F = {
+const _hoisted_6$F = ["disabled"];
+const _hoisted_7$F = ["disabled"];
+const _hoisted_8$E = { class: "dropdown-container" };
+const _hoisted_9$E = {
+  key: 0,
+  class: "dropdown-menu"
+};
+const _hoisted_10$E = {
   key: 1,
   class: "search-bar"
 };
-const _hoisted_7$F = { class: "panel-content" };
-const _hoisted_8$E = { class: "folder-tree" };
-const _hoisted_9$E = ["onClick", "onDblclick"];
-const _hoisted_10$E = ["onClick"];
-const _hoisted_11$D = { class: "folder-name" };
-const _hoisted_12$B = { class: "item-count" };
-const _hoisted_13$B = {
+const _hoisted_11$D = { class: "panel-content" };
+const _hoisted_12$B = { class: "folder-tree" };
+const _hoisted_13$B = ["onClick", "onDblclick"];
+const _hoisted_14$y = ["onClick"];
+const _hoisted_15$x = { class: "folder-name" };
+const _hoisted_16$x = { class: "item-count" };
+const _hoisted_17$v = {
   key: 0,
   class: "folder-contents"
 };
-const _hoisted_14$y = ["onClick", "onDblclick", "onDragstart"];
-const _hoisted_15$x = { class: "item-icon" };
-const _hoisted_16$x = { class: "item-name" };
-const _hoisted_17$v = { class: "item-info" };
 const _hoisted_18$u = ["onClick", "onDblclick", "onDragstart"];
 const _hoisted_19$u = { class: "item-icon" };
 const _hoisted_20$u = { class: "item-name" };
 const _hoisted_21$t = { class: "item-info" };
-const _hoisted_22$s = {
+const _hoisted_22$s = ["onClick", "onDblclick", "onDragstart"];
+const _hoisted_23$r = { class: "item-icon" };
+const _hoisted_24$o = { class: "item-name" };
+const _hoisted_25$n = { class: "item-info" };
+const _hoisted_26$m = {
   key: 0,
   class: "empty-state"
 };
-const _hoisted_23$r = {
+const _hoisted_27$k = {
   key: 2,
   class: "panel-footer"
 };
-const _hoisted_24$o = { class: "item-details" };
-const _hoisted_25$n = { class: "detail-label" };
-const _hoisted_26$m = { class: "detail-info" };
+const _hoisted_28$k = { class: "item-details" };
+const _hoisted_29$k = { class: "detail-label" };
+const _hoisted_30$j = { class: "detail-info" };
 const _sfc_main$K = /* @__PURE__ */ defineComponent({
   __name: "ProjectPanel",
   emits: ["openCompositionSettings"],
   setup(__props, { emit: __emit }) {
     const emit = __emit;
     const store = useCompositorStore();
+    const selectionStore = useSelectionStore();
     const fileInputRef = ref(null);
     const showSearch = ref(false);
     const showNewMenu = ref(false);
+    const showExportMenu = ref(false);
     const showDecomposeDialog = ref(false);
+    const showVectorizeDialog = ref(false);
     const searchQuery = ref("");
     const selectedItem = ref(null);
     const expandedFolders = ref(["compositions", "footage"]);
+    const hasSelectedSplineLayer = computed(() => {
+      const selectedLayerIds = selectionStore.selectedLayerIds;
+      if (selectedLayerIds.length === 0) return false;
+      const layers = store.getActiveCompLayers();
+      const selectedLayer = layers.find((l) => l.id === selectedLayerIds[0]);
+      return selectedLayer?.type === "spline";
+    });
     const folders = computed(() => {
       const compositions = Object.values(store.project.compositions || {}).map((comp) => ({
         id: comp.id,
@@ -15917,8 +17538,105 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
       showNewMenu.value = false;
       showDecomposeDialog.value = true;
     }
+    function openVectorizeDialog() {
+      showNewMenu.value = false;
+      showVectorizeDialog.value = true;
+    }
     function onDecomposed(layers) {
       console.log("[ProjectPanel] Image decomposed into", layers.length, "layers");
+    }
+    function onVectorized(layerIds) {
+      console.log("[ProjectPanel] Created", layerIds.length, "vectorized layers");
+    }
+    function getSelectedSplineLayer() {
+      const selectedLayerIds = selectionStore.selectedLayerIds;
+      if (selectedLayerIds.length === 0) return null;
+      const layers = store.getActiveCompLayers();
+      const layer = layers.find((l) => l.id === selectedLayerIds[0]);
+      return layer?.type === "spline" ? layer : null;
+    }
+    function exportSelectedLayerSVG() {
+      showExportMenu.value = false;
+      const layer = getSelectedSplineLayer();
+      if (!layer) {
+        console.warn("[ProjectPanel] No spline layer selected");
+        return;
+      }
+      try {
+        const svg = exportSplineLayer(layer);
+        navigator.clipboard.writeText(svg).then(() => {
+          console.log("[ProjectPanel] SVG copied to clipboard");
+        }).catch((err) => {
+          console.error("[ProjectPanel] Failed to copy SVG:", err);
+        });
+      } catch (error) {
+        console.error("[ProjectPanel] Failed to export SVG:", error);
+      }
+    }
+    function exportCompositionSVG() {
+      showExportMenu.value = false;
+      const comp = store.activeComposition;
+      if (!comp) {
+        console.warn("[ProjectPanel] No active composition");
+        return;
+      }
+      try {
+        const svg = exportLayers(comp.layers, {
+          viewBox: { x: 0, y: 0, width: comp.settings.width, height: comp.settings.height }
+        });
+        navigator.clipboard.writeText(svg).then(() => {
+          console.log("[ProjectPanel] Composition SVG copied to clipboard");
+        }).catch((err) => {
+          console.error("[ProjectPanel] Failed to copy SVG:", err);
+        });
+      } catch (error) {
+        console.error("[ProjectPanel] Failed to export composition SVG:", error);
+      }
+    }
+    function downloadSVG(svgContent, filename) {
+      const blob = new Blob([svgContent], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    function exportSelectedLayerSVGDownload() {
+      showExportMenu.value = false;
+      const layer = getSelectedSplineLayer();
+      if (!layer) {
+        console.warn("[ProjectPanel] No spline layer selected");
+        return;
+      }
+      try {
+        const svg = exportSplineLayer(layer);
+        const filename = `${layer.name.replace(/[^a-z0-9]/gi, "_")}.svg`;
+        downloadSVG(svg, filename);
+        console.log("[ProjectPanel] SVG downloaded:", filename);
+      } catch (error) {
+        console.error("[ProjectPanel] Failed to export SVG:", error);
+      }
+    }
+    function exportCompositionSVGDownload() {
+      showExportMenu.value = false;
+      const comp = store.activeComposition;
+      if (!comp) {
+        console.warn("[ProjectPanel] No active composition");
+        return;
+      }
+      try {
+        const svg = exportLayers(comp.layers, {
+          viewBox: { x: 0, y: 0, width: comp.settings.width, height: comp.settings.height }
+        });
+        const filename = `${comp.name.replace(/[^a-z0-9]/gi, "_")}.svg`;
+        downloadSVG(svg, filename);
+        console.log("[ProjectPanel] Composition SVG downloaded:", filename);
+      } catch (error) {
+        console.error("[ProjectPanel] Failed to export composition SVG:", error);
+      }
     }
     function triggerFileImport() {
       fileInputRef.value?.click();
@@ -16015,7 +17733,7 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$J, [
         createBaseVNode("div", _hoisted_2$I, [
-          _cache[5] || (_cache[5] = createBaseVNode("span", { class: "panel-title" }, "Project", -1)),
+          _cache[8] || (_cache[8] = createBaseVNode("span", { class: "panel-title" }, "Project", -1)),
           createBaseVNode("div", _hoisted_3$G, [
             createBaseVNode("button", {
               onClick: triggerFileImport,
@@ -16023,10 +17741,29 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
             }, "📥"),
             createBaseVNode("div", _hoisted_4$F, [
               createBaseVNode("button", {
-                onClick: _cache[0] || (_cache[0] = ($event) => showNewMenu.value = !showNewMenu.value),
+                onClick: _cache[0] || (_cache[0] = ($event) => showExportMenu.value = !showExportMenu.value),
+                title: "Export"
+              }, "📤"),
+              showExportMenu.value ? (openBlock(), createElementBlock("div", _hoisted_5$F, [
+                createBaseVNode("button", {
+                  onClick: exportSelectedLayerSVG,
+                  disabled: !hasSelectedSplineLayer.value
+                }, " ✒ Export Selected Layer as SVG ", 8, _hoisted_6$F),
+                createBaseVNode("button", { onClick: exportCompositionSVG }, " 🎬 Export Composition as SVG "),
+                _cache[6] || (_cache[6] = createBaseVNode("hr", { class: "menu-divider" }, null, -1)),
+                createBaseVNode("button", {
+                  onClick: exportSelectedLayerSVGDownload,
+                  disabled: !hasSelectedSplineLayer.value
+                }, " 💾 Download Selected as SVG ", 8, _hoisted_7$F),
+                createBaseVNode("button", { onClick: exportCompositionSVGDownload }, " 💾 Download Composition as SVG ")
+              ])) : createCommentVNode("", true)
+            ]),
+            createBaseVNode("div", _hoisted_8$E, [
+              createBaseVNode("button", {
+                onClick: _cache[1] || (_cache[1] = ($event) => showNewMenu.value = !showNewMenu.value),
                 title: "New Item"
               }, "+"),
-              showNewMenu.value ? (openBlock(), createElementBlock("div", _hoisted_5$F, [
+              showNewMenu.value ? (openBlock(), createElementBlock("div", _hoisted_9$E, [
                 createBaseVNode("button", { onClick: createNewComposition }, "🎬 New Composition"),
                 createBaseVNode("button", { onClick: createNewSolid }, "⬜ New Solid"),
                 createBaseVNode("button", { onClick: createNewText }, "T New Text"),
@@ -16034,21 +17771,27 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
                 createBaseVNode("button", { onClick: createNewSpline }, "✏ New Spline"),
                 createBaseVNode("button", { onClick: createNewModel }, "🧊 New 3D Model"),
                 createBaseVNode("button", { onClick: createNewPointCloud }, "☁ New Point Cloud"),
-                _cache[4] || (_cache[4] = createBaseVNode("hr", { class: "menu-divider" }, null, -1)),
-                createBaseVNode("button", { onClick: openDecomposeDialog }, "✨ AI Layer Decompose")
+                _cache[7] || (_cache[7] = createBaseVNode("hr", { class: "menu-divider" }, null, -1)),
+                createBaseVNode("button", { onClick: openDecomposeDialog }, "✨ AI Layer Decompose"),
+                createBaseVNode("button", { onClick: openVectorizeDialog }, "✒ Vectorize Image")
               ])) : createCommentVNode("", true)
             ]),
             createBaseVNode("button", {
-              onClick: _cache[1] || (_cache[1] = ($event) => showSearch.value = !showSearch.value),
+              onClick: _cache[2] || (_cache[2] = ($event) => showSearch.value = !showSearch.value),
               title: "Search"
             }, "🔍")
           ])
         ]),
         showDecomposeDialog.value ? (openBlock(), createBlock(DecomposeDialog, {
           key: 0,
-          onClose: _cache[2] || (_cache[2] = ($event) => showDecomposeDialog.value = false),
+          onClose: _cache[3] || (_cache[3] = ($event) => showDecomposeDialog.value = false),
           onDecomposed
         })) : createCommentVNode("", true),
+        createVNode(VectorizeDialog, {
+          visible: showVectorizeDialog.value,
+          onClose: _cache[4] || (_cache[4] = ($event) => showVectorizeDialog.value = false),
+          onCreated: onVectorized
+        }, null, 8, ["visible"]),
         createBaseVNode("input", {
           ref_key: "fileInputRef",
           ref: fileInputRef,
@@ -16058,18 +17801,18 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
           style: { "display": "none" },
           onChange: handleFileImport
         }, null, 544),
-        showSearch.value ? (openBlock(), createElementBlock("div", _hoisted_6$F, [
+        showSearch.value ? (openBlock(), createElementBlock("div", _hoisted_10$E, [
           withDirectives(createBaseVNode("input", {
             type: "text",
-            "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => searchQuery.value = $event),
+            "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => searchQuery.value = $event),
             placeholder: "Search project...",
             class: "search-input"
           }, null, 512), [
             [vModelText, searchQuery.value]
           ])
         ])) : createCommentVNode("", true),
-        createBaseVNode("div", _hoisted_7$F, [
-          createBaseVNode("div", _hoisted_8$E, [
+        createBaseVNode("div", _hoisted_11$D, [
+          createBaseVNode("div", _hoisted_12$B, [
             (openBlock(true), createElementBlock(Fragment, null, renderList(filteredFolders.value, (folder) => {
               return openBlock(), createElementBlock("div", {
                 key: folder.id,
@@ -16083,12 +17826,12 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
                   createBaseVNode("span", {
                     class: "expand-icon",
                     onClick: withModifiers(($event) => toggleFolder(folder.id), ["stop"])
-                  }, toDisplayString(expandedFolders.value.includes(folder.id) ? "▼" : "►"), 9, _hoisted_10$E),
-                  _cache[6] || (_cache[6] = createBaseVNode("span", { class: "folder-icon" }, "📁", -1)),
-                  createBaseVNode("span", _hoisted_11$D, toDisplayString(folder.name), 1),
-                  createBaseVNode("span", _hoisted_12$B, toDisplayString(folder.items.length), 1)
-                ], 42, _hoisted_9$E),
-                expandedFolders.value.includes(folder.id) ? (openBlock(), createElementBlock("div", _hoisted_13$B, [
+                  }, toDisplayString(expandedFolders.value.includes(folder.id) ? "▼" : "►"), 9, _hoisted_14$y),
+                  _cache[9] || (_cache[9] = createBaseVNode("span", { class: "folder-icon" }, "📁", -1)),
+                  createBaseVNode("span", _hoisted_15$x, toDisplayString(folder.name), 1),
+                  createBaseVNode("span", _hoisted_16$x, toDisplayString(folder.items.length), 1)
+                ], 42, _hoisted_13$B),
+                expandedFolders.value.includes(folder.id) ? (openBlock(), createElementBlock("div", _hoisted_17$v, [
                   (openBlock(true), createElementBlock(Fragment, null, renderList(folder.items, (item) => {
                     return openBlock(), createElementBlock("div", {
                       key: item.id,
@@ -16098,10 +17841,10 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
                       draggable: "true",
                       onDragstart: ($event) => onDragStart(item, $event)
                     }, [
-                      createBaseVNode("span", _hoisted_15$x, toDisplayString(getItemIcon(item.type)), 1),
-                      createBaseVNode("span", _hoisted_16$x, toDisplayString(item.name), 1),
-                      createBaseVNode("span", _hoisted_17$v, toDisplayString(getItemInfo(item)), 1)
-                    ], 42, _hoisted_14$y);
+                      createBaseVNode("span", _hoisted_19$u, toDisplayString(getItemIcon(item.type)), 1),
+                      createBaseVNode("span", _hoisted_20$u, toDisplayString(item.name), 1),
+                      createBaseVNode("span", _hoisted_21$t, toDisplayString(getItemInfo(item)), 1)
+                    ], 42, _hoisted_18$u);
                   }), 128))
                 ])) : createCommentVNode("", true)
               ]);
@@ -16115,21 +17858,21 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
                 draggable: "true",
                 onDragstart: ($event) => onDragStart(item, $event)
               }, [
-                createBaseVNode("span", _hoisted_19$u, toDisplayString(getItemIcon(item.type)), 1),
-                createBaseVNode("span", _hoisted_20$u, toDisplayString(item.name), 1),
-                createBaseVNode("span", _hoisted_21$t, toDisplayString(getItemInfo(item)), 1)
-              ], 42, _hoisted_18$u);
+                createBaseVNode("span", _hoisted_23$r, toDisplayString(getItemIcon(item.type)), 1),
+                createBaseVNode("span", _hoisted_24$o, toDisplayString(item.name), 1),
+                createBaseVNode("span", _hoisted_25$n, toDisplayString(getItemInfo(item)), 1)
+              ], 42, _hoisted_22$s);
             }), 128))
           ]),
-          items.value.length === 0 ? (openBlock(), createElementBlock("div", _hoisted_22$s, [..._cache[7] || (_cache[7] = [
+          items.value.length === 0 ? (openBlock(), createElementBlock("div", _hoisted_26$m, [..._cache[10] || (_cache[10] = [
             createBaseVNode("p", null, "No items in project", -1),
             createBaseVNode("p", { class: "hint" }, "Import footage or create compositions", -1)
           ])])) : createCommentVNode("", true)
         ]),
-        selectedItemDetails.value ? (openBlock(), createElementBlock("div", _hoisted_23$r, [
-          createBaseVNode("div", _hoisted_24$o, [
-            createBaseVNode("span", _hoisted_25$n, toDisplayString(selectedItemDetails.value.name), 1),
-            createBaseVNode("span", _hoisted_26$m, toDisplayString(selectedItemDetails.value.info), 1)
+        selectedItemDetails.value ? (openBlock(), createElementBlock("div", _hoisted_27$k, [
+          createBaseVNode("div", _hoisted_28$k, [
+            createBaseVNode("span", _hoisted_29$k, toDisplayString(selectedItemDetails.value.name), 1),
+            createBaseVNode("span", _hoisted_30$j, toDisplayString(selectedItemDetails.value.info), 1)
           ])
         ])) : createCommentVNode("", true)
       ]);
@@ -16137,7 +17880,7 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ProjectPanel = /* @__PURE__ */ _export_sfc(_sfc_main$K, [["__scopeId", "data-v-74df8b88"]]);
+const ProjectPanel = /* @__PURE__ */ _export_sfc(_sfc_main$K, [["__scopeId", "data-v-b1624679"]]);
 
 const _hoisted_1$I = {
   class: "effects-panel",
@@ -18192,21 +19935,21 @@ const _hoisted_35$c = { class: "row" };
 const _hoisted_36$c = { class: "row" };
 const _hoisted_37$c = { class: "row checkbox-row" };
 const _hoisted_38$c = ["checked"];
-const _hoisted_39$b = { class: "row checkbox-row" };
-const _hoisted_40$a = ["checked"];
-const _hoisted_41$8 = { class: "row checkbox-row" };
-const _hoisted_42$7 = ["checked"];
-const _hoisted_43$7 = { class: "prop-section" };
-const _hoisted_44$7 = { class: "row" };
-const _hoisted_45$7 = { class: "row" };
-const _hoisted_46$7 = { class: "row" };
-const _hoisted_47$7 = { class: "row" };
-const _hoisted_48$7 = { class: "row text-formatting-row" };
-const _hoisted_49$7 = { class: "format-toggles" };
-const _hoisted_50$6 = { class: "row text-formatting-row" };
-const _hoisted_51$6 = { class: "format-toggles" };
-const _hoisted_52$6 = { class: "prop-section checkbox" };
-const _hoisted_53$6 = ["checked"];
+const _hoisted_39$c = { class: "row checkbox-row" };
+const _hoisted_40$b = ["checked"];
+const _hoisted_41$9 = { class: "row checkbox-row" };
+const _hoisted_42$8 = ["checked"];
+const _hoisted_43$8 = { class: "prop-section" };
+const _hoisted_44$8 = { class: "row" };
+const _hoisted_45$8 = { class: "row" };
+const _hoisted_46$8 = { class: "row" };
+const _hoisted_47$8 = { class: "row" };
+const _hoisted_48$8 = { class: "row text-formatting-row" };
+const _hoisted_49$8 = { class: "format-toggles" };
+const _hoisted_50$7 = { class: "row text-formatting-row" };
+const _hoisted_51$7 = { class: "format-toggles" };
+const _hoisted_52$7 = { class: "prop-section checkbox" };
+const _hoisted_53$7 = ["checked"];
 const _sfc_main$D = /* @__PURE__ */ defineComponent({
   __name: "TextProperties",
   props: {
@@ -18551,52 +20294,52 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
                 _cache[54] || (_cache[54] = createTextVNode(" Reverse Path ", -1))
               ])
             ]),
-            createBaseVNode("div", _hoisted_39$b, [
+            createBaseVNode("div", _hoisted_39$c, [
               createBaseVNode("label", null, [
                 createBaseVNode("input", {
                   type: "checkbox",
                   checked: textData.value.pathPerpendicularToPath ?? true,
                   onChange: _cache[23] || (_cache[23] = ($event) => updateData("pathPerpendicularToPath", !textData.value.pathPerpendicularToPath))
-                }, null, 40, _hoisted_40$a),
+                }, null, 40, _hoisted_40$b),
                 _cache[55] || (_cache[55] = createTextVNode(" Perpendicular to Path ", -1))
               ])
             ]),
-            createBaseVNode("div", _hoisted_41$8, [
+            createBaseVNode("div", _hoisted_41$9, [
               createBaseVNode("label", null, [
                 createBaseVNode("input", {
                   type: "checkbox",
                   checked: textData.value.pathForceAlignment,
                   onChange: _cache[24] || (_cache[24] = ($event) => updateData("pathForceAlignment", !textData.value.pathForceAlignment))
-                }, null, 40, _hoisted_42$7),
+                }, null, 40, _hoisted_42$8),
                 _cache[56] || (_cache[56] = createTextVNode(" Force Alignment ", -1))
               ])
             ])
           ], 64)) : createCommentVNode("", true)
         ]),
-        createBaseVNode("div", _hoisted_43$7, [
+        createBaseVNode("div", _hoisted_43$8, [
           _cache[64] || (_cache[64] = createBaseVNode("div", { class: "section-title" }, "Advanced", -1)),
-          createBaseVNode("div", _hoisted_44$7, [
+          createBaseVNode("div", _hoisted_44$8, [
             _cache[58] || (_cache[58] = createBaseVNode("label", null, "Tracking", -1)),
             createVNode(unref(ScrubableNumber), {
               modelValue: getPropertyValue("Tracking") || textData.value.tracking || 0,
               "onUpdate:modelValue": _cache[25] || (_cache[25] = (v) => updateAnimatable("Tracking", v))
             }, null, 8, ["modelValue"])
           ]),
-          createBaseVNode("div", _hoisted_45$7, [
+          createBaseVNode("div", _hoisted_45$8, [
             _cache[59] || (_cache[59] = createBaseVNode("label", null, "Line Spacing", -1)),
             createVNode(unref(ScrubableNumber), {
               modelValue: getPropertyValue("Line Spacing") || textData.value.lineSpacing || 0,
               "onUpdate:modelValue": _cache[26] || (_cache[26] = (v) => updateAnimatable("Line Spacing", v))
             }, null, 8, ["modelValue"])
           ]),
-          createBaseVNode("div", _hoisted_46$7, [
+          createBaseVNode("div", _hoisted_46$8, [
             _cache[60] || (_cache[60] = createBaseVNode("label", null, "Baseline", -1)),
             createVNode(unref(ScrubableNumber), {
               modelValue: getPropertyValue("Baseline Shift") || textData.value.baselineShift || 0,
               "onUpdate:modelValue": _cache[27] || (_cache[27] = (v) => updateAnimatable("Baseline Shift", v))
             }, null, 8, ["modelValue"])
           ]),
-          createBaseVNode("div", _hoisted_47$7, [
+          createBaseVNode("div", _hoisted_47$8, [
             _cache[61] || (_cache[61] = createBaseVNode("label", null, "Char Offset", -1)),
             createVNode(unref(ScrubableNumber), {
               modelValue: getPropertyValue("Character Offset") || textData.value.characterOffset || 0,
@@ -18604,9 +20347,9 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
               precision: 0
             }, null, 8, ["modelValue"])
           ]),
-          createBaseVNode("div", _hoisted_48$7, [
+          createBaseVNode("div", _hoisted_48$8, [
             _cache[62] || (_cache[62] = createBaseVNode("label", null, "Case", -1)),
-            createBaseVNode("div", _hoisted_49$7, [
+            createBaseVNode("div", _hoisted_49$8, [
               createBaseVNode("button", {
                 class: normalizeClass({ active: textData.value.textCase === "uppercase" }),
                 onClick: _cache[29] || (_cache[29] = ($event) => toggleCase("uppercase")),
@@ -18624,9 +20367,9 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
               }, "Aa", 2)
             ])
           ]),
-          createBaseVNode("div", _hoisted_50$6, [
+          createBaseVNode("div", _hoisted_50$7, [
             _cache[63] || (_cache[63] = createBaseVNode("label", null, "Script", -1)),
-            createBaseVNode("div", _hoisted_51$6, [
+            createBaseVNode("div", _hoisted_51$7, [
               createBaseVNode("button", {
                 class: normalizeClass({ active: textData.value.verticalAlign === "super" }),
                 onClick: _cache[32] || (_cache[32] = ($event) => toggleVerticalAlign("super")),
@@ -18645,13 +20388,13 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
             ])
           ])
         ]),
-        createBaseVNode("div", _hoisted_52$6, [
+        createBaseVNode("div", _hoisted_52$7, [
           createBaseVNode("label", null, [
             createBaseVNode("input", {
               type: "checkbox",
               checked: textData.value.perCharacter3D,
               onChange: _cache[35] || (_cache[35] = ($event) => updateData("perCharacter3D", !textData.value.perCharacter3D))
-            }, null, 40, _hoisted_53$6),
+            }, null, 40, _hoisted_53$7),
             _cache[65] || (_cache[65] = createTextVNode(" Enable Per-Character 3D ", -1))
           ])
         ])
@@ -18709,81 +20452,81 @@ const _hoisted_35$b = ["value", "onInput"];
 const _hoisted_36$b = { class: "value-display" };
 const _hoisted_37$b = { class: "property-row" };
 const _hoisted_38$b = ["value", "onInput"];
-const _hoisted_39$a = { class: "value-display" };
-const _hoisted_40$9 = { class: "property-row" };
-const _hoisted_41$7 = ["value", "onInput"];
-const _hoisted_42$6 = { class: "value-display" };
-const _hoisted_43$6 = { class: "property-row" };
-const _hoisted_44$6 = ["value", "onInput"];
-const _hoisted_45$6 = { class: "value-display" };
-const _hoisted_46$6 = { class: "property-row" };
-const _hoisted_47$6 = ["value", "onInput"];
-const _hoisted_48$6 = { class: "value-display" };
-const _hoisted_49$6 = { class: "property-row" };
-const _hoisted_50$5 = ["value", "onInput"];
-const _hoisted_51$5 = { class: "value-display" };
-const _hoisted_52$5 = { class: "property-row" };
-const _hoisted_53$5 = ["value", "onInput"];
-const _hoisted_54$5 = { class: "value-display" };
-const _hoisted_55$5 = { class: "property-row" };
-const _hoisted_56$5 = ["value", "onInput"];
-const _hoisted_57$5 = { class: "value-display" };
-const _hoisted_58$5 = { class: "property-row" };
-const _hoisted_59$5 = ["value", "onInput"];
-const _hoisted_60$5 = { class: "property-row" };
-const _hoisted_61$5 = ["value", "onInput"];
-const _hoisted_62$5 = { class: "value-display" };
-const _hoisted_63$3 = { class: "property-row" };
-const _hoisted_64$3 = ["value", "onInput"];
-const _hoisted_65$3 = { class: "value-display" };
-const _hoisted_66$2 = { class: "property-row" };
-const _hoisted_67$2 = ["value", "onInput"];
-const _hoisted_68$2 = { class: "value-display" };
-const _hoisted_69$2 = { class: "property-row checkbox-row" };
-const _hoisted_70$2 = ["checked", "onChange"];
-const _hoisted_71$2 = {
+const _hoisted_39$b = { class: "value-display" };
+const _hoisted_40$a = { class: "property-row" };
+const _hoisted_41$8 = ["value", "onInput"];
+const _hoisted_42$7 = { class: "value-display" };
+const _hoisted_43$7 = { class: "property-row" };
+const _hoisted_44$7 = ["value", "onInput"];
+const _hoisted_45$7 = { class: "value-display" };
+const _hoisted_46$7 = { class: "property-row" };
+const _hoisted_47$7 = ["value", "onInput"];
+const _hoisted_48$7 = { class: "value-display" };
+const _hoisted_49$7 = { class: "property-row" };
+const _hoisted_50$6 = ["value", "onInput"];
+const _hoisted_51$6 = { class: "value-display" };
+const _hoisted_52$6 = { class: "property-row" };
+const _hoisted_53$6 = ["value", "onInput"];
+const _hoisted_54$6 = { class: "value-display" };
+const _hoisted_55$6 = { class: "property-row" };
+const _hoisted_56$6 = ["value", "onInput"];
+const _hoisted_57$6 = { class: "value-display" };
+const _hoisted_58$6 = { class: "property-row" };
+const _hoisted_59$6 = ["value", "onInput"];
+const _hoisted_60$6 = { class: "property-row" };
+const _hoisted_61$6 = ["value", "onInput"];
+const _hoisted_62$6 = { class: "value-display" };
+const _hoisted_63$4 = { class: "property-row" };
+const _hoisted_64$4 = ["value", "onInput"];
+const _hoisted_65$4 = { class: "value-display" };
+const _hoisted_66$3 = { class: "property-row" };
+const _hoisted_67$3 = ["value", "onInput"];
+const _hoisted_68$3 = { class: "value-display" };
+const _hoisted_69$3 = { class: "property-row checkbox-row" };
+const _hoisted_70$3 = ["checked", "onChange"];
+const _hoisted_71$3 = {
   key: 0,
   class: "property-row"
 };
-const _hoisted_72$2 = ["value", "onInput"];
-const _hoisted_73$2 = { class: "value-display" };
-const _hoisted_74$2 = { class: "property-row" };
-const _hoisted_75$2 = ["value", "onChange"];
-const _hoisted_76$2 = {
+const _hoisted_72$3 = ["value", "onInput"];
+const _hoisted_73$3 = { class: "value-display" };
+const _hoisted_74$3 = { class: "property-row" };
+const _hoisted_75$3 = ["value", "onChange"];
+const _hoisted_76$3 = {
   key: 1,
   class: "property-row"
 };
-const _hoisted_77$2 = ["value", "onInput"];
-const _hoisted_78$2 = { class: "value-display" };
-const _hoisted_79$1 = {
+const _hoisted_77$3 = ["value", "onInput"];
+const _hoisted_78$3 = { class: "value-display" };
+const _hoisted_79$2 = {
   key: 2,
   class: "property-row"
 };
-const _hoisted_80$1 = ["value", "onInput"];
-const _hoisted_81$1 = { class: "value-display" };
-const _hoisted_82$1 = {
+const _hoisted_80$2 = ["value", "onInput"];
+const _hoisted_81$2 = { class: "value-display" };
+const _hoisted_82$2 = {
   key: 3,
   class: "property-row"
 };
-const _hoisted_83$1 = ["value", "onInput"];
-const _hoisted_84$1 = { class: "value-display" };
-const _hoisted_85$1 = {
+const _hoisted_83$2 = ["value", "onInput"];
+const _hoisted_84$2 = { class: "value-display" };
+const _hoisted_85$2 = {
   key: 4,
   class: "property-row"
 };
-const _hoisted_86$1 = ["value", "onInput"];
-const _hoisted_87$1 = { class: "value-display" };
-const _hoisted_88$1 = {
+const _hoisted_86$2 = ["value", "onInput"];
+const _hoisted_87$2 = { class: "value-display" };
+const _hoisted_88$2 = {
   key: 5,
   class: "property-row"
 };
-const _hoisted_89$1 = ["value", "onInput"];
-const _hoisted_90$1 = { class: "value-display" };
-const _hoisted_91$1 = {
+const _hoisted_89$2 = ["value", "onInput"];
+const _hoisted_90$2 = { class: "value-display" };
+const _hoisted_91$2 = {
   key: 6,
   class: "property-row checkbox-row"
 };
-const _hoisted_92$1 = ["checked", "onChange"];
+const _hoisted_92$2 = ["checked", "onChange"];
 const _hoisted_93$1 = {
   key: 0,
   class: "empty-message"
@@ -19455,9 +21198,9 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       step: "0.01",
                       onInput: ($event) => updateEmitter(emitter.id, "y", Number($event.target.value))
                     }, null, 40, _hoisted_38$b),
-                    createBaseVNode("span", _hoisted_39$a, toDisplayString(emitter.y.toFixed(2)), 1)
+                    createBaseVNode("span", _hoisted_39$b, toDisplayString(emitter.y.toFixed(2)), 1)
                   ]),
-                  createBaseVNode("div", _hoisted_40$9, [
+                  createBaseVNode("div", _hoisted_40$a, [
                     _cache[51] || (_cache[51] = createBaseVNode("label", null, "Direction", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19466,10 +21209,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "360",
                       step: "5",
                       onInput: ($event) => updateEmitter(emitter.id, "direction", Number($event.target.value))
-                    }, null, 40, _hoisted_41$7),
-                    createBaseVNode("span", _hoisted_42$6, toDisplayString(emitter.direction) + "°", 1)
+                    }, null, 40, _hoisted_41$8),
+                    createBaseVNode("span", _hoisted_42$7, toDisplayString(emitter.direction) + "°", 1)
                   ]),
-                  createBaseVNode("div", _hoisted_43$6, [
+                  createBaseVNode("div", _hoisted_43$7, [
                     _cache[52] || (_cache[52] = createBaseVNode("label", null, "Spread", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19478,10 +21221,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "360",
                       step: "5",
                       onInput: ($event) => updateEmitter(emitter.id, "spread", Number($event.target.value))
-                    }, null, 40, _hoisted_44$6),
-                    createBaseVNode("span", _hoisted_45$6, toDisplayString(emitter.spread) + "°", 1)
+                    }, null, 40, _hoisted_44$7),
+                    createBaseVNode("span", _hoisted_45$7, toDisplayString(emitter.spread) + "°", 1)
                   ]),
-                  createBaseVNode("div", _hoisted_46$6, [
+                  createBaseVNode("div", _hoisted_46$7, [
                     _cache[53] || (_cache[53] = createBaseVNode("label", null, "Speed", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19490,10 +21233,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "1000",
                       step: "10",
                       onInput: ($event) => updateEmitter(emitter.id, "speed", Number($event.target.value))
-                    }, null, 40, _hoisted_47$6),
-                    createBaseVNode("span", _hoisted_48$6, toDisplayString(emitter.speed), 1)
+                    }, null, 40, _hoisted_47$7),
+                    createBaseVNode("span", _hoisted_48$7, toDisplayString(emitter.speed), 1)
                   ]),
-                  createBaseVNode("div", _hoisted_49$6, [
+                  createBaseVNode("div", _hoisted_49$7, [
                     _cache[54] || (_cache[54] = createBaseVNode("label", null, "Speed Variance", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19502,10 +21245,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "500",
                       step: "10",
                       onInput: ($event) => updateEmitter(emitter.id, "speedVariance", Number($event.target.value))
-                    }, null, 40, _hoisted_50$5),
-                    createBaseVNode("span", _hoisted_51$5, toDisplayString(emitter.speedVariance), 1)
+                    }, null, 40, _hoisted_50$6),
+                    createBaseVNode("span", _hoisted_51$6, toDisplayString(emitter.speedVariance), 1)
                   ]),
-                  createBaseVNode("div", _hoisted_52$5, [
+                  createBaseVNode("div", _hoisted_52$6, [
                     _cache[55] || (_cache[55] = createBaseVNode("label", null, "Size", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19514,10 +21257,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "400",
                       step: "1",
                       onInput: ($event) => updateEmitter(emitter.id, "size", Number($event.target.value))
-                    }, null, 40, _hoisted_53$5),
-                    createBaseVNode("span", _hoisted_54$5, toDisplayString(emitter.size) + "px", 1)
+                    }, null, 40, _hoisted_53$6),
+                    createBaseVNode("span", _hoisted_54$6, toDisplayString(emitter.size) + "px", 1)
                   ]),
-                  createBaseVNode("div", _hoisted_55$5, [
+                  createBaseVNode("div", _hoisted_55$6, [
                     _cache[56] || (_cache[56] = createBaseVNode("label", null, "Size Variance", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19526,18 +21269,18 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "100",
                       step: "1",
                       onInput: ($event) => updateEmitter(emitter.id, "sizeVariance", Number($event.target.value))
-                    }, null, 40, _hoisted_56$5),
-                    createBaseVNode("span", _hoisted_57$5, toDisplayString(emitter.sizeVariance), 1)
+                    }, null, 40, _hoisted_56$6),
+                    createBaseVNode("span", _hoisted_57$6, toDisplayString(emitter.sizeVariance), 1)
                   ]),
-                  createBaseVNode("div", _hoisted_58$5, [
+                  createBaseVNode("div", _hoisted_58$6, [
                     _cache[57] || (_cache[57] = createBaseVNode("label", null, "Color", -1)),
                     createBaseVNode("input", {
                       type: "color",
                       value: rgbToHex(emitter.color),
                       onInput: ($event) => updateEmitterColor(emitter.id, $event.target.value)
-                    }, null, 40, _hoisted_59$5)
+                    }, null, 40, _hoisted_59$6)
                   ]),
-                  createBaseVNode("div", _hoisted_60$5, [
+                  createBaseVNode("div", _hoisted_60$6, [
                     _cache[58] || (_cache[58] = createBaseVNode("label", null, "Emission Rate", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19546,10 +21289,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "100",
                       step: "0.1",
                       onInput: ($event) => updateEmitter(emitter.id, "emissionRate", Number($event.target.value))
-                    }, null, 40, _hoisted_61$5),
-                    createBaseVNode("span", _hoisted_62$5, toDisplayString(emitter.emissionRate.toFixed(1)) + "/s", 1)
+                    }, null, 40, _hoisted_61$6),
+                    createBaseVNode("span", _hoisted_62$6, toDisplayString(emitter.emissionRate.toFixed(1)) + "/s", 1)
                   ]),
-                  createBaseVNode("div", _hoisted_63$3, [
+                  createBaseVNode("div", _hoisted_63$4, [
                     _cache[59] || (_cache[59] = createBaseVNode("label", null, "Lifetime", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19558,10 +21301,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "300",
                       step: "1",
                       onInput: ($event) => updateEmitter(emitter.id, "particleLifetime", Number($event.target.value))
-                    }, null, 40, _hoisted_64$3),
-                    createBaseVNode("span", _hoisted_65$3, toDisplayString(emitter.particleLifetime) + "f", 1)
+                    }, null, 40, _hoisted_64$4),
+                    createBaseVNode("span", _hoisted_65$4, toDisplayString(emitter.particleLifetime) + "f", 1)
                   ]),
-                  createBaseVNode("div", _hoisted_66$2, [
+                  createBaseVNode("div", _hoisted_66$3, [
                     _cache[60] || (_cache[60] = createBaseVNode("label", null, "Initial Burst", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19570,20 +21313,20 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "1",
                       step: "0.1",
                       onInput: ($event) => updateEmitter(emitter.id, "initialBurst", Number($event.target.value))
-                    }, null, 40, _hoisted_67$2),
-                    createBaseVNode("span", _hoisted_68$2, toDisplayString((emitter.initialBurst * 100).toFixed(0)) + "%", 1)
+                    }, null, 40, _hoisted_67$3),
+                    createBaseVNode("span", _hoisted_68$3, toDisplayString((emitter.initialBurst * 100).toFixed(0)) + "%", 1)
                   ]),
-                  createBaseVNode("div", _hoisted_69$2, [
+                  createBaseVNode("div", _hoisted_69$3, [
                     createBaseVNode("label", null, [
                       createBaseVNode("input", {
                         type: "checkbox",
                         checked: emitter.burstOnBeat,
                         onChange: ($event) => updateEmitter(emitter.id, "burstOnBeat", $event.target.checked)
-                      }, null, 40, _hoisted_70$2),
+                      }, null, 40, _hoisted_70$3),
                       _cache[61] || (_cache[61] = createTextVNode(" Burst on Beat ", -1))
                     ])
                   ]),
-                  emitter.burstOnBeat ? (openBlock(), createElementBlock("div", _hoisted_71$2, [
+                  emitter.burstOnBeat ? (openBlock(), createElementBlock("div", _hoisted_71$3, [
                     _cache[62] || (_cache[62] = createBaseVNode("label", null, "Burst Count", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19592,20 +21335,20 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "100",
                       step: "1",
                       onInput: ($event) => updateEmitter(emitter.id, "burstCount", Number($event.target.value))
-                    }, null, 40, _hoisted_72$2),
-                    createBaseVNode("span", _hoisted_73$2, toDisplayString(emitter.burstCount), 1)
+                    }, null, 40, _hoisted_72$3),
+                    createBaseVNode("span", _hoisted_73$3, toDisplayString(emitter.burstCount), 1)
                   ])) : createCommentVNode("", true),
                   _cache[71] || (_cache[71] = createBaseVNode("div", { class: "subsection-divider" }, "Emitter Shape", -1)),
-                  createBaseVNode("div", _hoisted_74$2, [
+                  createBaseVNode("div", _hoisted_74$3, [
                     _cache[64] || (_cache[64] = createBaseVNode("label", null, "Shape", -1)),
                     createBaseVNode("select", {
                       value: emitter.shape || "point",
                       onChange: ($event) => updateEmitter(emitter.id, "shape", $event.target.value)
                     }, [..._cache[63] || (_cache[63] = [
                       createStaticVNode('<option value="point" data-v-4bf32f4f>Point</option><option value="line" data-v-4bf32f4f>Line</option><option value="circle" data-v-4bf32f4f>Circle</option><option value="box" data-v-4bf32f4f>Box</option><option value="sphere" data-v-4bf32f4f>Sphere</option><option value="ring" data-v-4bf32f4f>Ring</option><option value="spline" data-v-4bf32f4f>Spline Path</option>', 7)
-                    ])], 40, _hoisted_75$2)
+                    ])], 40, _hoisted_75$3)
                   ]),
-                  emitter.shape === "circle" || emitter.shape === "sphere" || emitter.shape === "ring" ? (openBlock(), createElementBlock("div", _hoisted_76$2, [
+                  emitter.shape === "circle" || emitter.shape === "sphere" || emitter.shape === "ring" ? (openBlock(), createElementBlock("div", _hoisted_76$3, [
                     _cache[65] || (_cache[65] = createBaseVNode("label", null, "Radius", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19614,10 +21357,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "0.5",
                       step: "0.01",
                       onInput: ($event) => updateEmitter(emitter.id, "shapeRadius", Number($event.target.value))
-                    }, null, 40, _hoisted_77$2),
-                    createBaseVNode("span", _hoisted_78$2, toDisplayString((emitter.shapeRadius || 0.1).toFixed(2)), 1)
+                    }, null, 40, _hoisted_77$3),
+                    createBaseVNode("span", _hoisted_78$3, toDisplayString((emitter.shapeRadius || 0.1).toFixed(2)), 1)
                   ])) : createCommentVNode("", true),
-                  emitter.shape === "ring" ? (openBlock(), createElementBlock("div", _hoisted_79$1, [
+                  emitter.shape === "ring" ? (openBlock(), createElementBlock("div", _hoisted_79$2, [
                     _cache[66] || (_cache[66] = createBaseVNode("label", null, "Inner Radius", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19626,10 +21369,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "0.4",
                       step: "0.01",
                       onInput: ($event) => updateEmitter(emitter.id, "shapeInnerRadius", Number($event.target.value))
-                    }, null, 40, _hoisted_80$1),
-                    createBaseVNode("span", _hoisted_81$1, toDisplayString((emitter.shapeInnerRadius || 0.05).toFixed(2)), 1)
+                    }, null, 40, _hoisted_80$2),
+                    createBaseVNode("span", _hoisted_81$2, toDisplayString((emitter.shapeInnerRadius || 0.05).toFixed(2)), 1)
                   ])) : createCommentVNode("", true),
-                  emitter.shape === "box" ? (openBlock(), createElementBlock("div", _hoisted_82$1, [
+                  emitter.shape === "box" ? (openBlock(), createElementBlock("div", _hoisted_82$2, [
                     _cache[67] || (_cache[67] = createBaseVNode("label", null, "Width", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19638,10 +21381,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "1",
                       step: "0.01",
                       onInput: ($event) => updateEmitter(emitter.id, "shapeWidth", Number($event.target.value))
-                    }, null, 40, _hoisted_83$1),
-                    createBaseVNode("span", _hoisted_84$1, toDisplayString((emitter.shapeWidth || 0.2).toFixed(2)), 1)
+                    }, null, 40, _hoisted_83$2),
+                    createBaseVNode("span", _hoisted_84$2, toDisplayString((emitter.shapeWidth || 0.2).toFixed(2)), 1)
                   ])) : createCommentVNode("", true),
-                  emitter.shape === "box" ? (openBlock(), createElementBlock("div", _hoisted_85$1, [
+                  emitter.shape === "box" ? (openBlock(), createElementBlock("div", _hoisted_85$2, [
                     _cache[68] || (_cache[68] = createBaseVNode("label", null, "Height", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19650,10 +21393,10 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "1",
                       step: "0.01",
                       onInput: ($event) => updateEmitter(emitter.id, "shapeHeight", Number($event.target.value))
-                    }, null, 40, _hoisted_86$1),
-                    createBaseVNode("span", _hoisted_87$1, toDisplayString((emitter.shapeHeight || 0.2).toFixed(2)), 1)
+                    }, null, 40, _hoisted_86$2),
+                    createBaseVNode("span", _hoisted_87$2, toDisplayString((emitter.shapeHeight || 0.2).toFixed(2)), 1)
                   ])) : createCommentVNode("", true),
-                  emitter.shape === "line" ? (openBlock(), createElementBlock("div", _hoisted_88$1, [
+                  emitter.shape === "line" ? (openBlock(), createElementBlock("div", _hoisted_88$2, [
                     _cache[69] || (_cache[69] = createBaseVNode("label", null, "Length", -1)),
                     createBaseVNode("input", {
                       type: "range",
@@ -19662,16 +21405,16 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                       max: "1",
                       step: "0.01",
                       onInput: ($event) => updateEmitter(emitter.id, "shapeWidth", Number($event.target.value))
-                    }, null, 40, _hoisted_89$1),
-                    createBaseVNode("span", _hoisted_90$1, toDisplayString((emitter.shapeWidth || 0.2).toFixed(2)), 1)
+                    }, null, 40, _hoisted_89$2),
+                    createBaseVNode("span", _hoisted_90$2, toDisplayString((emitter.shapeWidth || 0.2).toFixed(2)), 1)
                   ])) : createCommentVNode("", true),
-                  emitter.shape !== "point" && emitter.shape !== "spline" ? (openBlock(), createElementBlock("div", _hoisted_91$1, [
+                  emitter.shape !== "point" && emitter.shape !== "spline" ? (openBlock(), createElementBlock("div", _hoisted_91$2, [
                     createBaseVNode("label", null, [
                       createBaseVNode("input", {
                         type: "checkbox",
                         checked: emitter.emitFromEdge,
                         onChange: ($event) => updateEmitter(emitter.id, "emitFromEdge", $event.target.checked)
-                      }, null, 40, _hoisted_92$1),
+                      }, null, 40, _hoisted_92$2),
                       _cache[70] || (_cache[70] = createTextVNode(" Emit from Edge Only ", -1))
                     ])
                   ])) : createCommentVNode("", true)
@@ -20587,81 +22330,81 @@ const _hoisted_35$a = { class: "value-display" };
 const _hoisted_36$a = { class: "property-row" };
 const _hoisted_37$a = ["value"];
 const _hoisted_38$a = { class: "value-display" };
-const _hoisted_39$9 = {
+const _hoisted_39$a = {
   key: 0,
   class: "property-section"
 };
-const _hoisted_40$8 = {
+const _hoisted_40$9 = {
   key: 0,
   class: "section-content"
 };
-const _hoisted_41$6 = { class: "property-row" };
-const _hoisted_42$5 = ["value"];
-const _hoisted_43$5 = { class: "value-display" };
-const _hoisted_44$5 = { class: "property-row" };
-const _hoisted_45$5 = ["value"];
-const _hoisted_46$5 = { class: "value-display" };
-const _hoisted_47$5 = { class: "property-row" };
-const _hoisted_48$5 = ["value"];
-const _hoisted_49$5 = { class: "value-display" };
-const _hoisted_50$4 = { class: "property-row" };
-const _hoisted_51$4 = ["value"];
-const _hoisted_52$4 = { class: "value-display" };
-const _hoisted_53$4 = {
+const _hoisted_41$7 = { class: "property-row" };
+const _hoisted_42$6 = ["value"];
+const _hoisted_43$6 = { class: "value-display" };
+const _hoisted_44$6 = { class: "property-row" };
+const _hoisted_45$6 = ["value"];
+const _hoisted_46$6 = { class: "value-display" };
+const _hoisted_47$6 = { class: "property-row" };
+const _hoisted_48$6 = ["value"];
+const _hoisted_49$6 = { class: "value-display" };
+const _hoisted_50$5 = { class: "property-row" };
+const _hoisted_51$5 = ["value"];
+const _hoisted_52$5 = { class: "value-display" };
+const _hoisted_53$5 = {
   key: 2,
   class: "property-row"
 };
-const _hoisted_54$4 = ["value"];
-const _hoisted_55$4 = { class: "value-display" };
-const _hoisted_56$4 = { class: "property-section" };
-const _hoisted_57$4 = {
+const _hoisted_54$5 = ["value"];
+const _hoisted_55$5 = { class: "value-display" };
+const _hoisted_56$5 = { class: "property-section" };
+const _hoisted_57$5 = {
   key: 0,
   class: "section-content"
 };
-const _hoisted_58$4 = { class: "property-row" };
-const _hoisted_59$4 = ["value"];
-const _hoisted_60$4 = { class: "value-display" };
-const _hoisted_61$4 = { class: "property-row checkbox-row" };
-const _hoisted_62$4 = ["checked"];
-const _hoisted_63$2 = { class: "property-section" };
-const _hoisted_64$2 = {
+const _hoisted_58$5 = { class: "property-row" };
+const _hoisted_59$5 = ["value"];
+const _hoisted_60$5 = { class: "value-display" };
+const _hoisted_61$5 = { class: "property-row checkbox-row" };
+const _hoisted_62$5 = ["checked"];
+const _hoisted_63$3 = { class: "property-section" };
+const _hoisted_64$3 = {
   key: 0,
   class: "sync-badge"
 };
-const _hoisted_65$2 = {
+const _hoisted_65$3 = {
   key: 0,
   class: "section-content"
 };
-const _hoisted_66$1 = { class: "property-row checkbox-row" };
-const _hoisted_67$1 = ["checked"];
-const _hoisted_68$1 = { class: "property-row" };
-const _hoisted_69$1 = ["value"];
-const _hoisted_70$1 = ["value"];
-const _hoisted_71$1 = { class: "property-row" };
-const _hoisted_72$1 = ["value"];
-const _hoisted_73$1 = { class: "value-display" };
-const _hoisted_74$1 = { class: "property-row" };
-const _hoisted_75$1 = ["value"];
-const _hoisted_76$1 = { class: "value-display" };
-const _hoisted_77$1 = { class: "property-row" };
-const _hoisted_78$1 = ["value"];
-const _hoisted_79 = { class: "value-display" };
-const _hoisted_80 = { class: "property-row" };
-const _hoisted_81 = ["value"];
-const _hoisted_82 = { class: "value-display" };
-const _hoisted_83 = { class: "property-row checkbox-row" };
-const _hoisted_84 = ["checked"];
-const _hoisted_85 = { style: { "margin-left": "16px" } };
-const _hoisted_86 = ["checked"];
-const _hoisted_87 = { class: "property-row" };
-const _hoisted_88 = ["value"];
-const _hoisted_89 = { class: "value-display" };
-const _hoisted_90 = { class: "property-section" };
-const _hoisted_91 = {
+const _hoisted_66$2 = { class: "property-row checkbox-row" };
+const _hoisted_67$2 = ["checked"];
+const _hoisted_68$2 = { class: "property-row" };
+const _hoisted_69$2 = ["value"];
+const _hoisted_70$2 = ["value"];
+const _hoisted_71$2 = { class: "property-row" };
+const _hoisted_72$2 = ["value"];
+const _hoisted_73$2 = { class: "value-display" };
+const _hoisted_74$2 = { class: "property-row" };
+const _hoisted_75$2 = ["value"];
+const _hoisted_76$2 = { class: "value-display" };
+const _hoisted_77$2 = { class: "property-row" };
+const _hoisted_78$2 = ["value"];
+const _hoisted_79$1 = { class: "value-display" };
+const _hoisted_80$1 = { class: "property-row" };
+const _hoisted_81$1 = ["value"];
+const _hoisted_82$1 = { class: "value-display" };
+const _hoisted_83$1 = { class: "property-row checkbox-row" };
+const _hoisted_84$1 = ["checked"];
+const _hoisted_85$1 = { style: { "margin-left": "16px" } };
+const _hoisted_86$1 = ["checked"];
+const _hoisted_87$1 = { class: "property-row" };
+const _hoisted_88$1 = ["value"];
+const _hoisted_89$1 = { class: "value-display" };
+const _hoisted_90$1 = { class: "property-section" };
+const _hoisted_91$1 = {
   key: 0,
   class: "section-content"
 };
-const _hoisted_92 = { class: "preview-container" };
+const _hoisted_92$1 = { class: "preview-container" };
 const _hoisted_93 = { class: "preview-controls" };
 const _hoisted_94 = { class: "frame-indicator" };
 const previewSize = 200;
@@ -21050,7 +22793,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
             ], -1))
           ])) : createCommentVNode("", true)
         ]),
-        showPresetSettings.value ? (openBlock(), createElementBlock("div", _hoisted_39$9, [
+        showPresetSettings.value ? (openBlock(), createElementBlock("div", _hoisted_39$a, [
           createBaseVNode("div", {
             class: "section-header",
             onClick: _cache[13] || (_cache[13] = ($event) => toggleSection("presetSettings"))
@@ -21060,9 +22803,9 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
             }, null, 2),
             createBaseVNode("span", null, toDisplayString(presetSettingsTitle.value), 1)
           ]),
-          expandedSections.value.has("presetSettings") ? (openBlock(), createElementBlock("div", _hoisted_40$8, [
+          expandedSections.value.has("presetSettings") ? (openBlock(), createElementBlock("div", _hoisted_40$9, [
             isOrbitPreset.value ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-              createBaseVNode("div", _hoisted_41$6, [
+              createBaseVNode("div", _hoisted_41$7, [
                 _cache[49] || (_cache[49] = createBaseVNode("label", null, "Orbit Radius", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21071,10 +22814,10 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "0.5",
                   step: "0.01",
                   onInput: _cache[14] || (_cache[14] = ($event) => updateDepthflowConfig("orbitRadius", Number($event.target.value)))
-                }, null, 40, _hoisted_42$5),
-                createBaseVNode("span", _hoisted_43$5, toDisplayString(depthflowConfig.value.orbitRadius.toFixed(2)), 1)
+                }, null, 40, _hoisted_42$6),
+                createBaseVNode("span", _hoisted_43$6, toDisplayString(depthflowConfig.value.orbitRadius.toFixed(2)), 1)
               ]),
-              createBaseVNode("div", _hoisted_44$5, [
+              createBaseVNode("div", _hoisted_44$6, [
                 _cache[50] || (_cache[50] = createBaseVNode("label", null, "Orbit Speed", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21083,12 +22826,12 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "720",
                   step: "1",
                   onInput: _cache[15] || (_cache[15] = ($event) => updateDepthflowConfig("orbitSpeed", Number($event.target.value)))
-                }, null, 40, _hoisted_45$5),
-                createBaseVNode("span", _hoisted_46$5, toDisplayString(depthflowConfig.value.orbitSpeed) + "°", 1)
+                }, null, 40, _hoisted_45$6),
+                createBaseVNode("span", _hoisted_46$6, toDisplayString(depthflowConfig.value.orbitSpeed) + "°", 1)
               ])
             ], 64)) : createCommentVNode("", true),
             isSwingPreset.value ? (openBlock(), createElementBlock(Fragment, { key: 1 }, [
-              createBaseVNode("div", _hoisted_47$5, [
+              createBaseVNode("div", _hoisted_47$6, [
                 _cache[51] || (_cache[51] = createBaseVNode("label", null, "Amplitude", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21097,10 +22840,10 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "0.5",
                   step: "0.01",
                   onInput: _cache[16] || (_cache[16] = ($event) => updateDepthflowConfig("swingAmplitude", Number($event.target.value)))
-                }, null, 40, _hoisted_48$5),
-                createBaseVNode("span", _hoisted_49$5, toDisplayString(depthflowConfig.value.swingAmplitude.toFixed(2)), 1)
+                }, null, 40, _hoisted_48$6),
+                createBaseVNode("span", _hoisted_49$6, toDisplayString(depthflowConfig.value.swingAmplitude.toFixed(2)), 1)
               ]),
-              createBaseVNode("div", _hoisted_50$4, [
+              createBaseVNode("div", _hoisted_50$5, [
                 _cache[52] || (_cache[52] = createBaseVNode("label", null, "Frequency", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21109,11 +22852,11 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "5",
                   step: "0.1",
                   onInput: _cache[17] || (_cache[17] = ($event) => updateDepthflowConfig("swingFrequency", Number($event.target.value)))
-                }, null, 40, _hoisted_51$4),
-                createBaseVNode("span", _hoisted_52$4, toDisplayString(depthflowConfig.value.swingFrequency.toFixed(1)) + " Hz", 1)
+                }, null, 40, _hoisted_51$5),
+                createBaseVNode("span", _hoisted_52$5, toDisplayString(depthflowConfig.value.swingFrequency.toFixed(1)) + " Hz", 1)
               ])
             ], 64)) : createCommentVNode("", true),
-            isDollyPreset.value ? (openBlock(), createElementBlock("div", _hoisted_53$4, [
+            isDollyPreset.value ? (openBlock(), createElementBlock("div", _hoisted_53$5, [
               _cache[53] || (_cache[53] = createBaseVNode("label", null, "Dolly Rate", -1)),
               createBaseVNode("input", {
                 type: "range",
@@ -21122,12 +22865,12 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                 max: "1",
                 step: "0.05",
                 onInput: _cache[18] || (_cache[18] = ($event) => updateDepthflowConfig("dollyZoom", Number($event.target.value)))
-              }, null, 40, _hoisted_54$4),
-              createBaseVNode("span", _hoisted_55$4, toDisplayString(depthflowConfig.value.dollyZoom.toFixed(2)), 1)
+              }, null, 40, _hoisted_54$5),
+              createBaseVNode("span", _hoisted_55$5, toDisplayString(depthflowConfig.value.dollyZoom.toFixed(2)), 1)
             ])) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ])) : createCommentVNode("", true),
-        createBaseVNode("div", _hoisted_56$4, [
+        createBaseVNode("div", _hoisted_56$5, [
           createBaseVNode("div", {
             class: "section-header",
             onClick: _cache[19] || (_cache[19] = ($event) => toggleSection("quality"))
@@ -21137,8 +22880,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
             }, null, 2),
             _cache[54] || (_cache[54] = createBaseVNode("span", null, "Quality", -1))
           ]),
-          expandedSections.value.has("quality") ? (openBlock(), createElementBlock("div", _hoisted_57$4, [
-            createBaseVNode("div", _hoisted_58$4, [
+          expandedSections.value.has("quality") ? (openBlock(), createElementBlock("div", _hoisted_57$5, [
+            createBaseVNode("div", _hoisted_58$5, [
               _cache[55] || (_cache[55] = createBaseVNode("label", null, "Edge Dilation", -1)),
               createBaseVNode("input", {
                 type: "range",
@@ -21147,22 +22890,22 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                 max: "50",
                 step: "1",
                 onInput: _cache[20] || (_cache[20] = ($event) => updateDepthflowConfig("edgeDilation", Number($event.target.value)))
-              }, null, 40, _hoisted_59$4),
-              createBaseVNode("span", _hoisted_60$4, toDisplayString(depthflowConfig.value.edgeDilation) + "px", 1)
+              }, null, 40, _hoisted_59$5),
+              createBaseVNode("span", _hoisted_60$5, toDisplayString(depthflowConfig.value.edgeDilation) + "px", 1)
             ]),
-            createBaseVNode("div", _hoisted_61$4, [
+            createBaseVNode("div", _hoisted_61$5, [
               createBaseVNode("label", null, [
                 createBaseVNode("input", {
                   type: "checkbox",
                   checked: depthflowConfig.value.inpaintEdges,
                   onChange: _cache[21] || (_cache[21] = ($event) => updateDepthflowConfig("inpaintEdges", $event.target.checked))
-                }, null, 40, _hoisted_62$4),
+                }, null, 40, _hoisted_62$5),
                 _cache[56] || (_cache[56] = createTextVNode(" Inpaint Edges ", -1))
               ])
             ])
           ])) : createCommentVNode("", true)
         ]),
-        createBaseVNode("div", _hoisted_63$2, [
+        createBaseVNode("div", _hoisted_63$3, [
           createBaseVNode("div", {
             class: "section-header",
             onClick: _cache[22] || (_cache[22] = ($event) => toggleSection("cameraSync"))
@@ -21171,21 +22914,21 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
               class: normalizeClass(["pi", expandedSections.value.has("cameraSync") ? "pi-chevron-down" : "pi-chevron-right"])
             }, null, 2),
             _cache[57] || (_cache[57] = createBaseVNode("span", null, "Camera Sync", -1)),
-            config.value.cameraSyncEnabled ? (openBlock(), createElementBlock("span", _hoisted_64$2, "Active")) : createCommentVNode("", true)
+            config.value.cameraSyncEnabled ? (openBlock(), createElementBlock("span", _hoisted_64$3, "Active")) : createCommentVNode("", true)
           ]),
-          expandedSections.value.has("cameraSync") ? (openBlock(), createElementBlock("div", _hoisted_65$2, [
-            createBaseVNode("div", _hoisted_66$1, [
+          expandedSections.value.has("cameraSync") ? (openBlock(), createElementBlock("div", _hoisted_65$3, [
+            createBaseVNode("div", _hoisted_66$2, [
               createBaseVNode("label", null, [
                 createBaseVNode("input", {
                   type: "checkbox",
                   checked: config.value.cameraSyncEnabled ?? false,
                   onChange: _cache[23] || (_cache[23] = ($event) => updateConfig("cameraSyncEnabled", $event.target.checked))
-                }, null, 40, _hoisted_67$1),
+                }, null, 40, _hoisted_67$2),
                 _cache[58] || (_cache[58] = createTextVNode(" Enable Camera Sync ", -1))
               ])
             ]),
             config.value.cameraSyncEnabled ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-              createBaseVNode("div", _hoisted_68$1, [
+              createBaseVNode("div", _hoisted_68$2, [
                 _cache[60] || (_cache[60] = createBaseVNode("label", null, "Camera Layer", -1)),
                 createBaseVNode("select", {
                   value: config.value.cameraSyncLayerId ?? "",
@@ -21196,12 +22939,12 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                     return openBlock(), createElementBlock("option", {
                       key: layer.id,
                       value: layer.id
-                    }, toDisplayString(layer.name), 9, _hoisted_70$1);
+                    }, toDisplayString(layer.name), 9, _hoisted_70$2);
                   }), 128))
-                ], 40, _hoisted_69$1)
+                ], 40, _hoisted_69$2)
               ]),
               _cache[68] || (_cache[68] = createBaseVNode("div", { class: "sync-hint" }, " Camera movement will drive parallax. Adjust sensitivity below. ", -1)),
-              createBaseVNode("div", _hoisted_71$1, [
+              createBaseVNode("div", _hoisted_71$2, [
                 _cache[61] || (_cache[61] = createBaseVNode("label", null, "X Sensitivity", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21210,10 +22953,10 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "2",
                   step: "0.05",
                   onInput: _cache[25] || (_cache[25] = ($event) => updateCameraSyncConfig("sensitivityX", Number($event.target.value)))
-                }, null, 40, _hoisted_72$1),
-                createBaseVNode("span", _hoisted_73$1, toDisplayString(cameraSyncConfig.value.sensitivityX.toFixed(2)), 1)
+                }, null, 40, _hoisted_72$2),
+                createBaseVNode("span", _hoisted_73$2, toDisplayString(cameraSyncConfig.value.sensitivityX.toFixed(2)), 1)
               ]),
-              createBaseVNode("div", _hoisted_74$1, [
+              createBaseVNode("div", _hoisted_74$2, [
                 _cache[62] || (_cache[62] = createBaseVNode("label", null, "Y Sensitivity", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21222,10 +22965,10 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "2",
                   step: "0.05",
                   onInput: _cache[26] || (_cache[26] = ($event) => updateCameraSyncConfig("sensitivityY", Number($event.target.value)))
-                }, null, 40, _hoisted_75$1),
-                createBaseVNode("span", _hoisted_76$1, toDisplayString(cameraSyncConfig.value.sensitivityY.toFixed(2)), 1)
+                }, null, 40, _hoisted_75$2),
+                createBaseVNode("span", _hoisted_76$2, toDisplayString(cameraSyncConfig.value.sensitivityY.toFixed(2)), 1)
               ]),
-              createBaseVNode("div", _hoisted_77$1, [
+              createBaseVNode("div", _hoisted_77$2, [
                 _cache[63] || (_cache[63] = createBaseVNode("label", null, "Z Sensitivity", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21234,10 +22977,10 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "10",
                   step: "0.1",
                   onInput: _cache[27] || (_cache[27] = ($event) => updateCameraSyncConfig("sensitivityZ", Number($event.target.value) / 1e3))
-                }, null, 40, _hoisted_78$1),
-                createBaseVNode("span", _hoisted_79, toDisplayString((cameraSyncConfig.value.sensitivityZ * 1e3).toFixed(1)), 1)
+                }, null, 40, _hoisted_78$2),
+                createBaseVNode("span", _hoisted_79$1, toDisplayString((cameraSyncConfig.value.sensitivityZ * 1e3).toFixed(1)), 1)
               ]),
-              createBaseVNode("div", _hoisted_80, [
+              createBaseVNode("div", _hoisted_80$1, [
                 _cache[64] || (_cache[64] = createBaseVNode("label", null, "Rotation Sens.", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21246,28 +22989,28 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "2",
                   step: "0.05",
                   onInput: _cache[28] || (_cache[28] = ($event) => updateCameraSyncConfig("sensitivityRotation", Number($event.target.value)))
-                }, null, 40, _hoisted_81),
-                createBaseVNode("span", _hoisted_82, toDisplayString(cameraSyncConfig.value.sensitivityRotation.toFixed(2)), 1)
+                }, null, 40, _hoisted_81$1),
+                createBaseVNode("span", _hoisted_82$1, toDisplayString(cameraSyncConfig.value.sensitivityRotation.toFixed(2)), 1)
               ]),
-              createBaseVNode("div", _hoisted_83, [
+              createBaseVNode("div", _hoisted_83$1, [
                 createBaseVNode("label", null, [
                   createBaseVNode("input", {
                     type: "checkbox",
                     checked: cameraSyncConfig.value.invertX,
                     onChange: _cache[29] || (_cache[29] = ($event) => updateCameraSyncConfig("invertX", $event.target.checked))
-                  }, null, 40, _hoisted_84),
+                  }, null, 40, _hoisted_84$1),
                   _cache[65] || (_cache[65] = createTextVNode(" Invert X ", -1))
                 ]),
-                createBaseVNode("label", _hoisted_85, [
+                createBaseVNode("label", _hoisted_85$1, [
                   createBaseVNode("input", {
                     type: "checkbox",
                     checked: cameraSyncConfig.value.invertY,
                     onChange: _cache[30] || (_cache[30] = ($event) => updateCameraSyncConfig("invertY", $event.target.checked))
-                  }, null, 40, _hoisted_86),
+                  }, null, 40, _hoisted_86$1),
                   _cache[66] || (_cache[66] = createTextVNode(" Invert Y ", -1))
                 ])
               ]),
-              createBaseVNode("div", _hoisted_87, [
+              createBaseVNode("div", _hoisted_87$1, [
                 _cache[67] || (_cache[67] = createBaseVNode("label", null, "Base Zoom", -1)),
                 createBaseVNode("input", {
                   type: "range",
@@ -21276,13 +23019,13 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   max: "2",
                   step: "0.05",
                   onInput: _cache[31] || (_cache[31] = ($event) => updateCameraSyncConfig("baseZoom", Number($event.target.value)))
-                }, null, 40, _hoisted_88),
-                createBaseVNode("span", _hoisted_89, toDisplayString(cameraSyncConfig.value.baseZoom.toFixed(2)), 1)
+                }, null, 40, _hoisted_88$1),
+                createBaseVNode("span", _hoisted_89$1, toDisplayString(cameraSyncConfig.value.baseZoom.toFixed(2)), 1)
               ])
             ], 64)) : createCommentVNode("", true)
           ])) : createCommentVNode("", true)
         ]),
-        createBaseVNode("div", _hoisted_90, [
+        createBaseVNode("div", _hoisted_90$1, [
           createBaseVNode("div", {
             class: "section-header",
             onClick: _cache[32] || (_cache[32] = ($event) => toggleSection("preview"))
@@ -21292,8 +23035,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
             }, null, 2),
             _cache[69] || (_cache[69] = createBaseVNode("span", null, "Preview", -1))
           ]),
-          expandedSections.value.has("preview") ? (openBlock(), createElementBlock("div", _hoisted_91, [
-            createBaseVNode("div", _hoisted_92, [
+          expandedSections.value.has("preview") ? (openBlock(), createElementBlock("div", _hoisted_91$1, [
+            createBaseVNode("div", _hoisted_92$1, [
               createBaseVNode("canvas", {
                 ref_key: "previewCanvas",
                 ref: previewCanvas,
@@ -21569,12 +23312,78 @@ const _hoisted_32$a = { class: "prop-section" };
 const _hoisted_33$a = { class: "expand-icon" };
 const _hoisted_34$a = {
   key: 0,
+  class: "effect-count"
+};
+const _hoisted_35$9 = {
+  key: 0,
   class: "section-content"
 };
-const _hoisted_35$9 = { class: "property-row checkbox-row" };
-const _hoisted_36$9 = ["checked"];
-const _hoisted_37$9 = { class: "property-row info-row" };
-const _hoisted_38$9 = { class: "info-value" };
+const _hoisted_36$9 = { class: "add-effect-row" };
+const _hoisted_37$9 = ["disabled"];
+const _hoisted_38$9 = { class: "effect-header" };
+const _hoisted_39$9 = ["onClick"];
+const _hoisted_40$8 = { class: "effect-name" };
+const _hoisted_41$6 = { class: "effect-actions" };
+const _hoisted_42$5 = ["onClick", "disabled"];
+const _hoisted_43$5 = ["onClick", "disabled"];
+const _hoisted_44$5 = ["onClick"];
+const _hoisted_45$5 = {
+  key: 0,
+  class: "effect-params"
+};
+const _hoisted_46$5 = { class: "property-row" };
+const _hoisted_47$5 = ["onClick"];
+const _hoisted_48$5 = { class: "property-row" };
+const _hoisted_49$5 = { class: "icon-toggle-group" };
+const _hoisted_50$4 = ["onClick"];
+const _hoisted_51$4 = ["onClick"];
+const _hoisted_52$4 = ["onClick"];
+const _hoisted_53$4 = { class: "property-row" };
+const _hoisted_54$4 = ["onClick"];
+const _hoisted_55$4 = { class: "property-row" };
+const _hoisted_56$4 = ["onClick"];
+const _hoisted_57$4 = { class: "property-row" };
+const _hoisted_58$4 = { class: "property-row" };
+const _hoisted_59$4 = ["onClick"];
+const _hoisted_60$4 = { class: "property-row" };
+const _hoisted_61$4 = ["onClick"];
+const _hoisted_62$4 = { class: "property-row" };
+const _hoisted_63$2 = ["onClick"];
+const _hoisted_64$2 = { class: "property-row" };
+const _hoisted_65$2 = ["onClick"];
+const _hoisted_66$1 = { class: "property-row" };
+const _hoisted_67$1 = ["onClick"];
+const _hoisted_68$1 = { class: "property-row" };
+const _hoisted_69$1 = ["onClick"];
+const _hoisted_70$1 = { class: "property-row" };
+const _hoisted_71$1 = { class: "icon-toggle-group" };
+const _hoisted_72$1 = ["onClick"];
+const _hoisted_73$1 = ["onClick"];
+const _hoisted_74$1 = { class: "property-row" };
+const _hoisted_75$1 = ["onClick"];
+const _hoisted_76$1 = { class: "property-row" };
+const _hoisted_77$1 = ["onClick"];
+const _hoisted_78$1 = { class: "property-row" };
+const _hoisted_79 = ["onClick"];
+const _hoisted_80 = { class: "property-row" };
+const _hoisted_81 = { class: "icon-toggle-group wide" };
+const _hoisted_82 = ["onClick"];
+const _hoisted_83 = ["onClick"];
+const _hoisted_84 = ["onClick"];
+const _hoisted_85 = {
+  key: 0,
+  class: "no-effects"
+};
+const _hoisted_86 = { class: "prop-section" };
+const _hoisted_87 = { class: "expand-icon" };
+const _hoisted_88 = {
+  key: 0,
+  class: "section-content"
+};
+const _hoisted_89 = { class: "property-row checkbox-row" };
+const _hoisted_90 = ["checked"];
+const _hoisted_91 = { class: "property-row info-row" };
+const _hoisted_92 = { class: "info-value" };
 const _sfc_main$y = /* @__PURE__ */ defineComponent({
   __name: "ShapeProperties",
   props: {
@@ -21586,6 +23395,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     const emit = __emit;
     const store = useCompositorStore();
     const expandedSections = ref(["stroke", "fill", "trim"]);
+    const newEffectType = ref("");
     const shapeData = computed(() => {
       return props.layer.data || {
         pathData: "",
@@ -21706,6 +23516,177 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
         });
       }
     }
+    const pathEffects = computed(() => {
+      return (shapeData.value.pathEffects || []).sort((a, b) => a.order - b.order);
+    });
+    function getEffectDisplayName(type) {
+      const names = {
+        offsetPath: "Offset Path",
+        roughen: "Roughen",
+        wiggle: "Wiggle Path",
+        zigzag: "Zig Zag",
+        wave: "Wave"
+      };
+      return names[type] || type;
+    }
+    function generateId() {
+      return `effect_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    }
+    function createAnimatableProp(value, name) {
+      return {
+        id: generateId(),
+        name,
+        type: "number",
+        value,
+        animated: false,
+        keyframes: []
+      };
+    }
+    function addEffect() {
+      if (!newEffectType.value) return;
+      const effects = [...shapeData.value.pathEffects || []];
+      const newOrder = effects.length > 0 ? Math.max(...effects.map((e) => e.order)) + 1 : 0;
+      let newEffect;
+      switch (newEffectType.value) {
+        case "offsetPath":
+          newEffect = {
+            id: generateId(),
+            type: "offsetPath",
+            enabled: true,
+            order: newOrder,
+            amount: createAnimatableProp(0, "Offset Amount"),
+            lineJoin: "round",
+            miterLimit: createAnimatableProp(4, "Miter Limit")
+          };
+          break;
+        case "roughen":
+          newEffect = {
+            id: generateId(),
+            type: "roughen",
+            enabled: true,
+            order: newOrder,
+            size: createAnimatableProp(5, "Roughen Size"),
+            detail: createAnimatableProp(2, "Roughen Detail"),
+            seed: Math.floor(Math.random() * 99999)
+          };
+          break;
+        case "wiggle":
+          newEffect = {
+            id: generateId(),
+            type: "wiggle",
+            enabled: true,
+            order: newOrder,
+            size: createAnimatableProp(10, "Wiggle Size"),
+            detail: createAnimatableProp(3, "Wiggle Detail"),
+            temporalPhase: createAnimatableProp(0, "Temporal Phase"),
+            spatialPhase: createAnimatableProp(0, "Spatial Phase"),
+            correlation: createAnimatableProp(50, "Correlation"),
+            seed: Math.floor(Math.random() * 99999)
+          };
+          break;
+        case "zigzag":
+          newEffect = {
+            id: generateId(),
+            type: "zigzag",
+            enabled: true,
+            order: newOrder,
+            size: createAnimatableProp(10, "Zig Zag Size"),
+            ridgesPerSegment: createAnimatableProp(5, "Ridges Per Segment"),
+            pointType: "smooth"
+          };
+          break;
+        case "wave":
+          newEffect = {
+            id: generateId(),
+            type: "wave",
+            enabled: true,
+            order: newOrder,
+            amplitude: createAnimatableProp(10, "Wave Amplitude"),
+            frequency: createAnimatableProp(2, "Wave Frequency"),
+            phase: createAnimatableProp(0, "Wave Phase"),
+            waveType: "sine"
+          };
+          break;
+        default:
+          return;
+      }
+      effects.push(newEffect);
+      update("pathEffects", effects);
+      newEffectType.value = "";
+    }
+    function removeEffect(effectId) {
+      const effects = (shapeData.value.pathEffects || []).filter((e) => e.id !== effectId);
+      update("pathEffects", effects);
+    }
+    function toggleEffect(effectId) {
+      const effects = [...shapeData.value.pathEffects || []];
+      const effect = effects.find((e) => e.id === effectId);
+      if (effect) {
+        effect.enabled = !effect.enabled;
+        update("pathEffects", effects);
+      }
+    }
+    function moveEffect(index, direction) {
+      const effects = [...shapeData.value.pathEffects || []].sort((a, b) => a.order - b.order);
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= effects.length) return;
+      const tempOrder = effects[index].order;
+      effects[index].order = effects[newIndex].order;
+      effects[newIndex].order = tempOrder;
+      update("pathEffects", effects);
+    }
+    function getEffectPropValue(effect, propName) {
+      const prop = effect[propName];
+      if (prop === void 0) return 0;
+      if (typeof prop === "number") return prop;
+      return prop.value;
+    }
+    function isEffectPropAnimated(effect, propName) {
+      const prop = effect[propName];
+      if (!prop || typeof prop === "number") return false;
+      return prop.animated ?? false;
+    }
+    function updateEffectProp(effectId, propName, value) {
+      const effects = [...shapeData.value.pathEffects || []];
+      const effect = effects.find((e) => e.id === effectId);
+      if (!effect) return;
+      const prop = effect[propName];
+      if (prop && typeof prop === "object") {
+        prop.value = value;
+      } else {
+        effect[propName] = value;
+      }
+      update("pathEffects", effects);
+    }
+    function updateEffectMeta(effectId, key, value) {
+      const effects = [...shapeData.value.pathEffects || []];
+      const effect = effects.find((e) => e.id === effectId);
+      if (!effect) return;
+      effect[key] = value;
+      update("pathEffects", effects);
+    }
+    function toggleEffectKeyframe(effectId, propName) {
+      const effects = [...shapeData.value.pathEffects || []];
+      const effect = effects.find((e) => e.id === effectId);
+      if (!effect) return;
+      const prop = effect[propName];
+      if (!prop || typeof prop === "number") return;
+      const frame = store.currentFrame;
+      const hasKeyframeAtFrame = prop.keyframes.some((k) => k.frame === frame);
+      if (hasKeyframeAtFrame) {
+        prop.keyframes = prop.keyframes.filter((k) => k.frame !== frame);
+        prop.animated = prop.keyframes.length > 0;
+      } else {
+        prop.keyframes.push({
+          id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          frame,
+          value: prop.value,
+          easing: "linear"
+        });
+        prop.animated = true;
+      }
+      update("pathEffects", effects);
+    }
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$x, [
         createBaseVNode("div", _hoisted_2$x, [
@@ -21714,7 +23695,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
             onClick: _cache[1] || (_cache[1] = ($event) => toggleSection("stroke"))
           }, [
             createBaseVNode("span", _hoisted_3$x, toDisplayString(expandedSections.value.includes("stroke") ? "▼" : "►"), 1),
-            _cache[29] || (_cache[29] = createBaseVNode("span", { class: "section-title" }, "Stroke", -1)),
+            _cache[31] || (_cache[31] = createBaseVNode("span", { class: "section-title" }, "Stroke", -1)),
             createBaseVNode("input", {
               type: "checkbox",
               checked: hasStroke.value,
@@ -21726,7 +23707,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
           ]),
           expandedSections.value.includes("stroke") && hasStroke.value ? (openBlock(), createElementBlock("div", _hoisted_5$x, [
             createBaseVNode("div", _hoisted_6$x, [
-              _cache[30] || (_cache[30] = createBaseVNode("label", null, "Color", -1)),
+              _cache[32] || (_cache[32] = createBaseVNode("label", null, "Color", -1)),
               createBaseVNode("div", _hoisted_7$x, [
                 createBaseVNode("input", {
                   type: "color",
@@ -21736,7 +23717,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               ])
             ]),
             createBaseVNode("div", _hoisted_9$w, [
-              _cache[31] || (_cache[31] = createBaseVNode("label", null, "Opacity", -1)),
+              _cache[33] || (_cache[33] = createBaseVNode("label", null, "Opacity", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Stroke Opacity") ?? shapeData.value.strokeOpacity ?? 100,
                 "onUpdate:modelValue": _cache[3] || (_cache[3] = (v) => updateAnimatable("Stroke Opacity", v, "strokeOpacity")),
@@ -21750,7 +23731,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               }, "◆", 2)
             ]),
             createBaseVNode("div", _hoisted_10$w, [
-              _cache[32] || (_cache[32] = createBaseVNode("label", null, "Width", -1)),
+              _cache[34] || (_cache[34] = createBaseVNode("label", null, "Width", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Stroke Width") ?? shapeData.value.strokeWidth ?? 2,
                 "onUpdate:modelValue": _cache[5] || (_cache[5] = (v) => updateAnimatable("Stroke Width", v, "strokeWidth")),
@@ -21764,7 +23745,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               }, "◆", 2)
             ]),
             createBaseVNode("div", _hoisted_11$v, [
-              _cache[33] || (_cache[33] = createBaseVNode("label", null, "Line Cap", -1)),
+              _cache[35] || (_cache[35] = createBaseVNode("label", null, "Line Cap", -1)),
               createBaseVNode("div", _hoisted_12$t, [
                 createBaseVNode("button", {
                   class: normalizeClass({ active: strokeLineCap.value === "butt" }),
@@ -21784,7 +23765,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               ])
             ]),
             createBaseVNode("div", _hoisted_13$t, [
-              _cache[34] || (_cache[34] = createBaseVNode("label", null, "Line Join", -1)),
+              _cache[36] || (_cache[36] = createBaseVNode("label", null, "Line Join", -1)),
               createBaseVNode("div", _hoisted_14$q, [
                 createBaseVNode("button", {
                   class: normalizeClass({ active: strokeLineJoin.value === "miter" }),
@@ -21804,7 +23785,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               ])
             ]),
             createBaseVNode("div", _hoisted_15$p, [
-              _cache[35] || (_cache[35] = createBaseVNode("label", null, "Dashes", -1)),
+              _cache[37] || (_cache[37] = createBaseVNode("label", null, "Dashes", -1)),
               createBaseVNode("input", {
                 type: "text",
                 class: "dash-input",
@@ -21815,7 +23796,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               }, null, 40, _hoisted_16$p)
             ]),
             hasDashes.value ? (openBlock(), createElementBlock("div", _hoisted_17$n, [
-              _cache[36] || (_cache[36] = createBaseVNode("label", null, "Dash Offset", -1)),
+              _cache[38] || (_cache[38] = createBaseVNode("label", null, "Dash Offset", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Dash Offset") ?? shapeData.value.strokeDashOffset ?? 0,
                 "onUpdate:modelValue": _cache[13] || (_cache[13] = (v) => updateAnimatable("Dash Offset", v, "strokeDashOffset"))
@@ -21833,7 +23814,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
             onClick: _cache[16] || (_cache[16] = ($event) => toggleSection("fill"))
           }, [
             createBaseVNode("span", _hoisted_19$m, toDisplayString(expandedSections.value.includes("fill") ? "▼" : "►"), 1),
-            _cache[37] || (_cache[37] = createBaseVNode("span", { class: "section-title" }, "Fill", -1)),
+            _cache[39] || (_cache[39] = createBaseVNode("span", { class: "section-title" }, "Fill", -1)),
             createBaseVNode("input", {
               type: "checkbox",
               checked: hasFill.value,
@@ -21845,7 +23826,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
           ]),
           expandedSections.value.includes("fill") && hasFill.value ? (openBlock(), createElementBlock("div", _hoisted_21$m, [
             createBaseVNode("div", _hoisted_22$l, [
-              _cache[38] || (_cache[38] = createBaseVNode("label", null, "Color", -1)),
+              _cache[40] || (_cache[40] = createBaseVNode("label", null, "Color", -1)),
               createBaseVNode("div", _hoisted_23$k, [
                 createBaseVNode("input", {
                   type: "color",
@@ -21855,7 +23836,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               ])
             ]),
             createBaseVNode("div", _hoisted_25$g, [
-              _cache[39] || (_cache[39] = createBaseVNode("label", null, "Opacity", -1)),
+              _cache[41] || (_cache[41] = createBaseVNode("label", null, "Opacity", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Fill Opacity") ?? shapeData.value.fillOpacity ?? 100,
                 "onUpdate:modelValue": _cache[18] || (_cache[18] = (v) => updateAnimatable("Fill Opacity", v, "fillOpacity")),
@@ -21876,11 +23857,11 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
             onClick: _cache[20] || (_cache[20] = ($event) => toggleSection("trim"))
           }, [
             createBaseVNode("span", _hoisted_27$e, toDisplayString(expandedSections.value.includes("trim") ? "▼" : "►"), 1),
-            _cache[40] || (_cache[40] = createBaseVNode("span", { class: "section-title" }, "Trim Paths", -1))
+            _cache[42] || (_cache[42] = createBaseVNode("span", { class: "section-title" }, "Trim Paths", -1))
           ]),
           expandedSections.value.includes("trim") ? (openBlock(), createElementBlock("div", _hoisted_28$e, [
             createBaseVNode("div", _hoisted_29$e, [
-              _cache[41] || (_cache[41] = createBaseVNode("label", null, "Start", -1)),
+              _cache[43] || (_cache[43] = createBaseVNode("label", null, "Start", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Trim Start") ?? shapeData.value.trimStart ?? 0,
                 "onUpdate:modelValue": _cache[21] || (_cache[21] = (v) => updateAnimatable("Trim Start", v, "trimStart")),
@@ -21894,7 +23875,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               }, "◆", 2)
             ]),
             createBaseVNode("div", _hoisted_30$d, [
-              _cache[42] || (_cache[42] = createBaseVNode("label", null, "End", -1)),
+              _cache[44] || (_cache[44] = createBaseVNode("label", null, "End", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Trim End") ?? shapeData.value.trimEnd ?? 100,
                 "onUpdate:modelValue": _cache[23] || (_cache[23] = (v) => updateAnimatable("Trim End", v, "trimEnd")),
@@ -21908,7 +23889,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
               }, "◆", 2)
             ]),
             createBaseVNode("div", _hoisted_31$a, [
-              _cache[43] || (_cache[43] = createBaseVNode("label", null, "Offset", -1)),
+              _cache[45] || (_cache[45] = createBaseVNode("label", null, "Offset", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Trim Offset") ?? shapeData.value.trimOffset ?? 0,
                 "onUpdate:modelValue": _cache[25] || (_cache[25] = (v) => updateAnimatable("Trim Offset", v, "trimOffset")),
@@ -21926,25 +23907,319 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
         createBaseVNode("div", _hoisted_32$a, [
           createBaseVNode("div", {
             class: "section-header",
-            onClick: _cache[27] || (_cache[27] = ($event) => toggleSection("path"))
+            onClick: _cache[27] || (_cache[27] = ($event) => toggleSection("effects"))
           }, [
-            createBaseVNode("span", _hoisted_33$a, toDisplayString(expandedSections.value.includes("path") ? "▼" : "►"), 1),
-            _cache[44] || (_cache[44] = createBaseVNode("span", { class: "section-title" }, "Path", -1))
+            createBaseVNode("span", _hoisted_33$a, toDisplayString(expandedSections.value.includes("effects") ? "▼" : "►"), 1),
+            _cache[46] || (_cache[46] = createBaseVNode("span", { class: "section-title" }, "Path Effects", -1)),
+            pathEffects.value.length > 0 ? (openBlock(), createElementBlock("span", _hoisted_34$a, toDisplayString(pathEffects.value.length), 1)) : createCommentVNode("", true)
           ]),
-          expandedSections.value.includes("path") ? (openBlock(), createElementBlock("div", _hoisted_34$a, [
-            createBaseVNode("div", _hoisted_35$9, [
+          expandedSections.value.includes("effects") ? (openBlock(), createElementBlock("div", _hoisted_35$9, [
+            createBaseVNode("div", _hoisted_36$9, [
+              withDirectives(createBaseVNode("select", {
+                "onUpdate:modelValue": _cache[28] || (_cache[28] = ($event) => newEffectType.value = $event),
+                class: "effect-select"
+              }, [..._cache[47] || (_cache[47] = [
+                createStaticVNode('<option value="" data-v-3b6d48f0>Add Effect...</option><option value="offsetPath" data-v-3b6d48f0>Offset Path</option><option value="roughen" data-v-3b6d48f0>Roughen</option><option value="wiggle" data-v-3b6d48f0>Wiggle Path</option><option value="zigzag" data-v-3b6d48f0>Zig Zag</option><option value="wave" data-v-3b6d48f0>Wave</option>', 6)
+              ])], 512), [
+                [vModelSelect, newEffectType.value]
+              ]),
+              createBaseVNode("button", {
+                class: "add-btn",
+                onClick: addEffect,
+                disabled: !newEffectType.value
+              }, "+", 8, _hoisted_37$9)
+            ]),
+            (openBlock(true), createElementBlock(Fragment, null, renderList(pathEffects.value, (effect, index) => {
+              return openBlock(), createElementBlock("div", {
+                key: effect.id,
+                class: "effect-item"
+              }, [
+                createBaseVNode("div", _hoisted_38$9, [
+                  createBaseVNode("button", {
+                    class: "effect-toggle",
+                    onClick: ($event) => toggleEffect(effect.id)
+                  }, toDisplayString(effect.enabled ? "●" : "○"), 9, _hoisted_39$9),
+                  createBaseVNode("span", _hoisted_40$8, toDisplayString(getEffectDisplayName(effect.type)), 1),
+                  createBaseVNode("div", _hoisted_41$6, [
+                    createBaseVNode("button", {
+                      class: "effect-action",
+                      onClick: ($event) => moveEffect(index, -1),
+                      disabled: index === 0,
+                      title: "Move Up"
+                    }, "▲", 8, _hoisted_42$5),
+                    createBaseVNode("button", {
+                      class: "effect-action",
+                      onClick: ($event) => moveEffect(index, 1),
+                      disabled: index === pathEffects.value.length - 1,
+                      title: "Move Down"
+                    }, "▼", 8, _hoisted_43$5),
+                    createBaseVNode("button", {
+                      class: "effect-action delete",
+                      onClick: ($event) => removeEffect(effect.id),
+                      title: "Delete"
+                    }, "×", 8, _hoisted_44$5)
+                  ])
+                ]),
+                effect.enabled ? (openBlock(), createElementBlock("div", _hoisted_45$5, [
+                  effect.type === "offsetPath" ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
+                    createBaseVNode("div", _hoisted_46$5, [
+                      _cache[48] || (_cache[48] = createBaseVNode("label", null, "Amount", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "amount"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "amount", v),
+                        min: -100,
+                        max: 100,
+                        unit: "px"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "amount") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "amount")
+                      }, "◆", 10, _hoisted_47$5)
+                    ]),
+                    createBaseVNode("div", _hoisted_48$5, [
+                      _cache[49] || (_cache[49] = createBaseVNode("label", null, "Join", -1)),
+                      createBaseVNode("div", _hoisted_49$5, [
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.lineJoin === "miter" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "lineJoin", "miter")
+                        }, "⟨", 10, _hoisted_50$4),
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.lineJoin === "round" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "lineJoin", "round")
+                        }, "◠", 10, _hoisted_51$4),
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.lineJoin === "bevel" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "lineJoin", "bevel")
+                        }, "∠", 10, _hoisted_52$4)
+                      ])
+                    ])
+                  ], 64)) : effect.type === "roughen" ? (openBlock(), createElementBlock(Fragment, { key: 1 }, [
+                    createBaseVNode("div", _hoisted_53$4, [
+                      _cache[50] || (_cache[50] = createBaseVNode("label", null, "Size", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "size"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "size", v),
+                        min: 0,
+                        max: 100,
+                        unit: "px"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "size") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "size")
+                      }, "◆", 10, _hoisted_54$4)
+                    ]),
+                    createBaseVNode("div", _hoisted_55$4, [
+                      _cache[51] || (_cache[51] = createBaseVNode("label", null, "Detail", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "detail"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "detail", v),
+                        min: 1,
+                        max: 10,
+                        step: 1
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "detail") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "detail")
+                      }, "◆", 10, _hoisted_56$4)
+                    ]),
+                    createBaseVNode("div", _hoisted_57$4, [
+                      _cache[52] || (_cache[52] = createBaseVNode("label", null, "Seed", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: effect.seed ?? 12345,
+                        "onUpdate:modelValue": (v) => updateEffectMeta(effect.id, "seed", v),
+                        min: 0,
+                        max: 99999,
+                        step: 1
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"])
+                    ])
+                  ], 64)) : effect.type === "wiggle" ? (openBlock(), createElementBlock(Fragment, { key: 2 }, [
+                    createBaseVNode("div", _hoisted_58$4, [
+                      _cache[53] || (_cache[53] = createBaseVNode("label", null, "Size", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "size"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "size", v),
+                        min: 0,
+                        max: 100,
+                        unit: "px"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "size") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "size")
+                      }, "◆", 10, _hoisted_59$4)
+                    ]),
+                    createBaseVNode("div", _hoisted_60$4, [
+                      _cache[54] || (_cache[54] = createBaseVNode("label", null, "Detail", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "detail"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "detail", v),
+                        min: 1,
+                        max: 10,
+                        step: 1
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "detail") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "detail")
+                      }, "◆", 10, _hoisted_61$4)
+                    ]),
+                    createBaseVNode("div", _hoisted_62$4, [
+                      _cache[55] || (_cache[55] = createBaseVNode("label", null, "Correlation", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "correlation"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "correlation", v),
+                        min: 0,
+                        max: 100,
+                        unit: "%"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "correlation") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "correlation")
+                      }, "◆", 10, _hoisted_63$2)
+                    ]),
+                    createBaseVNode("div", _hoisted_64$2, [
+                      _cache[56] || (_cache[56] = createBaseVNode("label", null, "Temp Phase", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "temporalPhase"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "temporalPhase", v),
+                        min: 0,
+                        max: 360,
+                        unit: "°"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "temporalPhase") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "temporalPhase")
+                      }, "◆", 10, _hoisted_65$2)
+                    ])
+                  ], 64)) : effect.type === "zigzag" ? (openBlock(), createElementBlock(Fragment, { key: 3 }, [
+                    createBaseVNode("div", _hoisted_66$1, [
+                      _cache[57] || (_cache[57] = createBaseVNode("label", null, "Size", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "size"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "size", v),
+                        min: 0,
+                        max: 100,
+                        unit: "px"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "size") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "size")
+                      }, "◆", 10, _hoisted_67$1)
+                    ]),
+                    createBaseVNode("div", _hoisted_68$1, [
+                      _cache[58] || (_cache[58] = createBaseVNode("label", null, "Ridges", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "ridgesPerSegment"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "ridgesPerSegment", v),
+                        min: 1,
+                        max: 20,
+                        step: 1
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "ridgesPerSegment") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "ridgesPerSegment")
+                      }, "◆", 10, _hoisted_69$1)
+                    ]),
+                    createBaseVNode("div", _hoisted_70$1, [
+                      _cache[59] || (_cache[59] = createBaseVNode("label", null, "Points", -1)),
+                      createBaseVNode("div", _hoisted_71$1, [
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.pointType === "corner" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "pointType", "corner")
+                        }, "∠", 10, _hoisted_72$1),
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.pointType === "smooth" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "pointType", "smooth")
+                        }, "◠", 10, _hoisted_73$1)
+                      ])
+                    ])
+                  ], 64)) : effect.type === "wave" ? (openBlock(), createElementBlock(Fragment, { key: 4 }, [
+                    createBaseVNode("div", _hoisted_74$1, [
+                      _cache[60] || (_cache[60] = createBaseVNode("label", null, "Amplitude", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "amplitude"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "amplitude", v),
+                        min: 0,
+                        max: 100,
+                        unit: "px"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "amplitude") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "amplitude")
+                      }, "◆", 10, _hoisted_75$1)
+                    ]),
+                    createBaseVNode("div", _hoisted_76$1, [
+                      _cache[61] || (_cache[61] = createBaseVNode("label", null, "Frequency", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "frequency"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "frequency", v),
+                        min: 0.1,
+                        max: 20,
+                        step: 0.1
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "frequency") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "frequency")
+                      }, "◆", 10, _hoisted_77$1)
+                    ]),
+                    createBaseVNode("div", _hoisted_78$1, [
+                      _cache[62] || (_cache[62] = createBaseVNode("label", null, "Phase", -1)),
+                      createVNode(unref(ScrubableNumber), {
+                        modelValue: getEffectPropValue(effect, "phase"),
+                        "onUpdate:modelValue": (v) => updateEffectProp(effect.id, "phase", v),
+                        min: 0,
+                        max: 360,
+                        unit: "°"
+                      }, null, 8, ["modelValue", "onUpdate:modelValue"]),
+                      createBaseVNode("button", {
+                        class: normalizeClass(["keyframe-btn", { active: isEffectPropAnimated(effect, "phase") }]),
+                        onClick: ($event) => toggleEffectKeyframe(effect.id, "phase")
+                      }, "◆", 10, _hoisted_79)
+                    ]),
+                    createBaseVNode("div", _hoisted_80, [
+                      _cache[63] || (_cache[63] = createBaseVNode("label", null, "Type", -1)),
+                      createBaseVNode("div", _hoisted_81, [
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.waveType === "sine" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "waveType", "sine")
+                        }, "∿", 10, _hoisted_82),
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.waveType === "triangle" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "waveType", "triangle")
+                        }, "△", 10, _hoisted_83),
+                        createBaseVNode("button", {
+                          class: normalizeClass({ active: effect.waveType === "square" }),
+                          onClick: ($event) => updateEffectMeta(effect.id, "waveType", "square")
+                        }, "□", 10, _hoisted_84)
+                      ])
+                    ])
+                  ], 64)) : createCommentVNode("", true)
+                ])) : createCommentVNode("", true)
+              ]);
+            }), 128)),
+            pathEffects.value.length === 0 ? (openBlock(), createElementBlock("div", _hoisted_85, " No path effects. Use the dropdown above to add one. ")) : createCommentVNode("", true)
+          ])) : createCommentVNode("", true)
+        ]),
+        createBaseVNode("div", _hoisted_86, [
+          createBaseVNode("div", {
+            class: "section-header",
+            onClick: _cache[29] || (_cache[29] = ($event) => toggleSection("path"))
+          }, [
+            createBaseVNode("span", _hoisted_87, toDisplayString(expandedSections.value.includes("path") ? "▼" : "►"), 1),
+            _cache[64] || (_cache[64] = createBaseVNode("span", { class: "section-title" }, "Path", -1))
+          ]),
+          expandedSections.value.includes("path") ? (openBlock(), createElementBlock("div", _hoisted_88, [
+            createBaseVNode("div", _hoisted_89, [
               createBaseVNode("label", null, [
                 createBaseVNode("input", {
                   type: "checkbox",
                   checked: shapeData.value.closed,
-                  onChange: _cache[28] || (_cache[28] = ($event) => update("closed", $event.target.checked))
-                }, null, 40, _hoisted_36$9),
-                _cache[45] || (_cache[45] = createTextVNode(" Closed Path ", -1))
+                  onChange: _cache[30] || (_cache[30] = ($event) => update("closed", $event.target.checked))
+                }, null, 40, _hoisted_90),
+                _cache[65] || (_cache[65] = createTextVNode(" Closed Path ", -1))
               ])
             ]),
-            createBaseVNode("div", _hoisted_37$9, [
-              _cache[46] || (_cache[46] = createBaseVNode("span", { class: "info-label" }, "Points:", -1)),
-              createBaseVNode("span", _hoisted_38$9, toDisplayString(shapeData.value.controlPoints?.length || 0), 1)
+            createBaseVNode("div", _hoisted_91, [
+              _cache[66] || (_cache[66] = createBaseVNode("span", { class: "info-label" }, "Points:", -1)),
+              createBaseVNode("span", _hoisted_92, toDisplayString(shapeData.value.controlPoints?.length || 0), 1)
             ])
           ])) : createCommentVNode("", true)
         ])
@@ -21953,7 +24228,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ShapeProperties = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-1bc5b90e"]]);
+const ShapeProperties = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-3b6d48f0"]]);
 
 const _hoisted_1$w = { class: "video-properties" };
 const _hoisted_2$w = {
@@ -32462,6 +34737,71 @@ const TOOL_DEFINITIONS = [
       }
     }
   },
+  {
+    type: "function",
+    function: {
+      name: "vectorizeImage",
+      description: "Convert an image layer to vector spline paths. Creates one or more SplineLayer(s) with keyframeable control points that can be animated individually, by group, or as a whole layer. Ideal for logos, icons, and graphics.",
+      parameters: {
+        type: "object",
+        properties: {
+          sourceLayerId: {
+            type: "string",
+            description: "ID of the image layer to vectorize"
+          },
+          mode: {
+            type: "string",
+            enum: ["trace", "ai"],
+            description: 'Vectorization mode: "trace" (VTracer, fast, works on any image) or "ai" (StarVector, best for icons/logos)'
+          },
+          separateLayers: {
+            type: "boolean",
+            description: "Create separate layer for each path (default: true)"
+          },
+          groupByPath: {
+            type: "boolean",
+            description: "Assign group IDs to control points for group animation (default: true)"
+          },
+          autoGroupByRegion: {
+            type: "boolean",
+            description: "Auto-group points by quadrant region (default: false)"
+          },
+          enableAnimation: {
+            type: "boolean",
+            description: "Enable keyframe animation on created layers (default: true)"
+          },
+          traceOptions: {
+            type: "object",
+            description: 'VTracer-specific options (only used if mode is "trace")',
+            properties: {
+              colorMode: {
+                type: "string",
+                enum: ["color", "binary"],
+                description: 'Color mode: "color" for full color, "binary" for black & white'
+              },
+              filterSpeckle: {
+                type: "number",
+                description: "Filter speckle size (0-100, default 4)"
+              },
+              cornerThreshold: {
+                type: "number",
+                description: "Corner threshold in degrees (0-180, default 60)"
+              },
+              colorPrecision: {
+                type: "number",
+                description: "Color precision (1-10, default 6)"
+              },
+              layerDifference: {
+                type: "number",
+                description: "Layer difference threshold (1-256, default 16)"
+              }
+            }
+          }
+        },
+        required: ["sourceLayerId"]
+      }
+    }
+  },
   // ==========================================================================
   // UTILITY
   // ==========================================================================
@@ -32572,6 +34912,8 @@ async function executeToolCall(toolCall) {
       return executePlayPreview(context, args);
     case "decomposeImage":
       return executeDecomposeImage(context, args);
+    case "vectorizeImage":
+      return executeVectorizeImage(context, args);
     case "getLayerInfo":
       return executeGetLayerInfo(context, args);
     case "findLayers":
@@ -33138,6 +35480,132 @@ async function executeDecomposeImage(context, args) {
   return {
     layerIds: createdLayerIds,
     message: `Decomposed image into ${decomposedLayers.length} layers: ${decomposedLayers.map((l) => l.label).join(", ")}`
+  };
+}
+async function executeVectorizeImage(context, args) {
+  const { store } = context;
+  const {
+    sourceLayerId,
+    mode = "trace",
+    separateLayers = true,
+    groupByPath = true,
+    autoGroupByRegion = false,
+    enableAnimation = true,
+    traceOptions = {}
+  } = args;
+  const sourceLayer = store.getActiveCompLayers().find((l) => l.id === sourceLayerId);
+  if (!sourceLayer) {
+    throw new Error(`Source layer ${sourceLayerId} not found`);
+  }
+  if (sourceLayer.type !== "image" && sourceLayer.type !== "video" && sourceLayer.type !== "solid") {
+    throw new Error(`Layer ${sourceLayerId} must be an image, video, or solid layer`);
+  }
+  const layerData = sourceLayer.data;
+  let imageDataUrl;
+  if (layerData?.source) {
+    imageDataUrl = layerData.source;
+  } else if (layerData?.assetId) {
+    const asset = store.project?.assets[layerData.assetId];
+    if (!asset?.data) throw new Error("Asset data not found");
+    imageDataUrl = asset.data;
+  } else if (layerData?.url) {
+    imageDataUrl = layerData.url;
+  } else {
+    throw new Error("Source layer has no image source");
+  }
+  if (!imageDataUrl.startsWith("data:")) {
+    imageDataUrl = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => reject(new Error("Failed to load source image"));
+      img.src = imageDataUrl;
+    });
+  }
+  const vectorizeService = getVectorizeService();
+  const result = await vectorizeService.vectorize(
+    imageDataUrl,
+    {
+      mode,
+      traceOptions: {
+        colorMode: traceOptions.colorMode || "color",
+        filterSpeckle: traceOptions.filterSpeckle ?? 4,
+        cornerThreshold: traceOptions.cornerThreshold ?? 60,
+        colorPrecision: traceOptions.colorPrecision ?? 6,
+        layerDifference: traceOptions.layerDifference ?? 16
+      }
+    },
+    (stage, message) => {
+      console.log(`[AI Vectorize] ${stage}: ${message}`);
+    }
+  );
+  let paths = filterSmallPaths(result.paths, 2);
+  paths = normalizeControlPoints(paths, {
+    groupByPath,
+    prefix: "vec"
+  });
+  const createdLayerIds = [];
+  if (separateLayers) {
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      let controlPoints = path.controlPoints;
+      if (autoGroupByRegion) {
+        controlPoints = autoGroupPoints(controlPoints, { method: "quadrant" });
+      }
+      const layer = createLayer(store, "spline", `Vector Path ${i + 1}`);
+      if (layer.data) {
+        Object.assign(layer.data, {
+          controlPoints,
+          closed: path.closed,
+          stroke: path.stroke || "#00ff00",
+          strokeWidth: 2,
+          fill: path.fill || "",
+          animated: enableAnimation
+        });
+      }
+      createdLayerIds.push(layer.id);
+    }
+  } else {
+    const allPoints = [];
+    let pointIdx = 0;
+    for (let pathIdx = 0; pathIdx < paths.length; pathIdx++) {
+      const path = paths[pathIdx];
+      for (const cp of path.controlPoints) {
+        allPoints.push({
+          ...cp,
+          id: `vec_${pointIdx++}`,
+          group: `path_${pathIdx}`
+        });
+      }
+    }
+    let controlPoints = allPoints;
+    if (autoGroupByRegion) {
+      controlPoints = autoGroupPoints(allPoints, { method: "quadrant" });
+    }
+    const layer = createLayer(store, "spline", "Vectorized Paths");
+    if (layer.data) {
+      Object.assign(layer.data, {
+        controlPoints,
+        closed: false,
+        stroke: "#00ff00",
+        strokeWidth: 2,
+        fill: "",
+        animated: enableAnimation
+      });
+    }
+    createdLayerIds.push(layer.id);
+  }
+  store.pushHistory();
+  return {
+    layerIds: createdLayerIds,
+    message: `Vectorized image into ${createdLayerIds.length} spline layer(s) with ${result.pathCount} paths`
   };
 }
 function executeGetLayerInfo(context, args) {
@@ -37982,6 +40450,3928 @@ class TextLayer extends BaseLayer {
   }
 }
 
+/**
+ * splaytree v3.1.2
+ * Fast Splay tree for Node and browser
+ *
+ * @author Alexander Milevski <info@w8r.name>
+ * @license MIT
+ * @preserve
+ */
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
+
+var Node = /** @class */ (function () {
+    function Node(key, data) {
+        this.next = null;
+        this.key = key;
+        this.data = data;
+        this.left = null;
+        this.right = null;
+    }
+    return Node;
+}());
+
+/* follows "An implementation of top-down splaying"
+ * by D. Sleator <sleator@cs.cmu.edu> March 1992
+ */
+function DEFAULT_COMPARE(a, b) {
+    return a > b ? 1 : a < b ? -1 : 0;
+}
+/**
+ * Simple top down splay, not requiring i to be in the tree t.
+ */
+function splay(i, t, comparator) {
+    var N = new Node(null, null);
+    var l = N;
+    var r = N;
+    while (true) {
+        var cmp = comparator(i, t.key);
+        //if (i < t.key) {
+        if (cmp < 0) {
+            if (t.left === null)
+                break;
+            //if (i < t.left.key) {
+            if (comparator(i, t.left.key) < 0) {
+                var y = t.left; /* rotate right */
+                t.left = y.right;
+                y.right = t;
+                t = y;
+                if (t.left === null)
+                    break;
+            }
+            r.left = t; /* link right */
+            r = t;
+            t = t.left;
+            //} else if (i > t.key) {
+        }
+        else if (cmp > 0) {
+            if (t.right === null)
+                break;
+            //if (i > t.right.key) {
+            if (comparator(i, t.right.key) > 0) {
+                var y = t.right; /* rotate left */
+                t.right = y.left;
+                y.left = t;
+                t = y;
+                if (t.right === null)
+                    break;
+            }
+            l.right = t; /* link left */
+            l = t;
+            t = t.right;
+        }
+        else
+            break;
+    }
+    /* assemble */
+    l.right = t.left;
+    r.left = t.right;
+    t.left = N.right;
+    t.right = N.left;
+    return t;
+}
+function insert(i, data, t, comparator) {
+    var node = new Node(i, data);
+    if (t === null) {
+        node.left = node.right = null;
+        return node;
+    }
+    t = splay(i, t, comparator);
+    var cmp = comparator(i, t.key);
+    if (cmp < 0) {
+        node.left = t.left;
+        node.right = t;
+        t.left = null;
+    }
+    else if (cmp >= 0) {
+        node.right = t.right;
+        node.left = t;
+        t.right = null;
+    }
+    return node;
+}
+function split(key, v, comparator) {
+    var left = null;
+    var right = null;
+    if (v) {
+        v = splay(key, v, comparator);
+        var cmp = comparator(v.key, key);
+        if (cmp === 0) {
+            left = v.left;
+            right = v.right;
+        }
+        else if (cmp < 0) {
+            right = v.right;
+            v.right = null;
+            left = v;
+        }
+        else {
+            left = v.left;
+            v.left = null;
+            right = v;
+        }
+    }
+    return { left: left, right: right };
+}
+function merge(left, right, comparator) {
+    if (right === null)
+        return left;
+    if (left === null)
+        return right;
+    right = splay(left.key, right, comparator);
+    right.left = left;
+    return right;
+}
+/**
+ * Prints level of the tree
+ */
+function printRow(root, prefix, isTail, out, printNode) {
+    if (root) {
+        out("" + prefix + (isTail ? '└── ' : '├── ') + printNode(root) + "\n");
+        var indent = prefix + (isTail ? '    ' : '│   ');
+        if (root.left)
+            printRow(root.left, indent, false, out, printNode);
+        if (root.right)
+            printRow(root.right, indent, true, out, printNode);
+    }
+}
+var Tree = /** @class */ (function () {
+    function Tree(comparator) {
+        if (comparator === void 0) { comparator = DEFAULT_COMPARE; }
+        this._root = null;
+        this._size = 0;
+        this._comparator = comparator;
+    }
+    /**
+     * Inserts a key, allows duplicates
+     */
+    Tree.prototype.insert = function (key, data) {
+        this._size++;
+        return this._root = insert(key, data, this._root, this._comparator);
+    };
+    /**
+     * Adds a key, if it is not present in the tree
+     */
+    Tree.prototype.add = function (key, data) {
+        var node = new Node(key, data);
+        if (this._root === null) {
+            node.left = node.right = null;
+            this._size++;
+            this._root = node;
+        }
+        var comparator = this._comparator;
+        var t = splay(key, this._root, comparator);
+        var cmp = comparator(key, t.key);
+        if (cmp === 0)
+            this._root = t;
+        else {
+            if (cmp < 0) {
+                node.left = t.left;
+                node.right = t;
+                t.left = null;
+            }
+            else if (cmp > 0) {
+                node.right = t.right;
+                node.left = t;
+                t.right = null;
+            }
+            this._size++;
+            this._root = node;
+        }
+        return this._root;
+    };
+    /**
+     * @param  {Key} key
+     * @return {Node|null}
+     */
+    Tree.prototype.remove = function (key) {
+        this._root = this._remove(key, this._root, this._comparator);
+    };
+    /**
+     * Deletes i from the tree if it's there
+     */
+    Tree.prototype._remove = function (i, t, comparator) {
+        var x;
+        if (t === null)
+            return null;
+        t = splay(i, t, comparator);
+        var cmp = comparator(i, t.key);
+        if (cmp === 0) { /* found it */
+            if (t.left === null) {
+                x = t.right;
+            }
+            else {
+                x = splay(i, t.left, comparator);
+                x.right = t.right;
+            }
+            this._size--;
+            return x;
+        }
+        return t; /* It wasn't there */
+    };
+    /**
+     * Removes and returns the node with smallest key
+     */
+    Tree.prototype.pop = function () {
+        var node = this._root;
+        if (node) {
+            while (node.left)
+                node = node.left;
+            this._root = splay(node.key, this._root, this._comparator);
+            this._root = this._remove(node.key, this._root, this._comparator);
+            return { key: node.key, data: node.data };
+        }
+        return null;
+    };
+    /**
+     * Find without splaying
+     */
+    Tree.prototype.findStatic = function (key) {
+        var current = this._root;
+        var compare = this._comparator;
+        while (current) {
+            var cmp = compare(key, current.key);
+            if (cmp === 0)
+                return current;
+            else if (cmp < 0)
+                current = current.left;
+            else
+                current = current.right;
+        }
+        return null;
+    };
+    Tree.prototype.find = function (key) {
+        if (this._root) {
+            this._root = splay(key, this._root, this._comparator);
+            if (this._comparator(key, this._root.key) !== 0)
+                return null;
+        }
+        return this._root;
+    };
+    Tree.prototype.contains = function (key) {
+        var current = this._root;
+        var compare = this._comparator;
+        while (current) {
+            var cmp = compare(key, current.key);
+            if (cmp === 0)
+                return true;
+            else if (cmp < 0)
+                current = current.left;
+            else
+                current = current.right;
+        }
+        return false;
+    };
+    Tree.prototype.forEach = function (visitor, ctx) {
+        var current = this._root;
+        var Q = []; /* Initialize stack s */
+        var done = false;
+        while (!done) {
+            if (current !== null) {
+                Q.push(current);
+                current = current.left;
+            }
+            else {
+                if (Q.length !== 0) {
+                    current = Q.pop();
+                    visitor.call(ctx, current);
+                    current = current.right;
+                }
+                else
+                    done = true;
+            }
+        }
+        return this;
+    };
+    /**
+     * Walk key range from `low` to `high`. Stops if `fn` returns a value.
+     */
+    Tree.prototype.range = function (low, high, fn, ctx) {
+        var Q = [];
+        var compare = this._comparator;
+        var node = this._root;
+        var cmp;
+        while (Q.length !== 0 || node) {
+            if (node) {
+                Q.push(node);
+                node = node.left;
+            }
+            else {
+                node = Q.pop();
+                cmp = compare(node.key, high);
+                if (cmp > 0) {
+                    break;
+                }
+                else if (compare(node.key, low) >= 0) {
+                    if (fn.call(ctx, node))
+                        return this; // stop if smth is returned
+                }
+                node = node.right;
+            }
+        }
+        return this;
+    };
+    /**
+     * Returns array of keys
+     */
+    Tree.prototype.keys = function () {
+        var keys = [];
+        this.forEach(function (_a) {
+            var key = _a.key;
+            return keys.push(key);
+        });
+        return keys;
+    };
+    /**
+     * Returns array of all the data in the nodes
+     */
+    Tree.prototype.values = function () {
+        var values = [];
+        this.forEach(function (_a) {
+            var data = _a.data;
+            return values.push(data);
+        });
+        return values;
+    };
+    Tree.prototype.min = function () {
+        if (this._root)
+            return this.minNode(this._root).key;
+        return null;
+    };
+    Tree.prototype.max = function () {
+        if (this._root)
+            return this.maxNode(this._root).key;
+        return null;
+    };
+    Tree.prototype.minNode = function (t) {
+        if (t === void 0) { t = this._root; }
+        if (t)
+            while (t.left)
+                t = t.left;
+        return t;
+    };
+    Tree.prototype.maxNode = function (t) {
+        if (t === void 0) { t = this._root; }
+        if (t)
+            while (t.right)
+                t = t.right;
+        return t;
+    };
+    /**
+     * Returns node at given index
+     */
+    Tree.prototype.at = function (index) {
+        var current = this._root;
+        var done = false;
+        var i = 0;
+        var Q = [];
+        while (!done) {
+            if (current) {
+                Q.push(current);
+                current = current.left;
+            }
+            else {
+                if (Q.length > 0) {
+                    current = Q.pop();
+                    if (i === index)
+                        return current;
+                    i++;
+                    current = current.right;
+                }
+                else
+                    done = true;
+            }
+        }
+        return null;
+    };
+    Tree.prototype.next = function (d) {
+        var root = this._root;
+        var successor = null;
+        if (d.right) {
+            successor = d.right;
+            while (successor.left)
+                successor = successor.left;
+            return successor;
+        }
+        var comparator = this._comparator;
+        while (root) {
+            var cmp = comparator(d.key, root.key);
+            if (cmp === 0)
+                break;
+            else if (cmp < 0) {
+                successor = root;
+                root = root.left;
+            }
+            else
+                root = root.right;
+        }
+        return successor;
+    };
+    Tree.prototype.prev = function (d) {
+        var root = this._root;
+        var predecessor = null;
+        if (d.left !== null) {
+            predecessor = d.left;
+            while (predecessor.right)
+                predecessor = predecessor.right;
+            return predecessor;
+        }
+        var comparator = this._comparator;
+        while (root) {
+            var cmp = comparator(d.key, root.key);
+            if (cmp === 0)
+                break;
+            else if (cmp < 0)
+                root = root.left;
+            else {
+                predecessor = root;
+                root = root.right;
+            }
+        }
+        return predecessor;
+    };
+    Tree.prototype.clear = function () {
+        this._root = null;
+        this._size = 0;
+        return this;
+    };
+    Tree.prototype.toList = function () {
+        return toList(this._root);
+    };
+    /**
+     * Bulk-load items. Both array have to be same size
+     */
+    Tree.prototype.load = function (keys, values, presort) {
+        if (values === void 0) { values = []; }
+        if (presort === void 0) { presort = false; }
+        var size = keys.length;
+        var comparator = this._comparator;
+        // sort if needed
+        if (presort)
+            sort(keys, values, 0, size - 1, comparator);
+        if (this._root === null) { // empty tree
+            this._root = loadRecursive(keys, values, 0, size);
+            this._size = size;
+        }
+        else { // that re-builds the whole tree from two in-order traversals
+            var mergedList = mergeLists(this.toList(), createList(keys, values), comparator);
+            size = this._size + size;
+            this._root = sortedListToBST({ head: mergedList }, 0, size);
+        }
+        return this;
+    };
+    Tree.prototype.isEmpty = function () { return this._root === null; };
+    Object.defineProperty(Tree.prototype, "size", {
+        get: function () { return this._size; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Tree.prototype, "root", {
+        get: function () { return this._root; },
+        enumerable: true,
+        configurable: true
+    });
+    Tree.prototype.toString = function (printNode) {
+        if (printNode === void 0) { printNode = function (n) { return String(n.key); }; }
+        var out = [];
+        printRow(this._root, '', true, function (v) { return out.push(v); }, printNode);
+        return out.join('');
+    };
+    Tree.prototype.update = function (key, newKey, newData) {
+        var comparator = this._comparator;
+        var _a = split(key, this._root, comparator), left = _a.left, right = _a.right;
+        if (comparator(key, newKey) < 0) {
+            right = insert(newKey, newData, right, comparator);
+        }
+        else {
+            left = insert(newKey, newData, left, comparator);
+        }
+        this._root = merge(left, right, comparator);
+    };
+    Tree.prototype.split = function (key) {
+        return split(key, this._root, this._comparator);
+    };
+    Tree.prototype[Symbol.iterator] = function () {
+        var current, Q, done;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    current = this._root;
+                    Q = [];
+                    done = false;
+                    _a.label = 1;
+                case 1:
+                    if (!!done) return [3 /*break*/, 6];
+                    if (!(current !== null)) return [3 /*break*/, 2];
+                    Q.push(current);
+                    current = current.left;
+                    return [3 /*break*/, 5];
+                case 2:
+                    if (!(Q.length !== 0)) return [3 /*break*/, 4];
+                    current = Q.pop();
+                    return [4 /*yield*/, current];
+                case 3:
+                    _a.sent();
+                    current = current.right;
+                    return [3 /*break*/, 5];
+                case 4:
+                    done = true;
+                    _a.label = 5;
+                case 5: return [3 /*break*/, 1];
+                case 6: return [2 /*return*/];
+            }
+        });
+    };
+    return Tree;
+}());
+function loadRecursive(keys, values, start, end) {
+    var size = end - start;
+    if (size > 0) {
+        var middle = start + Math.floor(size / 2);
+        var key = keys[middle];
+        var data = values[middle];
+        var node = new Node(key, data);
+        node.left = loadRecursive(keys, values, start, middle);
+        node.right = loadRecursive(keys, values, middle + 1, end);
+        return node;
+    }
+    return null;
+}
+function createList(keys, values) {
+    var head = new Node(null, null);
+    var p = head;
+    for (var i = 0; i < keys.length; i++) {
+        p = p.next = new Node(keys[i], values[i]);
+    }
+    p.next = null;
+    return head.next;
+}
+function toList(root) {
+    var current = root;
+    var Q = [];
+    var done = false;
+    var head = new Node(null, null);
+    var p = head;
+    while (!done) {
+        if (current) {
+            Q.push(current);
+            current = current.left;
+        }
+        else {
+            if (Q.length > 0) {
+                current = p = p.next = Q.pop();
+                current = current.right;
+            }
+            else
+                done = true;
+        }
+    }
+    p.next = null; // that'll work even if the tree was empty
+    return head.next;
+}
+function sortedListToBST(list, start, end) {
+    var size = end - start;
+    if (size > 0) {
+        var middle = start + Math.floor(size / 2);
+        var left = sortedListToBST(list, start, middle);
+        var root = list.head;
+        root.left = left;
+        list.head = list.head.next;
+        root.right = sortedListToBST(list, middle + 1, end);
+        return root;
+    }
+    return null;
+}
+function mergeLists(l1, l2, compare) {
+    var head = new Node(null, null); // dummy
+    var p = head;
+    var p1 = l1;
+    var p2 = l2;
+    while (p1 !== null && p2 !== null) {
+        if (compare(p1.key, p2.key) < 0) {
+            p.next = p1;
+            p1 = p1.next;
+        }
+        else {
+            p.next = p2;
+            p2 = p2.next;
+        }
+        p = p.next;
+    }
+    if (p1 !== null) {
+        p.next = p1;
+    }
+    else if (p2 !== null) {
+        p.next = p2;
+    }
+    return head.next;
+}
+function sort(keys, values, left, right, compare) {
+    if (left >= right)
+        return;
+    var pivot = keys[(left + right) >> 1];
+    var i = left - 1;
+    var j = right + 1;
+    while (true) {
+        do
+            i++;
+        while (compare(keys[i], pivot) < 0);
+        do
+            j--;
+        while (compare(keys[j], pivot) > 0);
+        if (i >= j)
+            break;
+        var tmp = keys[i];
+        keys[i] = keys[j];
+        keys[j] = tmp;
+        tmp = values[i];
+        values[i] = values[j];
+        values[j] = tmp;
+    }
+    sort(keys, values, left, j, compare);
+    sort(keys, values, j + 1, right, compare);
+}
+
+const epsilon$1 = 1.1102230246251565e-16;
+const splitter = 134217729;
+const resulterrbound = (3 + 8 * epsilon$1) * epsilon$1;
+
+// fast_expansion_sum_zeroelim routine from oritinal code
+function sum(elen, e, flen, f, h) {
+    let Q, Qnew, hh, bvirt;
+    let enow = e[0];
+    let fnow = f[0];
+    let eindex = 0;
+    let findex = 0;
+    if ((fnow > enow) === (fnow > -enow)) {
+        Q = enow;
+        enow = e[++eindex];
+    } else {
+        Q = fnow;
+        fnow = f[++findex];
+    }
+    let hindex = 0;
+    if (eindex < elen && findex < flen) {
+        if ((fnow > enow) === (fnow > -enow)) {
+            Qnew = enow + Q;
+            hh = Q - (Qnew - enow);
+            enow = e[++eindex];
+        } else {
+            Qnew = fnow + Q;
+            hh = Q - (Qnew - fnow);
+            fnow = f[++findex];
+        }
+        Q = Qnew;
+        if (hh !== 0) {
+            h[hindex++] = hh;
+        }
+        while (eindex < elen && findex < flen) {
+            if ((fnow > enow) === (fnow > -enow)) {
+                Qnew = Q + enow;
+                bvirt = Qnew - Q;
+                hh = Q - (Qnew - bvirt) + (enow - bvirt);
+                enow = e[++eindex];
+            } else {
+                Qnew = Q + fnow;
+                bvirt = Qnew - Q;
+                hh = Q - (Qnew - bvirt) + (fnow - bvirt);
+                fnow = f[++findex];
+            }
+            Q = Qnew;
+            if (hh !== 0) {
+                h[hindex++] = hh;
+            }
+        }
+    }
+    while (eindex < elen) {
+        Qnew = Q + enow;
+        bvirt = Qnew - Q;
+        hh = Q - (Qnew - bvirt) + (enow - bvirt);
+        enow = e[++eindex];
+        Q = Qnew;
+        if (hh !== 0) {
+            h[hindex++] = hh;
+        }
+    }
+    while (findex < flen) {
+        Qnew = Q + fnow;
+        bvirt = Qnew - Q;
+        hh = Q - (Qnew - bvirt) + (fnow - bvirt);
+        fnow = f[++findex];
+        Q = Qnew;
+        if (hh !== 0) {
+            h[hindex++] = hh;
+        }
+    }
+    if (Q !== 0 || hindex === 0) {
+        h[hindex++] = Q;
+    }
+    return hindex;
+}
+
+function estimate(elen, e) {
+    let Q = e[0];
+    for (let i = 1; i < elen; i++) Q += e[i];
+    return Q;
+}
+
+function vec(n) {
+    return new Float64Array(n);
+}
+
+const ccwerrboundA = (3 + 16 * epsilon$1) * epsilon$1;
+const ccwerrboundB = (2 + 12 * epsilon$1) * epsilon$1;
+const ccwerrboundC = (9 + 64 * epsilon$1) * epsilon$1 * epsilon$1;
+
+const B = vec(4);
+const C1 = vec(8);
+const C2 = vec(12);
+const D = vec(16);
+const u = vec(4);
+
+function orient2dadapt(ax, ay, bx, by, cx, cy, detsum) {
+    let acxtail, acytail, bcxtail, bcytail;
+    let bvirt, c, ahi, alo, bhi, blo, _i, _j, _0, s1, s0, t1, t0, u3;
+
+    const acx = ax - cx;
+    const bcx = bx - cx;
+    const acy = ay - cy;
+    const bcy = by - cy;
+
+    s1 = acx * bcy;
+    c = splitter * acx;
+    ahi = c - (c - acx);
+    alo = acx - ahi;
+    c = splitter * bcy;
+    bhi = c - (c - bcy);
+    blo = bcy - bhi;
+    s0 = alo * blo - (s1 - ahi * bhi - alo * bhi - ahi * blo);
+    t1 = acy * bcx;
+    c = splitter * acy;
+    ahi = c - (c - acy);
+    alo = acy - ahi;
+    c = splitter * bcx;
+    bhi = c - (c - bcx);
+    blo = bcx - bhi;
+    t0 = alo * blo - (t1 - ahi * bhi - alo * bhi - ahi * blo);
+    _i = s0 - t0;
+    bvirt = s0 - _i;
+    B[0] = s0 - (_i + bvirt) + (bvirt - t0);
+    _j = s1 + _i;
+    bvirt = _j - s1;
+    _0 = s1 - (_j - bvirt) + (_i - bvirt);
+    _i = _0 - t1;
+    bvirt = _0 - _i;
+    B[1] = _0 - (_i + bvirt) + (bvirt - t1);
+    u3 = _j + _i;
+    bvirt = u3 - _j;
+    B[2] = _j - (u3 - bvirt) + (_i - bvirt);
+    B[3] = u3;
+
+    let det = estimate(4, B);
+    let errbound = ccwerrboundB * detsum;
+    if (det >= errbound || -det >= errbound) {
+        return det;
+    }
+
+    bvirt = ax - acx;
+    acxtail = ax - (acx + bvirt) + (bvirt - cx);
+    bvirt = bx - bcx;
+    bcxtail = bx - (bcx + bvirt) + (bvirt - cx);
+    bvirt = ay - acy;
+    acytail = ay - (acy + bvirt) + (bvirt - cy);
+    bvirt = by - bcy;
+    bcytail = by - (bcy + bvirt) + (bvirt - cy);
+
+    if (acxtail === 0 && acytail === 0 && bcxtail === 0 && bcytail === 0) {
+        return det;
+    }
+
+    errbound = ccwerrboundC * detsum + resulterrbound * Math.abs(det);
+    det += (acx * bcytail + bcy * acxtail) - (acy * bcxtail + bcx * acytail);
+    if (det >= errbound || -det >= errbound) return det;
+
+    s1 = acxtail * bcy;
+    c = splitter * acxtail;
+    ahi = c - (c - acxtail);
+    alo = acxtail - ahi;
+    c = splitter * bcy;
+    bhi = c - (c - bcy);
+    blo = bcy - bhi;
+    s0 = alo * blo - (s1 - ahi * bhi - alo * bhi - ahi * blo);
+    t1 = acytail * bcx;
+    c = splitter * acytail;
+    ahi = c - (c - acytail);
+    alo = acytail - ahi;
+    c = splitter * bcx;
+    bhi = c - (c - bcx);
+    blo = bcx - bhi;
+    t0 = alo * blo - (t1 - ahi * bhi - alo * bhi - ahi * blo);
+    _i = s0 - t0;
+    bvirt = s0 - _i;
+    u[0] = s0 - (_i + bvirt) + (bvirt - t0);
+    _j = s1 + _i;
+    bvirt = _j - s1;
+    _0 = s1 - (_j - bvirt) + (_i - bvirt);
+    _i = _0 - t1;
+    bvirt = _0 - _i;
+    u[1] = _0 - (_i + bvirt) + (bvirt - t1);
+    u3 = _j + _i;
+    bvirt = u3 - _j;
+    u[2] = _j - (u3 - bvirt) + (_i - bvirt);
+    u[3] = u3;
+    const C1len = sum(4, B, 4, u, C1);
+
+    s1 = acx * bcytail;
+    c = splitter * acx;
+    ahi = c - (c - acx);
+    alo = acx - ahi;
+    c = splitter * bcytail;
+    bhi = c - (c - bcytail);
+    blo = bcytail - bhi;
+    s0 = alo * blo - (s1 - ahi * bhi - alo * bhi - ahi * blo);
+    t1 = acy * bcxtail;
+    c = splitter * acy;
+    ahi = c - (c - acy);
+    alo = acy - ahi;
+    c = splitter * bcxtail;
+    bhi = c - (c - bcxtail);
+    blo = bcxtail - bhi;
+    t0 = alo * blo - (t1 - ahi * bhi - alo * bhi - ahi * blo);
+    _i = s0 - t0;
+    bvirt = s0 - _i;
+    u[0] = s0 - (_i + bvirt) + (bvirt - t0);
+    _j = s1 + _i;
+    bvirt = _j - s1;
+    _0 = s1 - (_j - bvirt) + (_i - bvirt);
+    _i = _0 - t1;
+    bvirt = _0 - _i;
+    u[1] = _0 - (_i + bvirt) + (bvirt - t1);
+    u3 = _j + _i;
+    bvirt = u3 - _j;
+    u[2] = _j - (u3 - bvirt) + (_i - bvirt);
+    u[3] = u3;
+    const C2len = sum(C1len, C1, 4, u, C2);
+
+    s1 = acxtail * bcytail;
+    c = splitter * acxtail;
+    ahi = c - (c - acxtail);
+    alo = acxtail - ahi;
+    c = splitter * bcytail;
+    bhi = c - (c - bcytail);
+    blo = bcytail - bhi;
+    s0 = alo * blo - (s1 - ahi * bhi - alo * bhi - ahi * blo);
+    t1 = acytail * bcxtail;
+    c = splitter * acytail;
+    ahi = c - (c - acytail);
+    alo = acytail - ahi;
+    c = splitter * bcxtail;
+    bhi = c - (c - bcxtail);
+    blo = bcxtail - bhi;
+    t0 = alo * blo - (t1 - ahi * bhi - alo * bhi - ahi * blo);
+    _i = s0 - t0;
+    bvirt = s0 - _i;
+    u[0] = s0 - (_i + bvirt) + (bvirt - t0);
+    _j = s1 + _i;
+    bvirt = _j - s1;
+    _0 = s1 - (_j - bvirt) + (_i - bvirt);
+    _i = _0 - t1;
+    bvirt = _0 - _i;
+    u[1] = _0 - (_i + bvirt) + (bvirt - t1);
+    u3 = _j + _i;
+    bvirt = u3 - _j;
+    u[2] = _j - (u3 - bvirt) + (_i - bvirt);
+    u[3] = u3;
+    const Dlen = sum(C2len, C2, 4, u, D);
+
+    return D[Dlen - 1];
+}
+
+function orient2d(ax, ay, bx, by, cx, cy) {
+    const detleft = (ay - cy) * (bx - cx);
+    const detright = (ax - cx) * (by - cy);
+    const det = detleft - detright;
+
+    const detsum = Math.abs(detleft + detright);
+    if (Math.abs(det) >= ccwerrboundA * detsum) return det;
+
+    return -orient2dadapt(ax, ay, bx, by, cx, cy, detsum);
+}
+
+var define_process_default = { };
+var define_process_env_default = {};
+const isInBbox = (bbox, point) => {
+  return bbox.ll.x <= point.x && point.x <= bbox.ur.x && bbox.ll.y <= point.y && point.y <= bbox.ur.y;
+};
+const getBboxOverlap = (b1, b2) => {
+  if (b2.ur.x < b1.ll.x || b1.ur.x < b2.ll.x || b2.ur.y < b1.ll.y || b1.ur.y < b2.ll.y) return null;
+  const lowerX = b1.ll.x < b2.ll.x ? b2.ll.x : b1.ll.x;
+  const upperX = b1.ur.x < b2.ur.x ? b1.ur.x : b2.ur.x;
+  const lowerY = b1.ll.y < b2.ll.y ? b2.ll.y : b1.ll.y;
+  const upperY = b1.ur.y < b2.ur.y ? b1.ur.y : b2.ur.y;
+  return {
+    ll: {
+      x: lowerX,
+      y: lowerY
+    },
+    ur: {
+      x: upperX,
+      y: upperY
+    }
+  };
+};
+let epsilon = Number.EPSILON;
+if (epsilon === void 0) epsilon = Math.pow(2, -52);
+const EPSILON_SQ = epsilon * epsilon;
+const cmp = (a, b) => {
+  if (-epsilon < a && a < epsilon) {
+    if (-epsilon < b && b < epsilon) {
+      return 0;
+    }
+  }
+  const ab = a - b;
+  if (ab * ab < EPSILON_SQ * a * b) {
+    return 0;
+  }
+  return a < b ? -1 : 1;
+};
+class PtRounder {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.xRounder = new CoordRounder();
+    this.yRounder = new CoordRounder();
+  }
+  round(x, y) {
+    return {
+      x: this.xRounder.round(x),
+      y: this.yRounder.round(y)
+    };
+  }
+}
+class CoordRounder {
+  constructor() {
+    this.tree = new Tree();
+    this.round(0);
+  }
+  // Note: this can rounds input values backwards or forwards.
+  //       You might ask, why not restrict this to just rounding
+  //       forwards? Wouldn't that allow left endpoints to always
+  //       remain left endpoints during splitting (never change to
+  //       right). No - it wouldn't, because we snap intersections
+  //       to endpoints (to establish independence from the segment
+  //       angle for t-intersections).
+  round(coord) {
+    const node = this.tree.add(coord);
+    const prevNode = this.tree.prev(node);
+    if (prevNode !== null && cmp(node.key, prevNode.key) === 0) {
+      this.tree.remove(coord);
+      return prevNode.key;
+    }
+    const nextNode = this.tree.next(node);
+    if (nextNode !== null && cmp(node.key, nextNode.key) === 0) {
+      this.tree.remove(coord);
+      return nextNode.key;
+    }
+    return coord;
+  }
+}
+const rounder = new PtRounder();
+const crossProduct = (a, b) => a.x * b.y - a.y * b.x;
+const dotProduct = (a, b) => a.x * b.x + a.y * b.y;
+const compareVectorAngles = (basePt, endPt1, endPt2) => {
+  const res = orient2d(basePt.x, basePt.y, endPt1.x, endPt1.y, endPt2.x, endPt2.y);
+  if (res > 0) return -1;
+  if (res < 0) return 1;
+  return 0;
+};
+const length = (v) => Math.sqrt(dotProduct(v, v));
+const sineOfAngle = (pShared, pBase, pAngle) => {
+  const vBase = {
+    x: pBase.x - pShared.x,
+    y: pBase.y - pShared.y
+  };
+  const vAngle = {
+    x: pAngle.x - pShared.x,
+    y: pAngle.y - pShared.y
+  };
+  return crossProduct(vAngle, vBase) / length(vAngle) / length(vBase);
+};
+const cosineOfAngle = (pShared, pBase, pAngle) => {
+  const vBase = {
+    x: pBase.x - pShared.x,
+    y: pBase.y - pShared.y
+  };
+  const vAngle = {
+    x: pAngle.x - pShared.x,
+    y: pAngle.y - pShared.y
+  };
+  return dotProduct(vAngle, vBase) / length(vAngle) / length(vBase);
+};
+const horizontalIntersection = (pt, v, y) => {
+  if (v.y === 0) return null;
+  return {
+    x: pt.x + v.x / v.y * (y - pt.y),
+    y
+  };
+};
+const verticalIntersection = (pt, v, x) => {
+  if (v.x === 0) return null;
+  return {
+    x,
+    y: pt.y + v.y / v.x * (x - pt.x)
+  };
+};
+const intersection$1 = (pt1, v1, pt2, v2) => {
+  if (v1.x === 0) return verticalIntersection(pt2, v2, pt1.x);
+  if (v2.x === 0) return verticalIntersection(pt1, v1, pt2.x);
+  if (v1.y === 0) return horizontalIntersection(pt2, v2, pt1.y);
+  if (v2.y === 0) return horizontalIntersection(pt1, v1, pt2.y);
+  const kross = crossProduct(v1, v2);
+  if (kross == 0) return null;
+  const ve = {
+    x: pt2.x - pt1.x,
+    y: pt2.y - pt1.y
+  };
+  const d1 = crossProduct(ve, v1) / kross;
+  const d2 = crossProduct(ve, v2) / kross;
+  const x1 = pt1.x + d2 * v1.x, x2 = pt2.x + d1 * v2.x;
+  const y1 = pt1.y + d2 * v1.y, y2 = pt2.y + d1 * v2.y;
+  const x = (x1 + x2) / 2;
+  const y = (y1 + y2) / 2;
+  return {
+    x,
+    y
+  };
+};
+class SweepEvent {
+  // for ordering sweep events in the sweep event queue
+  static compare(a, b) {
+    const ptCmp = SweepEvent.comparePoints(a.point, b.point);
+    if (ptCmp !== 0) return ptCmp;
+    if (a.point !== b.point) a.link(b);
+    if (a.isLeft !== b.isLeft) return a.isLeft ? 1 : -1;
+    return Segment.compare(a.segment, b.segment);
+  }
+  // for ordering points in sweep line order
+  static comparePoints(aPt, bPt) {
+    if (aPt.x < bPt.x) return -1;
+    if (aPt.x > bPt.x) return 1;
+    if (aPt.y < bPt.y) return -1;
+    if (aPt.y > bPt.y) return 1;
+    return 0;
+  }
+  // Warning: 'point' input will be modified and re-used (for performance)
+  constructor(point, isLeft) {
+    if (point.events === void 0) point.events = [this];
+    else point.events.push(this);
+    this.point = point;
+    this.isLeft = isLeft;
+  }
+  link(other) {
+    if (other.point === this.point) {
+      throw new Error("Tried to link already linked events");
+    }
+    const otherEvents = other.point.events;
+    for (let i = 0, iMax = otherEvents.length; i < iMax; i++) {
+      const evt = otherEvents[i];
+      this.point.events.push(evt);
+      evt.point = this.point;
+    }
+    this.checkForConsuming();
+  }
+  /* Do a pass over our linked events and check to see if any pair
+   * of segments match, and should be consumed. */
+  checkForConsuming() {
+    const numEvents = this.point.events.length;
+    for (let i = 0; i < numEvents; i++) {
+      const evt1 = this.point.events[i];
+      if (evt1.segment.consumedBy !== void 0) continue;
+      for (let j = i + 1; j < numEvents; j++) {
+        const evt2 = this.point.events[j];
+        if (evt2.consumedBy !== void 0) continue;
+        if (evt1.otherSE.point.events !== evt2.otherSE.point.events) continue;
+        evt1.segment.consume(evt2.segment);
+      }
+    }
+  }
+  getAvailableLinkedEvents() {
+    const events = [];
+    for (let i = 0, iMax = this.point.events.length; i < iMax; i++) {
+      const evt = this.point.events[i];
+      if (evt !== this && !evt.segment.ringOut && evt.segment.isInResult()) {
+        events.push(evt);
+      }
+    }
+    return events;
+  }
+  /**
+   * Returns a comparator function for sorting linked events that will
+   * favor the event that will give us the smallest left-side angle.
+   * All ring construction starts as low as possible heading to the right,
+   * so by always turning left as sharp as possible we'll get polygons
+   * without uncessary loops & holes.
+   *
+   * The comparator function has a compute cache such that it avoids
+   * re-computing already-computed values.
+   */
+  getLeftmostComparator(baseEvent) {
+    const cache = /* @__PURE__ */ new Map();
+    const fillCache = (linkedEvent) => {
+      const nextEvent = linkedEvent.otherSE;
+      cache.set(linkedEvent, {
+        sine: sineOfAngle(this.point, baseEvent.point, nextEvent.point),
+        cosine: cosineOfAngle(this.point, baseEvent.point, nextEvent.point)
+      });
+    };
+    return (a, b) => {
+      if (!cache.has(a)) fillCache(a);
+      if (!cache.has(b)) fillCache(b);
+      const {
+        sine: asine,
+        cosine: acosine
+      } = cache.get(a);
+      const {
+        sine: bsine,
+        cosine: bcosine
+      } = cache.get(b);
+      if (asine >= 0 && bsine >= 0) {
+        if (acosine < bcosine) return 1;
+        if (acosine > bcosine) return -1;
+        return 0;
+      }
+      if (asine < 0 && bsine < 0) {
+        if (acosine < bcosine) return -1;
+        if (acosine > bcosine) return 1;
+        return 0;
+      }
+      if (bsine < asine) return -1;
+      if (bsine > asine) return 1;
+      return 0;
+    };
+  }
+}
+let segmentId = 0;
+class Segment {
+  /* This compare() function is for ordering segments in the sweep
+   * line tree, and does so according to the following criteria:
+   *
+   * Consider the vertical line that lies an infinestimal step to the
+   * right of the right-more of the two left endpoints of the input
+   * segments. Imagine slowly moving a point up from negative infinity
+   * in the increasing y direction. Which of the two segments will that
+   * point intersect first? That segment comes 'before' the other one.
+   *
+   * If neither segment would be intersected by such a line, (if one
+   * or more of the segments are vertical) then the line to be considered
+   * is directly on the right-more of the two left inputs.
+   */
+  static compare(a, b) {
+    const alx = a.leftSE.point.x;
+    const blx = b.leftSE.point.x;
+    const arx = a.rightSE.point.x;
+    const brx = b.rightSE.point.x;
+    if (brx < alx) return 1;
+    if (arx < blx) return -1;
+    const aly = a.leftSE.point.y;
+    const bly = b.leftSE.point.y;
+    const ary = a.rightSE.point.y;
+    const bry = b.rightSE.point.y;
+    if (alx < blx) {
+      if (bly < aly && bly < ary) return 1;
+      if (bly > aly && bly > ary) return -1;
+      const aCmpBLeft = a.comparePoint(b.leftSE.point);
+      if (aCmpBLeft < 0) return 1;
+      if (aCmpBLeft > 0) return -1;
+      const bCmpARight = b.comparePoint(a.rightSE.point);
+      if (bCmpARight !== 0) return bCmpARight;
+      return -1;
+    }
+    if (alx > blx) {
+      if (aly < bly && aly < bry) return -1;
+      if (aly > bly && aly > bry) return 1;
+      const bCmpALeft = b.comparePoint(a.leftSE.point);
+      if (bCmpALeft !== 0) return bCmpALeft;
+      const aCmpBRight = a.comparePoint(b.rightSE.point);
+      if (aCmpBRight < 0) return 1;
+      if (aCmpBRight > 0) return -1;
+      return 1;
+    }
+    if (aly < bly) return -1;
+    if (aly > bly) return 1;
+    if (arx < brx) {
+      const bCmpARight = b.comparePoint(a.rightSE.point);
+      if (bCmpARight !== 0) return bCmpARight;
+    }
+    if (arx > brx) {
+      const aCmpBRight = a.comparePoint(b.rightSE.point);
+      if (aCmpBRight < 0) return 1;
+      if (aCmpBRight > 0) return -1;
+    }
+    if (arx !== brx) {
+      const ay = ary - aly;
+      const ax = arx - alx;
+      const by = bry - bly;
+      const bx = brx - blx;
+      if (ay > ax && by < bx) return 1;
+      if (ay < ax && by > bx) return -1;
+    }
+    if (arx > brx) return 1;
+    if (arx < brx) return -1;
+    if (ary < bry) return -1;
+    if (ary > bry) return 1;
+    if (a.id < b.id) return -1;
+    if (a.id > b.id) return 1;
+    return 0;
+  }
+  /* Warning: a reference to ringWindings input will be stored,
+   *  and possibly will be later modified */
+  constructor(leftSE, rightSE, rings, windings) {
+    this.id = ++segmentId;
+    this.leftSE = leftSE;
+    leftSE.segment = this;
+    leftSE.otherSE = rightSE;
+    this.rightSE = rightSE;
+    rightSE.segment = this;
+    rightSE.otherSE = leftSE;
+    this.rings = rings;
+    this.windings = windings;
+  }
+  static fromRing(pt1, pt2, ring) {
+    let leftPt, rightPt, winding;
+    const cmpPts = SweepEvent.comparePoints(pt1, pt2);
+    if (cmpPts < 0) {
+      leftPt = pt1;
+      rightPt = pt2;
+      winding = 1;
+    } else if (cmpPts > 0) {
+      leftPt = pt2;
+      rightPt = pt1;
+      winding = -1;
+    } else throw new Error(`Tried to create degenerate segment at [${pt1.x}, ${pt1.y}]`);
+    const leftSE = new SweepEvent(leftPt, true);
+    const rightSE = new SweepEvent(rightPt, false);
+    return new Segment(leftSE, rightSE, [ring], [winding]);
+  }
+  /* When a segment is split, the rightSE is replaced with a new sweep event */
+  replaceRightSE(newRightSE) {
+    this.rightSE = newRightSE;
+    this.rightSE.segment = this;
+    this.rightSE.otherSE = this.leftSE;
+    this.leftSE.otherSE = this.rightSE;
+  }
+  bbox() {
+    const y1 = this.leftSE.point.y;
+    const y2 = this.rightSE.point.y;
+    return {
+      ll: {
+        x: this.leftSE.point.x,
+        y: y1 < y2 ? y1 : y2
+      },
+      ur: {
+        x: this.rightSE.point.x,
+        y: y1 > y2 ? y1 : y2
+      }
+    };
+  }
+  /* A vector from the left point to the right */
+  vector() {
+    return {
+      x: this.rightSE.point.x - this.leftSE.point.x,
+      y: this.rightSE.point.y - this.leftSE.point.y
+    };
+  }
+  isAnEndpoint(pt) {
+    return pt.x === this.leftSE.point.x && pt.y === this.leftSE.point.y || pt.x === this.rightSE.point.x && pt.y === this.rightSE.point.y;
+  }
+  /* Compare this segment with a point.
+   *
+   * A point P is considered to be colinear to a segment if there
+   * exists a distance D such that if we travel along the segment
+   * from one * endpoint towards the other a distance D, we find
+   * ourselves at point P.
+   *
+   * Return value indicates:
+   *
+   *   1: point lies above the segment (to the left of vertical)
+   *   0: point is colinear to segment
+   *  -1: point lies below the segment (to the right of vertical)
+   */
+  comparePoint(point) {
+    if (this.isAnEndpoint(point)) return 0;
+    const lPt = this.leftSE.point;
+    const rPt = this.rightSE.point;
+    const v = this.vector();
+    if (lPt.x === rPt.x) {
+      if (point.x === lPt.x) return 0;
+      return point.x < lPt.x ? 1 : -1;
+    }
+    const yDist = (point.y - lPt.y) / v.y;
+    const xFromYDist = lPt.x + yDist * v.x;
+    if (point.x === xFromYDist) return 0;
+    const xDist = (point.x - lPt.x) / v.x;
+    const yFromXDist = lPt.y + xDist * v.y;
+    if (point.y === yFromXDist) return 0;
+    return point.y < yFromXDist ? -1 : 1;
+  }
+  /**
+   * Given another segment, returns the first non-trivial intersection
+   * between the two segments (in terms of sweep line ordering), if it exists.
+   *
+   * A 'non-trivial' intersection is one that will cause one or both of the
+   * segments to be split(). As such, 'trivial' vs. 'non-trivial' intersection:
+   *
+   *   * endpoint of segA with endpoint of segB --> trivial
+   *   * endpoint of segA with point along segB --> non-trivial
+   *   * endpoint of segB with point along segA --> non-trivial
+   *   * point along segA with point along segB --> non-trivial
+   *
+   * If no non-trivial intersection exists, return null
+   * Else, return null.
+   */
+  getIntersection(other) {
+    const tBbox = this.bbox();
+    const oBbox = other.bbox();
+    const bboxOverlap = getBboxOverlap(tBbox, oBbox);
+    if (bboxOverlap === null) return null;
+    const tlp = this.leftSE.point;
+    const trp = this.rightSE.point;
+    const olp = other.leftSE.point;
+    const orp = other.rightSE.point;
+    const touchesOtherLSE = isInBbox(tBbox, olp) && this.comparePoint(olp) === 0;
+    const touchesThisLSE = isInBbox(oBbox, tlp) && other.comparePoint(tlp) === 0;
+    const touchesOtherRSE = isInBbox(tBbox, orp) && this.comparePoint(orp) === 0;
+    const touchesThisRSE = isInBbox(oBbox, trp) && other.comparePoint(trp) === 0;
+    if (touchesThisLSE && touchesOtherLSE) {
+      if (touchesThisRSE && !touchesOtherRSE) return trp;
+      if (!touchesThisRSE && touchesOtherRSE) return orp;
+      return null;
+    }
+    if (touchesThisLSE) {
+      if (touchesOtherRSE) {
+        if (tlp.x === orp.x && tlp.y === orp.y) return null;
+      }
+      return tlp;
+    }
+    if (touchesOtherLSE) {
+      if (touchesThisRSE) {
+        if (trp.x === olp.x && trp.y === olp.y) return null;
+      }
+      return olp;
+    }
+    if (touchesThisRSE && touchesOtherRSE) return null;
+    if (touchesThisRSE) return trp;
+    if (touchesOtherRSE) return orp;
+    const pt = intersection$1(tlp, this.vector(), olp, other.vector());
+    if (pt === null) return null;
+    if (!isInBbox(bboxOverlap, pt)) return null;
+    return rounder.round(pt.x, pt.y);
+  }
+  /**
+   * Split the given segment into multiple segments on the given points.
+   *  * Each existing segment will retain its leftSE and a new rightSE will be
+   *    generated for it.
+   *  * A new segment will be generated which will adopt the original segment's
+   *    rightSE, and a new leftSE will be generated for it.
+   *  * If there are more than two points given to split on, new segments
+   *    in the middle will be generated with new leftSE and rightSE's.
+   *  * An array of the newly generated SweepEvents will be returned.
+   *
+   * Warning: input array of points is modified
+   */
+  split(point) {
+    const newEvents = [];
+    const alreadyLinked = point.events !== void 0;
+    const newLeftSE = new SweepEvent(point, true);
+    const newRightSE = new SweepEvent(point, false);
+    const oldRightSE = this.rightSE;
+    this.replaceRightSE(newRightSE);
+    newEvents.push(newRightSE);
+    newEvents.push(newLeftSE);
+    const newSeg = new Segment(newLeftSE, oldRightSE, this.rings.slice(), this.windings.slice());
+    if (SweepEvent.comparePoints(newSeg.leftSE.point, newSeg.rightSE.point) > 0) {
+      newSeg.swapEvents();
+    }
+    if (SweepEvent.comparePoints(this.leftSE.point, this.rightSE.point) > 0) {
+      this.swapEvents();
+    }
+    if (alreadyLinked) {
+      newLeftSE.checkForConsuming();
+      newRightSE.checkForConsuming();
+    }
+    return newEvents;
+  }
+  /* Swap which event is left and right */
+  swapEvents() {
+    const tmpEvt = this.rightSE;
+    this.rightSE = this.leftSE;
+    this.leftSE = tmpEvt;
+    this.leftSE.isLeft = true;
+    this.rightSE.isLeft = false;
+    for (let i = 0, iMax = this.windings.length; i < iMax; i++) {
+      this.windings[i] *= -1;
+    }
+  }
+  /* Consume another segment. We take their rings under our wing
+   * and mark them as consumed. Use for perfectly overlapping segments */
+  consume(other) {
+    let consumer = this;
+    let consumee = other;
+    while (consumer.consumedBy) consumer = consumer.consumedBy;
+    while (consumee.consumedBy) consumee = consumee.consumedBy;
+    const cmp2 = Segment.compare(consumer, consumee);
+    if (cmp2 === 0) return;
+    if (cmp2 > 0) {
+      const tmp = consumer;
+      consumer = consumee;
+      consumee = tmp;
+    }
+    if (consumer.prev === consumee) {
+      const tmp = consumer;
+      consumer = consumee;
+      consumee = tmp;
+    }
+    for (let i = 0, iMax = consumee.rings.length; i < iMax; i++) {
+      const ring = consumee.rings[i];
+      const winding = consumee.windings[i];
+      const index2 = consumer.rings.indexOf(ring);
+      if (index2 === -1) {
+        consumer.rings.push(ring);
+        consumer.windings.push(winding);
+      } else consumer.windings[index2] += winding;
+    }
+    consumee.rings = null;
+    consumee.windings = null;
+    consumee.consumedBy = consumer;
+    consumee.leftSE.consumedBy = consumer.leftSE;
+    consumee.rightSE.consumedBy = consumer.rightSE;
+  }
+  /* The first segment previous segment chain that is in the result */
+  prevInResult() {
+    if (this._prevInResult !== void 0) return this._prevInResult;
+    if (!this.prev) this._prevInResult = null;
+    else if (this.prev.isInResult()) this._prevInResult = this.prev;
+    else this._prevInResult = this.prev.prevInResult();
+    return this._prevInResult;
+  }
+  beforeState() {
+    if (this._beforeState !== void 0) return this._beforeState;
+    if (!this.prev) this._beforeState = {
+      rings: [],
+      windings: [],
+      multiPolys: []
+    };
+    else {
+      const seg = this.prev.consumedBy || this.prev;
+      this._beforeState = seg.afterState();
+    }
+    return this._beforeState;
+  }
+  afterState() {
+    if (this._afterState !== void 0) return this._afterState;
+    const beforeState = this.beforeState();
+    this._afterState = {
+      rings: beforeState.rings.slice(0),
+      windings: beforeState.windings.slice(0),
+      multiPolys: []
+    };
+    const ringsAfter = this._afterState.rings;
+    const windingsAfter = this._afterState.windings;
+    const mpsAfter = this._afterState.multiPolys;
+    for (let i = 0, iMax = this.rings.length; i < iMax; i++) {
+      const ring = this.rings[i];
+      const winding = this.windings[i];
+      const index2 = ringsAfter.indexOf(ring);
+      if (index2 === -1) {
+        ringsAfter.push(ring);
+        windingsAfter.push(winding);
+      } else windingsAfter[index2] += winding;
+    }
+    const polysAfter = [];
+    const polysExclude = [];
+    for (let i = 0, iMax = ringsAfter.length; i < iMax; i++) {
+      if (windingsAfter[i] === 0) continue;
+      const ring = ringsAfter[i];
+      const poly = ring.poly;
+      if (polysExclude.indexOf(poly) !== -1) continue;
+      if (ring.isExterior) polysAfter.push(poly);
+      else {
+        if (polysExclude.indexOf(poly) === -1) polysExclude.push(poly);
+        const index2 = polysAfter.indexOf(ring.poly);
+        if (index2 !== -1) polysAfter.splice(index2, 1);
+      }
+    }
+    for (let i = 0, iMax = polysAfter.length; i < iMax; i++) {
+      const mp = polysAfter[i].multiPoly;
+      if (mpsAfter.indexOf(mp) === -1) mpsAfter.push(mp);
+    }
+    return this._afterState;
+  }
+  /* Is this segment part of the final result? */
+  isInResult() {
+    if (this.consumedBy) return false;
+    if (this._isInResult !== void 0) return this._isInResult;
+    const mpsBefore = this.beforeState().multiPolys;
+    const mpsAfter = this.afterState().multiPolys;
+    switch (operation.type) {
+      case "union": {
+        const noBefores = mpsBefore.length === 0;
+        const noAfters = mpsAfter.length === 0;
+        this._isInResult = noBefores !== noAfters;
+        break;
+      }
+      case "intersection": {
+        let least;
+        let most;
+        if (mpsBefore.length < mpsAfter.length) {
+          least = mpsBefore.length;
+          most = mpsAfter.length;
+        } else {
+          least = mpsAfter.length;
+          most = mpsBefore.length;
+        }
+        this._isInResult = most === operation.numMultiPolys && least < most;
+        break;
+      }
+      case "xor": {
+        const diff = Math.abs(mpsBefore.length - mpsAfter.length);
+        this._isInResult = diff % 2 === 1;
+        break;
+      }
+      case "difference": {
+        const isJustSubject = (mps) => mps.length === 1 && mps[0].isSubject;
+        this._isInResult = isJustSubject(mpsBefore) !== isJustSubject(mpsAfter);
+        break;
+      }
+      default:
+        throw new Error(`Unrecognized operation type found ${operation.type}`);
+    }
+    return this._isInResult;
+  }
+}
+class RingIn {
+  constructor(geomRing, poly, isExterior) {
+    if (!Array.isArray(geomRing) || geomRing.length === 0) {
+      throw new Error("Input geometry is not a valid Polygon or MultiPolygon");
+    }
+    this.poly = poly;
+    this.isExterior = isExterior;
+    this.segments = [];
+    if (typeof geomRing[0][0] !== "number" || typeof geomRing[0][1] !== "number") {
+      throw new Error("Input geometry is not a valid Polygon or MultiPolygon");
+    }
+    const firstPoint = rounder.round(geomRing[0][0], geomRing[0][1]);
+    this.bbox = {
+      ll: {
+        x: firstPoint.x,
+        y: firstPoint.y
+      },
+      ur: {
+        x: firstPoint.x,
+        y: firstPoint.y
+      }
+    };
+    let prevPoint = firstPoint;
+    for (let i = 1, iMax = geomRing.length; i < iMax; i++) {
+      if (typeof geomRing[i][0] !== "number" || typeof geomRing[i][1] !== "number") {
+        throw new Error("Input geometry is not a valid Polygon or MultiPolygon");
+      }
+      let point = rounder.round(geomRing[i][0], geomRing[i][1]);
+      if (point.x === prevPoint.x && point.y === prevPoint.y) continue;
+      this.segments.push(Segment.fromRing(prevPoint, point, this));
+      if (point.x < this.bbox.ll.x) this.bbox.ll.x = point.x;
+      if (point.y < this.bbox.ll.y) this.bbox.ll.y = point.y;
+      if (point.x > this.bbox.ur.x) this.bbox.ur.x = point.x;
+      if (point.y > this.bbox.ur.y) this.bbox.ur.y = point.y;
+      prevPoint = point;
+    }
+    if (firstPoint.x !== prevPoint.x || firstPoint.y !== prevPoint.y) {
+      this.segments.push(Segment.fromRing(prevPoint, firstPoint, this));
+    }
+  }
+  getSweepEvents() {
+    const sweepEvents = [];
+    for (let i = 0, iMax = this.segments.length; i < iMax; i++) {
+      const segment = this.segments[i];
+      sweepEvents.push(segment.leftSE);
+      sweepEvents.push(segment.rightSE);
+    }
+    return sweepEvents;
+  }
+}
+class PolyIn {
+  constructor(geomPoly, multiPoly) {
+    if (!Array.isArray(geomPoly)) {
+      throw new Error("Input geometry is not a valid Polygon or MultiPolygon");
+    }
+    this.exteriorRing = new RingIn(geomPoly[0], this, true);
+    this.bbox = {
+      ll: {
+        x: this.exteriorRing.bbox.ll.x,
+        y: this.exteriorRing.bbox.ll.y
+      },
+      ur: {
+        x: this.exteriorRing.bbox.ur.x,
+        y: this.exteriorRing.bbox.ur.y
+      }
+    };
+    this.interiorRings = [];
+    for (let i = 1, iMax = geomPoly.length; i < iMax; i++) {
+      const ring = new RingIn(geomPoly[i], this, false);
+      if (ring.bbox.ll.x < this.bbox.ll.x) this.bbox.ll.x = ring.bbox.ll.x;
+      if (ring.bbox.ll.y < this.bbox.ll.y) this.bbox.ll.y = ring.bbox.ll.y;
+      if (ring.bbox.ur.x > this.bbox.ur.x) this.bbox.ur.x = ring.bbox.ur.x;
+      if (ring.bbox.ur.y > this.bbox.ur.y) this.bbox.ur.y = ring.bbox.ur.y;
+      this.interiorRings.push(ring);
+    }
+    this.multiPoly = multiPoly;
+  }
+  getSweepEvents() {
+    const sweepEvents = this.exteriorRing.getSweepEvents();
+    for (let i = 0, iMax = this.interiorRings.length; i < iMax; i++) {
+      const ringSweepEvents = this.interiorRings[i].getSweepEvents();
+      for (let j = 0, jMax = ringSweepEvents.length; j < jMax; j++) {
+        sweepEvents.push(ringSweepEvents[j]);
+      }
+    }
+    return sweepEvents;
+  }
+}
+class MultiPolyIn {
+  constructor(geom, isSubject) {
+    if (!Array.isArray(geom)) {
+      throw new Error("Input geometry is not a valid Polygon or MultiPolygon");
+    }
+    try {
+      if (typeof geom[0][0][0] === "number") geom = [geom];
+    } catch (ex) {
+    }
+    this.polys = [];
+    this.bbox = {
+      ll: {
+        x: Number.POSITIVE_INFINITY,
+        y: Number.POSITIVE_INFINITY
+      },
+      ur: {
+        x: Number.NEGATIVE_INFINITY,
+        y: Number.NEGATIVE_INFINITY
+      }
+    };
+    for (let i = 0, iMax = geom.length; i < iMax; i++) {
+      const poly = new PolyIn(geom[i], this);
+      if (poly.bbox.ll.x < this.bbox.ll.x) this.bbox.ll.x = poly.bbox.ll.x;
+      if (poly.bbox.ll.y < this.bbox.ll.y) this.bbox.ll.y = poly.bbox.ll.y;
+      if (poly.bbox.ur.x > this.bbox.ur.x) this.bbox.ur.x = poly.bbox.ur.x;
+      if (poly.bbox.ur.y > this.bbox.ur.y) this.bbox.ur.y = poly.bbox.ur.y;
+      this.polys.push(poly);
+    }
+    this.isSubject = isSubject;
+  }
+  getSweepEvents() {
+    const sweepEvents = [];
+    for (let i = 0, iMax = this.polys.length; i < iMax; i++) {
+      const polySweepEvents = this.polys[i].getSweepEvents();
+      for (let j = 0, jMax = polySweepEvents.length; j < jMax; j++) {
+        sweepEvents.push(polySweepEvents[j]);
+      }
+    }
+    return sweepEvents;
+  }
+}
+class RingOut {
+  /* Given the segments from the sweep line pass, compute & return a series
+   * of closed rings from all the segments marked to be part of the result */
+  static factory(allSegments) {
+    const ringsOut = [];
+    for (let i = 0, iMax = allSegments.length; i < iMax; i++) {
+      const segment = allSegments[i];
+      if (!segment.isInResult() || segment.ringOut) continue;
+      let prevEvent = null;
+      let event = segment.leftSE;
+      let nextEvent = segment.rightSE;
+      const events = [event];
+      const startingPoint = event.point;
+      const intersectionLEs = [];
+      while (true) {
+        prevEvent = event;
+        event = nextEvent;
+        events.push(event);
+        if (event.point === startingPoint) break;
+        while (true) {
+          const availableLEs = event.getAvailableLinkedEvents();
+          if (availableLEs.length === 0) {
+            const firstPt = events[0].point;
+            const lastPt = events[events.length - 1].point;
+            throw new Error(`Unable to complete output ring starting at [${firstPt.x}, ${firstPt.y}]. Last matching segment found ends at [${lastPt.x}, ${lastPt.y}].`);
+          }
+          if (availableLEs.length === 1) {
+            nextEvent = availableLEs[0].otherSE;
+            break;
+          }
+          let indexLE = null;
+          for (let j = 0, jMax = intersectionLEs.length; j < jMax; j++) {
+            if (intersectionLEs[j].point === event.point) {
+              indexLE = j;
+              break;
+            }
+          }
+          if (indexLE !== null) {
+            const intersectionLE = intersectionLEs.splice(indexLE)[0];
+            const ringEvents = events.splice(intersectionLE.index);
+            ringEvents.unshift(ringEvents[0].otherSE);
+            ringsOut.push(new RingOut(ringEvents.reverse()));
+            continue;
+          }
+          intersectionLEs.push({
+            index: events.length,
+            point: event.point
+          });
+          const comparator = event.getLeftmostComparator(prevEvent);
+          nextEvent = availableLEs.sort(comparator)[0].otherSE;
+          break;
+        }
+      }
+      ringsOut.push(new RingOut(events));
+    }
+    return ringsOut;
+  }
+  constructor(events) {
+    this.events = events;
+    for (let i = 0, iMax = events.length; i < iMax; i++) {
+      events[i].segment.ringOut = this;
+    }
+    this.poly = null;
+  }
+  getGeom() {
+    let prevPt = this.events[0].point;
+    const points = [prevPt];
+    for (let i = 1, iMax = this.events.length - 1; i < iMax; i++) {
+      const pt2 = this.events[i].point;
+      const nextPt2 = this.events[i + 1].point;
+      if (compareVectorAngles(pt2, prevPt, nextPt2) === 0) continue;
+      points.push(pt2);
+      prevPt = pt2;
+    }
+    if (points.length === 1) return null;
+    const pt = points[0];
+    const nextPt = points[1];
+    if (compareVectorAngles(pt, prevPt, nextPt) === 0) points.shift();
+    points.push(points[0]);
+    const step = this.isExteriorRing() ? 1 : -1;
+    const iStart = this.isExteriorRing() ? 0 : points.length - 1;
+    const iEnd = this.isExteriorRing() ? points.length : -1;
+    const orderedPoints = [];
+    for (let i = iStart; i != iEnd; i += step) orderedPoints.push([points[i].x, points[i].y]);
+    return orderedPoints;
+  }
+  isExteriorRing() {
+    if (this._isExteriorRing === void 0) {
+      const enclosing = this.enclosingRing();
+      this._isExteriorRing = enclosing ? !enclosing.isExteriorRing() : true;
+    }
+    return this._isExteriorRing;
+  }
+  enclosingRing() {
+    if (this._enclosingRing === void 0) {
+      this._enclosingRing = this._calcEnclosingRing();
+    }
+    return this._enclosingRing;
+  }
+  /* Returns the ring that encloses this one, if any */
+  _calcEnclosingRing() {
+    let leftMostEvt = this.events[0];
+    for (let i = 1, iMax = this.events.length; i < iMax; i++) {
+      const evt = this.events[i];
+      if (SweepEvent.compare(leftMostEvt, evt) > 0) leftMostEvt = evt;
+    }
+    let prevSeg = leftMostEvt.segment.prevInResult();
+    let prevPrevSeg = prevSeg ? prevSeg.prevInResult() : null;
+    while (true) {
+      if (!prevSeg) return null;
+      if (!prevPrevSeg) return prevSeg.ringOut;
+      if (prevPrevSeg.ringOut !== prevSeg.ringOut) {
+        if (prevPrevSeg.ringOut.enclosingRing() !== prevSeg.ringOut) {
+          return prevSeg.ringOut;
+        } else return prevSeg.ringOut.enclosingRing();
+      }
+      prevSeg = prevPrevSeg.prevInResult();
+      prevPrevSeg = prevSeg ? prevSeg.prevInResult() : null;
+    }
+  }
+}
+class PolyOut {
+  constructor(exteriorRing) {
+    this.exteriorRing = exteriorRing;
+    exteriorRing.poly = this;
+    this.interiorRings = [];
+  }
+  addInterior(ring) {
+    this.interiorRings.push(ring);
+    ring.poly = this;
+  }
+  getGeom() {
+    const geom = [this.exteriorRing.getGeom()];
+    if (geom[0] === null) return null;
+    for (let i = 0, iMax = this.interiorRings.length; i < iMax; i++) {
+      const ringGeom = this.interiorRings[i].getGeom();
+      if (ringGeom === null) continue;
+      geom.push(ringGeom);
+    }
+    return geom;
+  }
+}
+class MultiPolyOut {
+  constructor(rings) {
+    this.rings = rings;
+    this.polys = this._composePolys(rings);
+  }
+  getGeom() {
+    const geom = [];
+    for (let i = 0, iMax = this.polys.length; i < iMax; i++) {
+      const polyGeom = this.polys[i].getGeom();
+      if (polyGeom === null) continue;
+      geom.push(polyGeom);
+    }
+    return geom;
+  }
+  _composePolys(rings) {
+    const polys = [];
+    for (let i = 0, iMax = rings.length; i < iMax; i++) {
+      const ring = rings[i];
+      if (ring.poly) continue;
+      if (ring.isExteriorRing()) polys.push(new PolyOut(ring));
+      else {
+        const enclosingRing = ring.enclosingRing();
+        if (!enclosingRing.poly) polys.push(new PolyOut(enclosingRing));
+        enclosingRing.poly.addInterior(ring);
+      }
+    }
+    return polys;
+  }
+}
+class SweepLine {
+  constructor(queue) {
+    let comparator = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : Segment.compare;
+    this.queue = queue;
+    this.tree = new Tree(comparator);
+    this.segments = [];
+  }
+  process(event) {
+    const segment = event.segment;
+    const newEvents = [];
+    if (event.consumedBy) {
+      if (event.isLeft) this.queue.remove(event.otherSE);
+      else this.tree.remove(segment);
+      return newEvents;
+    }
+    const node = event.isLeft ? this.tree.add(segment) : this.tree.find(segment);
+    if (!node) throw new Error(`Unable to find segment #${segment.id} [${segment.leftSE.point.x}, ${segment.leftSE.point.y}] -> [${segment.rightSE.point.x}, ${segment.rightSE.point.y}] in SweepLine tree.`);
+    let prevNode = node;
+    let nextNode = node;
+    let prevSeg = void 0;
+    let nextSeg = void 0;
+    while (prevSeg === void 0) {
+      prevNode = this.tree.prev(prevNode);
+      if (prevNode === null) prevSeg = null;
+      else if (prevNode.key.consumedBy === void 0) prevSeg = prevNode.key;
+    }
+    while (nextSeg === void 0) {
+      nextNode = this.tree.next(nextNode);
+      if (nextNode === null) nextSeg = null;
+      else if (nextNode.key.consumedBy === void 0) nextSeg = nextNode.key;
+    }
+    if (event.isLeft) {
+      let prevMySplitter = null;
+      if (prevSeg) {
+        const prevInter = prevSeg.getIntersection(segment);
+        if (prevInter !== null) {
+          if (!segment.isAnEndpoint(prevInter)) prevMySplitter = prevInter;
+          if (!prevSeg.isAnEndpoint(prevInter)) {
+            const newEventsFromSplit = this._splitSafely(prevSeg, prevInter);
+            for (let i = 0, iMax = newEventsFromSplit.length; i < iMax; i++) {
+              newEvents.push(newEventsFromSplit[i]);
+            }
+          }
+        }
+      }
+      let nextMySplitter = null;
+      if (nextSeg) {
+        const nextInter = nextSeg.getIntersection(segment);
+        if (nextInter !== null) {
+          if (!segment.isAnEndpoint(nextInter)) nextMySplitter = nextInter;
+          if (!nextSeg.isAnEndpoint(nextInter)) {
+            const newEventsFromSplit = this._splitSafely(nextSeg, nextInter);
+            for (let i = 0, iMax = newEventsFromSplit.length; i < iMax; i++) {
+              newEvents.push(newEventsFromSplit[i]);
+            }
+          }
+        }
+      }
+      if (prevMySplitter !== null || nextMySplitter !== null) {
+        let mySplitter = null;
+        if (prevMySplitter === null) mySplitter = nextMySplitter;
+        else if (nextMySplitter === null) mySplitter = prevMySplitter;
+        else {
+          const cmpSplitters = SweepEvent.comparePoints(prevMySplitter, nextMySplitter);
+          mySplitter = cmpSplitters <= 0 ? prevMySplitter : nextMySplitter;
+        }
+        this.queue.remove(segment.rightSE);
+        newEvents.push(segment.rightSE);
+        const newEventsFromSplit = segment.split(mySplitter);
+        for (let i = 0, iMax = newEventsFromSplit.length; i < iMax; i++) {
+          newEvents.push(newEventsFromSplit[i]);
+        }
+      }
+      if (newEvents.length > 0) {
+        this.tree.remove(segment);
+        newEvents.push(event);
+      } else {
+        this.segments.push(segment);
+        segment.prev = prevSeg;
+      }
+    } else {
+      if (prevSeg && nextSeg) {
+        const inter = prevSeg.getIntersection(nextSeg);
+        if (inter !== null) {
+          if (!prevSeg.isAnEndpoint(inter)) {
+            const newEventsFromSplit = this._splitSafely(prevSeg, inter);
+            for (let i = 0, iMax = newEventsFromSplit.length; i < iMax; i++) {
+              newEvents.push(newEventsFromSplit[i]);
+            }
+          }
+          if (!nextSeg.isAnEndpoint(inter)) {
+            const newEventsFromSplit = this._splitSafely(nextSeg, inter);
+            for (let i = 0, iMax = newEventsFromSplit.length; i < iMax; i++) {
+              newEvents.push(newEventsFromSplit[i]);
+            }
+          }
+        }
+      }
+      this.tree.remove(segment);
+    }
+    return newEvents;
+  }
+  /* Safely split a segment that is currently in the datastructures
+   * IE - a segment other than the one that is currently being processed. */
+  _splitSafely(seg, pt) {
+    this.tree.remove(seg);
+    const rightSE = seg.rightSE;
+    this.queue.remove(rightSE);
+    const newEvents = seg.split(pt);
+    newEvents.push(rightSE);
+    if (seg.consumedBy === void 0) this.tree.add(seg);
+    return newEvents;
+  }
+}
+const POLYGON_CLIPPING_MAX_QUEUE_SIZE = typeof define_process_default !== "undefined" && define_process_env_default.POLYGON_CLIPPING_MAX_QUEUE_SIZE || 1e6;
+const POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS = typeof define_process_default !== "undefined" && define_process_env_default.POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS || 1e6;
+class Operation {
+  run(type, geom, moreGeoms) {
+    operation.type = type;
+    rounder.reset();
+    const multipolys = [new MultiPolyIn(geom, true)];
+    for (let i = 0, iMax = moreGeoms.length; i < iMax; i++) {
+      multipolys.push(new MultiPolyIn(moreGeoms[i], false));
+    }
+    operation.numMultiPolys = multipolys.length;
+    if (operation.type === "difference") {
+      const subject = multipolys[0];
+      let i = 1;
+      while (i < multipolys.length) {
+        if (getBboxOverlap(multipolys[i].bbox, subject.bbox) !== null) i++;
+        else multipolys.splice(i, 1);
+      }
+    }
+    if (operation.type === "intersection") {
+      for (let i = 0, iMax = multipolys.length; i < iMax; i++) {
+        const mpA = multipolys[i];
+        for (let j = i + 1, jMax = multipolys.length; j < jMax; j++) {
+          if (getBboxOverlap(mpA.bbox, multipolys[j].bbox) === null) return [];
+        }
+      }
+    }
+    const queue = new Tree(SweepEvent.compare);
+    for (let i = 0, iMax = multipolys.length; i < iMax; i++) {
+      const sweepEvents = multipolys[i].getSweepEvents();
+      for (let j = 0, jMax = sweepEvents.length; j < jMax; j++) {
+        queue.insert(sweepEvents[j]);
+        if (queue.size > POLYGON_CLIPPING_MAX_QUEUE_SIZE) {
+          throw new Error("Infinite loop when putting segment endpoints in a priority queue (queue size too big).");
+        }
+      }
+    }
+    const sweepLine = new SweepLine(queue);
+    let prevQueueSize = queue.size;
+    let node = queue.pop();
+    while (node) {
+      const evt = node.key;
+      if (queue.size === prevQueueSize) {
+        const seg = evt.segment;
+        throw new Error(`Unable to pop() ${evt.isLeft ? "left" : "right"} SweepEvent [${evt.point.x}, ${evt.point.y}] from segment #${seg.id} [${seg.leftSE.point.x}, ${seg.leftSE.point.y}] -> [${seg.rightSE.point.x}, ${seg.rightSE.point.y}] from queue.`);
+      }
+      if (queue.size > POLYGON_CLIPPING_MAX_QUEUE_SIZE) {
+        throw new Error("Infinite loop when passing sweep line over endpoints (queue size too big).");
+      }
+      if (sweepLine.segments.length > POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS) {
+        throw new Error("Infinite loop when passing sweep line over endpoints (too many sweep line segments).");
+      }
+      const newEvents = sweepLine.process(evt);
+      for (let i = 0, iMax = newEvents.length; i < iMax; i++) {
+        const evt2 = newEvents[i];
+        if (evt2.consumedBy === void 0) queue.insert(evt2);
+      }
+      prevQueueSize = queue.size;
+      node = queue.pop();
+    }
+    rounder.reset();
+    const ringsOut = RingOut.factory(sweepLine.segments);
+    const result = new MultiPolyOut(ringsOut);
+    return result.getGeom();
+  }
+}
+const operation = new Operation();
+const union = function(geom) {
+  for (var _len = arguments.length, moreGeoms = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    moreGeoms[_key - 1] = arguments[_key];
+  }
+  return operation.run("union", geom, moreGeoms);
+};
+const intersection = function(geom) {
+  for (var _len2 = arguments.length, moreGeoms = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    moreGeoms[_key2 - 1] = arguments[_key2];
+  }
+  return operation.run("intersection", geom, moreGeoms);
+};
+const xor = function(geom) {
+  for (var _len3 = arguments.length, moreGeoms = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+    moreGeoms[_key3 - 1] = arguments[_key3];
+  }
+  return operation.run("xor", geom, moreGeoms);
+};
+const difference = function(subjectGeom) {
+  for (var _len4 = arguments.length, clippingGeoms = new Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
+    clippingGeoms[_key4 - 1] = arguments[_key4];
+  }
+  return operation.run("difference", subjectGeom, clippingGeoms);
+};
+var index = {
+  union,
+  intersection,
+  xor,
+  difference
+};
+
+function distance$1(a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+function lerpPoint(a, b, t) {
+  return {
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t
+  };
+}
+function addPoints(a, b) {
+  return { x: a.x + b.x, y: a.y + b.y };
+}
+function subtractPoints(a, b) {
+  return { x: a.x - b.x, y: a.y - b.y };
+}
+function scalePoint$1(p, s) {
+  return { x: p.x * s, y: p.y * s };
+}
+function normalize(p) {
+  const len = Math.sqrt(p.x * p.x + p.y * p.y);
+  if (len < 1e-4) return { x: 0, y: 0 };
+  return { x: p.x / len, y: p.y / len };
+}
+function perpendicular(p) {
+  return { x: -p.y, y: p.x };
+}
+function dot(a, b) {
+  return a.x * b.x + a.y * b.y;
+}
+function rotatePoint$1(p, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    x: p.x * cos - p.y * sin,
+    y: p.x * sin + p.y * cos
+  };
+}
+function rotateAround(p, center, angle) {
+  const translated = subtractPoints(p, center);
+  const rotated = rotatePoint$1(translated, angle);
+  return addPoints(rotated, center);
+}
+function clonePoint(p) {
+  return { x: p.x, y: p.y };
+}
+function cloneVertex(v) {
+  return {
+    point: clonePoint(v.point),
+    inHandle: clonePoint(v.inHandle),
+    outHandle: clonePoint(v.outHandle)
+  };
+}
+function clonePath(path) {
+  return {
+    vertices: path.vertices.map(cloneVertex),
+    closed: path.closed
+  };
+}
+function cubicBezierPoint(p0, p1, p2, p3, t) {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const mt3 = mt2 * mt;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return {
+    x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
+    y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+  };
+}
+function cubicBezierDerivative(p0, p1, p2, p3, t) {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const t2 = t * t;
+  return {
+    x: 3 * mt2 * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t2 * (p3.x - p2.x),
+    y: 3 * mt2 * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t2 * (p3.y - p2.y)
+  };
+}
+function splitCubicBezier(p0, p1, p2, p3, t) {
+  const q0 = lerpPoint(p0, p1, t);
+  const q1 = lerpPoint(p1, p2, t);
+  const q2 = lerpPoint(p2, p3, t);
+  const r0 = lerpPoint(q0, q1, t);
+  const r1 = lerpPoint(q1, q2, t);
+  const s = lerpPoint(r0, r1, t);
+  return [
+    [p0, q0, r0, s],
+    [s, r1, q2, p3]
+  ];
+}
+function cubicBezierLength(p0, p1, p2, p3, subdivisions = 32) {
+  let length = 0;
+  let prev = p0;
+  for (let i = 1; i <= subdivisions; i++) {
+    const t = i / subdivisions;
+    const curr = cubicBezierPoint(p0, p1, p2, p3, t);
+    length += distance$1(prev, curr);
+    prev = curr;
+  }
+  return length;
+}
+function getPathLength(path) {
+  if (path.vertices.length < 2) return 0;
+  let totalLength = 0;
+  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
+  for (let i = 0; i < numSegments; i++) {
+    const v0 = path.vertices[i];
+    const v1 = path.vertices[(i + 1) % path.vertices.length];
+    const p0 = v0.point;
+    const p1 = addPoints(v0.point, v0.outHandle);
+    const p2 = addPoints(v1.point, v1.inHandle);
+    const p3 = v1.point;
+    totalLength += cubicBezierLength(p0, p1, p2, p3);
+  }
+  return totalLength;
+}
+function getPointAtDistance(path, targetDistance, totalLength) {
+  if (path.vertices.length < 2) return null;
+  const pathLength = totalLength ?? getPathLength(path);
+  if (pathLength < 1e-4) return null;
+  targetDistance = Math.max(0, Math.min(pathLength, targetDistance));
+  let accumulatedLength = 0;
+  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
+  for (let i = 0; i < numSegments; i++) {
+    const v0 = path.vertices[i];
+    const v1 = path.vertices[(i + 1) % path.vertices.length];
+    const p0 = v0.point;
+    const p1 = addPoints(v0.point, v0.outHandle);
+    const p2 = addPoints(v1.point, v1.inHandle);
+    const p3 = v1.point;
+    const segmentLength = cubicBezierLength(p0, p1, p2, p3);
+    if (accumulatedLength + segmentLength >= targetDistance) {
+      const remainingDistance = targetDistance - accumulatedLength;
+      const localT = remainingDistance / segmentLength;
+      const point = cubicBezierPoint(p0, p1, p2, p3, localT);
+      const tangent = normalize(cubicBezierDerivative(p0, p1, p2, p3, localT));
+      const globalT = (i + localT) / numSegments;
+      return { point, tangent, t: globalT };
+    }
+    accumulatedLength += segmentLength;
+  }
+  const lastVertex = path.vertices[path.closed ? 0 : path.vertices.length - 1];
+  return {
+    point: clonePoint(lastVertex.point),
+    tangent: { x: 1, y: 0 },
+    t: 1
+  };
+}
+function trimPath(path, startPercent, endPercent, offsetDegrees = 0) {
+  if (path.vertices.length < 2) return clonePath(path);
+  const totalLength = getPathLength(path);
+  if (totalLength < 1e-4) return clonePath(path);
+  const offsetPercent = offsetDegrees / 360 * 100;
+  let start = ((startPercent + offsetPercent) % 100 + 100) % 100;
+  let end = ((endPercent + offsetPercent) % 100 + 100) % 100;
+  if (start > end && path.closed) {
+    const part1 = trimPathSimple(path, start, 100, totalLength);
+    const part2 = trimPathSimple(path, 0, end, totalLength);
+    return joinPaths(part1, part2);
+  }
+  if (start > end) {
+    [start, end] = [end, start];
+  }
+  return trimPathSimple(path, start, end, totalLength);
+}
+function trimPathSimple(path, startPercent, endPercent, totalLength) {
+  const startDist = startPercent / 100 * totalLength;
+  const endDist = endPercent / 100 * totalLength;
+  if (endDist - startDist < 1e-3) {
+    return { vertices: [], closed: false };
+  }
+  const result = [];
+  let accumulatedLength = 0;
+  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
+  let inTrimRegion = false;
+  let lastPoint = null;
+  for (let i = 0; i < numSegments; i++) {
+    const v0 = path.vertices[i];
+    const v1 = path.vertices[(i + 1) % path.vertices.length];
+    const p0 = v0.point;
+    const p1 = addPoints(v0.point, v0.outHandle);
+    const p2 = addPoints(v1.point, v1.inHandle);
+    const p3 = v1.point;
+    const segmentLength = cubicBezierLength(p0, p1, p2, p3);
+    const segmentStart = accumulatedLength;
+    const segmentEnd = accumulatedLength + segmentLength;
+    if (segmentEnd > startDist && segmentStart < endDist) {
+      const tStart = Math.max(0, (startDist - segmentStart) / segmentLength);
+      const tEnd = Math.min(1, (endDist - segmentStart) / segmentLength);
+      let trimmedPoints;
+      if (tStart > 0 && tEnd < 1) {
+        const [, right] = splitCubicBezier(p0, p1, p2, p3, tStart);
+        const newTEnd = (tEnd - tStart) / (1 - tStart);
+        const [left] = splitCubicBezier(right[0], right[1], right[2], right[3], newTEnd);
+        trimmedPoints = left;
+      } else if (tStart > 0) {
+        const [, right] = splitCubicBezier(p0, p1, p2, p3, tStart);
+        trimmedPoints = right;
+      } else if (tEnd < 1) {
+        const [left] = splitCubicBezier(p0, p1, p2, p3, tEnd);
+        trimmedPoints = left;
+      } else {
+        trimmedPoints = [p0, p1, p2, p3];
+      }
+      if (!inTrimRegion || result.length === 0) {
+        result.push({
+          point: trimmedPoints[0],
+          inHandle: { x: 0, y: 0 },
+          outHandle: subtractPoints(trimmedPoints[1], trimmedPoints[0])
+        });
+        inTrimRegion = true;
+      } else if (lastPoint && distance$1(lastPoint, trimmedPoints[0]) > 0.01) {
+        if (result.length > 0) {
+          result[result.length - 1].outHandle = subtractPoints(trimmedPoints[1], result[result.length - 1].point);
+        }
+      }
+      result.push({
+        point: trimmedPoints[3],
+        inHandle: subtractPoints(trimmedPoints[2], trimmedPoints[3]),
+        outHandle: { x: 0, y: 0 }
+      });
+      lastPoint = trimmedPoints[3];
+    }
+    accumulatedLength += segmentLength;
+  }
+  return { vertices: result, closed: false };
+}
+function joinPaths(path1, path2) {
+  if (path1.vertices.length === 0) return clonePath(path2);
+  if (path2.vertices.length === 0) return clonePath(path1);
+  const result = clonePath(path1);
+  const p2Verts = path2.vertices.map(cloneVertex);
+  const lastP1 = result.vertices[result.vertices.length - 1];
+  const firstP2 = p2Verts[0];
+  if (distance$1(lastP1.point, firstP2.point) < 0.01) {
+    lastP1.outHandle = firstP2.outHandle;
+    result.vertices.push(...p2Verts.slice(1));
+  } else {
+    result.vertices.push(...p2Verts);
+  }
+  return result;
+}
+function mergePaths(paths, mode) {
+  if (paths.length === 0) return [];
+  if (paths.length === 1) return [clonePath(paths[0])];
+  const polygons = paths.map(pathToPolygon);
+  let result = [polygons[0]];
+  for (let i = 1; i < polygons.length; i++) {
+    const newPolygons = [];
+    for (const existing of result) {
+      switch (mode) {
+        case "add":
+          newPolygons.push(...polygonUnion(existing, polygons[i]));
+          break;
+        case "subtract":
+        case "minusFront":
+          newPolygons.push(...polygonDifference(existing, polygons[i]));
+          break;
+        case "minusBack":
+          newPolygons.push(...polygonDifference(polygons[i], existing));
+          break;
+        case "intersect":
+          newPolygons.push(...polygonIntersection(existing, polygons[i]));
+          break;
+        case "exclude":
+          newPolygons.push(...polygonXor(existing, polygons[i]));
+          break;
+      }
+    }
+    result = newPolygons;
+  }
+  return result.map(polygonToPath);
+}
+function booleanOperation(paths, operation, segmentsPerCurve = 32) {
+  if (paths.length === 0) return [];
+  if (paths.length === 1) return [clonePath(paths[0])];
+  const multiPolygons = paths.map((path) => {
+    const polygon = pathToPolygon(path, segmentsPerCurve);
+    return [point2DArrayToPolygon(polygon)];
+  });
+  let result;
+  try {
+    if (multiPolygons.length === 0) {
+      return [];
+    }
+    if (multiPolygons.length === 1) {
+      return [clonePath(paths[0])];
+    }
+    switch (operation) {
+      case "union":
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = index.union(result, multiPolygons[i]);
+        }
+        break;
+      case "subtract":
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = index.difference(result, multiPolygons[i]);
+        }
+        break;
+      case "intersect":
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = index.intersection(result, multiPolygons[i]);
+        }
+        break;
+      case "exclude":
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = index.xor(result, multiPolygons[i]);
+        }
+        break;
+      default:
+        return paths.map(clonePath);
+    }
+  } catch {
+    return paths.map(clonePath);
+  }
+  const outputPaths = [];
+  for (const polygon of result) {
+    if (polygon.length > 0) {
+      const points = ringToPoint2DArray(polygon[0]);
+      if (points.length >= 3) {
+        const bezierPath = fitBezierToPolygon(points, true);
+        outputPaths.push(bezierPath);
+      }
+    }
+  }
+  return outputPaths;
+}
+function fitBezierToPolygon(points, closed) {
+  if (points.length < 2) {
+    return { vertices: [], closed };
+  }
+  const simplified = simplifyPolygon(points, 0.5);
+  if (simplified.length < 2) {
+    return polygonToPath(points);
+  }
+  const vertices = [];
+  for (let i = 0; i < simplified.length; i++) {
+    const curr = simplified[i];
+    const prev = simplified[(i - 1 + simplified.length) % simplified.length];
+    const next = simplified[(i + 1) % simplified.length];
+    const toPrev = subtractPoints(prev, curr);
+    const toNext = subtractPoints(next, curr);
+    const distPrev = distance$1(curr, prev);
+    const distNext = distance$1(curr, next);
+    const handleScale = 0.25;
+    let inHandle;
+    let outHandle;
+    {
+      const tangent = normalize(subtractPoints(toNext, toPrev));
+      inHandle = scalePoint$1(tangent, -distPrev * handleScale);
+      outHandle = scalePoint$1(tangent, distNext * handleScale);
+    }
+    vertices.push({
+      point: clonePoint(curr),
+      inHandle,
+      outHandle
+    });
+  }
+  return { vertices, closed };
+}
+function simplifyPolygon(points, tolerance) {
+  if (points.length <= 2) return points;
+  let maxDist = 0;
+  let maxIndex = 0;
+  const first = points[0];
+  const last = points[points.length - 1];
+  for (let i = 1; i < points.length - 1; i++) {
+    const d = perpendicularDistance$1(points[i], first, last);
+    if (d > maxDist) {
+      maxDist = d;
+      maxIndex = i;
+    }
+  }
+  if (maxDist > tolerance) {
+    const left = simplifyPolygon(points.slice(0, maxIndex + 1), tolerance);
+    const right = simplifyPolygon(points.slice(maxIndex), tolerance);
+    return [...left.slice(0, -1), ...right];
+  }
+  return [first, last];
+}
+function perpendicularDistance$1(point, lineStart, lineEnd) {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const lineLengthSq = dx * dx + dy * dy;
+  if (lineLengthSq === 0) {
+    return distance$1(point, lineStart);
+  }
+  const t = Math.max(0, Math.min(
+    1,
+    ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
+  ));
+  const projection = {
+    x: lineStart.x + t * dx,
+    y: lineStart.y + t * dy
+  };
+  return distance$1(point, projection);
+}
+function pathToPolygon(path, segments = 16) {
+  const points = [];
+  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
+  for (let i = 0; i < numSegments; i++) {
+    const v0 = path.vertices[i];
+    const v1 = path.vertices[(i + 1) % path.vertices.length];
+    const p0 = v0.point;
+    const p1 = addPoints(v0.point, v0.outHandle);
+    const p2 = addPoints(v1.point, v1.inHandle);
+    const p3 = v1.point;
+    for (let j = 0; j < segments; j++) {
+      const t = j / segments;
+      points.push(cubicBezierPoint(p0, p1, p2, p3, t));
+    }
+  }
+  return points;
+}
+function polygonToPath(polygon) {
+  const vertices = polygon.map((p) => ({
+    point: clonePoint(p),
+    inHandle: { x: 0, y: 0 },
+    outHandle: { x: 0, y: 0 }
+  }));
+  return { vertices, closed: true };
+}
+function point2DArrayToRing(points) {
+  return points.map((p) => [p.x, p.y]);
+}
+function ringToPoint2DArray(ring) {
+  return ring.map(([x, y]) => ({ x, y }));
+}
+function point2DArrayToPolygon(points) {
+  return [point2DArrayToRing(points)];
+}
+function multiPolygonToPoint2DArrays(multiPoly) {
+  const result = [];
+  for (const polygon of multiPoly) {
+    if (polygon.length > 0) {
+      result.push(ringToPoint2DArray(polygon[0]));
+    }
+  }
+  return result;
+}
+function polygonUnion(a, b) {
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = index.union([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    return [a, b];
+  }
+}
+function polygonDifference(a, b) {
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = index.difference([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    return [a];
+  }
+}
+function polygonIntersection(a, b) {
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = index.intersection([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    return [];
+  }
+}
+function polygonXor(a, b) {
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = index.xor([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    return [a, b];
+  }
+}
+function offsetPath(path, amount, join = "miter", miterLimit = 4) {
+  if (path.vertices.length < 2 || Math.abs(amount) < 1e-3) {
+    return clonePath(path);
+  }
+  const result = [];
+  const numVertices = path.vertices.length;
+  const isClosed = path.closed;
+  for (let i = 0; i < numVertices; i++) {
+    const curr = path.vertices[i];
+    const prev = path.vertices[(i - 1 + numVertices) % numVertices];
+    const next = path.vertices[(i + 1) % numVertices];
+    let inDir;
+    let outDir;
+    if (i === 0 && !isClosed) {
+      inDir = { x: 0, y: 0 };
+      outDir = normalize(subtractPoints(
+        addPoints(next.point, next.inHandle),
+        addPoints(curr.point, curr.outHandle)
+      ));
+    } else if (i === numVertices - 1 && !isClosed) {
+      inDir = normalize(subtractPoints(
+        addPoints(curr.point, curr.inHandle),
+        addPoints(prev.point, prev.outHandle)
+      ));
+      outDir = { x: 0, y: 0 };
+    } else {
+      inDir = normalize(subtractPoints(
+        curr.point,
+        addPoints(prev.point, prev.outHandle)
+      ));
+      outDir = normalize(subtractPoints(
+        addPoints(curr.point, curr.outHandle),
+        curr.point
+      ));
+    }
+    let offsetDir;
+    if (Math.abs(inDir.x) < 1e-3 && Math.abs(inDir.y) < 1e-3) {
+      offsetDir = perpendicular(outDir);
+    } else if (Math.abs(outDir.x) < 1e-3 && Math.abs(outDir.y) < 1e-3) {
+      offsetDir = perpendicular(inDir);
+    } else {
+      const perpIn = perpendicular(inDir);
+      const perpOut = perpendicular(outDir);
+      offsetDir = normalize(addPoints(perpIn, perpOut));
+      const angle = Math.acos(Math.max(-1, Math.min(1, dot(inDir, outDir))));
+      if (angle > 0.01) {
+        const miterFactor = 1 / Math.cos(angle / 2);
+        if (join === "miter" && miterFactor <= miterLimit) {
+          offsetDir = scalePoint$1(offsetDir, miterFactor);
+        }
+      }
+    }
+    const newPoint = addPoints(curr.point, scalePoint$1(offsetDir, amount));
+    const handleScale = 1;
+    result.push({
+      point: newPoint,
+      inHandle: scalePoint$1(curr.inHandle, handleScale),
+      outHandle: scalePoint$1(curr.outHandle, handleScale)
+    });
+  }
+  return { vertices: result, closed: isClosed };
+}
+function offsetPathMultiple(path, baseAmount, copies, copyOffset, join = "miter", miterLimit = 4) {
+  const results = [clonePath(path)];
+  for (let i = 1; i < copies; i++) {
+    const amount = baseAmount + copyOffset * i;
+    results.push(offsetPath(path, amount, join, miterLimit));
+  }
+  return results;
+}
+function puckerBloat(path, amount) {
+  if (path.vertices.length < 2 || Math.abs(amount) < 1e-3) {
+    return clonePath(path);
+  }
+  const centroid = { x: 0, y: 0 };
+  for (const v of path.vertices) {
+    centroid.x += v.point.x;
+    centroid.y += v.point.y;
+  }
+  centroid.x /= path.vertices.length;
+  centroid.y /= path.vertices.length;
+  const factor = amount / 100;
+  const result = path.vertices.map((v) => {
+    const dir = subtractPoints(v.point, centroid);
+    const dist = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
+    if (dist < 1e-3) return cloneVertex(v);
+    const moveAmount = dist * factor;
+    const newPoint = addPoints(v.point, scalePoint$1(normalize(dir), moveAmount));
+    const handleFactor = 1 + factor * 0.5;
+    return {
+      point: newPoint,
+      inHandle: scalePoint$1(v.inHandle, handleFactor),
+      outHandle: scalePoint$1(v.outHandle, handleFactor)
+    };
+  });
+  return { vertices: result, closed: path.closed };
+}
+function wigglePath(path, size, detail, pointType, correlation, temporalPhase, spatialPhase, seed) {
+  if (path.vertices.length < 2 || size < 1e-3) {
+    return clonePath(path);
+  }
+  const rng = new SeededRandom(seed);
+  for (let i = 0; i < Math.floor(temporalPhase * 100); i++) {
+    rng.next();
+  }
+  const correlationFactor = correlation / 100;
+  const result = [];
+  const subdividedPath = subdividePath(path, Math.max(1, Math.floor(detail)));
+  let prevOffset = { x: 0, y: 0 };
+  for (let i = 0; i < subdividedPath.vertices.length; i++) {
+    const v = subdividedPath.vertices[i];
+    const angle = rng.next() * Math.PI * 2 + spatialPhase;
+    const magnitude = rng.next() * size;
+    const newOffset = {
+      x: Math.cos(angle) * magnitude,
+      y: Math.sin(angle) * magnitude
+    };
+    const offset = {
+      x: prevOffset.x * correlationFactor + newOffset.x * (1 - correlationFactor),
+      y: prevOffset.y * correlationFactor + newOffset.y * (1 - correlationFactor)
+    };
+    prevOffset = offset;
+    const newVertex = {
+      point: addPoints(v.point, offset),
+      inHandle: pointType === "smooth" ? clonePoint(v.inHandle) : { x: 0, y: 0 },
+      outHandle: pointType === "smooth" ? clonePoint(v.outHandle) : { x: 0, y: 0 }
+    };
+    result.push(newVertex);
+  }
+  return { vertices: result, closed: path.closed };
+}
+function subdividePath(path, levels = 1) {
+  if (levels <= 0) return clonePath(path);
+  let current = clonePath(path);
+  for (let level = 0; level < levels; level++) {
+    const result = [];
+    const numSegments = current.closed ? current.vertices.length : current.vertices.length - 1;
+    for (let i = 0; i < numSegments; i++) {
+      const v0 = current.vertices[i];
+      const v1 = current.vertices[(i + 1) % current.vertices.length];
+      const p0 = v0.point;
+      const p1 = addPoints(v0.point, v0.outHandle);
+      const p2 = addPoints(v1.point, v1.inHandle);
+      const p3 = v1.point;
+      const [left, right] = splitCubicBezier(p0, p1, p2, p3, 0.5);
+      result.push({
+        point: left[0],
+        inHandle: i === 0 ? v0.inHandle : subtractPoints(left[1], left[0]),
+        outHandle: subtractPoints(left[1], left[0])
+      });
+      result.push({
+        point: left[3],
+        inHandle: subtractPoints(left[2], left[3]),
+        outHandle: subtractPoints(right[1], right[0])
+      });
+    }
+    if (!current.closed) {
+      const lastV = current.vertices[current.vertices.length - 1];
+      result.push(cloneVertex(lastV));
+    }
+    current = { vertices: result, closed: current.closed };
+  }
+  return current;
+}
+function zigZagPath(path, size, ridgesPerSegment, pointType) {
+  if (path.vertices.length < 2 || size < 1e-3 || ridgesPerSegment < 1) {
+    return clonePath(path);
+  }
+  const result = [];
+  const totalLength = getPathLength(path);
+  const ridgeLength = totalLength / (ridgesPerSegment * (path.vertices.length - (path.closed ? 0 : 1)));
+  let currentDistance = 0;
+  let zigDirection = 1;
+  while (currentDistance < totalLength) {
+    const pointData = getPointAtDistance(path, currentDistance, totalLength);
+    if (!pointData) break;
+    const perp = perpendicular(pointData.tangent);
+    const offset = scalePoint$1(perp, size * zigDirection);
+    const vertex = {
+      point: addPoints(pointData.point, offset),
+      inHandle: pointType === "smooth" ? scalePoint$1(pointData.tangent, -ridgeLength * 0.3) : { x: 0, y: 0 },
+      outHandle: pointType === "smooth" ? scalePoint$1(pointData.tangent, ridgeLength * 0.3) : { x: 0, y: 0 }
+    };
+    result.push(vertex);
+    currentDistance += ridgeLength;
+    zigDirection *= -1;
+  }
+  if (result.length > 0 && !path.closed) {
+    const lastVertex = path.vertices[path.vertices.length - 1];
+    result.push({
+      point: clonePoint(lastVertex.point),
+      inHandle: { x: 0, y: 0 },
+      outHandle: { x: 0, y: 0 }
+    });
+  }
+  return { vertices: result, closed: path.closed };
+}
+function roughenPath(path, size, detail, seed, relative = false) {
+  if (path.vertices.length < 2 || size < 1e-3 || detail < 1) {
+    return clonePath(path);
+  }
+  const rng = new SeededRandom(seed);
+  const result = [];
+  let actualSize = size;
+  if (relative) {
+    const bounds = getPathBounds(path);
+    const diagonal = Math.sqrt(bounds.width * bounds.width + bounds.height * bounds.height);
+    actualSize = size / 100 * diagonal;
+  }
+  const subdivided = subdividePath(path, Math.max(1, Math.floor(detail)));
+  for (const v of subdivided.vertices) {
+    const angle = rng.next() * Math.PI * 2;
+    const magnitude = rng.next() * actualSize;
+    const offset = {
+      x: Math.cos(angle) * magnitude,
+      y: Math.sin(angle) * magnitude
+    };
+    const newPoint = addPoints(v.point, offset);
+    const handleRoughness = actualSize * 0.5;
+    const handleAngle1 = rng.next() * Math.PI * 2;
+    const handleMag1 = rng.next() * handleRoughness;
+    const handleAngle2 = rng.next() * Math.PI * 2;
+    const handleMag2 = rng.next() * handleRoughness;
+    result.push({
+      point: newPoint,
+      inHandle: addPoints(v.inHandle, {
+        x: Math.cos(handleAngle1) * handleMag1,
+        y: Math.sin(handleAngle1) * handleMag1
+      }),
+      outHandle: addPoints(v.outHandle, {
+        x: Math.cos(handleAngle2) * handleMag2,
+        y: Math.sin(handleAngle2) * handleMag2
+      })
+    });
+  }
+  return { vertices: result, closed: path.closed };
+}
+function wavePath(path, amplitude, frequency, phase = 0, waveType = "sine") {
+  if (path.vertices.length < 2 || amplitude < 1e-3 || frequency < 0.1) {
+    return clonePath(path);
+  }
+  const totalLength = getPathLength(path);
+  if (totalLength < 1e-3) return clonePath(path);
+  const samplesPerWave = 16;
+  const totalSamples = Math.max(4, Math.ceil(frequency * samplesPerWave));
+  const sampleDistance = totalLength / totalSamples;
+  const result = [];
+  for (let i = 0; i <= totalSamples; i++) {
+    const distance2 = Math.min(i * sampleDistance, totalLength - 1e-3);
+    const pointData = getPointAtDistance(path, distance2, totalLength);
+    if (!pointData) continue;
+    const t = distance2 / totalLength;
+    const waveInput = t * frequency * Math.PI * 2 + phase;
+    let waveValue;
+    switch (waveType) {
+      case "triangle":
+        waveValue = Math.abs(waveInput / Math.PI % 2 - 1) * 2 - 1;
+        break;
+      case "square":
+        waveValue = Math.sin(waveInput) >= 0 ? 1 : -1;
+        break;
+      case "sine":
+      default:
+        waveValue = Math.sin(waveInput);
+    }
+    const perp = perpendicular(pointData.tangent);
+    const offset = scalePoint$1(perp, waveValue * amplitude);
+    const newPoint = addPoints(pointData.point, offset);
+    const handleLength = sampleDistance * 0.3;
+    const inHandle = scalePoint$1(pointData.tangent, -handleLength);
+    const outHandle = scalePoint$1(pointData.tangent, handleLength);
+    result.push({
+      point: newPoint,
+      inHandle,
+      outHandle
+    });
+  }
+  return { vertices: result, closed: path.closed };
+}
+function getPathBounds(path) {
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+  for (const v of path.vertices) {
+    minX = Math.min(minX, v.point.x);
+    minY = Math.min(minY, v.point.y);
+    maxX = Math.max(maxX, v.point.x);
+    maxY = Math.max(maxY, v.point.y);
+  }
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
+}
+function twistPath(path, angle, center) {
+  if (path.vertices.length < 2 || Math.abs(angle) < 1e-3) {
+    return clonePath(path);
+  }
+  let minY = Infinity, maxY = -Infinity;
+  for (const v of path.vertices) {
+    minY = Math.min(minY, v.point.y);
+    maxY = Math.max(maxY, v.point.y);
+  }
+  const height = maxY - minY;
+  if (height < 1e-3) return clonePath(path);
+  const angleRad = angle * Math.PI / 180;
+  const result = path.vertices.map((v) => {
+    const yNorm = (v.point.y - minY) / height;
+    const localAngle = angleRad * yNorm;
+    const rotatedPoint = rotateAround(v.point, center, localAngle);
+    const absInHandle = addPoints(v.point, v.inHandle);
+    const absOutHandle = addPoints(v.point, v.outHandle);
+    const rotatedIn = rotateAround(absInHandle, center, localAngle);
+    const rotatedOut = rotateAround(absOutHandle, center, localAngle);
+    return {
+      point: rotatedPoint,
+      inHandle: subtractPoints(rotatedIn, rotatedPoint),
+      outHandle: subtractPoints(rotatedOut, rotatedPoint)
+    };
+  });
+  return { vertices: result, closed: path.closed };
+}
+function roundCorners(path, radius) {
+  if (path.vertices.length < 2 || radius < 1e-3) {
+    return clonePath(path);
+  }
+  const result = [];
+  const numVertices = path.vertices.length;
+  for (let i = 0; i < numVertices; i++) {
+    const curr = path.vertices[i];
+    const prev = path.vertices[(i - 1 + numVertices) % numVertices];
+    const next = path.vertices[(i + 1) % numVertices];
+    if (!path.closed && (i === 0 || i === numVertices - 1)) {
+      result.push(cloneVertex(curr));
+      continue;
+    }
+    const toPrev = normalize(subtractPoints(prev.point, curr.point));
+    const toNext = normalize(subtractPoints(next.point, curr.point));
+    const dotProduct = dot(toPrev, toNext);
+    if (dotProduct > 0.99) {
+      result.push(cloneVertex(curr));
+      continue;
+    }
+    const distPrev = distance$1(curr.point, prev.point);
+    const distNext = distance$1(curr.point, next.point);
+    const maxRadius = Math.min(radius, distPrev / 2, distNext / 2);
+    const startPoint = addPoints(curr.point, scalePoint$1(toPrev, maxRadius));
+    const endPoint = addPoints(curr.point, scalePoint$1(toNext, maxRadius));
+    const kappa = 0.5522847498;
+    const handleLength = maxRadius * kappa;
+    result.push({
+      point: startPoint,
+      inHandle: { x: 0, y: 0 },
+      outHandle: scalePoint$1(toPrev, -handleLength)
+    });
+    result.push({
+      point: endPoint,
+      inHandle: scalePoint$1(toNext, -handleLength),
+      outHandle: { x: 0, y: 0 }
+    });
+  }
+  return { vertices: result, closed: path.closed };
+}
+function generateRectangle(position, size, roundness = 0, direction = 1) {
+  const hw = size.x / 2;
+  const hh = size.y / 2;
+  const r = Math.min(roundness, hw, hh);
+  const corners = [
+    { x: position.x - hw, y: position.y - hh },
+    // TL
+    { x: position.x + hw, y: position.y - hh },
+    // TR
+    { x: position.x + hw, y: position.y + hh },
+    // BR
+    { x: position.x - hw, y: position.y + hh }
+    // BL
+  ];
+  if (direction === -1) {
+    corners.reverse();
+  }
+  if (r < 0.01) {
+    return {
+      vertices: corners.map((p) => ({
+        point: p,
+        inHandle: { x: 0, y: 0 },
+        outHandle: { x: 0, y: 0 }
+      })),
+      closed: true
+    };
+  }
+  const kappa = 0.5522847498 * r;
+  const vertices = [];
+  for (let i = 0; i < 4; i++) {
+    const curr = corners[i];
+    const next = corners[(i + 1) % 4];
+    const dir = normalize(subtractPoints(next, curr));
+    vertices.push({
+      point: addPoints(curr, scalePoint$1(dir, r)),
+      inHandle: scalePoint$1(dir, -kappa),
+      outHandle: { x: 0, y: 0 }
+    });
+    vertices.push({
+      point: subtractPoints(next, scalePoint$1(dir, r)),
+      inHandle: { x: 0, y: 0 },
+      outHandle: scalePoint$1(dir, kappa)
+    });
+  }
+  return { vertices, closed: true };
+}
+function generateEllipse(position, size, direction = 1) {
+  const rx = size.x / 2;
+  const ry = size.y / 2;
+  const kappa = 0.5522847498;
+  let vertices = [
+    {
+      // Top
+      point: { x: position.x, y: position.y - ry },
+      inHandle: { x: -rx * kappa, y: 0 },
+      outHandle: { x: rx * kappa, y: 0 }
+    },
+    {
+      // Right
+      point: { x: position.x + rx, y: position.y },
+      inHandle: { x: 0, y: -ry * kappa },
+      outHandle: { x: 0, y: ry * kappa }
+    },
+    {
+      // Bottom
+      point: { x: position.x, y: position.y + ry },
+      inHandle: { x: rx * kappa, y: 0 },
+      outHandle: { x: -rx * kappa, y: 0 }
+    },
+    {
+      // Left
+      point: { x: position.x - rx, y: position.y },
+      inHandle: { x: 0, y: ry * kappa },
+      outHandle: { x: 0, y: -ry * kappa }
+    }
+  ];
+  if (direction === -1) {
+    vertices = vertices.reverse().map((v) => ({
+      point: v.point,
+      inHandle: v.outHandle,
+      outHandle: v.inHandle
+    }));
+  }
+  return { vertices, closed: true };
+}
+function generatePolygon(position, points, radius, roundness = 0, rotation = 0, direction = 1) {
+  const numPoints = Math.max(3, Math.floor(points));
+  const angleStep = Math.PI * 2 / numPoints;
+  const startAngle = (rotation - 90) * (Math.PI / 180);
+  const vertices = [];
+  for (let i = 0; i < numPoints; i++) {
+    const idx = direction === 1 ? i : numPoints - 1 - i;
+    const angle = startAngle + angleStep * idx * direction;
+    const point = {
+      x: position.x + Math.cos(angle) * radius,
+      y: position.y + Math.sin(angle) * radius
+    };
+    const handleLength = radius * (roundness / 100) * 0.5;
+    const tangentAngle = angle + Math.PI / 2 * direction;
+    vertices.push({
+      point,
+      inHandle: roundness > 0 ? {
+        x: Math.cos(tangentAngle) * handleLength,
+        y: Math.sin(tangentAngle) * handleLength
+      } : { x: 0, y: 0 },
+      outHandle: roundness > 0 ? {
+        x: -Math.cos(tangentAngle) * handleLength,
+        y: -Math.sin(tangentAngle) * handleLength
+      } : { x: 0, y: 0 }
+    });
+  }
+  return { vertices, closed: true };
+}
+function generateStar(position, points, outerRadius, innerRadius, outerRoundness = 0, innerRoundness = 0, rotation = 0, direction = 1) {
+  const numPoints = Math.max(3, Math.floor(points));
+  const angleStep = Math.PI / numPoints;
+  const startAngle = (rotation - 90) * (Math.PI / 180);
+  const vertices = [];
+  for (let i = 0; i < numPoints * 2; i++) {
+    const idx = direction === 1 ? i : numPoints * 2 - 1 - i;
+    const angle = startAngle + angleStep * idx * direction;
+    const isOuter = idx % 2 === 0;
+    const radius = isOuter ? outerRadius : innerRadius;
+    const roundness = isOuter ? outerRoundness : innerRoundness;
+    const point = {
+      x: position.x + Math.cos(angle) * radius,
+      y: position.y + Math.sin(angle) * radius
+    };
+    const handleLength = radius * (roundness / 100) * 0.3;
+    const tangentAngle = angle + Math.PI / 2 * direction;
+    vertices.push({
+      point,
+      inHandle: roundness > 0 ? {
+        x: Math.cos(tangentAngle) * handleLength,
+        y: Math.sin(tangentAngle) * handleLength
+      } : { x: 0, y: 0 },
+      outHandle: roundness > 0 ? {
+        x: -Math.cos(tangentAngle) * handleLength,
+        y: -Math.sin(tangentAngle) * handleLength
+      } : { x: 0, y: 0 }
+    });
+  }
+  return { vertices, closed: true };
+}
+function simplifyPath(path, tolerance, straightLines = false) {
+  if (path.vertices.length <= 2) return clonePath(path);
+  const points = pathToPolygon(path, 32);
+  const simplified = douglasPeucker(points, tolerance);
+  if (straightLines) {
+    return polygonToPath(simplified);
+  } else {
+    return fitBezierToPoints(simplified, path.closed);
+  }
+}
+function douglasPeucker(points, tolerance) {
+  if (points.length <= 2) return [...points];
+  let maxDist = 0;
+  let maxIndex = 0;
+  const start = points[0];
+  const end = points[points.length - 1];
+  for (let i = 1; i < points.length - 1; i++) {
+    const dist = perpendicularDistance$1(points[i], start, end);
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIndex = i;
+    }
+  }
+  if (maxDist > tolerance) {
+    const left = douglasPeucker(points.slice(0, maxIndex + 1), tolerance);
+    const right = douglasPeucker(points.slice(maxIndex), tolerance);
+    return [...left.slice(0, -1), ...right];
+  } else {
+    return [start, end];
+  }
+}
+function fitBezierToPoints(points, closed) {
+  const vertices = [];
+  for (let i = 0; i < points.length; i++) {
+    const prev = points[(i - 1 + points.length) % points.length];
+    const curr = points[i];
+    const next = points[(i + 1) % points.length];
+    const toPrev = subtractPoints(prev, curr);
+    const toNext = subtractPoints(next, curr);
+    const handleLength = Math.min(
+      distance$1(curr, prev) * 0.3,
+      distance$1(curr, next) * 0.3
+    );
+    const avgDir = normalize(subtractPoints(toNext, toPrev));
+    vertices.push({
+      point: clonePoint(curr),
+      inHandle: scalePoint$1(avgDir, -handleLength),
+      outHandle: scalePoint$1(avgDir, handleLength)
+    });
+  }
+  return { vertices, closed };
+}
+function smoothPath(path, amount) {
+  if (path.vertices.length < 2) return clonePath(path);
+  const factor = amount / 100;
+  const result = path.vertices.map((v, i) => {
+    const prev = path.vertices[(i - 1 + path.vertices.length) % path.vertices.length];
+    const next = path.vertices[(i + 1) % path.vertices.length];
+    const toPrev = subtractPoints(prev.point, v.point);
+    const toNext = subtractPoints(next.point, v.point);
+    const avgDir = normalize(subtractPoints(toNext, toPrev));
+    const idealHandleLength = (distance$1(v.point, prev.point) + distance$1(v.point, next.point)) / 6;
+    const idealIn = scalePoint$1(avgDir, -idealHandleLength);
+    const idealOut = scalePoint$1(avgDir, idealHandleLength);
+    return {
+      point: clonePoint(v.point),
+      inHandle: lerpPoint(v.inHandle, idealIn, factor),
+      outHandle: lerpPoint(v.outHandle, idealOut, factor)
+    };
+  });
+  return { vertices: result, closed: path.closed };
+}
+function applyRepeater(paths, copies, offset, anchorPoint, position, scale, rotation, startOpacity, endOpacity) {
+  const results = [];
+  for (let i = 0; i < copies; i++) {
+    const t = copies > 1 ? i / (copies - 1) : 0;
+    const copyRotation = rotation * i;
+    const copyScale = {
+      x: 100 + (scale.x - 100) * i,
+      y: 100 + (scale.y - 100) * i
+    };
+    const copyPosition = {
+      x: position.x * i,
+      y: position.y * i
+    };
+    const copyOpacity = startOpacity + (endOpacity - startOpacity) * t;
+    const transformedPaths = paths.map((path) => {
+      return transformPath(path, anchorPoint, copyPosition, copyScale, copyRotation);
+    });
+    results.push({
+      paths: transformedPaths,
+      opacities: paths.map(() => copyOpacity / 100)
+    });
+  }
+  return results;
+}
+function transformPath(path, anchorPoint, position, scale, rotation) {
+  const rotRad = rotation * Math.PI / 180;
+  const cos = Math.cos(rotRad);
+  const sin = Math.sin(rotRad);
+  const transformPoint = (p) => {
+    let x = p.x - anchorPoint.x;
+    let y = p.y - anchorPoint.y;
+    x *= scale.x / 100;
+    y *= scale.y / 100;
+    const rx = x * cos - y * sin;
+    const ry = x * sin + y * cos;
+    return {
+      x: rx + anchorPoint.x + position.x,
+      y: ry + anchorPoint.y + position.y
+    };
+  };
+  const vertices = path.vertices.map((v) => {
+    const newPoint = transformPoint(v.point);
+    const absIn = addPoints(v.point, v.inHandle);
+    const absOut = addPoints(v.point, v.outHandle);
+    const newIn = transformPoint(absIn);
+    const newOut = transformPoint(absOut);
+    return {
+      point: newPoint,
+      inHandle: subtractPoints(newIn, newPoint),
+      outHandle: subtractPoints(newOut, newPoint)
+    };
+  });
+  return { vertices, closed: path.closed };
+}
+const ShapeOperations = {
+  // Utilities
+  distance: distance$1,
+  lerpPoint,
+  addPoints,
+  subtractPoints,
+  scalePoint: scalePoint$1,
+  normalize,
+  perpendicular,
+  clonePath,
+  // Bezier
+  cubicBezierPoint,
+  cubicBezierLength,
+  getPathLength,
+  getPointAtDistance,
+  splitCubicBezier,
+  // Path operators
+  trimPath,
+  mergePaths,
+  offsetPath,
+  offsetPathMultiple,
+  puckerBloat,
+  wigglePath,
+  zigZagPath,
+  roughenPath,
+  wavePath,
+  twistPath,
+  roundCorners,
+  booleanOperation,
+  // Generators
+  generateRectangle,
+  generateEllipse,
+  generatePolygon,
+  generateStar,
+  // Illustrator features
+  simplifyPath,
+  smoothPath,
+  // Repeater
+  applyRepeater,
+  transformPath
+};
+
+const logger$3 = createLogger("VectorLOD");
+function perpendicularDistance(point, lineStart, lineEnd) {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const lineLengthSq = dx * dx + dy * dy;
+  if (lineLengthSq === 0) {
+    const ddx2 = point.x - lineStart.x;
+    const ddy2 = point.y - lineStart.y;
+    return Math.sqrt(ddx2 * ddx2 + ddy2 * ddy2);
+  }
+  const t = Math.max(0, Math.min(
+    1,
+    ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
+  ));
+  const projection = {
+    x: lineStart.x + t * dx,
+    y: lineStart.y + t * dy
+  };
+  const ddx = point.x - projection.x;
+  const ddy = point.y - projection.y;
+  return Math.sqrt(ddx * ddx + ddy * ddy);
+}
+function simplifyControlPoints(points, tolerance) {
+  if (points.length <= 2) {
+    return points.map(cloneControlPoint);
+  }
+  let maxDist = 0;
+  let maxIndex = 0;
+  const first = points[0];
+  const last = points[points.length - 1];
+  for (let i = 1; i < points.length - 1; i++) {
+    const dist = perpendicularDistance(
+      { x: points[i].x, y: points[i].y },
+      { x: first.x, y: first.y },
+      { x: last.x, y: last.y }
+    );
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIndex = i;
+    }
+  }
+  if (maxDist > tolerance) {
+    const left = simplifyControlPoints(points.slice(0, maxIndex + 1), tolerance);
+    const right = simplifyControlPoints(points.slice(maxIndex), tolerance);
+    return [...left.slice(0, -1), ...right];
+  }
+  return [cloneControlPoint(first), cloneControlPoint(last)];
+}
+function cloneControlPoint(point) {
+  return {
+    ...point,
+    handleIn: point.handleIn ? { ...point.handleIn } : null,
+    handleOut: point.handleOut ? { ...point.handleOut } : null
+  };
+}
+function generateLODLevels(controlPoints, numLevels = 4, baseTolerance = 2) {
+  if (controlPoints.length === 0) {
+    return [];
+  }
+  const levels = [];
+  for (let i = 0; i < numLevels; i++) {
+    const factor = Math.pow(2, numLevels - 1 - i);
+    const tolerance = i === numLevels - 1 ? 0 : baseTolerance * factor;
+    let simplifiedPoints;
+    if (tolerance === 0) {
+      simplifiedPoints = controlPoints.map(cloneControlPoint);
+    } else {
+      simplifiedPoints = simplifyControlPoints(controlPoints, tolerance);
+    }
+    levels.push({
+      tolerance,
+      controlPoints: simplifiedPoints,
+      pointCount: simplifiedPoints.length,
+      quality: i
+    });
+  }
+  logger$3.debug(
+    `Generated ${numLevels} LOD levels:`,
+    levels.map((l) => `L${l.quality}: ${l.pointCount} points`).join(", ")
+  );
+  return levels;
+}
+function selectLODLevel(levels, context) {
+  if (levels.length === 0) {
+    return null;
+  }
+  let selectedIndex = levels.length - 1;
+  if (context.isPlaying) {
+    if (context.actualFps < context.targetFps * 0.8) {
+      selectedIndex = Math.max(0, selectedIndex - 2);
+    } else if (context.actualFps < context.targetFps * 0.95) {
+      selectedIndex = Math.max(0, selectedIndex - 1);
+    } else {
+      selectedIndex = Math.max(0, Math.floor(levels.length / 2));
+    }
+  }
+  if (context.isScrubbing) {
+    selectedIndex = 0;
+  }
+  if (context.zoom < 0.25) {
+    selectedIndex = Math.min(selectedIndex, 0);
+  } else if (context.zoom < 0.5) {
+    selectedIndex = Math.min(selectedIndex, 1);
+  } else if (context.zoom < 1) {
+    selectedIndex = Math.min(selectedIndex, Math.floor(levels.length / 2));
+  }
+  return levels[selectedIndex];
+}
+function isPointInRect(point, rect, margin = 0) {
+  return point.x >= rect.x - margin && point.x <= rect.x + rect.width + margin && point.y >= rect.y - margin && point.y <= rect.y + rect.height + margin;
+}
+function doesSegmentIntersectRect(p1, p2, rect, margin = 0) {
+  if (isPointInRect(p1, rect, margin) || isPointInRect(p2, rect, margin)) {
+    return true;
+  }
+  const expandedRect = {
+    x: rect.x - margin,
+    y: rect.y - margin,
+    width: rect.width + margin * 2,
+    height: rect.height + margin * 2
+  };
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  if (dx !== 0) {
+    const t1 = (expandedRect.x - p1.x) / dx;
+    const t2 = (expandedRect.x + expandedRect.width - p1.x) / dx;
+    for (const t of [t1, t2]) {
+      if (t >= 0 && t <= 1) {
+        const y = p1.y + t * dy;
+        if (y >= expandedRect.y && y <= expandedRect.y + expandedRect.height) {
+          return true;
+        }
+      }
+    }
+  }
+  if (dy !== 0) {
+    const t1 = (expandedRect.y - p1.y) / dy;
+    const t2 = (expandedRect.y + expandedRect.height - p1.y) / dy;
+    for (const t of [t1, t2]) {
+      if (t >= 0 && t <= 1) {
+        const x = p1.x + t * dx;
+        if (x >= expandedRect.x && x <= expandedRect.x + expandedRect.width) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+function cullOffScreenPoints(points, viewport, margin = 50) {
+  if (points.length === 0) {
+    return [];
+  }
+  if (points.length === 1) {
+    return isPointInRect(points[0], viewport, margin) ? [cloneControlPoint(points[0])] : [];
+  }
+  const visibleIndices = /* @__PURE__ */ new Set();
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    if (doesSegmentIntersectRect(
+      { x: p1.x, y: p1.y },
+      { x: p2.x, y: p2.y },
+      viewport,
+      margin
+    )) {
+      visibleIndices.add(i);
+      visibleIndices.add(i + 1);
+    }
+  }
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (doesSegmentIntersectRect(
+    { x: last.x, y: last.y },
+    { x: first.x, y: first.y },
+    viewport,
+    margin
+  )) {
+    visibleIndices.add(0);
+    visibleIndices.add(points.length - 1);
+  }
+  return Array.from(visibleIndices).sort((a, b) => a - b).map((i) => cloneControlPoint(points[i]));
+}
+class VectorLODService {
+  lodCache = /* @__PURE__ */ new Map();
+  /**
+   * Generate LOD levels for a layer
+   *
+   * @param layerId Layer identifier for caching
+   * @param controlPoints Original control points
+   * @param numLevels Number of LOD levels
+   * @param baseTolerance Base simplification tolerance
+   * @returns Generated LOD levels
+   */
+  generateLODLevels(layerId, controlPoints, numLevels = 4, baseTolerance = 2) {
+    const levels = generateLODLevels(controlPoints, numLevels, baseTolerance);
+    this.lodCache.set(layerId, levels);
+    return levels;
+  }
+  /**
+   * Get cached LOD levels for a layer
+   */
+  getLODLevels(layerId) {
+    return this.lodCache.get(layerId);
+  }
+  /**
+   * Clear LOD cache for a layer
+   */
+  clearLODLevels(layerId) {
+    this.lodCache.delete(layerId);
+  }
+  /**
+   * Select appropriate LOD level
+   */
+  selectLODLevel(levels, context) {
+    return selectLODLevel(levels, context);
+  }
+  /**
+   * Get control points for a layer at appropriate LOD
+   *
+   * @param layerId Layer identifier
+   * @param context Rendering context
+   * @param fallbackPoints Fallback points if no LOD data
+   * @returns Control points at appropriate detail level
+   */
+  getControlPointsAtLOD(layerId, context, fallbackPoints) {
+    const levels = this.lodCache.get(layerId);
+    if (!levels || levels.length === 0) {
+      return fallbackPoints;
+    }
+    const level = selectLODLevel(levels, context);
+    return level ? level.controlPoints : fallbackPoints;
+  }
+  /**
+   * Cull off-screen points
+   */
+  cullOffScreenPoints(points, viewport, margin = 50) {
+    return cullOffScreenPoints(points, viewport, margin);
+  }
+  /**
+   * Check if LOD should be used for given point count
+   */
+  shouldUseLOD(pointCount, config) {
+    return config.enabled && pointCount > config.maxPointsForPreview;
+  }
+  /**
+   * Clear all cached LOD data
+   */
+  clearAllLOD() {
+    this.lodCache.clear();
+  }
+}
+const vectorLOD = new VectorLODService();
+
+const DEFAULT_WARP_WEIGHT_OPTIONS = {
+  method: "inverse-distance",
+  falloffPower: 2,
+  normalize: true,
+  minWeight: 1e-3
+};
+
+const logger$2 = createLogger("MeshWarpDeformation");
+function distance(a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+function rotatePoint(point, origin, angleDegrees) {
+  const angleRadians = angleDegrees * Math.PI / 180;
+  const cos = Math.cos(angleRadians);
+  const sin = Math.sin(angleRadians);
+  const dx = point.x - origin.x;
+  const dy = point.y - origin.y;
+  return {
+    x: origin.x + dx * cos - dy * sin,
+    y: origin.y + dx * sin + dy * cos
+  };
+}
+function scalePoint(point, origin, scale) {
+  return {
+    x: origin.x + (point.x - origin.x) * scale,
+    y: origin.y + (point.y - origin.y) * scale
+  };
+}
+function delaunayTriangulate(points) {
+  if (points.length < 3) {
+    return [];
+  }
+  const minX = Math.min(...points.map((p) => p.x));
+  const maxX = Math.max(...points.map((p) => p.x));
+  const minY = Math.min(...points.map((p) => p.y));
+  const maxY = Math.max(...points.map((p) => p.y));
+  const dx = maxX - minX;
+  const dy = maxY - minY;
+  const deltaMax = Math.max(dx, dy) * 2;
+  const superA = { x: minX - deltaMax, y: minY - deltaMax };
+  const superB = { x: minX + deltaMax * 2, y: minY - deltaMax };
+  const superC = { x: minX + deltaMax / 2, y: maxY + deltaMax * 2 };
+  const allPoints = [...points, superA, superB, superC];
+  const superIndices = [points.length, points.length + 1, points.length + 2];
+  let triangles = [{ a: superIndices[0], b: superIndices[1], c: superIndices[2] }];
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    const badTriangles = [];
+    const polygon = [];
+    for (const tri of triangles) {
+      if (isPointInCircumcircle(point, allPoints[tri.a], allPoints[tri.b], allPoints[tri.c])) {
+        badTriangles.push(tri);
+      }
+    }
+    for (const tri of badTriangles) {
+      const edges = [
+        { a: tri.a, b: tri.b },
+        { a: tri.b, b: tri.c },
+        { a: tri.c, b: tri.a }
+      ];
+      for (const edge of edges) {
+        let isShared = false;
+        for (const other of badTriangles) {
+          if (other === tri) continue;
+          const otherEdges = [
+            { a: other.a, b: other.b },
+            { a: other.b, b: other.c },
+            { a: other.c, b: other.a }
+          ];
+          for (const otherEdge of otherEdges) {
+            if (edge.a === otherEdge.a && edge.b === otherEdge.b || edge.a === otherEdge.b && edge.b === otherEdge.a) {
+              isShared = true;
+              break;
+            }
+          }
+          if (isShared) break;
+        }
+        if (!isShared) {
+          polygon.push(edge);
+        }
+      }
+    }
+    triangles = triangles.filter((t) => !badTriangles.includes(t));
+    for (const edge of polygon) {
+      triangles.push({ a: edge.a, b: edge.b, c: i });
+    }
+  }
+  return triangles.filter(
+    (t) => !superIndices.includes(t.a) && !superIndices.includes(t.b) && !superIndices.includes(t.c)
+  );
+}
+function isPointInCircumcircle(point, a, b, c) {
+  const ax = a.x - point.x;
+  const ay = a.y - point.y;
+  const bx = b.x - point.x;
+  const by = b.y - point.y;
+  const cx = c.x - point.x;
+  const cy = c.y - point.y;
+  const det = (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) + (cx * cx + cy * cy) * (ax * by - bx * ay);
+  const orientation = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  return orientation > 0 ? det > 0 : det < 0;
+}
+function calculateWeights(vertices, pins, options = DEFAULT_WARP_WEIGHT_OPTIONS) {
+  const vertexCount = vertices.length / 2;
+  const pinCount = pins.length;
+  if (pinCount === 0) {
+    return new Float32Array(0);
+  }
+  const weights = new Float32Array(vertexCount * pinCount);
+  for (let v = 0; v < vertexCount; v++) {
+    const vx = vertices[v * 2];
+    const vy = vertices[v * 2 + 1];
+    let totalWeight = 0;
+    const vertexWeights = [];
+    for (let p = 0; p < pinCount; p++) {
+      const pin = pins[p];
+      const pinPos = pin.position.value;
+      const dist = distance({ x: vx, y: vy }, pinPos);
+      let weight;
+      switch (options.method) {
+        case "bounded":
+        case "radial-basis":
+        case "heat-diffusion":
+        case "inverse-distance":
+        default: {
+          if (dist < 1e-3) {
+            weight = 1e3;
+          } else if (dist > pin.radius * 3) {
+            weight = 0;
+          } else {
+            const normalizedDist = dist / pin.radius;
+            weight = Math.pow(1 / (1 + normalizedDist), options.falloffPower);
+            if (pin.stiffness > 0) {
+              weight *= 1 - pin.stiffness * 0.5;
+            }
+          }
+          break;
+        }
+      }
+      if (weight < options.minWeight) {
+        weight = 0;
+      }
+      vertexWeights.push(weight);
+      totalWeight += weight;
+    }
+    for (let p = 0; p < pinCount; p++) {
+      let finalWeight = vertexWeights[p];
+      if (options.normalize && totalWeight > 0) {
+        finalWeight = finalWeight / totalWeight;
+      }
+      weights[v * pinCount + p] = finalWeight;
+    }
+  }
+  return weights;
+}
+function evaluatePinAtFrame(pin, restState, frame) {
+  const position = {
+    x: interpolateProperty(pin.position, frame).x,
+    y: interpolateProperty(pin.position, frame).y
+  };
+  const rotation = interpolateProperty(pin.rotation, frame);
+  const scale = interpolateProperty(pin.scale, frame);
+  const delta = {
+    x: position.x - restState.position.x,
+    y: position.y - restState.position.y
+  };
+  return { position, rotation, scale, delta };
+}
+function deformMesh(mesh, frame) {
+  const { originalVertices, pins, weights, pinRestStates, vertexCount } = mesh;
+  const pinCount = pins.length;
+  if (pinCount === 0 || vertexCount === 0) {
+    return new Float32Array(originalVertices);
+  }
+  const pinStates = pins.map(
+    (pin, i) => evaluatePinAtFrame(pin, pinRestStates[i], frame)
+  );
+  const deformedVertices = new Float32Array(vertexCount * 2);
+  for (let v = 0; v < vertexCount; v++) {
+    const origX = originalVertices[v * 2];
+    const origY = originalVertices[v * 2 + 1];
+    let deformedX = 0;
+    let deformedY = 0;
+    let totalWeight = 0;
+    for (let p = 0; p < pinCount; p++) {
+      const weight = weights[v * pinCount + p];
+      if (weight <= 0) continue;
+      const pin = pins[p];
+      const pinState = pinStates[p];
+      const restState = pinRestStates[p];
+      let pinDeformed = { x: origX, y: origY };
+      pinDeformed = {
+        x: pinDeformed.x + pinState.delta.x,
+        y: pinDeformed.y + pinState.delta.y
+      };
+      if (pin.type === "rotation" || Math.abs(pinState.rotation - restState.rotation) > 1e-3) {
+        const rotationDelta = pinState.rotation - restState.rotation;
+        pinDeformed = rotatePoint(
+          pinDeformed,
+          pinState.position,
+          rotationDelta
+        );
+      }
+      if (Math.abs(pinState.scale - restState.scale) > 1e-3) {
+        const scaleDelta = pinState.scale / restState.scale;
+        pinDeformed = scalePoint(
+          pinDeformed,
+          pinState.position,
+          scaleDelta
+        );
+      }
+      deformedX += pinDeformed.x * weight;
+      deformedY += pinDeformed.y * weight;
+      totalWeight += weight;
+    }
+    if (totalWeight > 0) {
+      deformedVertices[v * 2] = deformedX / totalWeight;
+      deformedVertices[v * 2 + 1] = deformedY / totalWeight;
+    } else {
+      deformedVertices[v * 2] = origX;
+      deformedVertices[v * 2 + 1] = origY;
+    }
+  }
+  return deformedVertices;
+}
+class MeshWarpDeformationService {
+  meshCache = /* @__PURE__ */ new Map();
+  /**
+   * Build a warp mesh from control points and pins
+   */
+  buildMesh(layerId, controlPoints, pins, options = DEFAULT_WARP_WEIGHT_OPTIONS) {
+    const vertices = new Float32Array(controlPoints.length * 2);
+    for (let i = 0; i < controlPoints.length; i++) {
+      vertices[i * 2] = controlPoints[i].x;
+      vertices[i * 2 + 1] = controlPoints[i].y;
+    }
+    const pinRestStates = pins.map((pin) => ({
+      pinId: pin.id,
+      position: { ...pin.position.value },
+      rotation: pin.rotation.value,
+      scale: pin.scale.value
+    }));
+    const allPoints = [
+      ...controlPoints.map((cp) => ({ x: cp.x, y: cp.y })),
+      ...pins.map((pin) => pin.position.value)
+    ];
+    const triangles = delaunayTriangulate(allPoints);
+    const triangulation = [];
+    for (const tri of triangles) {
+      triangulation.push(tri.a, tri.b, tri.c);
+    }
+    const weights = calculateWeights(vertices, pins, options);
+    const mesh = {
+      layerId,
+      pins,
+      triangulation,
+      weights,
+      originalVertices: vertices,
+      pinRestStates,
+      vertexCount: controlPoints.length,
+      dirty: false
+    };
+    this.meshCache.set(layerId, mesh);
+    logger$2.debug(`Built warp mesh: ${controlPoints.length} vertices, ${pins.length} pins`);
+    return mesh;
+  }
+  /**
+   * Get or build a mesh for a layer
+   */
+  getMesh(layerId) {
+    return this.meshCache.get(layerId);
+  }
+  /**
+   * Clear cached mesh for a layer
+   */
+  clearMesh(layerId) {
+    this.meshCache.delete(layerId);
+  }
+  /**
+   * Update mesh when pins change
+   */
+  updateMeshPins(layerId, pins, options = DEFAULT_WARP_WEIGHT_OPTIONS) {
+    const mesh = this.meshCache.get(layerId);
+    if (!mesh) return;
+    mesh.pins = pins;
+    mesh.pinRestStates = pins.map((pin) => ({
+      pinId: pin.id,
+      position: { ...pin.position.value },
+      rotation: pin.rotation.value,
+      scale: pin.scale.value
+    }));
+    mesh.weights = calculateWeights(mesh.originalVertices, pins, options);
+    mesh.dirty = false;
+  }
+  /**
+   * Add a pin to an existing mesh
+   */
+  addPin(layerId, pin, options = DEFAULT_WARP_WEIGHT_OPTIONS) {
+    const mesh = this.meshCache.get(layerId);
+    if (!mesh) return;
+    mesh.pins.push(pin);
+    mesh.pinRestStates.push({
+      pinId: pin.id,
+      position: { ...pin.position.value },
+      rotation: pin.rotation.value,
+      scale: pin.scale.value
+    });
+    mesh.weights = calculateWeights(mesh.originalVertices, mesh.pins, options);
+  }
+  /**
+   * Remove a pin from an existing mesh
+   */
+  removePin(layerId, pinId, options = DEFAULT_WARP_WEIGHT_OPTIONS) {
+    const mesh = this.meshCache.get(layerId);
+    if (!mesh) return;
+    const pinIndex = mesh.pins.findIndex((p) => p.id === pinId);
+    if (pinIndex === -1) return;
+    mesh.pins.splice(pinIndex, 1);
+    mesh.pinRestStates.splice(pinIndex, 1);
+    mesh.weights = calculateWeights(mesh.originalVertices, mesh.pins, options);
+  }
+  /**
+   * Get deformed control points at a specific frame
+   */
+  getDeformedControlPoints(layerId, frame, originalControlPoints) {
+    const mesh = this.meshCache.get(layerId);
+    if (!mesh || mesh.pins.length === 0) {
+      return originalControlPoints;
+    }
+    const deformedVertices = deformMesh(mesh, frame);
+    const deformedPoints = originalControlPoints.map((cp, i) => {
+      const newX = deformedVertices[i * 2];
+      const newY = deformedVertices[i * 2 + 1];
+      const dx = newX - cp.x;
+      const dy = newY - cp.y;
+      return {
+        ...cp,
+        x: newX,
+        y: newY,
+        // Also offset handles to maintain shape
+        handleIn: cp.handleIn ? { x: cp.handleIn.x + dx, y: cp.handleIn.y + dy } : null,
+        handleOut: cp.handleOut ? { x: cp.handleOut.x + dx, y: cp.handleOut.y + dy } : null
+      };
+    });
+    return deformedPoints;
+  }
+  /**
+   * Deform a mesh and return result
+   */
+  deform(layerId, frame) {
+    const mesh = this.meshCache.get(layerId);
+    if (!mesh) return null;
+    const vertices = deformMesh(mesh, frame);
+    const controlPoints = [];
+    for (let i = 0; i < mesh.vertexCount; i++) {
+      controlPoints.push({
+        x: vertices[i * 2],
+        y: vertices[i * 2 + 1],
+        inHandle: { x: 0, y: 0 },
+        outHandle: { x: 0, y: 0 }
+      });
+    }
+    return { vertices, controlPoints };
+  }
+  /**
+   * Get all pins for a layer
+   */
+  getPins(layerId) {
+    return this.meshCache.get(layerId)?.pins ?? [];
+  }
+  /**
+   * Update a pin's position (for UI dragging)
+   */
+  updatePinPosition(layerId, pinId, x, y) {
+    const mesh = this.meshCache.get(layerId);
+    if (!mesh) return;
+    const pin = mesh.pins.find((p) => p.id === pinId);
+    if (pin) {
+      pin.position.value = { x, y };
+    }
+  }
+  /**
+   * Clear all cached meshes
+   */
+  clearAllMeshes() {
+    this.meshCache.clear();
+  }
+}
+const meshWarpDeformation = new MeshWarpDeformationService();
+
 class SplineLayer extends BaseLayer {
   /** The line mesh for the spline (using Line2 for proper width support) */
   lineMesh = null;
@@ -38001,12 +44391,59 @@ class SplineLayer extends BaseLayer {
   cachedEvaluatedPoints = null;
   /** Hash of last evaluated points for change detection */
   lastPointsHash = "";
+  /** Trim start property (static or animated) */
+  trimStartProp;
+  /** Trim end property (static or animated) */
+  trimEndProp;
+  /** Trim offset property (static or animated) */
+  trimOffsetProp;
+  /** Path effects to apply */
+  pathEffects;
+  /** LOD levels for this spline */
+  lodLevels = [];
+  /** Whether LOD is enabled for this spline */
+  lodEnabled = false;
+  /** Current LOD context (updated during playback) */
+  lodContext = {
+    zoom: 1,
+    isPlaying: false,
+    isScrubbing: false,
+    targetFps: 60,
+    actualFps: 60,
+    viewport: { width: 1920, height: 1080 }
+  };
+  /** Whether warp (mesh warp) deformation is enabled for this spline */
+  warpEnabled = false;
+  /** Warp pins for this spline (stored on layer, mesh managed by service) */
+  warpPins = [];
+  // Backwards compatibility getters
+  /** @deprecated Use warpEnabled instead */
+  get puppetEnabled() {
+    return this.warpEnabled;
+  }
+  set puppetEnabled(val) {
+    this.warpEnabled = val;
+  }
+  /** @deprecated Use warpPins instead */
+  get puppetPins() {
+    return this.warpPins;
+  }
+  set puppetPins(val) {
+    this.warpPins = val;
+  }
   constructor(layerData) {
     super(layerData);
     this.splineData = this.extractSplineData(layerData);
     if (this.splineData.animated && this.splineData.animatedControlPoints) {
       this.animatedPoints = this.splineData.animatedControlPoints;
     }
+    const data = layerData.data;
+    this.trimStartProp = data?.trimStart;
+    this.trimEndProp = data?.trimEnd;
+    this.trimOffsetProp = data?.trimOffset;
+    this.pathEffects = data?.pathEffects;
+    this.initializeLOD(data);
+    this.initializeWarp(data);
     this.buildSpline();
     this.initializeBlendMode();
   }
@@ -38023,6 +44460,208 @@ class SplineLayer extends BaseLayer {
       fill: data?.fill ?? "",
       pathData: data?.pathData ?? ""
     };
+  }
+  /**
+   * Initialize LOD levels for complex paths
+   */
+  initializeLOD(data) {
+    if (!data) return;
+    const lodSettings = data.lod;
+    const points = data.controlPoints;
+    const shouldAutoEnable = points.length > 100;
+    if (lodSettings?.enabled || shouldAutoEnable) {
+      this.lodEnabled = true;
+      if (lodSettings?.levels && lodSettings.levels.length > 0) {
+        this.lodLevels = lodSettings.levels.map((level) => ({
+          tolerance: level.tolerance,
+          controlPoints: level.controlPoints,
+          pointCount: level.controlPoints.length,
+          quality: 0
+          // Will be set by index
+        }));
+        this.lodLevels.forEach((level, i) => {
+          level.quality = i;
+        });
+      } else {
+        const tolerance = lodSettings?.simplificationTolerance ?? 2;
+        this.lodLevels = vectorLOD.generateLODLevels(
+          this.layerData.id,
+          points,
+          4,
+          // 4 levels
+          tolerance
+        );
+      }
+    }
+  }
+  /**
+   * Update LOD context (call this when playback state changes)
+   */
+  updateLODContext(context) {
+    this.lodContext = { ...this.lodContext, ...context };
+  }
+  /**
+   * Get control points at appropriate LOD level
+   */
+  getPointsAtLOD(points) {
+    if (!this.lodEnabled || this.lodLevels.length === 0) {
+      return points;
+    }
+    const level = vectorLOD.selectLODLevel(this.lodLevels, this.lodContext);
+    if (level) {
+      return level.controlPoints;
+    }
+    return points;
+  }
+  /**
+   * Initialize mesh warp deformation from layer data
+   */
+  initializeWarp(data) {
+    const pins = data?.warpPins ?? data?.puppetPins;
+    if (!data || !pins || pins.length === 0) {
+      return;
+    }
+    this.warpPins = pins;
+    this.warpEnabled = true;
+    meshWarpDeformation.buildMesh(
+      this.layerData.id,
+      data.controlPoints,
+      pins
+    );
+  }
+  /** @deprecated Use initializeWarp instead */
+  initializePuppet(data) {
+    return this.initializeWarp(data);
+  }
+  /**
+   * Enable mesh warp deformation mode
+   * Creates a deformation mesh from current control points
+   */
+  enableWarpMode() {
+    if (this.warpEnabled) return;
+    this.warpEnabled = true;
+    meshWarpDeformation.buildMesh(
+      this.layerData.id,
+      this.splineData.controlPoints,
+      this.warpPins
+    );
+    this.lastPointsHash = "";
+  }
+  /** @deprecated Use enableWarpMode instead */
+  enablePuppetMode() {
+    return this.enableWarpMode();
+  }
+  /**
+   * Disable mesh warp deformation mode
+   */
+  disableWarpMode() {
+    if (!this.warpEnabled) return;
+    this.warpEnabled = false;
+    this.warpPins = [];
+    meshWarpDeformation.clearMesh(this.layerData.id);
+    this.lastPointsHash = "";
+  }
+  /** @deprecated Use disableWarpMode instead */
+  disablePuppetMode() {
+    return this.disableWarpMode();
+  }
+  /**
+   * Check if mesh warp deformation is enabled
+   */
+  isWarpEnabled() {
+    return this.warpEnabled;
+  }
+  /** @deprecated Use isWarpEnabled instead */
+  isPuppetEnabled() {
+    return this.isWarpEnabled();
+  }
+  /**
+   * Add a warp pin at the specified position
+   * @param x - X position of the pin
+   * @param y - Y position of the pin
+   * @param type - Pin type (position, rotation, or starch)
+   * @returns The created pin
+   */
+  addWarpPin(x, y, type = "position") {
+    const { createDefaultWarpPin } = require("@/types/meshWarp");
+    const id = `pin_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const pin = createDefaultWarpPin(id, x, y, type);
+    this.warpPins.push(pin);
+    if (!this.warpEnabled) {
+      this.enableWarpMode();
+    }
+    meshWarpDeformation.addPin(this.layerData.id, pin);
+    this.lastPointsHash = "";
+    return pin;
+  }
+  /** @deprecated Use addWarpPin instead */
+  addPuppetPin(x, y, type = "position") {
+    return this.addWarpPin(x, y, type);
+  }
+  /**
+   * Remove a warp pin by ID
+   * @param pinId - The ID of the pin to remove
+   */
+  removeWarpPin(pinId) {
+    const index = this.warpPins.findIndex((p) => p.id === pinId);
+    if (index === -1) return;
+    this.warpPins.splice(index, 1);
+    meshWarpDeformation.removePin(this.layerData.id, pinId);
+    if (this.warpPins.length === 0) {
+      this.disableWarpMode();
+    }
+    this.lastPointsHash = "";
+  }
+  /** @deprecated Use removeWarpPin instead */
+  removePuppetPin(pinId) {
+    return this.removeWarpPin(pinId);
+  }
+  /**
+   * Get all warp pins
+   */
+  getWarpPins() {
+    return this.warpPins;
+  }
+  /** @deprecated Use getWarpPins instead */
+  getPuppetPins() {
+    return this.getWarpPins();
+  }
+  /**
+   * Update a warp pin's position
+   * @param pinId - The ID of the pin to update
+   * @param x - New X position
+   * @param y - New Y position
+   */
+  updateWarpPinPosition(pinId, x, y) {
+    const pin = this.warpPins.find((p) => p.id === pinId);
+    if (!pin) return;
+    pin.position.value = { x, y };
+    meshWarpDeformation.updatePinPosition(this.layerData.id, pinId, x, y);
+    this.lastPointsHash = "";
+  }
+  /** @deprecated Use updateWarpPinPosition instead */
+  updatePuppetPinPosition(pinId, x, y) {
+    return this.updateWarpPinPosition(pinId, x, y);
+  }
+  /**
+   * Set warp pins (replacing all existing pins)
+   * @param pins - Array of warp pins
+   */
+  setWarpPins(pins) {
+    this.warpPins = pins;
+    if (pins.length > 0) {
+      if (!this.warpEnabled) {
+        this.enableWarpMode();
+      }
+      meshWarpDeformation.updateMeshPins(this.layerData.id, pins);
+    } else {
+      this.disableWarpMode();
+    }
+    this.lastPointsHash = "";
+  }
+  /** @deprecated Use setWarpPins instead */
+  setPuppetPins(pins) {
+    return this.setWarpPins(pins);
   }
   /**
    * Build the Three.js spline from control points
@@ -38290,6 +44929,88 @@ class SplineLayer extends BaseLayer {
     return this.splineData.closed;
   }
   // ============================================================================
+  // TRIM PATH SETTERS/GETTERS
+  // ============================================================================
+  /**
+   * Set trim start (static value)
+   * @param value - Trim start percentage (0-100)
+   */
+  setTrimStart(value) {
+    this.trimStartProp = value;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Set trim end (static value)
+   * @param value - Trim end percentage (0-100)
+   */
+  setTrimEnd(value) {
+    this.trimEndProp = value;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Set trim offset (static value)
+   * @param value - Trim offset in degrees
+   */
+  setTrimOffset(value) {
+    this.trimOffsetProp = value;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Set animated trim start property
+   * @param prop - AnimatableProperty for trim start
+   */
+  setAnimatedTrimStart(prop) {
+    this.trimStartProp = prop;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Set animated trim end property
+   * @param prop - AnimatableProperty for trim end
+   */
+  setAnimatedTrimEnd(prop) {
+    this.trimEndProp = prop;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Set animated trim offset property
+   * @param prop - AnimatableProperty for trim offset
+   */
+  setAnimatedTrimOffset(prop) {
+    this.trimOffsetProp = prop;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Get current trim values at a specific frame
+   * Useful for UI display and debugging
+   */
+  getTrimValues(frame) {
+    return {
+      start: this.evaluateStaticOrAnimated(this.trimStartProp, frame, 0),
+      end: this.evaluateStaticOrAnimated(this.trimEndProp, frame, 100),
+      offset: this.evaluateStaticOrAnimated(this.trimOffsetProp, frame, 0)
+    };
+  }
+  /**
+   * Check if trim path is enabled (has non-default values or animated)
+   */
+  hasTrimPath() {
+    return this.trimStartProp !== void 0 || this.trimEndProp !== void 0 || this.trimOffsetProp !== void 0;
+  }
+  /**
+   * Set path effects
+   * @param effects - Array of path effects to apply
+   */
+  setPathEffects(effects) {
+    this.pathEffects = effects;
+    this.lastPointsHash = "";
+  }
+  /**
+   * Get current path effects
+   */
+  getPathEffects() {
+    return this.pathEffects;
+  }
+  // ============================================================================
   // ANIMATED SPLINE EVALUATION
   // ============================================================================
   /**
@@ -38320,7 +45041,8 @@ class SplineLayer extends BaseLayer {
         x: interpolateProperty(acp.handleOut.x, frame),
         y: interpolateProperty(acp.handleOut.y, frame)
       } : null,
-      type: acp.type
+      type: acp.type,
+      group: acp.group
     };
   }
   /**
@@ -38351,7 +45073,8 @@ class SplineLayer extends BaseLayer {
         depth: this.getDrivenControlPointValue(index, "depth", cp.depth ?? 0),
         handleIn: cp.handleIn,
         handleOut: cp.handleOut,
-        type: cp.type
+        type: cp.type,
+        group: cp.group
       }));
     }
     this.lastEvaluatedFrame = frame;
@@ -38386,6 +45109,141 @@ class SplineLayer extends BaseLayer {
     return points.map(
       (p) => `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.depth.toFixed(2)}`
     ).join("|");
+  }
+  // ============================================================================
+  // TRIM PATH & PATH EFFECTS HELPERS
+  // ============================================================================
+  /**
+   * Evaluate a property that can be either a static value or AnimatableProperty
+   * @param prop - Static value or AnimatableProperty
+   * @param frame - Current frame number
+   * @param defaultValue - Value to use if prop is undefined
+   */
+  evaluateStaticOrAnimated(prop, frame, defaultValue) {
+    if (prop === void 0) {
+      return defaultValue;
+    }
+    if (typeof prop === "number") {
+      return prop;
+    }
+    return interpolateProperty(prop, frame);
+  }
+  /**
+   * Check if trim is active (differs from default values)
+   */
+  isTrimActive(trimStart, trimEnd, trimOffset) {
+    return trimStart !== 0 || trimEnd !== 100 || trimOffset !== 0;
+  }
+  /**
+   * Check if any path effects are enabled
+   */
+  hasActivePathEffects() {
+    return this.pathEffects?.some((e) => e.enabled) ?? false;
+  }
+  /**
+   * Convert EvaluatedControlPoint[] to BezierPath format for shapeOperations
+   * Note: EvaluatedControlPoint handles are ABSOLUTE, BezierVertex handles are RELATIVE
+   */
+  evaluatedPointsToBezierPath(points) {
+    const vertices = points.map((p) => {
+      const inHandle = p.handleIn ? { x: p.handleIn.x - p.x, y: p.handleIn.y - p.y } : { x: 0, y: 0 };
+      const outHandle = p.handleOut ? { x: p.handleOut.x - p.x, y: p.handleOut.y - p.y } : { x: 0, y: 0 };
+      return {
+        point: { x: p.x, y: p.y },
+        inHandle,
+        outHandle
+      };
+    });
+    return {
+      vertices,
+      closed: this.splineData.closed
+    };
+  }
+  /**
+   * Convert BezierPath back to EvaluatedControlPoint[] format
+   * Note: Depth information is lost during trim - we interpolate from original points
+   */
+  bezierPathToEvaluatedPoints(bezierPath, originalPoints) {
+    return bezierPath.vertices.map((v, i) => {
+      const originalDepth = i < originalPoints.length ? originalPoints[i].depth : 0;
+      const handleIn = v.inHandle.x !== 0 || v.inHandle.y !== 0 ? { x: v.point.x + v.inHandle.x, y: v.point.y + v.inHandle.y } : null;
+      const handleOut = v.outHandle.x !== 0 || v.outHandle.y !== 0 ? { x: v.point.x + v.outHandle.x, y: v.point.y + v.outHandle.y } : null;
+      return {
+        id: `trimmed_${i}`,
+        x: v.point.x,
+        y: v.point.y,
+        depth: originalDepth,
+        handleIn,
+        handleOut,
+        type: "smooth"
+      };
+    });
+  }
+  /**
+   * Apply path effects in order (before trim)
+   * @param bezierPath - The input path
+   * @param frame - Current frame for animated effect properties
+   */
+  applyPathEffects(bezierPath, frame) {
+    if (!this.pathEffects || this.pathEffects.length === 0) {
+      return bezierPath;
+    }
+    const sortedEffects = [...this.pathEffects].filter((e) => e.enabled).sort((a, b) => a.order - b.order);
+    let result = bezierPath;
+    for (const effect of sortedEffects) {
+      switch (effect.type) {
+        case "offsetPath": {
+          const offsetEffect = effect;
+          const amount = interpolateProperty(offsetEffect.amount, frame);
+          const miterLimit = interpolateProperty(offsetEffect.miterLimit, frame);
+          result = offsetPath(result, amount, offsetEffect.lineJoin, miterLimit);
+          break;
+        }
+        case "wiggle": {
+          const wiggleEffect = effect;
+          const size = interpolateProperty(wiggleEffect.size, frame);
+          const detail = interpolateProperty(wiggleEffect.detail, frame);
+          const temporalPhase = interpolateProperty(wiggleEffect.temporalPhase, frame);
+          const spatialPhase = interpolateProperty(wiggleEffect.spatialPhase, frame);
+          const correlation = interpolateProperty(wiggleEffect.correlation, frame);
+          result = wigglePath(
+            result,
+            size,
+            detail,
+            "smooth",
+            // WigglePathEffect pointType mapping
+            correlation,
+            temporalPhase,
+            spatialPhase,
+            wiggleEffect.seed
+          );
+          break;
+        }
+        case "zigzag": {
+          const zigzagEffect = effect;
+          const size = interpolateProperty(zigzagEffect.size, frame);
+          const ridges = interpolateProperty(zigzagEffect.ridgesPerSegment, frame);
+          result = zigZagPath(result, size, ridges, zigzagEffect.pointType);
+          break;
+        }
+        case "roughen": {
+          const roughenEffect = effect;
+          const size = interpolateProperty(roughenEffect.size, frame);
+          const detail = interpolateProperty(roughenEffect.detail, frame);
+          result = roughenPath(result, size, detail, roughenEffect.seed);
+          break;
+        }
+        case "wave": {
+          const waveEffect = effect;
+          const amplitude = interpolateProperty(waveEffect.amplitude, frame);
+          const frequency = interpolateProperty(waveEffect.frequency, frame);
+          const phase = interpolateProperty(waveEffect.phase, frame);
+          result = wavePath(result, amplitude, frequency, phase, waveEffect.waveType);
+          break;
+        }
+      }
+    }
+    return result;
   }
   /**
    * Build spline geometry from evaluated control points
@@ -38464,15 +45322,96 @@ class SplineLayer extends BaseLayer {
   // ABSTRACT IMPLEMENTATIONS
   // ============================================================================
   onEvaluateFrame(frame) {
-    if (!this.isAnimated()) {
+    const trimStart = this.evaluateStaticOrAnimated(this.trimStartProp, frame, 0);
+    const trimEnd = this.evaluateStaticOrAnimated(this.trimEndProp, frame, 100);
+    const trimOffset = this.evaluateStaticOrAnimated(this.trimOffsetProp, frame, 0);
+    const needsTrim = this.isTrimActive(trimStart, trimEnd, trimOffset);
+    const hasEffects = this.hasActivePathEffects();
+    const useLOD = this.shouldUseLOD();
+    const hasWarp = this.warpEnabled && this.warpPins.length > 0;
+    if (!this.isAnimated() && !needsTrim && !hasEffects && !useLOD && !hasWarp) {
       return;
     }
-    const evaluatedPoints = this.getEvaluatedControlPoints(frame);
-    const pointsHash = this.computePointsHash(evaluatedPoints);
+    let evaluatedPoints = this.getEvaluatedControlPoints(frame);
+    const lodHash = useLOD ? `|lod:${this.lodContext.isPlaying},${this.lodContext.zoom.toFixed(2)}` : "";
+    const trimHash = needsTrim || hasEffects ? `|trim:${trimStart.toFixed(2)},${trimEnd.toFixed(2)},${trimOffset.toFixed(2)}|fx:${frame}` : "";
+    const warpHash = hasWarp ? `|warp:${frame}` : "";
+    const pointsHash = this.computePointsHash(evaluatedPoints) + trimHash + lodHash + warpHash;
     if (pointsHash !== this.lastPointsHash) {
-      this.buildSplineFromEvaluatedPoints(evaluatedPoints);
+      let finalPoints = evaluatedPoints;
+      if (hasWarp) {
+        const controlPoints = evaluatedPoints.map((ep) => ({
+          id: ep.id,
+          x: ep.x,
+          y: ep.y,
+          depth: ep.depth,
+          handleIn: ep.handleIn,
+          handleOut: ep.handleOut,
+          type: ep.type,
+          group: ep.group
+        }));
+        const deformedPoints = meshWarpDeformation.getDeformedControlPoints(
+          this.layerData.id,
+          frame,
+          controlPoints
+        );
+        finalPoints = deformedPoints.map((cp) => ({
+          id: cp.id,
+          x: cp.x,
+          y: cp.y,
+          depth: cp.depth ?? 0,
+          handleIn: cp.handleIn,
+          handleOut: cp.handleOut,
+          type: cp.type,
+          group: cp.group
+        }));
+      }
+      if (needsTrim || hasEffects) {
+        let bezierPath = this.evaluatedPointsToBezierPath(finalPoints);
+        if (hasEffects) {
+          bezierPath = this.applyPathEffects(bezierPath, frame);
+        }
+        if (needsTrim) {
+          bezierPath = trimPath(bezierPath, trimStart, trimEnd, trimOffset);
+        }
+        finalPoints = this.bezierPathToEvaluatedPoints(bezierPath, evaluatedPoints);
+      }
+      if (useLOD && finalPoints.length > 50) {
+        const lodLevel = vectorLOD.selectLODLevel(this.lodLevels, this.lodContext);
+        if (lodLevel && lodLevel.pointCount < finalPoints.length) {
+          finalPoints = lodLevel.controlPoints.map((cp, i) => ({
+            id: cp.id,
+            x: cp.x,
+            y: cp.y,
+            handleIn: cp.handleIn ?? { x: cp.x, y: cp.y },
+            handleOut: cp.handleOut ?? { x: cp.x, y: cp.y },
+            depth: cp.depth ?? 0,
+            type: cp.type,
+            group: cp.group
+          }));
+        }
+      }
+      this.buildSplineFromEvaluatedPoints(finalPoints);
       this.lastPointsHash = pointsHash;
     }
+  }
+  /**
+   * Check if LOD should be used based on current context
+   */
+  shouldUseLOD() {
+    if (!this.lodEnabled || this.lodLevels.length === 0) {
+      return false;
+    }
+    if (this.lodContext.isPlaying || this.lodContext.isScrubbing) {
+      return true;
+    }
+    if (this.lodContext.zoom < 0.5) {
+      return true;
+    }
+    if (this.lodContext.actualFps < this.lodContext.targetFps * 0.8) {
+      return true;
+    }
+    return false;
   }
   onApplyEvaluatedState(state) {
     const props = state.properties;
@@ -38528,6 +45467,26 @@ class SplineLayer extends BaseLayer {
       if (data.fill !== void 0) {
         this.setFill(data.fill);
       }
+      if (data.trimStart !== void 0) {
+        this.trimStartProp = data.trimStart;
+        this.lastPointsHash = "";
+      }
+      if (data.trimEnd !== void 0) {
+        this.trimEndProp = data.trimEnd;
+        this.lastPointsHash = "";
+      }
+      if (data.trimOffset !== void 0) {
+        this.trimOffsetProp = data.trimOffset;
+        this.lastPointsHash = "";
+      }
+      if (data.pathEffects !== void 0) {
+        this.pathEffects = data.pathEffects;
+        this.lastPointsHash = "";
+      }
+      const warpPinsData = data.warpPins ?? data.puppetPins;
+      if (warpPinsData !== void 0) {
+        this.setWarpPins(warpPinsData);
+      }
       if (needsRebuild) {
         this.buildSpline();
       }
@@ -38535,6 +45494,9 @@ class SplineLayer extends BaseLayer {
   }
   onDispose() {
     this.clearMeshes();
+    if (this.warpEnabled) {
+      meshWarpDeformation.clearMesh(this.layerData.id);
+    }
   }
 }
 
@@ -43940,905 +50902,6 @@ class ProceduralMatteLayer extends BaseLayer {
     }
   }
 }
-
-function distance(a, b) {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-function lerpPoint(a, b, t) {
-  return {
-    x: a.x + (b.x - a.x) * t,
-    y: a.y + (b.y - a.y) * t
-  };
-}
-function addPoints(a, b) {
-  return { x: a.x + b.x, y: a.y + b.y };
-}
-function subtractPoints(a, b) {
-  return { x: a.x - b.x, y: a.y - b.y };
-}
-function scalePoint(p, s) {
-  return { x: p.x * s, y: p.y * s };
-}
-function normalize(p) {
-  const len = Math.sqrt(p.x * p.x + p.y * p.y);
-  if (len < 1e-4) return { x: 0, y: 0 };
-  return { x: p.x / len, y: p.y / len };
-}
-function perpendicular(p) {
-  return { x: -p.y, y: p.x };
-}
-function dot(a, b) {
-  return a.x * b.x + a.y * b.y;
-}
-function rotatePoint(p, angle) {
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  return {
-    x: p.x * cos - p.y * sin,
-    y: p.x * sin + p.y * cos
-  };
-}
-function rotateAround(p, center, angle) {
-  const translated = subtractPoints(p, center);
-  const rotated = rotatePoint(translated, angle);
-  return addPoints(rotated, center);
-}
-function clonePoint(p) {
-  return { x: p.x, y: p.y };
-}
-function cloneVertex(v) {
-  return {
-    point: clonePoint(v.point),
-    inHandle: clonePoint(v.inHandle),
-    outHandle: clonePoint(v.outHandle)
-  };
-}
-function clonePath(path) {
-  return {
-    vertices: path.vertices.map(cloneVertex),
-    closed: path.closed
-  };
-}
-function cubicBezierPoint(p0, p1, p2, p3, t) {
-  const mt = 1 - t;
-  const mt2 = mt * mt;
-  const mt3 = mt2 * mt;
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return {
-    x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
-    y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
-  };
-}
-function cubicBezierDerivative(p0, p1, p2, p3, t) {
-  const mt = 1 - t;
-  const mt2 = mt * mt;
-  const t2 = t * t;
-  return {
-    x: 3 * mt2 * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t2 * (p3.x - p2.x),
-    y: 3 * mt2 * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t2 * (p3.y - p2.y)
-  };
-}
-function splitCubicBezier(p0, p1, p2, p3, t) {
-  const q0 = lerpPoint(p0, p1, t);
-  const q1 = lerpPoint(p1, p2, t);
-  const q2 = lerpPoint(p2, p3, t);
-  const r0 = lerpPoint(q0, q1, t);
-  const r1 = lerpPoint(q1, q2, t);
-  const s = lerpPoint(r0, r1, t);
-  return [
-    [p0, q0, r0, s],
-    [s, r1, q2, p3]
-  ];
-}
-function cubicBezierLength(p0, p1, p2, p3, subdivisions = 32) {
-  let length = 0;
-  let prev = p0;
-  for (let i = 1; i <= subdivisions; i++) {
-    const t = i / subdivisions;
-    const curr = cubicBezierPoint(p0, p1, p2, p3, t);
-    length += distance(prev, curr);
-    prev = curr;
-  }
-  return length;
-}
-function getPathLength(path) {
-  if (path.vertices.length < 2) return 0;
-  let totalLength = 0;
-  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
-  for (let i = 0; i < numSegments; i++) {
-    const v0 = path.vertices[i];
-    const v1 = path.vertices[(i + 1) % path.vertices.length];
-    const p0 = v0.point;
-    const p1 = addPoints(v0.point, v0.outHandle);
-    const p2 = addPoints(v1.point, v1.inHandle);
-    const p3 = v1.point;
-    totalLength += cubicBezierLength(p0, p1, p2, p3);
-  }
-  return totalLength;
-}
-function getPointAtDistance(path, targetDistance, totalLength) {
-  if (path.vertices.length < 2) return null;
-  const pathLength = totalLength ?? getPathLength(path);
-  if (pathLength < 1e-4) return null;
-  targetDistance = Math.max(0, Math.min(pathLength, targetDistance));
-  let accumulatedLength = 0;
-  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
-  for (let i = 0; i < numSegments; i++) {
-    const v0 = path.vertices[i];
-    const v1 = path.vertices[(i + 1) % path.vertices.length];
-    const p0 = v0.point;
-    const p1 = addPoints(v0.point, v0.outHandle);
-    const p2 = addPoints(v1.point, v1.inHandle);
-    const p3 = v1.point;
-    const segmentLength = cubicBezierLength(p0, p1, p2, p3);
-    if (accumulatedLength + segmentLength >= targetDistance) {
-      const remainingDistance = targetDistance - accumulatedLength;
-      const localT = remainingDistance / segmentLength;
-      const point = cubicBezierPoint(p0, p1, p2, p3, localT);
-      const tangent = normalize(cubicBezierDerivative(p0, p1, p2, p3, localT));
-      const globalT = (i + localT) / numSegments;
-      return { point, tangent, t: globalT };
-    }
-    accumulatedLength += segmentLength;
-  }
-  const lastVertex = path.vertices[path.closed ? 0 : path.vertices.length - 1];
-  return {
-    point: clonePoint(lastVertex.point),
-    tangent: { x: 1, y: 0 },
-    t: 1
-  };
-}
-function trimPath(path, startPercent, endPercent, offsetDegrees = 0) {
-  if (path.vertices.length < 2) return clonePath(path);
-  const totalLength = getPathLength(path);
-  if (totalLength < 1e-4) return clonePath(path);
-  const offsetPercent = offsetDegrees / 360 * 100;
-  let start = ((startPercent + offsetPercent) % 100 + 100) % 100;
-  let end = ((endPercent + offsetPercent) % 100 + 100) % 100;
-  if (start > end && path.closed) {
-    const part1 = trimPathSimple(path, start, 100, totalLength);
-    const part2 = trimPathSimple(path, 0, end, totalLength);
-    return joinPaths(part1, part2);
-  }
-  if (start > end) {
-    [start, end] = [end, start];
-  }
-  return trimPathSimple(path, start, end, totalLength);
-}
-function trimPathSimple(path, startPercent, endPercent, totalLength) {
-  const startDist = startPercent / 100 * totalLength;
-  const endDist = endPercent / 100 * totalLength;
-  if (endDist - startDist < 1e-3) {
-    return { vertices: [], closed: false };
-  }
-  const result = [];
-  let accumulatedLength = 0;
-  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
-  let inTrimRegion = false;
-  let lastPoint = null;
-  for (let i = 0; i < numSegments; i++) {
-    const v0 = path.vertices[i];
-    const v1 = path.vertices[(i + 1) % path.vertices.length];
-    const p0 = v0.point;
-    const p1 = addPoints(v0.point, v0.outHandle);
-    const p2 = addPoints(v1.point, v1.inHandle);
-    const p3 = v1.point;
-    const segmentLength = cubicBezierLength(p0, p1, p2, p3);
-    const segmentStart = accumulatedLength;
-    const segmentEnd = accumulatedLength + segmentLength;
-    if (segmentEnd > startDist && segmentStart < endDist) {
-      const tStart = Math.max(0, (startDist - segmentStart) / segmentLength);
-      const tEnd = Math.min(1, (endDist - segmentStart) / segmentLength);
-      let trimmedPoints;
-      if (tStart > 0 && tEnd < 1) {
-        const [, right] = splitCubicBezier(p0, p1, p2, p3, tStart);
-        const newTEnd = (tEnd - tStart) / (1 - tStart);
-        const [left] = splitCubicBezier(right[0], right[1], right[2], right[3], newTEnd);
-        trimmedPoints = left;
-      } else if (tStart > 0) {
-        const [, right] = splitCubicBezier(p0, p1, p2, p3, tStart);
-        trimmedPoints = right;
-      } else if (tEnd < 1) {
-        const [left] = splitCubicBezier(p0, p1, p2, p3, tEnd);
-        trimmedPoints = left;
-      } else {
-        trimmedPoints = [p0, p1, p2, p3];
-      }
-      if (!inTrimRegion || result.length === 0) {
-        result.push({
-          point: trimmedPoints[0],
-          inHandle: { x: 0, y: 0 },
-          outHandle: subtractPoints(trimmedPoints[1], trimmedPoints[0])
-        });
-        inTrimRegion = true;
-      } else if (lastPoint && distance(lastPoint, trimmedPoints[0]) > 0.01) {
-        if (result.length > 0) {
-          result[result.length - 1].outHandle = subtractPoints(trimmedPoints[1], result[result.length - 1].point);
-        }
-      }
-      result.push({
-        point: trimmedPoints[3],
-        inHandle: subtractPoints(trimmedPoints[2], trimmedPoints[3]),
-        outHandle: { x: 0, y: 0 }
-      });
-      lastPoint = trimmedPoints[3];
-    }
-    accumulatedLength += segmentLength;
-  }
-  return { vertices: result, closed: false };
-}
-function joinPaths(path1, path2) {
-  if (path1.vertices.length === 0) return clonePath(path2);
-  if (path2.vertices.length === 0) return clonePath(path1);
-  const result = clonePath(path1);
-  const p2Verts = path2.vertices.map(cloneVertex);
-  const lastP1 = result.vertices[result.vertices.length - 1];
-  const firstP2 = p2Verts[0];
-  if (distance(lastP1.point, firstP2.point) < 0.01) {
-    lastP1.outHandle = firstP2.outHandle;
-    result.vertices.push(...p2Verts.slice(1));
-  } else {
-    result.vertices.push(...p2Verts);
-  }
-  return result;
-}
-function mergePaths(paths, mode) {
-  if (paths.length === 0) return [];
-  if (paths.length === 1) return [clonePath(paths[0])];
-  const polygons = paths.map(pathToPolygon);
-  let result = [polygons[0]];
-  for (let i = 1; i < polygons.length; i++) {
-    const newPolygons = [];
-    for (const existing of result) {
-      switch (mode) {
-        case "add":
-          newPolygons.push(...polygonUnion(existing, polygons[i]));
-          break;
-        case "subtract":
-        case "minusFront":
-          newPolygons.push(...polygonDifference(existing));
-          break;
-        case "minusBack":
-          newPolygons.push(...polygonDifference(polygons[i]));
-          break;
-        case "intersect":
-          newPolygons.push(...polygonIntersection(existing));
-          break;
-        case "exclude":
-          newPolygons.push(...polygonXor(existing, polygons[i]));
-          break;
-      }
-    }
-    result = newPolygons;
-  }
-  return result.map(polygonToPath);
-}
-function pathToPolygon(path, segments = 16) {
-  const points = [];
-  const numSegments = path.closed ? path.vertices.length : path.vertices.length - 1;
-  for (let i = 0; i < numSegments; i++) {
-    const v0 = path.vertices[i];
-    const v1 = path.vertices[(i + 1) % path.vertices.length];
-    const p0 = v0.point;
-    const p1 = addPoints(v0.point, v0.outHandle);
-    const p2 = addPoints(v1.point, v1.inHandle);
-    const p3 = v1.point;
-    for (let j = 0; j < segments; j++) {
-      const t = j / segments;
-      points.push(cubicBezierPoint(p0, p1, p2, p3, t));
-    }
-  }
-  return points;
-}
-function polygonToPath(polygon) {
-  const vertices = polygon.map((p) => ({
-    point: clonePoint(p),
-    inHandle: { x: 0, y: 0 },
-    outHandle: { x: 0, y: 0 }
-  }));
-  return { vertices, closed: true };
-}
-function polygonUnion(a, b) {
-  return [a, b];
-}
-function polygonDifference(a, b) {
-  return [a];
-}
-function polygonIntersection(a, b) {
-  return [a];
-}
-function polygonXor(a, b) {
-  return [a, b];
-}
-function offsetPath(path, amount, join = "miter", miterLimit = 4) {
-  if (path.vertices.length < 2 || Math.abs(amount) < 1e-3) {
-    return clonePath(path);
-  }
-  const result = [];
-  const numVertices = path.vertices.length;
-  const isClosed = path.closed;
-  for (let i = 0; i < numVertices; i++) {
-    const curr = path.vertices[i];
-    const prev = path.vertices[(i - 1 + numVertices) % numVertices];
-    const next = path.vertices[(i + 1) % numVertices];
-    let inDir;
-    let outDir;
-    if (i === 0 && !isClosed) {
-      inDir = { x: 0, y: 0 };
-      outDir = normalize(subtractPoints(
-        addPoints(next.point, next.inHandle),
-        addPoints(curr.point, curr.outHandle)
-      ));
-    } else if (i === numVertices - 1 && !isClosed) {
-      inDir = normalize(subtractPoints(
-        addPoints(curr.point, curr.inHandle),
-        addPoints(prev.point, prev.outHandle)
-      ));
-      outDir = { x: 0, y: 0 };
-    } else {
-      inDir = normalize(subtractPoints(
-        curr.point,
-        addPoints(prev.point, prev.outHandle)
-      ));
-      outDir = normalize(subtractPoints(
-        addPoints(curr.point, curr.outHandle),
-        curr.point
-      ));
-    }
-    let offsetDir;
-    if (Math.abs(inDir.x) < 1e-3 && Math.abs(inDir.y) < 1e-3) {
-      offsetDir = perpendicular(outDir);
-    } else if (Math.abs(outDir.x) < 1e-3 && Math.abs(outDir.y) < 1e-3) {
-      offsetDir = perpendicular(inDir);
-    } else {
-      const perpIn = perpendicular(inDir);
-      const perpOut = perpendicular(outDir);
-      offsetDir = normalize(addPoints(perpIn, perpOut));
-      const angle = Math.acos(Math.max(-1, Math.min(1, dot(inDir, outDir))));
-      if (angle > 0.01) {
-        const miterFactor = 1 / Math.cos(angle / 2);
-        if (join === "miter" && miterFactor <= miterLimit) {
-          offsetDir = scalePoint(offsetDir, miterFactor);
-        }
-      }
-    }
-    const newPoint = addPoints(curr.point, scalePoint(offsetDir, amount));
-    const handleScale = 1;
-    result.push({
-      point: newPoint,
-      inHandle: scalePoint(curr.inHandle, handleScale),
-      outHandle: scalePoint(curr.outHandle, handleScale)
-    });
-  }
-  return { vertices: result, closed: isClosed };
-}
-function offsetPathMultiple(path, baseAmount, copies, copyOffset, join = "miter", miterLimit = 4) {
-  const results = [clonePath(path)];
-  for (let i = 1; i < copies; i++) {
-    const amount = baseAmount + copyOffset * i;
-    results.push(offsetPath(path, amount, join, miterLimit));
-  }
-  return results;
-}
-function puckerBloat(path, amount) {
-  if (path.vertices.length < 2 || Math.abs(amount) < 1e-3) {
-    return clonePath(path);
-  }
-  const centroid = { x: 0, y: 0 };
-  for (const v of path.vertices) {
-    centroid.x += v.point.x;
-    centroid.y += v.point.y;
-  }
-  centroid.x /= path.vertices.length;
-  centroid.y /= path.vertices.length;
-  const factor = amount / 100;
-  const result = path.vertices.map((v) => {
-    const dir = subtractPoints(v.point, centroid);
-    const dist = Math.sqrt(dir.x * dir.x + dir.y * dir.y);
-    if (dist < 1e-3) return cloneVertex(v);
-    const moveAmount = dist * factor;
-    const newPoint = addPoints(v.point, scalePoint(normalize(dir), moveAmount));
-    const handleFactor = 1 + factor * 0.5;
-    return {
-      point: newPoint,
-      inHandle: scalePoint(v.inHandle, handleFactor),
-      outHandle: scalePoint(v.outHandle, handleFactor)
-    };
-  });
-  return { vertices: result, closed: path.closed };
-}
-function wigglePath(path, size, detail, pointType, correlation, temporalPhase, spatialPhase, seed) {
-  if (path.vertices.length < 2 || size < 1e-3) {
-    return clonePath(path);
-  }
-  const rng = new SeededRandom(seed);
-  for (let i = 0; i < Math.floor(temporalPhase * 100); i++) {
-    rng.next();
-  }
-  const correlationFactor = correlation / 100;
-  const result = [];
-  const subdividedPath = subdividePath(path, Math.max(1, Math.floor(detail)));
-  let prevOffset = { x: 0, y: 0 };
-  for (let i = 0; i < subdividedPath.vertices.length; i++) {
-    const v = subdividedPath.vertices[i];
-    const angle = rng.next() * Math.PI * 2 + spatialPhase;
-    const magnitude = rng.next() * size;
-    const newOffset = {
-      x: Math.cos(angle) * magnitude,
-      y: Math.sin(angle) * magnitude
-    };
-    const offset = {
-      x: prevOffset.x * correlationFactor + newOffset.x * (1 - correlationFactor),
-      y: prevOffset.y * correlationFactor + newOffset.y * (1 - correlationFactor)
-    };
-    prevOffset = offset;
-    const newVertex = {
-      point: addPoints(v.point, offset),
-      inHandle: pointType === "smooth" ? clonePoint(v.inHandle) : { x: 0, y: 0 },
-      outHandle: pointType === "smooth" ? clonePoint(v.outHandle) : { x: 0, y: 0 }
-    };
-    result.push(newVertex);
-  }
-  return { vertices: result, closed: path.closed };
-}
-function subdividePath(path, levels = 1) {
-  if (levels <= 0) return clonePath(path);
-  let current = clonePath(path);
-  for (let level = 0; level < levels; level++) {
-    const result = [];
-    const numSegments = current.closed ? current.vertices.length : current.vertices.length - 1;
-    for (let i = 0; i < numSegments; i++) {
-      const v0 = current.vertices[i];
-      const v1 = current.vertices[(i + 1) % current.vertices.length];
-      const p0 = v0.point;
-      const p1 = addPoints(v0.point, v0.outHandle);
-      const p2 = addPoints(v1.point, v1.inHandle);
-      const p3 = v1.point;
-      const [left, right] = splitCubicBezier(p0, p1, p2, p3, 0.5);
-      result.push({
-        point: left[0],
-        inHandle: i === 0 ? v0.inHandle : subtractPoints(left[1], left[0]),
-        outHandle: subtractPoints(left[1], left[0])
-      });
-      result.push({
-        point: left[3],
-        inHandle: subtractPoints(left[2], left[3]),
-        outHandle: subtractPoints(right[1], right[0])
-      });
-    }
-    if (!current.closed) {
-      const lastV = current.vertices[current.vertices.length - 1];
-      result.push(cloneVertex(lastV));
-    }
-    current = { vertices: result, closed: current.closed };
-  }
-  return current;
-}
-function zigZagPath(path, size, ridgesPerSegment, pointType) {
-  if (path.vertices.length < 2 || size < 1e-3 || ridgesPerSegment < 1) {
-    return clonePath(path);
-  }
-  const result = [];
-  const totalLength = getPathLength(path);
-  const ridgeLength = totalLength / (ridgesPerSegment * (path.vertices.length - (path.closed ? 0 : 1)));
-  let currentDistance = 0;
-  let zigDirection = 1;
-  while (currentDistance < totalLength) {
-    const pointData = getPointAtDistance(path, currentDistance, totalLength);
-    if (!pointData) break;
-    const perp = perpendicular(pointData.tangent);
-    const offset = scalePoint(perp, size * zigDirection);
-    const vertex = {
-      point: addPoints(pointData.point, offset),
-      inHandle: pointType === "smooth" ? scalePoint(pointData.tangent, -ridgeLength * 0.3) : { x: 0, y: 0 },
-      outHandle: pointType === "smooth" ? scalePoint(pointData.tangent, ridgeLength * 0.3) : { x: 0, y: 0 }
-    };
-    result.push(vertex);
-    currentDistance += ridgeLength;
-    zigDirection *= -1;
-  }
-  if (result.length > 0 && !path.closed) {
-    const lastVertex = path.vertices[path.vertices.length - 1];
-    result.push({
-      point: clonePoint(lastVertex.point),
-      inHandle: { x: 0, y: 0 },
-      outHandle: { x: 0, y: 0 }
-    });
-  }
-  return { vertices: result, closed: path.closed };
-}
-function twistPath(path, angle, center) {
-  if (path.vertices.length < 2 || Math.abs(angle) < 1e-3) {
-    return clonePath(path);
-  }
-  let minY = Infinity, maxY = -Infinity;
-  for (const v of path.vertices) {
-    minY = Math.min(minY, v.point.y);
-    maxY = Math.max(maxY, v.point.y);
-  }
-  const height = maxY - minY;
-  if (height < 1e-3) return clonePath(path);
-  const angleRad = angle * Math.PI / 180;
-  const result = path.vertices.map((v) => {
-    const yNorm = (v.point.y - minY) / height;
-    const localAngle = angleRad * yNorm;
-    const rotatedPoint = rotateAround(v.point, center, localAngle);
-    const absInHandle = addPoints(v.point, v.inHandle);
-    const absOutHandle = addPoints(v.point, v.outHandle);
-    const rotatedIn = rotateAround(absInHandle, center, localAngle);
-    const rotatedOut = rotateAround(absOutHandle, center, localAngle);
-    return {
-      point: rotatedPoint,
-      inHandle: subtractPoints(rotatedIn, rotatedPoint),
-      outHandle: subtractPoints(rotatedOut, rotatedPoint)
-    };
-  });
-  return { vertices: result, closed: path.closed };
-}
-function roundCorners(path, radius) {
-  if (path.vertices.length < 2 || radius < 1e-3) {
-    return clonePath(path);
-  }
-  const result = [];
-  const numVertices = path.vertices.length;
-  for (let i = 0; i < numVertices; i++) {
-    const curr = path.vertices[i];
-    const prev = path.vertices[(i - 1 + numVertices) % numVertices];
-    const next = path.vertices[(i + 1) % numVertices];
-    if (!path.closed && (i === 0 || i === numVertices - 1)) {
-      result.push(cloneVertex(curr));
-      continue;
-    }
-    const toPrev = normalize(subtractPoints(prev.point, curr.point));
-    const toNext = normalize(subtractPoints(next.point, curr.point));
-    const dotProduct = dot(toPrev, toNext);
-    if (dotProduct > 0.99) {
-      result.push(cloneVertex(curr));
-      continue;
-    }
-    const distPrev = distance(curr.point, prev.point);
-    const distNext = distance(curr.point, next.point);
-    const maxRadius = Math.min(radius, distPrev / 2, distNext / 2);
-    const startPoint = addPoints(curr.point, scalePoint(toPrev, maxRadius));
-    const endPoint = addPoints(curr.point, scalePoint(toNext, maxRadius));
-    const kappa = 0.5522847498;
-    const handleLength = maxRadius * kappa;
-    result.push({
-      point: startPoint,
-      inHandle: { x: 0, y: 0 },
-      outHandle: scalePoint(toPrev, -handleLength)
-    });
-    result.push({
-      point: endPoint,
-      inHandle: scalePoint(toNext, -handleLength),
-      outHandle: { x: 0, y: 0 }
-    });
-  }
-  return { vertices: result, closed: path.closed };
-}
-function generateRectangle(position, size, roundness = 0, direction = 1) {
-  const hw = size.x / 2;
-  const hh = size.y / 2;
-  const r = Math.min(roundness, hw, hh);
-  const corners = [
-    { x: position.x - hw, y: position.y - hh },
-    // TL
-    { x: position.x + hw, y: position.y - hh },
-    // TR
-    { x: position.x + hw, y: position.y + hh },
-    // BR
-    { x: position.x - hw, y: position.y + hh }
-    // BL
-  ];
-  if (direction === -1) {
-    corners.reverse();
-  }
-  if (r < 0.01) {
-    return {
-      vertices: corners.map((p) => ({
-        point: p,
-        inHandle: { x: 0, y: 0 },
-        outHandle: { x: 0, y: 0 }
-      })),
-      closed: true
-    };
-  }
-  const kappa = 0.5522847498 * r;
-  const vertices = [];
-  for (let i = 0; i < 4; i++) {
-    const curr = corners[i];
-    const next = corners[(i + 1) % 4];
-    const dir = normalize(subtractPoints(next, curr));
-    vertices.push({
-      point: addPoints(curr, scalePoint(dir, r)),
-      inHandle: scalePoint(dir, -kappa),
-      outHandle: { x: 0, y: 0 }
-    });
-    vertices.push({
-      point: subtractPoints(next, scalePoint(dir, r)),
-      inHandle: { x: 0, y: 0 },
-      outHandle: scalePoint(dir, kappa)
-    });
-  }
-  return { vertices, closed: true };
-}
-function generateEllipse(position, size, direction = 1) {
-  const rx = size.x / 2;
-  const ry = size.y / 2;
-  const kappa = 0.5522847498;
-  let vertices = [
-    {
-      // Top
-      point: { x: position.x, y: position.y - ry },
-      inHandle: { x: -rx * kappa, y: 0 },
-      outHandle: { x: rx * kappa, y: 0 }
-    },
-    {
-      // Right
-      point: { x: position.x + rx, y: position.y },
-      inHandle: { x: 0, y: -ry * kappa },
-      outHandle: { x: 0, y: ry * kappa }
-    },
-    {
-      // Bottom
-      point: { x: position.x, y: position.y + ry },
-      inHandle: { x: rx * kappa, y: 0 },
-      outHandle: { x: -rx * kappa, y: 0 }
-    },
-    {
-      // Left
-      point: { x: position.x - rx, y: position.y },
-      inHandle: { x: 0, y: ry * kappa },
-      outHandle: { x: 0, y: -ry * kappa }
-    }
-  ];
-  if (direction === -1) {
-    vertices = vertices.reverse().map((v) => ({
-      point: v.point,
-      inHandle: v.outHandle,
-      outHandle: v.inHandle
-    }));
-  }
-  return { vertices, closed: true };
-}
-function generatePolygon(position, points, radius, roundness = 0, rotation = 0, direction = 1) {
-  const numPoints = Math.max(3, Math.floor(points));
-  const angleStep = Math.PI * 2 / numPoints;
-  const startAngle = (rotation - 90) * (Math.PI / 180);
-  const vertices = [];
-  for (let i = 0; i < numPoints; i++) {
-    const idx = direction === 1 ? i : numPoints - 1 - i;
-    const angle = startAngle + angleStep * idx * direction;
-    const point = {
-      x: position.x + Math.cos(angle) * radius,
-      y: position.y + Math.sin(angle) * radius
-    };
-    const handleLength = radius * (roundness / 100) * 0.5;
-    const tangentAngle = angle + Math.PI / 2 * direction;
-    vertices.push({
-      point,
-      inHandle: roundness > 0 ? {
-        x: Math.cos(tangentAngle) * handleLength,
-        y: Math.sin(tangentAngle) * handleLength
-      } : { x: 0, y: 0 },
-      outHandle: roundness > 0 ? {
-        x: -Math.cos(tangentAngle) * handleLength,
-        y: -Math.sin(tangentAngle) * handleLength
-      } : { x: 0, y: 0 }
-    });
-  }
-  return { vertices, closed: true };
-}
-function generateStar(position, points, outerRadius, innerRadius, outerRoundness = 0, innerRoundness = 0, rotation = 0, direction = 1) {
-  const numPoints = Math.max(3, Math.floor(points));
-  const angleStep = Math.PI / numPoints;
-  const startAngle = (rotation - 90) * (Math.PI / 180);
-  const vertices = [];
-  for (let i = 0; i < numPoints * 2; i++) {
-    const idx = direction === 1 ? i : numPoints * 2 - 1 - i;
-    const angle = startAngle + angleStep * idx * direction;
-    const isOuter = idx % 2 === 0;
-    const radius = isOuter ? outerRadius : innerRadius;
-    const roundness = isOuter ? outerRoundness : innerRoundness;
-    const point = {
-      x: position.x + Math.cos(angle) * radius,
-      y: position.y + Math.sin(angle) * radius
-    };
-    const handleLength = radius * (roundness / 100) * 0.3;
-    const tangentAngle = angle + Math.PI / 2 * direction;
-    vertices.push({
-      point,
-      inHandle: roundness > 0 ? {
-        x: Math.cos(tangentAngle) * handleLength,
-        y: Math.sin(tangentAngle) * handleLength
-      } : { x: 0, y: 0 },
-      outHandle: roundness > 0 ? {
-        x: -Math.cos(tangentAngle) * handleLength,
-        y: -Math.sin(tangentAngle) * handleLength
-      } : { x: 0, y: 0 }
-    });
-  }
-  return { vertices, closed: true };
-}
-function simplifyPath(path, tolerance, straightLines = false) {
-  if (path.vertices.length <= 2) return clonePath(path);
-  const points = pathToPolygon(path, 32);
-  const simplified = douglasPeucker(points, tolerance);
-  if (straightLines) {
-    return polygonToPath(simplified);
-  } else {
-    return fitBezierToPoints(simplified, path.closed);
-  }
-}
-function douglasPeucker(points, tolerance) {
-  if (points.length <= 2) return [...points];
-  let maxDist = 0;
-  let maxIndex = 0;
-  const start = points[0];
-  const end = points[points.length - 1];
-  for (let i = 1; i < points.length - 1; i++) {
-    const dist = perpendicularDistance(points[i], start, end);
-    if (dist > maxDist) {
-      maxDist = dist;
-      maxIndex = i;
-    }
-  }
-  if (maxDist > tolerance) {
-    const left = douglasPeucker(points.slice(0, maxIndex + 1), tolerance);
-    const right = douglasPeucker(points.slice(maxIndex), tolerance);
-    return [...left.slice(0, -1), ...right];
-  } else {
-    return [start, end];
-  }
-}
-function perpendicularDistance(point, lineStart, lineEnd) {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  if (length < 1e-4) return distance(point, lineStart);
-  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (length * length);
-  const closest = {
-    x: lineStart.x + t * dx,
-    y: lineStart.y + t * dy
-  };
-  return distance(point, closest);
-}
-function fitBezierToPoints(points, closed) {
-  const vertices = [];
-  for (let i = 0; i < points.length; i++) {
-    const prev = points[(i - 1 + points.length) % points.length];
-    const curr = points[i];
-    const next = points[(i + 1) % points.length];
-    const toPrev = subtractPoints(prev, curr);
-    const toNext = subtractPoints(next, curr);
-    const handleLength = Math.min(
-      distance(curr, prev) * 0.3,
-      distance(curr, next) * 0.3
-    );
-    const avgDir = normalize(subtractPoints(toNext, toPrev));
-    vertices.push({
-      point: clonePoint(curr),
-      inHandle: scalePoint(avgDir, -handleLength),
-      outHandle: scalePoint(avgDir, handleLength)
-    });
-  }
-  return { vertices, closed };
-}
-function smoothPath(path, amount) {
-  if (path.vertices.length < 2) return clonePath(path);
-  const factor = amount / 100;
-  const result = path.vertices.map((v, i) => {
-    const prev = path.vertices[(i - 1 + path.vertices.length) % path.vertices.length];
-    const next = path.vertices[(i + 1) % path.vertices.length];
-    const toPrev = subtractPoints(prev.point, v.point);
-    const toNext = subtractPoints(next.point, v.point);
-    const avgDir = normalize(subtractPoints(toNext, toPrev));
-    const idealHandleLength = (distance(v.point, prev.point) + distance(v.point, next.point)) / 6;
-    const idealIn = scalePoint(avgDir, -idealHandleLength);
-    const idealOut = scalePoint(avgDir, idealHandleLength);
-    return {
-      point: clonePoint(v.point),
-      inHandle: lerpPoint(v.inHandle, idealIn, factor),
-      outHandle: lerpPoint(v.outHandle, idealOut, factor)
-    };
-  });
-  return { vertices: result, closed: path.closed };
-}
-function applyRepeater(paths, copies, offset, anchorPoint, position, scale, rotation, startOpacity, endOpacity) {
-  const results = [];
-  for (let i = 0; i < copies; i++) {
-    const t = copies > 1 ? i / (copies - 1) : 0;
-    const copyRotation = rotation * i;
-    const copyScale = {
-      x: 100 + (scale.x - 100) * i,
-      y: 100 + (scale.y - 100) * i
-    };
-    const copyPosition = {
-      x: position.x * i,
-      y: position.y * i
-    };
-    const copyOpacity = startOpacity + (endOpacity - startOpacity) * t;
-    const transformedPaths = paths.map((path) => {
-      return transformPath(path, anchorPoint, copyPosition, copyScale, copyRotation);
-    });
-    results.push({
-      paths: transformedPaths,
-      opacities: paths.map(() => copyOpacity / 100)
-    });
-  }
-  return results;
-}
-function transformPath(path, anchorPoint, position, scale, rotation) {
-  const rotRad = rotation * Math.PI / 180;
-  const cos = Math.cos(rotRad);
-  const sin = Math.sin(rotRad);
-  const transformPoint = (p) => {
-    let x = p.x - anchorPoint.x;
-    let y = p.y - anchorPoint.y;
-    x *= scale.x / 100;
-    y *= scale.y / 100;
-    const rx = x * cos - y * sin;
-    const ry = x * sin + y * cos;
-    return {
-      x: rx + anchorPoint.x + position.x,
-      y: ry + anchorPoint.y + position.y
-    };
-  };
-  const vertices = path.vertices.map((v) => {
-    const newPoint = transformPoint(v.point);
-    const absIn = addPoints(v.point, v.inHandle);
-    const absOut = addPoints(v.point, v.outHandle);
-    const newIn = transformPoint(absIn);
-    const newOut = transformPoint(absOut);
-    return {
-      point: newPoint,
-      inHandle: subtractPoints(newIn, newPoint),
-      outHandle: subtractPoints(newOut, newPoint)
-    };
-  });
-  return { vertices, closed: path.closed };
-}
-const ShapeOperations = {
-  // Utilities
-  distance,
-  lerpPoint,
-  addPoints,
-  subtractPoints,
-  scalePoint,
-  normalize,
-  perpendicular,
-  clonePath,
-  // Bezier
-  cubicBezierPoint,
-  cubicBezierLength,
-  getPathLength,
-  getPointAtDistance,
-  splitCubicBezier,
-  // Path operators
-  trimPath,
-  mergePaths,
-  offsetPath,
-  offsetPathMultiple,
-  puckerBloat,
-  wigglePath,
-  zigZagPath,
-  twistPath,
-  roundCorners,
-  // Generators
-  generateRectangle,
-  generateEllipse,
-  generatePolygon,
-  generateStar,
-  // Illustrator features
-  simplifyPath,
-  smoothPath,
-  // Repeater
-  applyRepeater,
-  transformPath
-};
 
 class ShapeLayer extends BaseLayer {
   type = "shape";
