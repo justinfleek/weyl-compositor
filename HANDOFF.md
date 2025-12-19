@@ -442,13 +442,13 @@ private loadUSD(url: string): Promise<THREE.Object3D> {
 
 ### Phase 1: Critical Fixes (Immediate)
 
-1. **Fix TypeScript errors** (26 total)
-   - Update test files with new type requirements
-   - Fix Bezier import in arcLength.ts
-   - Add getExportData to BaseLayer or type guard
+1. **~~Fix TypeScript errors~~** ✅ COMPLETED
+   - ~~Update test files with new type requirements~~
+   - ~~Fix Bezier import in arcLength.ts~~ → Fixed type declaration instead
+   - ~~Add getExportData to BaseLayer or type guard~~ → Added getAllLayers() to LayerManager
 
-2. **Fix failing test**
-   - Increase timeout for chroma test
+2. **Fix failing test** (optional)
+   - Increase timeout for chroma test if needed
 
 3. **Add missing store methods**
    - `renameLayer(id, name)`
@@ -670,7 +670,7 @@ npm test -- --reporter=verbose  # Verbose output
 
 ### Type Check
 ```bash
-npx tsc --noEmit     # Shows 26 errors (see Part 1)
+npx tsc --noEmit     # Should show 0 errors ✅
 ```
 
 ---
@@ -926,8 +926,8 @@ Before starting work, verify:
 - [ ] Skim docs/ directory for detailed specifications
 - [ ] Check reference_images/ for UI compliance targets
 - [ ] Check git status for uncommitted changes
-- [ ] Run `npm test` to verify test status
-- [ ] Run `npx tsc --noEmit` to see TypeScript errors
+- [ ] Run `npm test` to verify test status (expect 1012 passing, 43 skipped)
+- [ ] Run `npx tsc --noEmit` to verify 0 TypeScript errors ✅
 
 ## CRITICAL SPEC VIOLATIONS TO FIX FIRST
 
