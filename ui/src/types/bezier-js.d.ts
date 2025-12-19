@@ -12,7 +12,7 @@ declare module 'bezier-js' {
     z?: number;
   }
 
-  export default class Bezier {
+  export class Bezier {
     constructor(
       p1: Point,
       p2: Point,
