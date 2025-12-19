@@ -782,6 +782,13 @@ export class LayerManager {
     return this.layers.size;
   }
 
+  /**
+   * Get all layers as an array
+   */
+  getAllLayers(): BaseLayer[] {
+    return Array.from(this.layers.values());
+  }
+
   // ============================================================================
   // LAYER ORDERING
   // ============================================================================
