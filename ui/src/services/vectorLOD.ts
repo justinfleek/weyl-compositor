@@ -26,7 +26,9 @@ export interface LODLevel {
   /** Point count at this level */
   pointCount: number;
   /** Estimated rendering cost (0-1) */
-  complexity: number;
+  complexity?: number;
+  /** Quality index (0 = highest, higher = more simplified) */
+  quality?: number;
 }
 
 export interface LODConfig {
@@ -51,6 +53,8 @@ export interface LODContext {
   zoom: number;
   /** Whether playback is active */
   isPlaying: boolean;
+  /** Whether user is scrubbing timeline */
+  isScrubbing?: boolean;
   /** Viewport bounds */
   viewport?: { x: number; y: number; width: number; height: number };
   /** Target FPS (for adaptive LOD) */
@@ -187,10 +191,10 @@ export class VectorLODService {
 
     // Find level closest to target quality
     let bestLevel = levels[0];
-    let bestDiff = Math.abs(levels[0].complexity - targetQuality);
+    let bestDiff = Math.abs((levels[0].complexity ?? 0) - targetQuality);
 
     for (const level of levels) {
-      const diff = Math.abs(level.complexity - targetQuality);
+      const diff = Math.abs((level.complexity ?? 0) - targetQuality);
       if (diff < bestDiff) {
         bestDiff = diff;
         bestLevel = level;

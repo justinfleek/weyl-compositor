@@ -114,9 +114,9 @@ export class SplineLayer extends BaseLayer {
     zoom: 1,
     isPlaying: false,
     isScrubbing: false,
-    targetFps: 60,
-    actualFps: 60,
-    viewport: { width: 1920, height: 1080 },
+    targetFPS: 60,
+    currentFPS: 60,
+    viewport: { x: 0, y: 0, width: 1920, height: 1080 },
   };
 
   /** Whether warp (mesh warp) deformation is enabled for this spline */
@@ -1416,7 +1416,7 @@ export class SplineLayer extends BaseLayer {
     }
 
     // Use LOD if frame rate is suffering
-    if (this.lodContext.actualFps < this.lodContext.targetFps * 0.8) {
+    if ((this.lodContext.currentFPS ?? 60) < (this.lodContext.targetFPS ?? 60) * 0.8) {
       return true;
     }
 

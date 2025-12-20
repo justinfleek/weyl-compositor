@@ -361,21 +361,25 @@ export const TEXT_ANIMATOR_PRESETS: Record<TextAnimatorPresetType, TextAnimatorP
 function createAnimatablePropWithKeyframes<T>(
   value: T,
   name: string,
-  keyframes: Array<{ frame: number; value: T }>
+  keyframes: Array<{ frame: number; value: T }>,
+  type: 'number' | 'color' | 'position' | 'enum' | 'vector3' = 'number'
 ): AnimatableProperty<T> {
   return {
     id: generateId(),
     name,
-    type: typeof value === 'number' ? 'number' : typeof value === 'string' ? 'string' : 'object',
+    type,
     value,
     animated: keyframes.length > 0,
     keyframes: keyframes.map(kf => ({
       id: generateId(),
       frame: kf.frame,
       value: kf.value,
-      easing: 'ease-out',
+      interpolation: 'bezier' as const,
+      inHandle: { frame: -5, value: 0, enabled: true },
+      outHandle: { frame: 5, value: 0, enabled: true },
+      controlMode: 'smooth' as const,
     })),
-  } as AnimatableProperty<T>;
+  };
 }
 
 // ============================================================================

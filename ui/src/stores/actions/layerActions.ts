@@ -1433,7 +1433,7 @@ export async function convertTextLayerToSplines(
           charLayer.transform = {
             ...createDefaultTransform(),
             position: createAnimatableProperty('Position', {
-              x: layer.transform.position.value.x + charGroup.x,
+              x: layer.transform.position.value.x + charGroup.bounds.x,
               y: layer.transform.position.value.y,
             }, 'position'),
           };

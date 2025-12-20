@@ -61,11 +61,11 @@ export class SVGExportService {
     );
 
     const strokeAttr = opts.includeStrokes
-      ? 'stroke="' + (splineData.strokeColor || '#000') + '" stroke-width="' + (splineData.strokeWidth || 1) + '"'
+      ? 'stroke="' + (splineData.stroke || '#000') + '" stroke-width="' + (splineData.strokeWidth || 1) + '"'
       : 'stroke="none"';
 
     const fillAttr = opts.includeFills
-      ? 'fill="' + (splineData.fillColor || 'none') + '"'
+      ? 'fill="' + (splineData.fill || 'none') + '"'
       : 'fill="none"';
 
     let transformAttr = '';
@@ -132,11 +132,11 @@ export class SVGExportService {
       );
 
       const strokeAttr = opts.includeStrokes
-        ? 'stroke="' + (splineData.strokeColor || '#000') + '" stroke-width="' + (splineData.strokeWidth || 1) + '"'
+        ? 'stroke="' + (splineData.stroke || '#000') + '" stroke-width="' + (splineData.strokeWidth || 1) + '"'
         : 'stroke="none"';
 
       const fillAttr = opts.includeFills
-        ? 'fill="' + (splineData.fillColor || 'none') + '"'
+        ? 'fill="' + (splineData.fill || 'none') + '"'
         : 'fill="none"';
 
       let transformAttr = '';

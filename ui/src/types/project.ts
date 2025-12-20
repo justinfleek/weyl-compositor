@@ -1723,6 +1723,10 @@ export interface LODLevel {
   tolerance: number;
   controlPoints: ControlPoint[];
   pointCount: number;
+  /** Quality index (0 = highest, higher = more simplified) */
+  quality?: number;
+  /** Complexity metric for this level */
+  complexity?: number;
 }
 
 /**

@@ -577,10 +577,11 @@ export class ParticleGPUCompute {
   uploadParticles(data: GPUParticleData): void {
     if (!this.device || !this.initialized) return;
 
-    this.device.queue.writeBuffer(this.positionBuffer!, 0, data.positions);
-    this.device.queue.writeBuffer(this.velocityBuffer!, 0, data.velocities);
-    this.device.queue.writeBuffer(this.propertiesBuffer!, 0, data.properties);
-    this.device.queue.writeBuffer(this.colorBuffer!, 0, data.colors);
+    // Cast Float32Array to BufferSource for WebGPU compatibility
+    this.device.queue.writeBuffer(this.positionBuffer!, 0, data.positions as BufferSource);
+    this.device.queue.writeBuffer(this.velocityBuffer!, 0, data.velocities as BufferSource);
+    this.device.queue.writeBuffer(this.propertiesBuffer!, 0, data.properties as BufferSource);
+    this.device.queue.writeBuffer(this.colorBuffer!, 0, data.colors as BufferSource);
   }
 
   /**

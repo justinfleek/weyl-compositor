@@ -201,7 +201,7 @@ interface SpatialGrid {
 }
 
 // Emitter shape types for geometric emission
-export type EmitterShape = 'point' | 'line' | 'circle' | 'box' | 'sphere' | 'ring' | 'spline';
+export type EmitterShape = 'point' | 'line' | 'circle' | 'box' | 'sphere' | 'ring' | 'spline' | 'depth-map' | 'mask';
 
 // Spline path emission configuration
 export interface SplinePathEmission {

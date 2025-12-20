@@ -5,7 +5,6 @@
  * animations, and other configurable elements.
  */
 
-import type { ParticleSystemConfig } from './particles';
 import type { SplinePathEffect } from './project';
 import type { CameraShakeConfig } from '../services/cameraEnhancements';
 import type { TrajectoryConfig } from '../services/cameraTrajectory';
@@ -46,9 +45,25 @@ export interface PresetMetadata {
 // SPECIFIC PRESET TYPES
 // ============================================================================
 
+/** Combined particle preset config (system + emitter settings) */
+export interface ParticlePresetConfig {
+  // System-level settings
+  maxParticles?: number;
+  gravity?: number;
+  turbulenceStrength?: number;
+  // Emitter-level settings
+  emissionRate?: number;
+  lifespan?: number;
+  startSize?: number;
+  endSize?: number;
+  startColor?: string;
+  endColor?: string;
+  velocitySpread?: number;
+}
+
 export interface ParticlePreset extends PresetMetadata {
   category: 'particle';
-  config: Partial<ParticleSystemConfig>;
+  config: ParticlePresetConfig;
 }
 
 export interface EffectPreset extends PresetMetadata {
@@ -153,7 +168,7 @@ export const BUILT_IN_PARTICLE_PRESETS: ParticlePreset[] = [
       endSize: 5,
       startColor: '#ff6600',
       endColor: '#ffff00',
-      gravity: { x: 0, y: -50, z: 0 },
+      gravity: -50,
       turbulenceStrength: 30,
       velocitySpread: 30,
     }
@@ -175,7 +190,7 @@ export const BUILT_IN_PARTICLE_PRESETS: ParticlePreset[] = [
       endSize: 6,
       startColor: '#ffffff',
       endColor: '#ccccff',
-      gravity: { x: 0, y: 20, z: 0 },
+      gravity: 20,
       turbulenceStrength: 10,
       velocitySpread: 20,
     }
@@ -197,7 +212,7 @@ export const BUILT_IN_PARTICLE_PRESETS: ParticlePreset[] = [
       endSize: 1,
       startColor: '#ffff00',
       endColor: '#ff8800',
-      gravity: { x: 0, y: 100, z: 0 },
+      gravity: 100,
       velocitySpread: 180,
     }
   },
@@ -218,7 +233,7 @@ export const BUILT_IN_PARTICLE_PRESETS: ParticlePreset[] = [
       endSize: 80,
       startColor: '#444444',
       endColor: '#888888',
-      gravity: { x: 0, y: -30, z: 0 },
+      gravity: -30,
       turbulenceStrength: 20,
     }
   },
@@ -237,7 +252,7 @@ export const BUILT_IN_PARTICLE_PRESETS: ParticlePreset[] = [
       lifespan: 3,
       startSize: 10,
       endSize: 8,
-      gravity: { x: 0, y: 50, z: 0 },
+      gravity: 50,
       velocitySpread: 60,
       turbulenceStrength: 15,
     }

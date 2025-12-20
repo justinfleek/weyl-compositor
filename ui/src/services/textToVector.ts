@@ -10,11 +10,31 @@
  */
 
 import opentype from 'opentype.js';
-import type { ControlPoint, Layer, SplineData } from '@/types/project';
+import type { ControlPoint, Layer, SplineData, AnimatableProperty } from '@/types/project';
 import type { BezierPath, BezierVertex, Point2D } from '@/types/shapes';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('TextToVector');
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/** Create a basic AnimatableProperty with default values */
+function createAnimatableProperty<T>(
+  name: string,
+  value: T,
+  type: 'number' | 'position' | 'color' | 'enum' | 'vector3'
+): AnimatableProperty<T> {
+  return {
+    id: `prop_${name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
+    name,
+    type,
+    value,
+    animated: false,
+    keyframes: [],
+  };
+}
 
 // ============================================================================
 // Types
@@ -379,11 +399,12 @@ export async function textLayerToSplines(
       const controlPoints = bezierPathsToControlPoints(charGroup.paths);
 
       const splineData: SplineData = {
+        pathData: '',
         controlPoints,
         closed: charGroup.paths[0]?.closed ?? false,
+        stroke: '#ffffff',
         strokeWidth: 2,
-        strokeColor: '#ffffff',
-        fillColor: 'transparent',
+        fill: 'transparent',
       };
 
       layers.push({
@@ -391,31 +412,29 @@ export async function textLayerToSplines(
         type: 'spline',
         data: splineData,
         transform: {
-          position: {
-            value: {
-              x: layerX + charGroup.bounds.x,
-              y: layerY + charGroup.bounds.y,
-              z: 0,
-            },
-          },
-          rotation: textLayer.transform?.rotation,
-          scale: textLayer.transform?.scale,
-          opacity: textLayer.transform?.opacity,
-          anchor: { value: { x: 0, y: 0, z: 0 } },
+          position: createAnimatableProperty('Position', {
+            x: layerX + charGroup.bounds.x,
+            y: layerY + charGroup.bounds.y,
+            z: 0,
+          }, 'position'),
+          rotation: textLayer.transform?.rotation ?? createAnimatableProperty('Rotation', 0, 'number'),
+          scale: textLayer.transform?.scale ?? createAnimatableProperty('Scale', { x: 100, y: 100 }, 'position'),
+          anchorPoint: createAnimatableProperty('Anchor Point', { x: 0, y: 0, z: 0 }, 'position'),
         },
         inPoint: textLayer.inPoint,
         outPoint: textLayer.outPoint,
-      });
+      } as Partial<Layer>);
     }
   } else {
     const allControlPoints = bezierPathsToControlPoints(result.allPaths);
 
     const splineData: SplineData = {
+      pathData: '',
       controlPoints: allControlPoints,
       closed: result.allPaths[0]?.closed ?? false,
+      stroke: '#ffffff',
       strokeWidth: 2,
-      strokeColor: '#ffffff',
-      fillColor: 'transparent',
+      fill: 'transparent',
     };
 
     layers.push({
@@ -423,21 +442,18 @@ export async function textLayerToSplines(
       type: 'spline',
       data: splineData,
       transform: {
-        position: {
-          value: {
-            x: layerX + result.bounds.x,
-            y: layerY + result.bounds.y,
-            z: 0,
-          },
-        },
-        rotation: textLayer.transform?.rotation,
-        scale: textLayer.transform?.scale,
-        opacity: textLayer.transform?.opacity,
-        anchor: { value: { x: 0, y: 0, z: 0 } },
+        position: createAnimatableProperty('Position', {
+          x: layerX + result.bounds.x,
+          y: layerY + result.bounds.y,
+          z: 0,
+        }, 'position'),
+        rotation: textLayer.transform?.rotation ?? createAnimatableProperty('Rotation', 0, 'number'),
+        scale: textLayer.transform?.scale ?? createAnimatableProperty('Scale', { x: 100, y: 100 }, 'position'),
+        anchorPoint: createAnimatableProperty('Anchor Point', { x: 0, y: 0, z: 0 }, 'position'),
       },
       inPoint: textLayer.inPoint,
       outPoint: textLayer.outPoint,
-    });
+    } as Partial<Layer>);
   }
 
   return { layers, result };
@@ -460,10 +476,10 @@ function bezierPathsToControlPoints(paths: BezierPath[]): ControlPoint[] {
         y: v.point.y,
         handleIn: v.inHandle.x !== 0 || v.inHandle.y !== 0
           ? { x: v.point.x + v.inHandle.x, y: v.point.y + v.inHandle.y }
-          : undefined,
+          : null,
         handleOut: v.outHandle.x !== 0 || v.outHandle.y !== 0
           ? { x: v.point.x + v.outHandle.x, y: v.point.y + v.outHandle.y }
-          : undefined,
+          : null,
         type: getPointType(v),
       });
     }
