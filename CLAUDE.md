@@ -1679,7 +1679,80 @@ This project is for the **open source ComfyUI community**. The goal is professio
 
 ---
 
-**Document Version:** 5.1
+## LARGE FILES (>2000 lines - Cannot Read Fully)
+
+These files exceed the 2000-line read limit. Use `offset` and `limit` parameters or targeted Grep searches.
+
+### compositorStore.ts (2733 lines)
+
+**Structure:**
+- Lines 1-195: Imports and CompositorState interface
+- Lines 196-261: `state()` - Initial state
+- Lines 262-389: `getters` - Computed properties
+- Lines 390-2733: `actions` - Delegated to action modules
+
+**Action Modules (in `stores/actions/`):**
+| Module | Key Functions |
+|--------|--------------|
+| `layerActions.ts` | createLayer, deleteLayer, duplicateLayer, updateLayer, moveLayer |
+| `keyframeActions.ts` | addKeyframe, removeKeyframe, updateKeyframeValue |
+| `projectActions.ts` | newProject, saveProject, loadProject |
+| `audioActions.ts` | loadAudio, setAudioMapping |
+| `effectActions.ts` | addEffect, removeEffect, updateEffect |
+| `cameraActions.ts` | setCameraPreset, updateCamera |
+
+**Key Getters:**
+- `activeComposition` - Current composition being edited
+- `layers` - All layers in active composition
+- `currentFrame` - Playhead position
+- `backgroundColor` - Composition background (`#050505`)
+
+### particleSystem.ts (2650 lines)
+
+**Structure:**
+- Lines 1-200: Types and interfaces
+- Lines 201-500: `SeededRandom` class (Mulberry32)
+- Lines 501-1000: `ParticleEmitter` class
+- Lines 1001-1500: Physics simulation (gravity, forces, collision)
+- Lines 1501-2000: Checkpoint system
+- Lines 2001-2650: `ParticleSystem` main class
+
+**Key Classes:**
+- `SeededRandom` - Deterministic RNG (DO NOT MODIFY)
+- `ParticleEmitter` - Emission logic
+- `ParticleSystem` - Main simulation with checkpointing
+
+### project.ts (2168 lines)
+
+**Structure:**
+- Lines 1-500: Core types (Layer, Composition, WeylProject)
+- Lines 501-1000: Layer-specific data types (TextData, ParticleLayerData, etc.)
+- Lines 1001-1500: Animation types (Keyframe, AnimatableProperty)
+- Lines 1501-2168: Factory functions (createEmptyProject, createDefaultTransform)
+
+**Key Types:**
+```typescript
+type LayerType = 'image' | 'solid' | 'null' | 'text' | 'spline' | 'shape' |
+                 'particle' | 'camera' | 'light' | 'video' | 'precomp' |
+                 'adjustment' | 'procedural_matte' | 'model' | 'point_cloud' | 'depthflow';
+```
+
+### GPUParticleSystem.ts (3459 lines)
+
+WebGPU/Transform Feedback particle renderer. Read only if working on GPU particles.
+
+### Other Large Files (2000-2500 lines)
+
+| File | Lines | When to Read |
+|------|-------|--------------|
+| `ParticleProperties.vue` | 2,404 | Particle UI work |
+| `SplineEditor.vue` | 2,095 | Spline editing |
+| `GraphEditor.vue` | 2,090 | Keyframe curves |
+| `shapeOperations.ts` | 1,997 | Boolean ops |
+
+---
+
+**Document Version:** 6.0
 **Last Updated:** December 20, 2024
-**Total Lines:** ~1250
-**Estimated Reading Time:** 30-45 minutes
+**Total Lines:** ~1700
+**Estimated Reading Time:** 35-50 minutes
