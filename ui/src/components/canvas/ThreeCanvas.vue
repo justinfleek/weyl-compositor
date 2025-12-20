@@ -457,6 +457,7 @@ onMounted(async () => {
     pixelRatio: Math.min(window.devicePixelRatio, 2), // Cap at 2 for performance
     antialias: true,
     alpha: true,
+    backgroundColor: store.backgroundColor || '#1a1a2e',
     powerPreference: 'high-performance'
   };
 
@@ -712,6 +713,15 @@ function setupWatchers() {
       engine.value.setCompositionBoundsVisible(false);
     },
     { immediate: true }
+  );
+
+  // Watch background color changes
+  watch(
+    () => store.backgroundColor,
+    (newColor) => {
+      if (!engine.value) return;
+      engine.value.setBackground(newColor);
+    }
   );
 }
 

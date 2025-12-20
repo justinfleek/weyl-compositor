@@ -1018,6 +1018,22 @@ export class WeylEngine {
   // ============================================================================
 
   /**
+   * Set the scene background color
+   * @param color - Hex color string (e.g., '#1a1a2e') or null for transparent
+   */
+  setBackground(color: string | null): void {
+    this.assertNotDisposed();
+    this.scene.setBackground(color);
+  }
+
+  /**
+   * Get the current background color
+   */
+  getBackground(): string | null {
+    return this.scene.getBackground();
+  }
+
+  /**
    * Set a background image for the composition
    * @param image - HTMLImageElement to use as background
    */

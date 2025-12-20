@@ -25901,6 +25901,10 @@ const useCompositorStore = defineStore("compositor", {
       const comp = state.project.compositions[state.activeCompositionId];
       return comp?.settings.duration || 5;
     },
+    backgroundColor(state) {
+      const comp = state.project.compositions[state.activeCompositionId];
+      return comp?.settings.backgroundColor || "#1a1a2e";
+    },
     // Current frame - per composition
     currentFrame(state) {
       const comp = state.project.compositions[state.activeCompositionId];
@@ -78053,6 +78057,20 @@ class WeylEngine {
   // BACKGROUND & OVERLAYS
   // ============================================================================
   /**
+   * Set the scene background color
+   * @param color - Hex color string (e.g., '#1a1a2e') or null for transparent
+   */
+  setBackground(color) {
+    this.assertNotDisposed();
+    this.scene.setBackground(color);
+  }
+  /**
+   * Get the current background color
+   */
+  getBackground() {
+    return this.scene.getBackground();
+  }
+  /**
    * Set a background image for the composition
    * @param image - HTMLImageElement to use as background
    */
@@ -80228,6 +80246,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
         // Cap at 2 for performance
         antialias: true,
         alpha: true,
+        backgroundColor: store.backgroundColor || "#1a1a2e",
         powerPreference: "high-performance"
       };
       try {
@@ -80400,6 +80419,13 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
           engine.value.setCompositionBoundsVisible(false);
         },
         { immediate: true }
+      );
+      watch(
+        () => store.backgroundColor,
+        (newColor) => {
+          if (!engine.value) return;
+          engine.value.setBackground(newColor);
+        }
       );
     }
     function syncLayersToEngine() {
@@ -81121,7 +81147,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             class: "zoom-dropdown",
             onChange: onZoomSelect
           }, [..._cache[24] || (_cache[24] = [
-            createStaticVNode('<option value="fit" data-v-133a9bf5>Fit</option><option value="0.25" data-v-133a9bf5>25%</option><option value="0.33" data-v-133a9bf5>33%</option><option value="0.5" data-v-133a9bf5>50%</option><option value="0.75" data-v-133a9bf5>75%</option><option value="1" data-v-133a9bf5>100%</option><option value="2" data-v-133a9bf5>200%</option><option value="4" data-v-133a9bf5>400%</option>', 8)
+            createStaticVNode('<option value="fit" data-v-e7970bb6>Fit</option><option value="0.25" data-v-e7970bb6>25%</option><option value="0.33" data-v-e7970bb6>33%</option><option value="0.5" data-v-e7970bb6>50%</option><option value="0.75" data-v-e7970bb6>75%</option><option value="1" data-v-e7970bb6>100%</option><option value="2" data-v-e7970bb6>200%</option><option value="4" data-v-e7970bb6>400%</option>', 8)
           ])], 544), [
             [vModelSelect, zoomLevel.value]
           ]),
@@ -81132,7 +81158,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             class: "resolution-dropdown",
             onChange: onResolutionChange
           }, [..._cache[25] || (_cache[25] = [
-            createStaticVNode('<option value="full" data-v-133a9bf5>Full</option><option value="half" data-v-133a9bf5>Half</option><option value="third" data-v-133a9bf5>Third</option><option value="quarter" data-v-133a9bf5>Quarter</option><option value="custom" data-v-133a9bf5>Custom</option>', 5)
+            createStaticVNode('<option value="full" data-v-e7970bb6>Full</option><option value="half" data-v-e7970bb6>Half</option><option value="third" data-v-e7970bb6>Third</option><option value="quarter" data-v-e7970bb6>Quarter</option><option value="custom" data-v-e7970bb6>Custom</option>', 5)
           ])], 544), [
             [vModelSelect, resolution.value]
           ])
@@ -81189,7 +81215,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-133a9bf5"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-e7970bb6"]]);
 
 const KEYFRAME_SHAPES = {
   // ========================================

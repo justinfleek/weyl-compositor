@@ -287,6 +287,10 @@ export const useCompositorStore = defineStore('compositor', {
       const comp = state.project.compositions[state.activeCompositionId];
       return comp?.settings.duration || 5;
     },
+    backgroundColor(state): string {
+      const comp = state.project.compositions[state.activeCompositionId];
+      return comp?.settings.backgroundColor || '#1a1a2e';
+    },
 
     // Current frame - per composition
     currentFrame(state): number {
