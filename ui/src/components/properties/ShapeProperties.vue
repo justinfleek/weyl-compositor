@@ -177,6 +177,236 @@
       </div>
     </div>
 
+    <!-- Path Effects Section -->
+    <div class="prop-section">
+      <div class="section-header" @click="toggleSection('effects')">
+        <span class="expand-icon">{{ expandedSections.includes('effects') ? '▼' : '►' }}</span>
+        <span class="section-title">Path Effects</span>
+        <span class="effect-count" v-if="pathEffects.length > 0">{{ pathEffects.length }}</span>
+      </div>
+
+      <div v-if="expandedSections.includes('effects')" class="section-content">
+        <!-- Add Effect Button -->
+        <div class="add-effect-row">
+          <select v-model="newEffectType" class="effect-select">
+            <option value="">Add Effect...</option>
+            <option value="offsetPath">Offset Path</option>
+            <option value="roughen">Roughen</option>
+            <option value="wiggle">Wiggle Path</option>
+            <option value="zigzag">Zig Zag</option>
+            <option value="wave">Wave</option>
+          </select>
+          <button class="add-btn" @click="addEffect" :disabled="!newEffectType">+</button>
+        </div>
+
+        <!-- Effect List -->
+        <div v-for="(effect, index) in pathEffects" :key="effect.id" class="effect-item">
+          <div class="effect-header">
+            <button class="effect-toggle" @click="toggleEffect(effect.id)">
+              {{ effect.enabled ? '●' : '○' }}
+            </button>
+            <span class="effect-name">{{ getEffectDisplayName(effect.type) }}</span>
+            <div class="effect-actions">
+              <button class="effect-action" @click="moveEffect(index, -1)" :disabled="index === 0" title="Move Up">▲</button>
+              <button class="effect-action" @click="moveEffect(index, 1)" :disabled="index === pathEffects.length - 1" title="Move Down">▼</button>
+              <button class="effect-action delete" @click="removeEffect(effect.id)" title="Delete">×</button>
+            </div>
+          </div>
+
+          <div v-if="effect.enabled" class="effect-params">
+            <!-- Offset Path -->
+            <template v-if="effect.type === 'offsetPath'">
+              <div class="property-row">
+                <label>Amount</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'amount')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'amount', v)"
+                  :min="-100"
+                  :max="100"
+                  unit="px"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'amount') }" @click="toggleEffectKeyframe(effect.id, 'amount')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Join</label>
+                <div class="icon-toggle-group">
+                  <button :class="{ active: effect.lineJoin === 'miter' }" @click="updateEffectMeta(effect.id, 'lineJoin', 'miter')">⟨</button>
+                  <button :class="{ active: effect.lineJoin === 'round' }" @click="updateEffectMeta(effect.id, 'lineJoin', 'round')">◠</button>
+                  <button :class="{ active: effect.lineJoin === 'bevel' }" @click="updateEffectMeta(effect.id, 'lineJoin', 'bevel')">∠</button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Roughen -->
+            <template v-else-if="effect.type === 'roughen'">
+              <div class="property-row">
+                <label>Size</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'size')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'size', v)"
+                  :min="0"
+                  :max="100"
+                  unit="px"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'size') }" @click="toggleEffectKeyframe(effect.id, 'size')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Detail</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'detail')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'detail', v)"
+                  :min="1"
+                  :max="10"
+                  :step="1"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'detail') }" @click="toggleEffectKeyframe(effect.id, 'detail')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Seed</label>
+                <ScrubableNumber
+                  :modelValue="effect.seed ?? 12345"
+                  @update:modelValue="v => updateEffectMeta(effect.id, 'seed', v)"
+                  :min="0"
+                  :max="99999"
+                  :step="1"
+                />
+              </div>
+            </template>
+
+            <!-- Wiggle -->
+            <template v-else-if="effect.type === 'wiggle'">
+              <div class="property-row">
+                <label>Size</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'size')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'size', v)"
+                  :min="0"
+                  :max="100"
+                  unit="px"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'size') }" @click="toggleEffectKeyframe(effect.id, 'size')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Detail</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'detail')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'detail', v)"
+                  :min="1"
+                  :max="10"
+                  :step="1"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'detail') }" @click="toggleEffectKeyframe(effect.id, 'detail')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Correlation</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'correlation')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'correlation', v)"
+                  :min="0"
+                  :max="100"
+                  unit="%"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'correlation') }" @click="toggleEffectKeyframe(effect.id, 'correlation')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Temp Phase</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'temporalPhase')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'temporalPhase', v)"
+                  :min="0"
+                  :max="360"
+                  unit="°"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'temporalPhase') }" @click="toggleEffectKeyframe(effect.id, 'temporalPhase')">◆</button>
+              </div>
+            </template>
+
+            <!-- Zig Zag -->
+            <template v-else-if="effect.type === 'zigzag'">
+              <div class="property-row">
+                <label>Size</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'size')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'size', v)"
+                  :min="0"
+                  :max="100"
+                  unit="px"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'size') }" @click="toggleEffectKeyframe(effect.id, 'size')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Ridges</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'ridgesPerSegment')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'ridgesPerSegment', v)"
+                  :min="1"
+                  :max="20"
+                  :step="1"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'ridgesPerSegment') }" @click="toggleEffectKeyframe(effect.id, 'ridgesPerSegment')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Points</label>
+                <div class="icon-toggle-group">
+                  <button :class="{ active: effect.pointType === 'corner' }" @click="updateEffectMeta(effect.id, 'pointType', 'corner')">∠</button>
+                  <button :class="{ active: effect.pointType === 'smooth' }" @click="updateEffectMeta(effect.id, 'pointType', 'smooth')">◠</button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Wave -->
+            <template v-else-if="effect.type === 'wave'">
+              <div class="property-row">
+                <label>Amplitude</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'amplitude')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'amplitude', v)"
+                  :min="0"
+                  :max="100"
+                  unit="px"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'amplitude') }" @click="toggleEffectKeyframe(effect.id, 'amplitude')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Frequency</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'frequency')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'frequency', v)"
+                  :min="0.1"
+                  :max="20"
+                  :step="0.1"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'frequency') }" @click="toggleEffectKeyframe(effect.id, 'frequency')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Phase</label>
+                <ScrubableNumber
+                  :modelValue="getEffectPropValue(effect, 'phase')"
+                  @update:modelValue="v => updateEffectProp(effect.id, 'phase', v)"
+                  :min="0"
+                  :max="360"
+                  unit="°"
+                />
+                <button class="keyframe-btn" :class="{ active: isEffectPropAnimated(effect, 'phase') }" @click="toggleEffectKeyframe(effect.id, 'phase')">◆</button>
+              </div>
+              <div class="property-row">
+                <label>Type</label>
+                <div class="icon-toggle-group wide">
+                  <button :class="{ active: effect.waveType === 'sine' }" @click="updateEffectMeta(effect.id, 'waveType', 'sine')">∿</button>
+                  <button :class="{ active: effect.waveType === 'triangle' }" @click="updateEffectMeta(effect.id, 'waveType', 'triangle')">△</button>
+                  <button :class="{ active: effect.waveType === 'square' }" @click="updateEffectMeta(effect.id, 'waveType', 'square')">□</button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div v-if="pathEffects.length === 0" class="no-effects">
+          No path effects. Use the dropdown above to add one.
+        </div>
+      </div>
+    </div>
+
     <!-- Path Section -->
     <div class="prop-section">
       <div class="section-header" @click="toggleSection('path')">
@@ -207,7 +437,18 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { Layer, SplineData, AnimatableProperty } from '@/types/project';
+import type {
+  Layer,
+  SplineData,
+  AnimatableProperty,
+  SplinePathEffect,
+  SplinePathEffectType,
+  OffsetPathEffect,
+  RoughenEffect,
+  WigglePathEffect,
+  ZigZagEffect,
+  WaveEffect,
+} from '@/types/project';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { ScrubableNumber } from '@/components/controls';
 
@@ -216,6 +457,7 @@ const emit = defineEmits(['update']);
 const store = useCompositorStore();
 
 const expandedSections = ref<string[]>(['stroke', 'fill', 'trim']);
+const newEffectType = ref<SplinePathEffectType | ''>('');
 
 const shapeData = computed<SplineData>(() => {
   return props.layer.data as SplineData || {
@@ -369,6 +611,208 @@ function ensureProperty(propName: string, dataKey: string) {
       group: propName.includes('Trim') ? 'Trim Paths' : propName.includes('Stroke') ? 'Stroke' : propName.includes('Fill') ? 'Fill' : 'Shape',
     } as AnimatableProperty<number>);
   }
+}
+
+// ============================================================================
+// PATH EFFECTS
+// ============================================================================
+
+const pathEffects = computed<SplinePathEffect[]>(() => {
+  return (shapeData.value.pathEffects || []).sort((a, b) => a.order - b.order);
+});
+
+function getEffectDisplayName(type: SplinePathEffectType): string {
+  const names: Record<SplinePathEffectType, string> = {
+    offsetPath: 'Offset Path',
+    roughen: 'Roughen',
+    wiggle: 'Wiggle Path',
+    zigzag: 'Zig Zag',
+    wave: 'Wave',
+  };
+  return names[type] || type;
+}
+
+function generateId(): string {
+  return `effect_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+}
+
+function createAnimatableProp(value: number, name: string): AnimatableProperty<number> {
+  return {
+    id: generateId(),
+    name,
+    type: 'number',
+    value,
+    animated: false,
+    keyframes: [],
+  };
+}
+
+function addEffect() {
+  if (!newEffectType.value) return;
+
+  const effects = [...(shapeData.value.pathEffects || [])];
+  const newOrder = effects.length > 0 ? Math.max(...effects.map(e => e.order)) + 1 : 0;
+
+  let newEffect: SplinePathEffect;
+
+  switch (newEffectType.value) {
+    case 'offsetPath':
+      newEffect = {
+        id: generateId(),
+        type: 'offsetPath',
+        enabled: true,
+        order: newOrder,
+        amount: createAnimatableProp(0, 'Offset Amount'),
+        lineJoin: 'round',
+        miterLimit: createAnimatableProp(4, 'Miter Limit'),
+      } as OffsetPathEffect;
+      break;
+    case 'roughen':
+      newEffect = {
+        id: generateId(),
+        type: 'roughen',
+        enabled: true,
+        order: newOrder,
+        size: createAnimatableProp(5, 'Roughen Size'),
+        detail: createAnimatableProp(2, 'Roughen Detail'),
+        seed: Math.floor(Math.random() * 99999),
+      } as RoughenEffect;
+      break;
+    case 'wiggle':
+      newEffect = {
+        id: generateId(),
+        type: 'wiggle',
+        enabled: true,
+        order: newOrder,
+        size: createAnimatableProp(10, 'Wiggle Size'),
+        detail: createAnimatableProp(3, 'Wiggle Detail'),
+        temporalPhase: createAnimatableProp(0, 'Temporal Phase'),
+        spatialPhase: createAnimatableProp(0, 'Spatial Phase'),
+        correlation: createAnimatableProp(50, 'Correlation'),
+        seed: Math.floor(Math.random() * 99999),
+      } as WigglePathEffect;
+      break;
+    case 'zigzag':
+      newEffect = {
+        id: generateId(),
+        type: 'zigzag',
+        enabled: true,
+        order: newOrder,
+        size: createAnimatableProp(10, 'Zig Zag Size'),
+        ridgesPerSegment: createAnimatableProp(5, 'Ridges Per Segment'),
+        pointType: 'smooth',
+      } as ZigZagEffect;
+      break;
+    case 'wave':
+      newEffect = {
+        id: generateId(),
+        type: 'wave',
+        enabled: true,
+        order: newOrder,
+        amplitude: createAnimatableProp(10, 'Wave Amplitude'),
+        frequency: createAnimatableProp(2, 'Wave Frequency'),
+        phase: createAnimatableProp(0, 'Wave Phase'),
+        waveType: 'sine',
+      } as WaveEffect;
+      break;
+    default:
+      return;
+  }
+
+  effects.push(newEffect);
+  update('pathEffects', effects);
+  newEffectType.value = '';
+}
+
+function removeEffect(effectId: string) {
+  const effects = (shapeData.value.pathEffects || []).filter(e => e.id !== effectId);
+  update('pathEffects', effects);
+}
+
+function toggleEffect(effectId: string) {
+  const effects = [...(shapeData.value.pathEffects || [])];
+  const effect = effects.find(e => e.id === effectId);
+  if (effect) {
+    effect.enabled = !effect.enabled;
+    update('pathEffects', effects);
+  }
+}
+
+function moveEffect(index: number, direction: -1 | 1) {
+  const effects = [...(shapeData.value.pathEffects || [])].sort((a, b) => a.order - b.order);
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= effects.length) return;
+
+  // Swap orders
+  const tempOrder = effects[index].order;
+  effects[index].order = effects[newIndex].order;
+  effects[newIndex].order = tempOrder;
+
+  update('pathEffects', effects);
+}
+
+function getEffectPropValue(effect: SplinePathEffect, propName: string): number {
+  const prop = (effect as any)[propName] as AnimatableProperty<number> | number | undefined;
+  if (prop === undefined) return 0;
+  if (typeof prop === 'number') return prop;
+  return prop.value;
+}
+
+function isEffectPropAnimated(effect: SplinePathEffect, propName: string): boolean {
+  const prop = (effect as any)[propName] as AnimatableProperty<number> | undefined;
+  if (!prop || typeof prop === 'number') return false;
+  return prop.animated ?? false;
+}
+
+function updateEffectProp(effectId: string, propName: string, value: number) {
+  const effects = [...(shapeData.value.pathEffects || [])];
+  const effect = effects.find(e => e.id === effectId);
+  if (!effect) return;
+
+  const prop = (effect as any)[propName];
+  if (prop && typeof prop === 'object') {
+    prop.value = value;
+  } else {
+    (effect as any)[propName] = value;
+  }
+
+  update('pathEffects', effects);
+}
+
+function updateEffectMeta(effectId: string, key: string, value: any) {
+  const effects = [...(shapeData.value.pathEffects || [])];
+  const effect = effects.find(e => e.id === effectId);
+  if (!effect) return;
+
+  (effect as any)[key] = value;
+  update('pathEffects', effects);
+}
+
+function toggleEffectKeyframe(effectId: string, propName: string) {
+  const effects = [...(shapeData.value.pathEffects || [])];
+  const effect = effects.find(e => e.id === effectId);
+  if (!effect) return;
+
+  const prop = (effect as any)[propName] as AnimatableProperty<number> | undefined;
+  if (!prop || typeof prop === 'number') return;
+
+  const frame = store.currentFrame;
+  const hasKeyframeAtFrame = prop.keyframes.some(k => k.frame === frame);
+
+  if (hasKeyframeAtFrame) {
+    prop.keyframes = prop.keyframes.filter(k => k.frame !== frame);
+    prop.animated = prop.keyframes.length > 0;
+  } else {
+    prop.keyframes.push({
+      id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      frame,
+      value: prop.value,
+      easing: 'linear',
+    });
+    prop.animated = true;
+  }
+
+  update('pathEffects', effects);
 }
 </script>
 
@@ -544,5 +988,151 @@ function ensureProperty(propName: string, dataKey: string) {
 
 .info-value {
   color: #999;
+}
+
+/* Path Effects Styles */
+.effect-count {
+  background: #4a90d9;
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.add-effect-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.effect-select {
+  flex: 1;
+  padding: 6px 8px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  color: #e0e0e0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.effect-select:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
+.add-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #4a90d9;
+  background: #4a90d9;
+  color: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.add-btn:hover:not(:disabled) {
+  background: #5a9fea;
+}
+
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.effect-item {
+  background: #252525;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.effect-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #2a2a2a;
+}
+
+.effect-toggle {
+  background: transparent;
+  border: none;
+  color: #4a90d9;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+}
+
+.effect-toggle:hover {
+  color: #5a9fea;
+}
+
+.effect-name {
+  flex: 1;
+  font-size: 12px;
+  color: #ccc;
+  font-weight: 500;
+}
+
+.effect-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.effect-action {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.effect-action:hover:not(:disabled) {
+  background: #333;
+  color: #ccc;
+}
+
+.effect-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.effect-action.delete {
+  color: #c44;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.effect-action.delete:hover {
+  background: #c44;
+  color: #fff;
+}
+
+.effect-params {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid #333;
+}
+
+.no-effects {
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+  padding: 12px;
+  font-style: italic;
+}
+
+.icon-toggle-group.wide button {
+  padding: 4px 12px;
 }
 </style>

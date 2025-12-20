@@ -25,6 +25,7 @@
  * - Cached computations where possible
  */
 import type { Keyframe, AnimatableProperty, BezierHandle, PropertyExpression } from '@/types/project';
+import type { BezierPath } from '@/types/shapes';
 import { getEasing, easings, type EasingName } from './easing';
 import { renderLogger } from '@/utils/logger';
 import {
@@ -32,6 +33,7 @@ import {
   type ExpressionContext,
   type Expression,
 } from './expressions';
+import { morphPaths, prepareMorphPaths, isBezierPath } from './pathMorphing';
 
 // ============================================================================
 // BEZIER HANDLE CACHE
@@ -516,6 +518,11 @@ function interpolateValue<T>(v1: T, v2: T, t: number): T {
     return interpolateColor(v1, v2, t) as T;
   }
 
+  // BezierPath (path morphing)
+  if (isBezierPath(v1) && isBezierPath(v2)) {
+    return interpolatePath(v1 as BezierPath, v2 as BezierPath, t) as T;
+  }
+
   // Default: no interpolation, return first value until t >= 0.5
   return t < 0.5 ? v1 : v2;
 }
@@ -537,6 +544,65 @@ function interpolateColor(c1: string, c2: string, t: number): string {
   const b = Math.round(b1 + (b2 - b1) * t);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// Path morph cache for prepared paths (keyed by path pair hashes)
+const pathMorphCache = new Map<string, { source: BezierPath; target: BezierPath }>();
+const PATH_MORPH_CACHE_MAX = 100;
+
+/**
+ * Generate a hash for a BezierPath to use as cache key
+ */
+function hashBezierPath(path: BezierPath): string {
+  // Use vertex count and first/last point coordinates for a quick hash
+  const v = path.vertices;
+  if (v.length === 0) return 'empty';
+  const first = v[0];
+  const last = v[v.length - 1];
+  return `${v.length}_${first.point.x.toFixed(1)}_${first.point.y.toFixed(1)}_${last.point.x.toFixed(1)}_${last.point.y.toFixed(1)}_${path.closed ? 'c' : 'o'}`;
+}
+
+/**
+ * Interpolate between two BezierPaths using path morphing
+ *
+ * This function handles shape morphing by:
+ * 1. Preparing both paths to have matching vertex counts
+ * 2. Interpolating between corresponding vertices
+ *
+ * The prepared paths are cached to avoid re-computation on each frame.
+ */
+function interpolatePath(p1: BezierPath, p2: BezierPath, t: number): BezierPath {
+  // Edge cases
+  if (t <= 0) return p1;
+  if (t >= 1) return p2;
+
+  // Generate cache key from both paths
+  const key = `${hashBezierPath(p1)}|${hashBezierPath(p2)}`;
+
+  // Get or create prepared paths
+  let prepared = pathMorphCache.get(key);
+  if (!prepared) {
+    // Prepare paths for morphing (match vertex counts)
+    prepared = prepareMorphPaths(p1, p2);
+
+    // Cache with LRU eviction
+    if (pathMorphCache.size >= PATH_MORPH_CACHE_MAX) {
+      const firstKey = pathMorphCache.keys().next().value;
+      if (firstKey) pathMorphCache.delete(firstKey);
+    }
+    pathMorphCache.set(key, prepared);
+  }
+
+  // Perform the actual morphing
+  return morphPaths(prepared.source, prepared.target, t);
+}
+
+/**
+ * Clear the path morph cache
+ * Call this when loading a new project to free memory
+ */
+export function clearPathMorphCache(): void {
+  pathMorphCache.clear();
 }
 
 /**
@@ -686,5 +752,6 @@ export default {
   getBezierCurvePointNormalized,
   createHandlesForPreset,
   clearBezierCache,
-  getBezierCacheStats
+  getBezierCacheStats,
+  clearPathMorphCache,
 };

@@ -16,6 +16,12 @@ import type {
   ZigZagPointType,
 } from '@/types/shapes';
 import { SeededRandom } from './particleSystem';
+import polygonClipping from 'polygon-clipping';
+
+// Type alias for polygon-clipping library types
+type Ring = [number, number][];
+type Polygon = Ring[];
+type MultiPolygon = Polygon[];
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -503,6 +509,217 @@ export function mergePaths(paths: BezierPath[], mode: MergeMode): BezierPath[] {
 }
 
 /**
+ * Boolean operation type for direct use
+ */
+export type BooleanOperationType = 'union' | 'subtract' | 'intersect' | 'exclude';
+
+/**
+ * Perform a boolean operation on multiple BezierPaths
+ * Higher-level API that handles path conversion and curve refitting
+ *
+ * @param paths - Array of BezierPaths to combine
+ * @param operation - Type of boolean operation
+ * @param segmentsPerCurve - Sampling resolution for path flattening (default 32)
+ * @returns Array of resulting BezierPaths
+ */
+export function booleanOperation(
+  paths: BezierPath[],
+  operation: BooleanOperationType,
+  segmentsPerCurve: number = 32
+): BezierPath[] {
+  if (paths.length === 0) return [];
+  if (paths.length === 1) return [clonePath(paths[0])];
+
+  // Convert all paths to polygon-clipping MultiPolygon format
+  const multiPolygons: MultiPolygon[] = paths.map(path => {
+    const polygon = pathToPolygon(path, segmentsPerCurve);
+    return [point2DArrayToPolygon(polygon)];
+  });
+
+  let result: MultiPolygon;
+
+  try {
+    // Need at least one polygon
+    if (multiPolygons.length === 0) {
+      return [];
+    }
+    if (multiPolygons.length === 1) {
+      return [clonePath(paths[0])];
+    }
+
+    switch (operation) {
+      case 'union':
+        // Accumulate union operations
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = polygonClipping.union(result, multiPolygons[i]);
+        }
+        break;
+      case 'subtract':
+        // Subtract all subsequent paths from the first
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = polygonClipping.difference(result, multiPolygons[i]);
+        }
+        break;
+      case 'intersect':
+        // Accumulate intersection operations
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = polygonClipping.intersection(result, multiPolygons[i]);
+        }
+        break;
+      case 'exclude':
+        // Accumulate xor operations
+        result = multiPolygons[0];
+        for (let i = 1; i < multiPolygons.length; i++) {
+          result = polygonClipping.xor(result, multiPolygons[i]);
+        }
+        break;
+      default:
+        return paths.map(clonePath);
+    }
+  } catch {
+    // Fallback on error
+    return paths.map(clonePath);
+  }
+
+  // Convert result back to BezierPaths with curve fitting
+  const outputPaths: BezierPath[] = [];
+  for (const polygon of result) {
+    if (polygon.length > 0) {
+      // Convert outer ring to path
+      const points = ringToPoint2DArray(polygon[0]);
+      if (points.length >= 3) {
+        // Fit bezier curves to the polygon points for smoother result
+        const bezierPath = fitBezierToPolygon(points, true);
+        outputPaths.push(bezierPath);
+      }
+    }
+  }
+
+  return outputPaths;
+}
+
+/**
+ * Fit bezier curves to a polygon for smoother paths
+ * Uses Catmull-Rom to bezier conversion for smooth curves
+ */
+function fitBezierToPolygon(points: Point2D[], closed: boolean): BezierPath {
+  if (points.length < 2) {
+    return { vertices: [], closed };
+  }
+
+  // Simplify points first to reduce noise
+  const simplified = simplifyPolygon(points, 0.5);
+
+  if (simplified.length < 2) {
+    return polygonToPath(points);
+  }
+
+  // For each point, calculate smooth handles using adjacent points
+  const vertices: BezierVertex[] = [];
+
+  for (let i = 0; i < simplified.length; i++) {
+    const curr = simplified[i];
+    const prev = simplified[(i - 1 + simplified.length) % simplified.length];
+    const next = simplified[(i + 1) % simplified.length];
+
+    // Calculate tangent at this point (average of in and out directions)
+    const toPrev = subtractPoints(prev, curr);
+    const toNext = subtractPoints(next, curr);
+
+    // Handle length is proportional to distance to neighbors
+    const distPrev = distance(curr, prev);
+    const distNext = distance(curr, next);
+    const handleScale = 0.25; // Adjust for curve tightness
+
+    // Smooth handles using tangent
+    let inHandle: Point2D;
+    let outHandle: Point2D;
+
+    if (!closed && i === 0) {
+      // First point of open path - no in handle
+      inHandle = { x: 0, y: 0 };
+      outHandle = scalePoint(normalize(toNext), distNext * handleScale);
+    } else if (!closed && i === simplified.length - 1) {
+      // Last point of open path - no out handle
+      inHandle = scalePoint(normalize(toPrev), distPrev * handleScale);
+      outHandle = { x: 0, y: 0 };
+    } else {
+      // Interior point or closed path - smooth handles
+      const tangent = normalize(subtractPoints(toNext, toPrev));
+      inHandle = scalePoint(tangent, -distPrev * handleScale);
+      outHandle = scalePoint(tangent, distNext * handleScale);
+    }
+
+    vertices.push({
+      point: clonePoint(curr),
+      inHandle,
+      outHandle,
+    });
+  }
+
+  return { vertices, closed };
+}
+
+/**
+ * Simplify polygon using Ramer-Douglas-Peucker algorithm
+ */
+function simplifyPolygon(points: Point2D[], tolerance: number): Point2D[] {
+  if (points.length <= 2) return points;
+
+  // Find point with maximum distance from line between first and last
+  let maxDist = 0;
+  let maxIndex = 0;
+
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  for (let i = 1; i < points.length - 1; i++) {
+    const d = perpendicularDistance(points[i], first, last);
+    if (d > maxDist) {
+      maxDist = d;
+      maxIndex = i;
+    }
+  }
+
+  // If max distance > tolerance, recursively simplify
+  if (maxDist > tolerance) {
+    const left = simplifyPolygon(points.slice(0, maxIndex + 1), tolerance);
+    const right = simplifyPolygon(points.slice(maxIndex), tolerance);
+    return [...left.slice(0, -1), ...right];
+  }
+
+  // Otherwise, return just the endpoints
+  return [first, last];
+}
+
+/**
+ * Calculate perpendicular distance from point to line
+ */
+function perpendicularDistance(point: Point2D, lineStart: Point2D, lineEnd: Point2D): number {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const lineLengthSq = dx * dx + dy * dy;
+
+  if (lineLengthSq === 0) {
+    return distance(point, lineStart);
+  }
+
+  const t = Math.max(0, Math.min(1,
+    ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
+  ));
+
+  const projection = {
+    x: lineStart.x + t * dx,
+    y: lineStart.y + t * dy,
+  };
+
+  return distance(point, projection);
+}
+
+/**
  * Convert bezier path to polygon (flattened)
  */
 function pathToPolygon(path: BezierPath, segments: number = 16): Point2D[] {
@@ -543,25 +760,100 @@ function polygonToPath(polygon: Point2D[]): BezierPath {
 // Simplified polygon boolean operations (placeholder implementations)
 // For production, use a proper polygon clipping library
 
+/**
+ * Convert Point2D[] to polygon-clipping Ring format
+ */
+function point2DArrayToRing(points: Point2D[]): Ring {
+  return points.map(p => [p.x, p.y] as [number, number]);
+}
+
+/**
+ * Convert polygon-clipping Ring to Point2D[]
+ */
+function ringToPoint2DArray(ring: Ring): Point2D[] {
+  return ring.map(([x, y]) => ({ x, y }));
+}
+
+/**
+ * Convert Point2D[] to polygon-clipping Polygon format (single ring)
+ */
+function point2DArrayToPolygon(points: Point2D[]): Polygon {
+  return [point2DArrayToRing(points)];
+}
+
+/**
+ * Convert polygon-clipping MultiPolygon result to Point2D[][]
+ */
+function multiPolygonToPoint2DArrays(multiPoly: MultiPolygon): Point2D[][] {
+  const result: Point2D[][] = [];
+  for (const polygon of multiPoly) {
+    // Take the outer ring of each polygon (index 0)
+    // polygon[0] is outer ring, polygon[1+] are holes
+    if (polygon.length > 0) {
+      result.push(ringToPoint2DArray(polygon[0]));
+    }
+  }
+  return result;
+}
+
+/**
+ * Boolean union of two polygons using polygon-clipping
+ */
 function polygonUnion(a: Point2D[], b: Point2D[]): Point2D[][] {
-  // Simplified: just return both polygons
-  // Real implementation would use Sutherland-Hodgman or Vatti algorithm
-  return [a, b];
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = polygonClipping.union([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    // Fallback on error: return both original polygons
+    return [a, b];
+  }
 }
 
+/**
+ * Boolean difference of two polygons (a - b) using polygon-clipping
+ */
 function polygonDifference(a: Point2D[], b: Point2D[]): Point2D[][] {
-  // Simplified placeholder
-  return [a];
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = polygonClipping.difference([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    // Fallback on error: return first polygon
+    return [a];
+  }
 }
 
+/**
+ * Boolean intersection of two polygons using polygon-clipping
+ */
 function polygonIntersection(a: Point2D[], b: Point2D[]): Point2D[][] {
-  // Simplified placeholder
-  return [a];
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = polygonClipping.intersection([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    // Fallback on error: return empty
+    return [];
+  }
 }
 
+/**
+ * Boolean XOR of two polygons using polygon-clipping
+ */
 function polygonXor(a: Point2D[], b: Point2D[]): Point2D[][] {
-  // Simplified placeholder
-  return [a, b];
+  try {
+    const polyA = point2DArrayToPolygon(a);
+    const polyB = point2DArrayToPolygon(b);
+    const result = polygonClipping.xor([polyA], [polyB]);
+    return multiPolygonToPoint2DArrays(result);
+  } catch {
+    // Fallback on error: return both original polygons
+    return [a, b];
+  }
 }
 
 // ============================================================================
@@ -907,6 +1199,188 @@ export function zigZagPath(
   }
 
   return { vertices: result, closed: path.closed };
+}
+
+// ============================================================================
+// ROUGHEN PATH
+// ============================================================================
+
+/**
+ * Add random roughness/distortion to a path
+ * Similar to Illustrator's Roughen effect
+ *
+ * @param path - Input bezier path
+ * @param size - Maximum displacement amount in pixels
+ * @param detail - Number of points per segment (1-10)
+ * @param seed - Random seed for deterministic results
+ * @param relative - If true, size is relative to path bounds (percentage)
+ */
+export function roughenPath(
+  path: BezierPath,
+  size: number,
+  detail: number,
+  seed: number,
+  relative: boolean = false
+): BezierPath {
+  if (path.vertices.length < 2 || size < 0.001 || detail < 1) {
+    return clonePath(path);
+  }
+
+  const rng = new SeededRandom(seed);
+  const result: BezierVertex[] = [];
+
+  // Calculate path bounds for relative mode
+  let actualSize = size;
+  if (relative) {
+    const bounds = getPathBounds(path);
+    const diagonal = Math.sqrt(bounds.width * bounds.width + bounds.height * bounds.height);
+    actualSize = (size / 100) * diagonal;
+  }
+
+  // Subdivide the path for more detail
+  const subdivided = subdividePath(path, Math.max(1, Math.floor(detail)));
+
+  for (const v of subdivided.vertices) {
+    // Generate random offset for this vertex
+    const angle = rng.next() * Math.PI * 2;
+    const magnitude = rng.next() * actualSize;
+
+    const offset: Point2D = {
+      x: Math.cos(angle) * magnitude,
+      y: Math.sin(angle) * magnitude,
+    };
+
+    // Apply offset to point
+    const newPoint = addPoints(v.point, offset);
+
+    // Optionally roughen handles too (50% of point roughness)
+    const handleRoughness = actualSize * 0.5;
+    const handleAngle1 = rng.next() * Math.PI * 2;
+    const handleMag1 = rng.next() * handleRoughness;
+    const handleAngle2 = rng.next() * Math.PI * 2;
+    const handleMag2 = rng.next() * handleRoughness;
+
+    result.push({
+      point: newPoint,
+      inHandle: addPoints(v.inHandle, {
+        x: Math.cos(handleAngle1) * handleMag1,
+        y: Math.sin(handleAngle1) * handleMag1,
+      }),
+      outHandle: addPoints(v.outHandle, {
+        x: Math.cos(handleAngle2) * handleMag2,
+        y: Math.sin(handleAngle2) * handleMag2,
+      }),
+    });
+  }
+
+  return { vertices: result, closed: path.closed };
+}
+
+// ============================================================================
+// WAVE PATH
+// ============================================================================
+
+export type WaveType = 'sine' | 'triangle' | 'square';
+
+/**
+ * Apply a wave deformation along a path
+ * Creates a sinusoidal/triangle/square wave pattern perpendicular to the path
+ *
+ * @param path - Input bezier path
+ * @param amplitude - Wave height (perpendicular displacement)
+ * @param frequency - Number of waves along the path length
+ * @param phase - Phase offset in radians (for animation)
+ * @param waveType - Type of wave: sine, triangle, or square
+ */
+export function wavePath(
+  path: BezierPath,
+  amplitude: number,
+  frequency: number,
+  phase: number = 0,
+  waveType: WaveType = 'sine'
+): BezierPath {
+  if (path.vertices.length < 2 || amplitude < 0.001 || frequency < 0.1) {
+    return clonePath(path);
+  }
+
+  const totalLength = getPathLength(path);
+  if (totalLength < 0.001) return clonePath(path);
+
+  // Sample the path at regular intervals for wave application
+  const samplesPerWave = 16; // Points per wave cycle for smooth curves
+  const totalSamples = Math.max(4, Math.ceil(frequency * samplesPerWave));
+  const sampleDistance = totalLength / totalSamples;
+
+  const result: BezierVertex[] = [];
+
+  for (let i = 0; i <= totalSamples; i++) {
+    const distance = Math.min(i * sampleDistance, totalLength - 0.001);
+    const pointData = getPointAtDistance(path, distance, totalLength);
+    if (!pointData) continue;
+
+    // Calculate wave position (0 to 1 along path)
+    const t = distance / totalLength;
+    const waveInput = t * frequency * Math.PI * 2 + phase;
+
+    // Calculate wave value based on type
+    let waveValue: number;
+    switch (waveType) {
+      case 'triangle':
+        // Triangle wave: linear ramp up and down
+        waveValue = Math.abs(((waveInput / Math.PI) % 2) - 1) * 2 - 1;
+        break;
+      case 'square':
+        // Square wave: -1 or 1
+        waveValue = Math.sin(waveInput) >= 0 ? 1 : -1;
+        break;
+      case 'sine':
+      default:
+        // Sine wave
+        waveValue = Math.sin(waveInput);
+    }
+
+    // Calculate perpendicular offset
+    const perp = perpendicular(pointData.tangent);
+    const offset = scalePoint(perp, waveValue * amplitude);
+
+    // Apply offset
+    const newPoint = addPoints(pointData.point, offset);
+
+    // Calculate smooth handles along the wave
+    const handleLength = sampleDistance * 0.3;
+    const inHandle = scalePoint(pointData.tangent, -handleLength);
+    const outHandle = scalePoint(pointData.tangent, handleLength);
+
+    result.push({
+      point: newPoint,
+      inHandle,
+      outHandle,
+    });
+  }
+
+  return { vertices: result, closed: path.closed };
+}
+
+/**
+ * Get bounding box of a path
+ */
+function getPathBounds(path: BezierPath): { x: number; y: number; width: number; height: number } {
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+
+  for (const v of path.vertices) {
+    minX = Math.min(minX, v.point.x);
+    minY = Math.min(minY, v.point.y);
+    maxX = Math.max(maxX, v.point.x);
+    maxY = Math.max(maxY, v.point.y);
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
 }
 
 // ============================================================================
@@ -1303,24 +1777,6 @@ function douglasPeucker(points: Point2D[], tolerance: number): Point2D[] {
   }
 }
 
-/**
- * Perpendicular distance from point to line
- */
-function perpendicularDistance(point: Point2D, lineStart: Point2D, lineEnd: Point2D): number {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
-
-  if (length < 0.0001) return distance(point, lineStart);
-
-  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (length * length);
-  const closest = {
-    x: lineStart.x + t * dx,
-    y: lineStart.y + t * dy,
-  };
-
-  return distance(point, closest);
-}
 
 /**
  * Fit bezier curves to a sequence of points
@@ -1517,8 +1973,11 @@ export const ShapeOperations = {
   puckerBloat,
   wigglePath,
   zigZagPath,
+  roughenPath,
+  wavePath,
   twistPath,
   roundCorners,
+  booleanOperation,
 
   // Generators
   generateRectangle,

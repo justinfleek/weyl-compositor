@@ -12,8 +12,14 @@ import * as layerActions from '@/stores/actions/layerActions';
 import * as keyframeActions from '@/stores/actions/keyframeActions';
 import * as effectActions from '@/stores/actions/effectActions';
 import { getLayerDecompositionService } from '@/services/layerDecomposition';
+import {
+  getVectorizeService,
+  normalizeControlPoints,
+  autoGroupPoints,
+  filterSmallPaths,
+} from '@/services/vectorize';
 import type { ToolCall } from './toolDefinitions';
-import type { Layer, LayerType, InterpolationType } from '@/types/project';
+import type { Layer, LayerType, InterpolationType, ControlPoint } from '@/types/project';
 
 // ============================================================================
 // TYPES
@@ -114,6 +120,8 @@ export async function executeToolCall(toolCall: ToolCall): Promise<any> {
     // AI Image Processing
     case 'decomposeImage':
       return executeDecomposeImage(context, args);
+    case 'vectorizeImage':
+      return executeVectorizeImage(context, args);
 
     // Utility
     case 'getLayerInfo':
@@ -962,6 +970,167 @@ async function executeDecomposeImage(
   return {
     layerIds: createdLayerIds,
     message: `Decomposed image into ${decomposedLayers.length} layers: ${decomposedLayers.map(l => l.label).join(', ')}`,
+  };
+}
+
+async function executeVectorizeImage(
+  context: ExecutionContext,
+  args: Record<string, any>
+): Promise<{ layerIds: string[]; message: string }> {
+  const { store } = context;
+  const {
+    sourceLayerId,
+    mode = 'trace',
+    separateLayers = true,
+    groupByPath = true,
+    autoGroupByRegion = false,
+    enableAnimation = true,
+    traceOptions = {},
+  } = args;
+
+  // Find the source layer
+  const sourceLayer = store.getActiveCompLayers().find(l => l.id === sourceLayerId);
+  if (!sourceLayer) {
+    throw new Error(`Source layer ${sourceLayerId} not found`);
+  }
+
+  if (sourceLayer.type !== 'image' && sourceLayer.type !== 'video' && sourceLayer.type !== 'solid') {
+    throw new Error(`Layer ${sourceLayerId} must be an image, video, or solid layer`);
+  }
+
+  // Get the source image URL
+  const layerData = sourceLayer.data as any;
+  let imageDataUrl: string;
+
+  if (layerData?.source) {
+    imageDataUrl = layerData.source;
+  } else if (layerData?.assetId) {
+    const asset = store.project?.assets[layerData.assetId];
+    if (!asset?.data) throw new Error('Asset data not found');
+    imageDataUrl = asset.data;
+  } else if (layerData?.url) {
+    imageDataUrl = layerData.url;
+  } else {
+    throw new Error('Source layer has no image source');
+  }
+
+  // Convert to data URL if it's a regular URL
+  if (!imageDataUrl.startsWith('data:')) {
+    imageDataUrl = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('Failed to load source image'));
+      img.src = imageDataUrl;
+    });
+  }
+
+  // Run vectorization
+  const vectorizeService = getVectorizeService();
+  const result = await vectorizeService.vectorize(
+    imageDataUrl,
+    {
+      mode: mode as 'trace' | 'ai',
+      traceOptions: {
+        colorMode: traceOptions.colorMode || 'color',
+        filterSpeckle: traceOptions.filterSpeckle ?? 4,
+        cornerThreshold: traceOptions.cornerThreshold ?? 60,
+        colorPrecision: traceOptions.colorPrecision ?? 6,
+        layerDifference: traceOptions.layerDifference ?? 16,
+      },
+    },
+    (stage, message) => {
+      console.log(`[AI Vectorize] ${stage}: ${message}`);
+    }
+  );
+
+  // Filter small paths and normalize control points
+  let paths = filterSmallPaths(result.paths, 2);
+  paths = normalizeControlPoints(paths, {
+    groupByPath: groupByPath,
+    prefix: 'vec',
+  });
+
+  const createdLayerIds: string[] = [];
+
+  if (separateLayers) {
+    // Create a separate spline layer for each path
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+
+      // Auto-group by region if requested
+      let controlPoints = path.controlPoints;
+      if (autoGroupByRegion) {
+        controlPoints = autoGroupPoints(controlPoints, { method: 'quadrant' });
+      }
+
+      // Create the spline layer
+      const layer = layerActions.createLayer(store, 'spline', `Vector Path ${i + 1}`);
+
+      // Update with control points
+      if (layer.data) {
+        Object.assign(layer.data, {
+          controlPoints,
+          closed: path.closed,
+          stroke: path.stroke || '#00ff00',
+          strokeWidth: 2,
+          fill: path.fill || '',
+          animated: enableAnimation,
+        });
+      }
+
+      createdLayerIds.push(layer.id);
+    }
+  } else {
+    // Create a single layer with all paths merged
+    const allPoints: ControlPoint[] = [];
+    let pointIdx = 0;
+
+    for (let pathIdx = 0; pathIdx < paths.length; pathIdx++) {
+      const path = paths[pathIdx];
+      for (const cp of path.controlPoints) {
+        allPoints.push({
+          ...cp,
+          id: `vec_${pointIdx++}`,
+          group: `path_${pathIdx}`,
+        });
+      }
+    }
+
+    // Auto-group by region if requested (overrides path grouping)
+    let controlPoints = allPoints;
+    if (autoGroupByRegion) {
+      controlPoints = autoGroupPoints(allPoints, { method: 'quadrant' });
+    }
+
+    const layer = layerActions.createLayer(store, 'spline', 'Vectorized Paths');
+
+    if (layer.data) {
+      Object.assign(layer.data, {
+        controlPoints,
+        closed: false,
+        stroke: '#00ff00',
+        strokeWidth: 2,
+        fill: '',
+        animated: enableAnimation,
+      });
+    }
+
+    createdLayerIds.push(layer.id);
+  }
+
+  store.pushHistory();
+
+  return {
+    layerIds: createdLayerIds,
+    message: `Vectorized image into ${createdLayerIds.length} spline layer(s) with ${result.pathCount} paths`,
   };
 }
 

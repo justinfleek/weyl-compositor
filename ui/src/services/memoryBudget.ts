@@ -58,6 +58,7 @@ export const VRAM_ESTIMATES = {
   'model:depth-anything-v2': 2500,
   'model:segment-anything': 4000,
   'model:clip': 1500,
+  'model:starvector': 4000, // ~4GB for 1B parameter model
 
   // Per-layer estimates
   'texture:1080p': 8,      // 1920x1080 RGBA

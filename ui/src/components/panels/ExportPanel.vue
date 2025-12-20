@@ -309,10 +309,13 @@ function formatBytes(bytes: number): string {
 }
 
 .panel-content {
+  flex: 1;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .control-section {

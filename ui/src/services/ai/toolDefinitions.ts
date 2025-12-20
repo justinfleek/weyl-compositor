@@ -768,6 +768,71 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'vectorizeImage',
+      description: 'Convert an image layer to vector spline paths. Creates one or more SplineLayer(s) with keyframeable control points that can be animated individually, by group, or as a whole layer. Ideal for logos, icons, and graphics.',
+      parameters: {
+        type: 'object',
+        properties: {
+          sourceLayerId: {
+            type: 'string',
+            description: 'ID of the image layer to vectorize',
+          },
+          mode: {
+            type: 'string',
+            enum: ['trace', 'ai'],
+            description: 'Vectorization mode: "trace" (VTracer, fast, works on any image) or "ai" (StarVector, best for icons/logos)',
+          },
+          separateLayers: {
+            type: 'boolean',
+            description: 'Create separate layer for each path (default: true)',
+          },
+          groupByPath: {
+            type: 'boolean',
+            description: 'Assign group IDs to control points for group animation (default: true)',
+          },
+          autoGroupByRegion: {
+            type: 'boolean',
+            description: 'Auto-group points by quadrant region (default: false)',
+          },
+          enableAnimation: {
+            type: 'boolean',
+            description: 'Enable keyframe animation on created layers (default: true)',
+          },
+          traceOptions: {
+            type: 'object',
+            description: 'VTracer-specific options (only used if mode is "trace")',
+            properties: {
+              colorMode: {
+                type: 'string',
+                enum: ['color', 'binary'],
+                description: 'Color mode: "color" for full color, "binary" for black & white',
+              },
+              filterSpeckle: {
+                type: 'number',
+                description: 'Filter speckle size (0-100, default 4)',
+              },
+              cornerThreshold: {
+                type: 'number',
+                description: 'Corner threshold in degrees (0-180, default 60)',
+              },
+              colorPrecision: {
+                type: 'number',
+                description: 'Color precision (1-10, default 6)',
+              },
+              layerDifference: {
+                type: 'number',
+                description: 'Layer difference threshold (1-256, default 16)',
+              },
+            },
+          },
+        },
+        required: ['sourceLayerId'],
+      },
+    },
+  },
 
   // ==========================================================================
   // UTILITY

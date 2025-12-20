@@ -5,6 +5,24 @@
       <div class="header-actions">
         <button @click="triggerFileImport" title="Import File (Ctrl+I)">📥</button>
         <div class="dropdown-container">
+          <button @click="showExportMenu = !showExportMenu" title="Export">📤</button>
+          <div v-if="showExportMenu" class="dropdown-menu">
+            <button @click="exportSelectedLayerSVG" :disabled="!hasSelectedSplineLayer">
+              ✒ Export Selected Layer as SVG
+            </button>
+            <button @click="exportCompositionSVG">
+              🎬 Export Composition as SVG
+            </button>
+            <hr class="menu-divider" />
+            <button @click="exportSelectedLayerSVGDownload" :disabled="!hasSelectedSplineLayer">
+              💾 Download Selected as SVG
+            </button>
+            <button @click="exportCompositionSVGDownload">
+              💾 Download Composition as SVG
+            </button>
+          </div>
+        </div>
+        <div class="dropdown-container">
           <button @click="showNewMenu = !showNewMenu" title="New Item">+</button>
           <div v-if="showNewMenu" class="dropdown-menu">
             <button @click="createNewComposition">🎬 New Composition</button>
@@ -16,6 +34,7 @@
             <button @click="createNewPointCloud">☁ New Point Cloud</button>
             <hr class="menu-divider" />
             <button @click="openDecomposeDialog">✨ AI Layer Decompose</button>
+            <button @click="openVectorizeDialog">✒ Vectorize Image</button>
           </div>
         </div>
         <button @click="showSearch = !showSearch" title="Search">🔍</button>
@@ -27,6 +46,13 @@
       v-if="showDecomposeDialog"
       @close="showDecomposeDialog = false"
       @decomposed="onDecomposed"
+    />
+
+    <!-- Vectorize Dialog -->
+    <VectorizeDialog
+      :visible="showVectorizeDialog"
+      @close="showVectorizeDialog = false"
+      @created="onVectorized"
     />
 
     <!-- Hidden file input -->
@@ -125,8 +151,11 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+import { useSelectionStore } from '@/stores/selectionStore';
 import DecomposeDialog from '@/components/dialogs/DecomposeDialog.vue';
+import VectorizeDialog from '@/components/dialogs/VectorizeDialog.vue';
 import type { DecomposedLayer } from '@/services/layerDecomposition';
+import { exportSplineLayer, exportLayers } from '@/services/svgExport';
 
 const emit = defineEmits<{
   (e: 'openCompositionSettings'): void;
@@ -149,6 +178,7 @@ interface Folder {
 }
 
 const store = useCompositorStore();
+const selectionStore = useSelectionStore();
 
 // Refs
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -156,10 +186,22 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 // State
 const showSearch = ref(false);
 const showNewMenu = ref(false);
+const showExportMenu = ref(false);
 const showDecomposeDialog = ref(false);
+const showVectorizeDialog = ref(false);
 const searchQuery = ref('');
 const selectedItem = ref<string | null>(null);
 const expandedFolders = ref<string[]>(['compositions', 'footage']);
+
+// Check if selected layer is a spline layer
+const hasSelectedSplineLayer = computed(() => {
+  const selectedLayerIds = selectionStore.selectedLayerIds;
+  if (selectedLayerIds.length === 0) return false;
+
+  const layers = store.getActiveCompLayers();
+  const selectedLayer = layers.find(l => l.id === selectedLayerIds[0]);
+  return selectedLayer?.type === 'spline';
+});
 
 // Folders computed from store - reactively updates when compositions change
 const folders = computed<Folder[]>(() => {
@@ -318,8 +360,124 @@ function openDecomposeDialog() {
   showDecomposeDialog.value = true;
 }
 
+function openVectorizeDialog() {
+  showNewMenu.value = false;
+  showVectorizeDialog.value = true;
+}
+
 function onDecomposed(layers: DecomposedLayer[]) {
   console.log('[ProjectPanel] Image decomposed into', layers.length, 'layers');
+}
+
+function onVectorized(layerIds: string[]) {
+  console.log('[ProjectPanel] Created', layerIds.length, 'vectorized layers');
+}
+
+// ============================================================
+// SVG EXPORT FUNCTIONS
+// ============================================================
+
+function getSelectedSplineLayer() {
+  const selectedLayerIds = selectionStore.selectedLayerIds;
+  if (selectedLayerIds.length === 0) return null;
+
+  const layers = store.getActiveCompLayers();
+  const layer = layers.find(l => l.id === selectedLayerIds[0]);
+  return layer?.type === 'spline' ? layer : null;
+}
+
+function exportSelectedLayerSVG() {
+  showExportMenu.value = false;
+  const layer = getSelectedSplineLayer();
+  if (!layer) {
+    console.warn('[ProjectPanel] No spline layer selected');
+    return;
+  }
+
+  try {
+    const svg = exportSplineLayer(layer);
+    // Copy to clipboard
+    navigator.clipboard.writeText(svg).then(() => {
+      console.log('[ProjectPanel] SVG copied to clipboard');
+    }).catch(err => {
+      console.error('[ProjectPanel] Failed to copy SVG:', err);
+    });
+  } catch (error) {
+    console.error('[ProjectPanel] Failed to export SVG:', error);
+  }
+}
+
+function exportCompositionSVG() {
+  showExportMenu.value = false;
+  const comp = store.activeComposition;
+  if (!comp) {
+    console.warn('[ProjectPanel] No active composition');
+    return;
+  }
+
+  try {
+    const svg = exportLayers(comp.layers, {
+      viewBox: { x: 0, y: 0, width: comp.settings.width, height: comp.settings.height }
+    });
+    // Copy to clipboard
+    navigator.clipboard.writeText(svg).then(() => {
+      console.log('[ProjectPanel] Composition SVG copied to clipboard');
+    }).catch(err => {
+      console.error('[ProjectPanel] Failed to copy SVG:', err);
+    });
+  } catch (error) {
+    console.error('[ProjectPanel] Failed to export composition SVG:', error);
+  }
+}
+
+function downloadSVG(svgContent: string, filename: string) {
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportSelectedLayerSVGDownload() {
+  showExportMenu.value = false;
+  const layer = getSelectedSplineLayer();
+  if (!layer) {
+    console.warn('[ProjectPanel] No spline layer selected');
+    return;
+  }
+
+  try {
+    const svg = exportSplineLayer(layer);
+    const filename = `${layer.name.replace(/[^a-z0-9]/gi, '_')}.svg`;
+    downloadSVG(svg, filename);
+    console.log('[ProjectPanel] SVG downloaded:', filename);
+  } catch (error) {
+    console.error('[ProjectPanel] Failed to export SVG:', error);
+  }
+}
+
+function exportCompositionSVGDownload() {
+  showExportMenu.value = false;
+  const comp = store.activeComposition;
+  if (!comp) {
+    console.warn('[ProjectPanel] No active composition');
+    return;
+  }
+
+  try {
+    const svg = exportLayers(comp.layers, {
+      viewBox: { x: 0, y: 0, width: comp.settings.width, height: comp.settings.height }
+    });
+    const filename = `${comp.name.replace(/[^a-z0-9]/gi, '_')}.svg`;
+    downloadSVG(svg, filename);
+    console.log('[ProjectPanel] Composition SVG downloaded:', filename);
+  } catch (error) {
+    console.error('[ProjectPanel] Failed to export composition SVG:', error);
+  }
 }
 
 function triggerFileImport() {
