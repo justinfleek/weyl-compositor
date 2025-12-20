@@ -88,7 +88,8 @@ export function createDefaultEmitter(id?: string): EmitterConfig {
     id: id || `emitter_${Date.now()}`,
     name: 'Emitter',
     enabled: true,
-    position: { x: 0.5, y: 0.5, z: 0 },
+    // Default to center of standard 832x480 composition
+    position: { x: 416, y: 240, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
     shape: { type: 'point' },
     emissionRate: 100,
@@ -125,7 +126,8 @@ export function createDefaultForceField(type: ForceFieldConfig['type'], id?: str
     type,
     enabled: true,
     strength: 100,
-    position: { x: 0.5, y: 0.5, z: 0 },
+    // Default to center of standard 832x480 composition
+    position: { x: 416, y: 240, z: 0 },
     falloffStart: 0,
     falloffEnd: 500,
     falloffType: 'linear',
@@ -1049,7 +1051,8 @@ export class GPUParticleSystem {
    */
   private getEmitterPosition(emitter: EmitterConfig): THREE.Vector3 {
     const shape = emitter.shape;
-    const base = new THREE.Vector3(emitter.position.x, emitter.position.y, emitter.position.z);
+    // Negate Y to match THREE.js coordinate system (Y-up) and gizmo positioning
+    const base = new THREE.Vector3(emitter.position.x, -emitter.position.y, emitter.position.z);
 
     switch (shape.type) {
       case 'point':

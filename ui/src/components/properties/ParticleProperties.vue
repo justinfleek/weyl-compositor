@@ -1194,7 +1194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import type {
   Layer,
   ParticleLayerData,
@@ -1256,10 +1256,63 @@ const emit = defineEmits<{
   (e: 'update', data: Partial<ParticleLayerData>): void;
 }>();
 
-// UI State
-const expandedSections = ref(new Set(['system', 'emitters']));
-const expandedEmitters = ref(new Set<string>());
+// UI State - persist expanded sections per layer
+const expandedSectionsMap = ref<Map<string, Set<string>>>(new Map());
+const expandedEmittersMap = ref<Map<string, Set<string>>>(new Map());
 const forceTab = ref<'wells' | 'vortices'>('wells');
+
+// Get/set expanded sections for current layer
+const expandedSections = computed({
+  get: () => {
+    const layerId = props.layer?.id;
+    if (!layerId) return new Set(['system', 'emitters']);
+    if (!expandedSectionsMap.value.has(layerId)) {
+      expandedSectionsMap.value.set(layerId, new Set(['system', 'emitters']));
+    }
+    return expandedSectionsMap.value.get(layerId)!;
+  },
+  set: (val: Set<string>) => {
+    const layerId = props.layer?.id;
+    if (layerId) {
+      expandedSectionsMap.value.set(layerId, val);
+    }
+  }
+});
+
+const expandedEmitters = computed({
+  get: () => {
+    const layerId = props.layer?.id;
+    if (!layerId) return new Set<string>();
+    if (!expandedEmittersMap.value.has(layerId)) {
+      expandedEmittersMap.value.set(layerId, new Set<string>());
+    }
+    return expandedEmittersMap.value.get(layerId)!;
+  },
+  set: (val: Set<string>) => {
+    const layerId = props.layer?.id;
+    if (layerId) {
+      expandedEmittersMap.value.set(layerId, val);
+    }
+  }
+});
+
+// Watch for layer changes to ensure UI stays in sync
+watch(() => props.layer?.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    // Initialize expanded sections for new layer if not already set
+    if (!expandedSectionsMap.value.has(newId)) {
+      expandedSectionsMap.value.set(newId, new Set(['system', 'emitters']));
+    }
+    if (!expandedEmittersMap.value.has(newId)) {
+      expandedEmittersMap.value.set(newId, new Set<string>());
+    }
+  }
+}, { immediate: true });
+
+// Deep watch for layer data changes to ensure computed properties update
+watch(() => props.layer?.data, () => {
+  // Force re-evaluation of computed properties when layer data changes externally
+}, { deep: true });
 
 // Get layer data with defaults
 const layerData = computed((): ParticleLayerData => {
@@ -1323,21 +1376,27 @@ const connections = computed(() => renderOptions.value.connections || {
 });
 const particleCount = computed(() => props.particleCount);
 
-// Section toggle
+// Section toggle - using new Set to trigger reactivity
 function toggleSection(section: string): void {
-  if (expandedSections.value.has(section)) {
-    expandedSections.value.delete(section);
+  const current = expandedSections.value;
+  const newSet = new Set(current);
+  if (newSet.has(section)) {
+    newSet.delete(section);
   } else {
-    expandedSections.value.add(section);
+    newSet.add(section);
   }
+  expandedSections.value = newSet;
 }
 
 function toggleEmitter(id: string): void {
-  if (expandedEmitters.value.has(id)) {
-    expandedEmitters.value.delete(id);
+  const current = expandedEmitters.value;
+  const newSet = new Set(current);
+  if (newSet.has(id)) {
+    newSet.delete(id);
   } else {
-    expandedEmitters.value.add(id);
+    newSet.add(id);
   }
+  expandedEmitters.value = newSet;
 }
 
 // Preset functions

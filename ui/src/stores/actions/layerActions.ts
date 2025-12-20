@@ -440,7 +440,8 @@ export function updateLayerData(store: LayerStore, layerId: string, dataUpdates:
   const layer = store.getActiveCompLayers().find(l => l.id === layerId);
   if (!layer || !layer.data) return;
 
-  Object.assign(layer.data, dataUpdates);
+  // Use spread operator instead of Object.assign for proper Vue reactivity
+  layer.data = { ...layer.data, ...dataUpdates };
   markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
