@@ -324,6 +324,24 @@ export interface ComfyUIHistoryEntry {
 export type VideoFormat = 'mp4' | 'webm' | 'gif' | 'webp' | 'image_sequence';
 export type VideoCodec = 'h264' | 'h265' | 'vp9' | 'av1';
 
+// Frame sequence formats
+export type FrameSequenceFormat =
+  | 'png'       // Lossless, 8-bit RGBA (browser)
+  | 'jpeg'      // Lossy, 8-bit RGB (browser)
+  | 'webp'      // Modern format (browser)
+  | 'tiff'      // 8/16-bit (backend)
+  | 'exr'       // HDR 16/32-bit float (backend)
+  | 'dpx';      // Film 10/16-bit (backend)
+
+export interface FrameSequenceOptions {
+  format: FrameSequenceFormat;
+  quality: number;           // 0-100 for lossy
+  filenamePattern: string;   // e.g., "frame_{frame:04d}"
+  outputDir: string;
+  bitDepth?: 8 | 10 | 16 | 32;
+  colorSpace?: 'sRGB' | 'Linear' | 'ACEScg' | 'Rec709';
+}
+
 export interface VideoEncoderOptions {
   format: VideoFormat;
   codec?: VideoCodec;
