@@ -646,12 +646,12 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 0;
+  right: 0;
   background: #2a2a2a;
   border: 1px solid #444;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  z-index: 1000;
   min-width: 180px;
   white-space: nowrap;
 }

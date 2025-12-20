@@ -26542,14 +26542,13 @@ const useCompositorStore = defineStore("compositor", {
       const compWidth = comp?.settings.width || this.project.composition.width;
       const compHeight = comp?.settings.height || this.project.composition.height;
       const layerTransform = createDefaultTransform();
+      layerTransform.position.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
       if (type === "solid" && layerData) {
         const layerWidth = layerData.width || compWidth;
         const layerHeight = layerData.height || compHeight;
         layerTransform.anchorPoint.value = { x: layerWidth / 2, y: layerHeight / 2, z: 0 };
-        layerTransform.position.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
       } else {
-        layerTransform.position.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
-        layerTransform.anchorPoint.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
+        layerTransform.anchorPoint.value = { x: 0, y: 0, z: 0 };
       }
       let layerProperties = [];
       if (type === "spline") {
@@ -28936,14 +28935,14 @@ const _hoisted_2$K = { class: "dialog-header" };
 const _hoisted_3$I = ["disabled"];
 const _hoisted_4$H = { class: "dialog-content" };
 const _hoisted_5$H = { class: "status-section" };
-const _hoisted_6$H = {
+const _hoisted_6$G = {
   key: 0,
   class: "model-info"
 };
-const _hoisted_7$H = { class: "form-group" };
-const _hoisted_8$G = { class: "source-options" };
-const _hoisted_9$G = ["disabled"];
-const _hoisted_10$G = {
+const _hoisted_7$G = { class: "form-group" };
+const _hoisted_8$F = { class: "source-options" };
+const _hoisted_9$F = ["disabled"];
+const _hoisted_10$F = {
   key: 0,
   class: "layer-select"
 };
@@ -29266,13 +29265,13 @@ const _sfc_main$M = /* @__PURE__ */ defineComponent({
                 }, null, 2),
                 createBaseVNode("span", null, toDisplayString(statusText.value), 1)
               ], 2),
-              modelStatus.value && !modelStatus.value.downloaded ? (openBlock(), createElementBlock("div", _hoisted_6$H, [
+              modelStatus.value && !modelStatus.value.downloaded ? (openBlock(), createElementBlock("div", _hoisted_6$G, [
                 createBaseVNode("small", null, "Model size: " + toDisplayString(modelStatus.value.model_size_gb) + "GB", 1)
               ])) : createCommentVNode("", true)
             ]),
-            createBaseVNode("div", _hoisted_7$H, [
+            createBaseVNode("div", _hoisted_7$G, [
               _cache[21] || (_cache[21] = createBaseVNode("label", null, "Source Image", -1)),
-              createBaseVNode("div", _hoisted_8$G, [
+              createBaseVNode("div", _hoisted_8$F, [
                 createBaseVNode("button", {
                   class: normalizeClass(["source-btn", { active: sourceType.value === "layer" }]),
                   onClick: _cache[1] || (_cache[1] = ($event) => sourceType.value = "layer"),
@@ -29280,7 +29279,7 @@ const _sfc_main$M = /* @__PURE__ */ defineComponent({
                 }, [..._cache[17] || (_cache[17] = [
                   createBaseVNode("i", { class: "pi pi-images" }, null, -1),
                   createBaseVNode("span", null, "From Layer", -1)
-                ])], 10, _hoisted_9$G),
+                ])], 10, _hoisted_9$F),
                 createBaseVNode("button", {
                   class: normalizeClass(["source-btn", { active: sourceType.value === "upload" }]),
                   onClick: _cache[2] || (_cache[2] = ($event) => sourceType.value = "upload")
@@ -29289,7 +29288,7 @@ const _sfc_main$M = /* @__PURE__ */ defineComponent({
                   createBaseVNode("span", null, "Upload", -1)
                 ])], 2)
               ]),
-              sourceType.value === "layer" ? (openBlock(), createElementBlock("div", _hoisted_10$G, [
+              sourceType.value === "layer" ? (openBlock(), createElementBlock("div", _hoisted_10$F, [
                 withDirectives(createBaseVNode("select", {
                   "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => selectedLayerId.value = $event),
                   disabled: isProcessing.value
@@ -30783,11 +30782,11 @@ const _hoisted_2$J = { class: "section" };
 const _hoisted_3$H = { class: "source-options" };
 const _hoisted_4$G = { class: "option-group" };
 const _hoisted_5$G = ["disabled"];
-const _hoisted_6$G = ["disabled"];
-const _hoisted_7$G = ["value"];
-const _hoisted_8$F = { class: "option-group" };
-const _hoisted_9$F = ["disabled"];
-const _hoisted_10$F = ["disabled"];
+const _hoisted_6$F = ["disabled"];
+const _hoisted_7$F = ["value"];
+const _hoisted_8$E = { class: "option-group" };
+const _hoisted_9$E = ["disabled"];
+const _hoisted_10$E = ["disabled"];
 const _hoisted_11$E = {
   key: 0,
   class: "preview-container"
@@ -31112,20 +31111,20 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                       return openBlock(), createElementBlock("option", {
                         key: layer.id,
                         value: layer.id
-                      }, toDisplayString(layer.name), 9, _hoisted_7$G);
+                      }, toDisplayString(layer.name), 9, _hoisted_7$F);
                     }), 128))
-                  ], 8, _hoisted_6$G), [
+                  ], 8, _hoisted_6$F), [
                     [vModelSelect, selectedLayerId.value]
                   ])
                 ]),
-                createBaseVNode("div", _hoisted_8$F, [
+                createBaseVNode("div", _hoisted_8$E, [
                   createBaseVNode("label", null, [
                     withDirectives(createBaseVNode("input", {
                       type: "radio",
                       "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => sourceType.value = $event),
                       value: "upload",
                       disabled: isProcessing.value
-                    }, null, 8, _hoisted_9$F), [
+                    }, null, 8, _hoisted_9$E), [
                       [vModelRadio, sourceType.value]
                     ]),
                     _cache[19] || (_cache[19] = createTextVNode(" Upload Image ", -1))
@@ -31138,7 +31137,7 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
                     onChange: onFileSelect,
                     disabled: sourceType.value !== "upload" || isProcessing.value,
                     class: "file-input"
-                  }, null, 40, _hoisted_10$F)
+                  }, null, 40, _hoisted_10$E)
                 ])
               ]),
               previewUrl.value ? (openBlock(), createElementBlock("div", _hoisted_11$E, [
@@ -31522,14 +31521,14 @@ const _hoisted_5$F = {
   key: 0,
   class: "dropdown-menu"
 };
-const _hoisted_6$F = ["disabled"];
-const _hoisted_7$F = ["disabled"];
-const _hoisted_8$E = { class: "dropdown-container" };
-const _hoisted_9$E = {
+const _hoisted_6$E = ["disabled"];
+const _hoisted_7$E = ["disabled"];
+const _hoisted_8$D = { class: "dropdown-container" };
+const _hoisted_9$D = {
   key: 0,
   class: "dropdown-menu"
 };
-const _hoisted_10$E = {
+const _hoisted_10$D = {
   key: 1,
   class: "search-bar"
 };
@@ -31923,22 +31922,22 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
                 createBaseVNode("button", {
                   onClick: exportSelectedLayerSVG,
                   disabled: !hasSelectedSplineLayer.value
-                }, " ✒ Export Selected Layer as SVG ", 8, _hoisted_6$F),
+                }, " ✒ Export Selected Layer as SVG ", 8, _hoisted_6$E),
                 createBaseVNode("button", { onClick: exportCompositionSVG }, " 🎬 Export Composition as SVG "),
                 _cache[6] || (_cache[6] = createBaseVNode("hr", { class: "menu-divider" }, null, -1)),
                 createBaseVNode("button", {
                   onClick: exportSelectedLayerSVGDownload,
                   disabled: !hasSelectedSplineLayer.value
-                }, " 💾 Download Selected as SVG ", 8, _hoisted_7$F),
+                }, " 💾 Download Selected as SVG ", 8, _hoisted_7$E),
                 createBaseVNode("button", { onClick: exportCompositionSVGDownload }, " 💾 Download Composition as SVG ")
               ])) : createCommentVNode("", true)
             ]),
-            createBaseVNode("div", _hoisted_8$E, [
+            createBaseVNode("div", _hoisted_8$D, [
               createBaseVNode("button", {
                 onClick: _cache[1] || (_cache[1] = ($event) => showNewMenu.value = !showNewMenu.value),
                 title: "New Item"
               }, "+"),
-              showNewMenu.value ? (openBlock(), createElementBlock("div", _hoisted_9$E, [
+              showNewMenu.value ? (openBlock(), createElementBlock("div", _hoisted_9$D, [
                 createBaseVNode("button", { onClick: createNewComposition }, "🎬 New Composition"),
                 createBaseVNode("button", { onClick: createNewSolid }, "⬜ New Solid"),
                 createBaseVNode("button", { onClick: createNewText }, "T New Text"),
@@ -31976,7 +31975,7 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
           style: { "display": "none" },
           onChange: handleFileImport
         }, null, 544),
-        showSearch.value ? (openBlock(), createElementBlock("div", _hoisted_10$E, [
+        showSearch.value ? (openBlock(), createElementBlock("div", _hoisted_10$D, [
           withDirectives(createBaseVNode("input", {
             type: "text",
             "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => searchQuery.value = $event),
@@ -32055,7 +32054,7 @@ const _sfc_main$K = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ProjectPanel = /* @__PURE__ */ _export_sfc(_sfc_main$K, [["__scopeId", "data-v-b1624679"]]);
+const ProjectPanel = /* @__PURE__ */ _export_sfc(_sfc_main$K, [["__scopeId", "data-v-a4ec84cb"]]);
 
 const _hoisted_1$I = {
   class: "effects-panel",
@@ -32070,17 +32069,17 @@ const _hoisted_5$E = {
   role: "tablist",
   "aria-label": "Effects panel tabs"
 };
-const _hoisted_6$E = ["aria-selected"];
-const _hoisted_7$E = ["aria-selected"];
-const _hoisted_8$D = ["aria-selected"];
-const _hoisted_9$D = {
+const _hoisted_6$D = ["aria-selected"];
+const _hoisted_7$D = ["aria-selected"];
+const _hoisted_8$C = ["aria-selected"];
+const _hoisted_9$C = {
   key: 0,
   class: "effects-list",
   id: "effects-tab-panel",
   role: "tabpanel",
   "aria-label": "Effects list"
 };
-const _hoisted_10$D = ["onClick"];
+const _hoisted_10$C = ["onClick"];
 const _hoisted_11$C = { class: "expand-icon" };
 const _hoisted_12$A = { class: "category-icon" };
 const _hoisted_13$A = { class: "category-name" };
@@ -32276,23 +32275,23 @@ const _sfc_main$J = /* @__PURE__ */ defineComponent({
               role: "tab",
               "aria-selected": activeTab.value === "effects",
               "aria-controls": "effects-tab-panel"
-            }, " Effects ", 10, _hoisted_6$E),
+            }, " Effects ", 10, _hoisted_6$D),
             createBaseVNode("button", {
               class: normalizeClass({ active: activeTab.value === "presets" }),
               onClick: _cache[2] || (_cache[2] = ($event) => activeTab.value = "presets"),
               role: "tab",
               "aria-selected": activeTab.value === "presets",
               "aria-controls": "presets-tab-panel"
-            }, " Presets ", 10, _hoisted_7$E),
+            }, " Presets ", 10, _hoisted_7$D),
             createBaseVNode("button", {
               class: normalizeClass({ active: activeTab.value === "favorites" }),
               onClick: _cache[3] || (_cache[3] = ($event) => activeTab.value = "favorites"),
               role: "tab",
               "aria-selected": activeTab.value === "favorites",
               "aria-controls": "favorites-tab-panel"
-            }, " Favorites ", 10, _hoisted_8$D)
+            }, " Favorites ", 10, _hoisted_8$C)
           ]),
-          activeTab.value === "effects" ? (openBlock(), createElementBlock("div", _hoisted_9$D, [
+          activeTab.value === "effects" ? (openBlock(), createElementBlock("div", _hoisted_9$C, [
             (openBlock(true), createElementBlock(Fragment, null, renderList(filteredCategories.value, (category) => {
               return openBlock(), createElementBlock("div", {
                 key: category.key,
@@ -32306,7 +32305,7 @@ const _sfc_main$J = /* @__PURE__ */ defineComponent({
                   createBaseVNode("span", _hoisted_12$A, toDisplayString(category.icon), 1),
                   createBaseVNode("span", _hoisted_13$A, toDisplayString(category.label), 1),
                   createBaseVNode("span", _hoisted_14$x, toDisplayString(category.effects.length), 1)
-                ], 8, _hoisted_10$D),
+                ], 8, _hoisted_10$C),
                 expandedCategories.value.includes(category.key) ? (openBlock(), createElementBlock("div", _hoisted_15$w, [
                   (openBlock(true), createElementBlock(Fragment, null, renderList(category.effects, (effect) => {
                     return openBlock(), createElementBlock("div", {
@@ -33016,11 +33015,11 @@ const _hoisted_5$D = {
   key: 1,
   class: "rgb-sliders"
 };
-const _hoisted_6$D = { class: "color-slider" };
-const _hoisted_7$D = ["value"];
-const _hoisted_8$C = { class: "color-slider" };
-const _hoisted_9$C = ["value"];
-const _hoisted_10$C = { class: "color-slider" };
+const _hoisted_6$C = { class: "color-slider" };
+const _hoisted_7$C = ["value"];
+const _hoisted_8$B = { class: "color-slider" };
+const _hoisted_9$B = ["value"];
+const _hoisted_10$B = { class: "color-slider" };
 const _hoisted_11$B = ["value"];
 const _hoisted_12$z = {
   key: 2,
@@ -33367,7 +33366,7 @@ const _sfc_main$F = /* @__PURE__ */ defineComponent({
                 }, null, 4)
               ], 544)
             ], 64)) : currentMode.value === "rgb" ? (openBlock(), createElementBlock("div", _hoisted_5$D, [
-              createBaseVNode("div", _hoisted_6$D, [
+              createBaseVNode("div", _hoisted_6$C, [
                 _cache[15] || (_cache[15] = createBaseVNode("label", null, "R", -1)),
                 createBaseVNode("div", {
                   class: "slider-track r-track",
@@ -33384,9 +33383,9 @@ const _sfc_main$F = /* @__PURE__ */ defineComponent({
                   min: "0",
                   max: "255",
                   onInput: _cache[2] || (_cache[2] = ($event) => onRgbInput(0, $event))
-                }, null, 40, _hoisted_7$D)
+                }, null, 40, _hoisted_7$C)
               ]),
-              createBaseVNode("div", _hoisted_8$C, [
+              createBaseVNode("div", _hoisted_8$B, [
                 _cache[16] || (_cache[16] = createBaseVNode("label", null, "G", -1)),
                 createBaseVNode("div", {
                   class: "slider-track g-track",
@@ -33403,9 +33402,9 @@ const _sfc_main$F = /* @__PURE__ */ defineComponent({
                   min: "0",
                   max: "255",
                   onInput: _cache[4] || (_cache[4] = ($event) => onRgbInput(1, $event))
-                }, null, 40, _hoisted_9$C)
+                }, null, 40, _hoisted_9$B)
               ]),
-              createBaseVNode("div", _hoisted_10$C, [
+              createBaseVNode("div", _hoisted_10$B, [
                 _cache[17] || (_cache[17] = createBaseVNode("label", null, "B", -1)),
                 createBaseVNode("div", {
                   class: "slider-track b-track",
@@ -33550,14 +33549,14 @@ const _hoisted_4$C = {
   class: "layer-badge"
 };
 const _hoisted_5$C = { class: "layer-type-icon" };
-const _hoisted_6$C = ["disabled"];
-const _hoisted_7$C = {
+const _hoisted_6$B = ["disabled"];
+const _hoisted_7$B = {
   key: 0,
   class: "effect-menu"
 };
-const _hoisted_8$B = { class: "category-label" };
-const _hoisted_9$B = { class: "cat-icon" };
-const _hoisted_10$B = { class: "category-items" };
+const _hoisted_8$A = { class: "category-label" };
+const _hoisted_9$A = { class: "cat-icon" };
+const _hoisted_10$A = { class: "category-items" };
 const _hoisted_11$A = ["onClick"];
 const _hoisted_12$y = { class: "panel-content" };
 const _hoisted_13$y = {
@@ -33723,18 +33722,18 @@ const _sfc_main$E = /* @__PURE__ */ defineComponent({
             }, [..._cache[2] || (_cache[2] = [
               createBaseVNode("span", { class: "icon" }, "+", -1),
               createTextVNode(" Add Effect ", -1)
-            ])], 8, _hoisted_6$C),
-            showAddMenu.value ? (openBlock(), createElementBlock("div", _hoisted_7$C, [
+            ])], 8, _hoisted_6$B),
+            showAddMenu.value ? (openBlock(), createElementBlock("div", _hoisted_7$B, [
               (openBlock(true), createElementBlock(Fragment, null, renderList(unref(categories), (catInfo, catKey) => {
                 return openBlock(), createElementBlock("div", {
                   key: catKey,
                   class: "effect-category"
                 }, [
-                  createBaseVNode("div", _hoisted_8$B, [
-                    createBaseVNode("span", _hoisted_9$B, toDisplayString(catInfo.icon), 1),
+                  createBaseVNode("div", _hoisted_8$A, [
+                    createBaseVNode("span", _hoisted_9$A, toDisplayString(catInfo.icon), 1),
                     createTextVNode(" " + toDisplayString(catInfo.label), 1)
                   ]),
-                  createBaseVNode("div", _hoisted_10$B, [
+                  createBaseVNode("div", _hoisted_10$A, [
                     (openBlock(true), createElementBlock(Fragment, null, renderList(getEffectsByCategory(catKey), (def) => {
                       return openBlock(), createElementBlock("button", {
                         key: def.key,
@@ -34401,11 +34400,11 @@ const _hoisted_2$B = { class: "prop-section" };
 const _hoisted_3$B = ["value"];
 const _hoisted_4$B = { class: "prop-section" };
 const _hoisted_5$B = { class: "row font-row" };
-const _hoisted_6$B = ["value"];
-const _hoisted_7$B = ["label"];
-const _hoisted_8$A = ["value"];
-const _hoisted_9$A = { class: "style-toggles" };
-const _hoisted_10$A = {
+const _hoisted_6$A = ["value"];
+const _hoisted_7$A = ["label"];
+const _hoisted_8$z = ["value"];
+const _hoisted_9$z = { class: "style-toggles" };
+const _hoisted_10$z = {
   key: 0,
   class: "row"
 };
@@ -34776,12 +34775,12 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
                     return openBlock(), createElementBlock("option", {
                       key: font.family,
                       value: font.family
-                    }, toDisplayString(font.family), 9, _hoisted_8$A);
+                    }, toDisplayString(font.family), 9, _hoisted_8$z);
                   }), 128))
-                ], 8, _hoisted_7$B);
+                ], 8, _hoisted_7$A);
               }), 128))
-            ], 40, _hoisted_6$B),
-            createBaseVNode("div", _hoisted_9$A, [
+            ], 40, _hoisted_6$A),
+            createBaseVNode("div", _hoisted_9$z, [
               createBaseVNode("button", {
                 class: normalizeClass({ active: textData.value.fontWeight === "bold" }),
                 onClick: toggleBold
@@ -34792,7 +34791,7 @@ const _sfc_main$D = /* @__PURE__ */ defineComponent({
               }, "I", 2)
             ])
           ]),
-          !hasSystemFonts.value ? (openBlock(), createElementBlock("div", _hoisted_10$A, [
+          !hasSystemFonts.value ? (openBlock(), createElementBlock("div", _hoisted_10$z, [
             createBaseVNode("button", {
               class: "font-access-btn",
               onClick: requestFontAccess,
@@ -36500,14 +36499,14 @@ const _hoisted_3$A = {
 };
 const _hoisted_4$A = { class: "preset-controls" };
 const _hoisted_5$A = { label: "Built-in" };
-const _hoisted_6$A = ["value"];
-const _hoisted_7$A = {
+const _hoisted_6$z = ["value"];
+const _hoisted_7$z = {
   key: 0,
   label: "User Presets"
 };
-const _hoisted_8$z = ["value"];
-const _hoisted_9$z = ["disabled"];
-const _hoisted_10$z = { class: "preset-actions" };
+const _hoisted_8$y = ["value"];
+const _hoisted_9$y = ["disabled"];
+const _hoisted_10$y = { class: "preset-actions" };
 const _hoisted_11$y = ["disabled"];
 const _hoisted_12$w = { class: "preset-dialog" };
 const _hoisted_13$w = { class: "dialog-field" };
@@ -37431,15 +37430,15 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                     return openBlock(), createElementBlock("option", {
                       key: p.id,
                       value: p.id
-                    }, toDisplayString(p.name), 9, _hoisted_6$A);
+                    }, toDisplayString(p.name), 9, _hoisted_6$z);
                   }), 128))
                 ]),
-                userPresets.value.length > 0 ? (openBlock(), createElementBlock("optgroup", _hoisted_7$A, [
+                userPresets.value.length > 0 ? (openBlock(), createElementBlock("optgroup", _hoisted_7$z, [
                   (openBlock(true), createElementBlock(Fragment, null, renderList(userPresets.value, (p) => {
                     return openBlock(), createElementBlock("option", {
                       key: p.id,
                       value: p.id
-                    }, toDisplayString(p.name), 9, _hoisted_8$z);
+                    }, toDisplayString(p.name), 9, _hoisted_8$y);
                   }), 128))
                 ])) : createCommentVNode("", true)
               ], 512), [
@@ -37450,9 +37449,9 @@ const _sfc_main$C = /* @__PURE__ */ defineComponent({
                 onClick: applySelectedPreset,
                 disabled: !selectedPresetId.value,
                 title: "Apply Preset"
-              }, " Apply ", 8, _hoisted_9$z)
+              }, " Apply ", 8, _hoisted_9$y)
             ]),
-            createBaseVNode("div", _hoisted_10$z, [
+            createBaseVNode("div", _hoisted_10$y, [
               createBaseVNode("button", {
                 class: "preset-btn save",
                 onClick: _cache[2] || (_cache[2] = ($event) => showSaveDialog.value = true),
@@ -38975,11 +38974,11 @@ const _hoisted_3$z = {
 };
 const _hoisted_4$z = { class: "property-row" };
 const _hoisted_5$z = ["value"];
-const _hoisted_6$z = ["value"];
-const _hoisted_7$z = { class: "property-row" };
-const _hoisted_8$y = ["value"];
-const _hoisted_9$y = ["value"];
-const _hoisted_10$y = { class: "property-section" };
+const _hoisted_6$y = ["value"];
+const _hoisted_7$y = { class: "property-row" };
+const _hoisted_8$x = ["value"];
+const _hoisted_9$x = ["value"];
+const _hoisted_10$x = { class: "property-section" };
 const _hoisted_11$x = {
   key: 0,
   class: "section-content"
@@ -39295,11 +39294,11 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   return openBlock(), createElementBlock("option", {
                     key: layer.id,
                     value: layer.id
-                  }, toDisplayString(layer.name), 9, _hoisted_6$z);
+                  }, toDisplayString(layer.name), 9, _hoisted_6$y);
                 }), 128))
               ], 40, _hoisted_5$z)
             ]),
-            createBaseVNode("div", _hoisted_7$z, [
+            createBaseVNode("div", _hoisted_7$y, [
               _cache[37] || (_cache[37] = createBaseVNode("label", null, "Depth Layer", -1)),
               createBaseVNode("select", {
                 value: config.value.depthLayerId,
@@ -39310,13 +39309,13 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   return openBlock(), createElementBlock("option", {
                     key: layer.id,
                     value: layer.id
-                  }, toDisplayString(layer.name), 9, _hoisted_9$y);
+                  }, toDisplayString(layer.name), 9, _hoisted_9$x);
                 }), 128))
-              ], 40, _hoisted_8$y)
+              ], 40, _hoisted_8$x)
             ])
           ])) : createCommentVNode("", true)
         ]),
-        createBaseVNode("div", _hoisted_10$y, [
+        createBaseVNode("div", _hoisted_10$x, [
           createBaseVNode("div", {
             class: "section-header",
             onClick: _cache[3] || (_cache[3] = ($event) => toggleSection("preset"))
@@ -39761,11 +39760,11 @@ const _hoisted_2$y = { class: "property-section" };
 const _hoisted_3$y = { class: "section-content" };
 const _hoisted_4$y = { class: "property-row" };
 const _hoisted_5$y = ["value"];
-const _hoisted_6$y = { class: "property-group" };
-const _hoisted_7$y = { class: "property-group" };
-const _hoisted_8$x = { class: "control-row" };
-const _hoisted_9$x = { class: "property-group" };
-const _hoisted_10$x = { class: "control-row" };
+const _hoisted_6$x = { class: "property-group" };
+const _hoisted_7$x = { class: "property-group" };
+const _hoisted_8$w = { class: "control-row" };
+const _hoisted_9$w = { class: "property-group" };
+const _hoisted_10$w = { class: "control-row" };
 const _hoisted_11$w = { class: "property-group" };
 const _hoisted_12$u = {
   key: 1,
@@ -39837,16 +39836,16 @@ const _sfc_main$z = /* @__PURE__ */ defineComponent({
                 createBaseVNode("option", { value: "ambient" }, "Ambient", -1)
               ])], 40, _hoisted_5$y)
             ]),
-            createBaseVNode("div", _hoisted_6$y, [
+            createBaseVNode("div", _hoisted_6$x, [
               _cache[14] || (_cache[14] = createBaseVNode("label", null, "Color", -1)),
               createVNode(unref(ColorPicker), {
                 modelValue: lightData.value.color,
                 "onUpdate:modelValue": _cache[1] || (_cache[1] = (v) => update("color", v))
               }, null, 8, ["modelValue"])
             ]),
-            createBaseVNode("div", _hoisted_7$y, [
+            createBaseVNode("div", _hoisted_7$x, [
               _cache[15] || (_cache[15] = createBaseVNode("label", null, "Intensity", -1)),
-              createBaseVNode("div", _hoisted_8$x, [
+              createBaseVNode("div", _hoisted_8$w, [
                 createVNode(unref(SliderInput), {
                   modelValue: lightData.value.intensity,
                   "onUpdate:modelValue": _cache[2] || (_cache[2] = (v) => update("intensity", v)),
@@ -39858,9 +39857,9 @@ const _sfc_main$z = /* @__PURE__ */ defineComponent({
               ])
             ]),
             lightData.value.lightType === "spot" ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-              createBaseVNode("div", _hoisted_9$x, [
+              createBaseVNode("div", _hoisted_9$w, [
                 _cache[16] || (_cache[16] = createBaseVNode("label", null, "Cone Angle", -1)),
-                createBaseVNode("div", _hoisted_10$x, [
+                createBaseVNode("div", _hoisted_10$w, [
                   createVNode(unref(AngleDial), {
                     modelValue: lightData.value.coneAngle ?? 90,
                     "onUpdate:modelValue": _cache[3] || (_cache[3] = (v) => update("coneAngle", v)),
@@ -39963,11 +39962,11 @@ const _hoisted_5$x = {
   key: 0,
   class: "section-content"
 };
-const _hoisted_6$x = { class: "property-row" };
-const _hoisted_7$x = { class: "color-input-wrapper" };
-const _hoisted_8$w = ["value"];
-const _hoisted_9$w = { class: "property-row" };
-const _hoisted_10$w = { class: "property-row" };
+const _hoisted_6$w = { class: "property-row" };
+const _hoisted_7$w = { class: "color-input-wrapper" };
+const _hoisted_8$v = ["value"];
+const _hoisted_9$v = { class: "property-row" };
+const _hoisted_10$v = { class: "property-row" };
 const _hoisted_11$v = { class: "property-row" };
 const _hoisted_12$t = { class: "icon-toggle-group" };
 const _hoisted_13$t = { class: "property-row" };
@@ -40396,17 +40395,17 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
             }, null, 40, _hoisted_4$x)
           ]),
           expandedSections.value.includes("stroke") && hasStroke.value ? (openBlock(), createElementBlock("div", _hoisted_5$x, [
-            createBaseVNode("div", _hoisted_6$x, [
+            createBaseVNode("div", _hoisted_6$w, [
               _cache[32] || (_cache[32] = createBaseVNode("label", null, "Color", -1)),
-              createBaseVNode("div", _hoisted_7$x, [
+              createBaseVNode("div", _hoisted_7$w, [
                 createBaseVNode("input", {
                   type: "color",
                   value: shapeData.value.stroke || "#ffffff",
                   onInput: _cache[2] || (_cache[2] = (e) => update("stroke", e.target.value))
-                }, null, 40, _hoisted_8$w)
+                }, null, 40, _hoisted_8$v)
               ])
             ]),
-            createBaseVNode("div", _hoisted_9$w, [
+            createBaseVNode("div", _hoisted_9$v, [
               _cache[33] || (_cache[33] = createBaseVNode("label", null, "Opacity", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Stroke Opacity") ?? shapeData.value.strokeOpacity ?? 100,
@@ -40420,7 +40419,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
                 onClick: _cache[4] || (_cache[4] = ($event) => toggleKeyframe("Stroke Opacity", "strokeOpacity"))
               }, "◆", 2)
             ]),
-            createBaseVNode("div", _hoisted_10$w, [
+            createBaseVNode("div", _hoisted_10$v, [
               _cache[34] || (_cache[34] = createBaseVNode("label", null, "Width", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Stroke Width") ?? shapeData.value.strokeWidth ?? 2,
@@ -40928,11 +40927,11 @@ const _hoisted_2$w = {
 const _hoisted_3$w = { class: "section-content info-grid" };
 const _hoisted_4$w = { class: "info-row" };
 const _hoisted_5$w = { class: "info-value" };
-const _hoisted_6$w = { class: "info-row" };
-const _hoisted_7$w = { class: "info-value" };
-const _hoisted_8$v = { class: "info-row" };
-const _hoisted_9$v = { class: "info-value" };
-const _hoisted_10$v = { class: "info-row" };
+const _hoisted_6$v = { class: "info-row" };
+const _hoisted_7$v = { class: "info-value" };
+const _hoisted_8$u = { class: "info-row" };
+const _hoisted_9$u = { class: "info-value" };
+const _hoisted_10$u = { class: "info-row" };
 const _hoisted_11$u = { class: "info-value" };
 const _hoisted_12$s = { class: "property-section" };
 const _hoisted_13$s = { class: "section-content" };
@@ -41087,15 +41086,15 @@ const _sfc_main$x = /* @__PURE__ */ defineComponent({
               _cache[0] || (_cache[0] = createBaseVNode("span", { class: "info-label" }, "Dimensions", -1)),
               createBaseVNode("span", _hoisted_5$w, toDisplayString(assetInfo.value.width) + " × " + toDisplayString(assetInfo.value.height), 1)
             ]),
-            createBaseVNode("div", _hoisted_6$w, [
+            createBaseVNode("div", _hoisted_6$v, [
               _cache[1] || (_cache[1] = createBaseVNode("span", { class: "info-label" }, "Duration", -1)),
-              createBaseVNode("span", _hoisted_7$w, toDisplayString(formatDuration(assetInfo.value.duration)), 1)
+              createBaseVNode("span", _hoisted_7$v, toDisplayString(formatDuration(assetInfo.value.duration)), 1)
             ]),
-            createBaseVNode("div", _hoisted_8$v, [
+            createBaseVNode("div", _hoisted_8$u, [
               _cache[2] || (_cache[2] = createBaseVNode("span", { class: "info-label" }, "Frame Rate", -1)),
-              createBaseVNode("span", _hoisted_9$v, toDisplayString(assetInfo.value.fps?.toFixed(2) || "?") + " fps", 1)
+              createBaseVNode("span", _hoisted_9$u, toDisplayString(assetInfo.value.fps?.toFixed(2) || "?") + " fps", 1)
             ]),
-            createBaseVNode("div", _hoisted_10$v, [
+            createBaseVNode("div", _hoisted_10$u, [
               _cache[3] || (_cache[3] = createBaseVNode("span", { class: "info-label" }, "Has Audio", -1)),
               createBaseVNode("span", _hoisted_11$u, toDisplayString(assetInfo.value.hasAudio ? "Yes" : "No"), 1)
             ])
@@ -41677,11 +41676,11 @@ const _hoisted_4$v = {
   class: "section-content"
 };
 const _hoisted_5$v = { class: "property-row checkbox-row" };
-const _hoisted_6$v = ["checked"];
-const _hoisted_7$v = { class: "property-row" };
-const _hoisted_8$u = { class: "property-row" };
-const _hoisted_9$u = { class: "prop-section" };
-const _hoisted_10$u = { class: "expand-icon" };
+const _hoisted_6$u = ["checked"];
+const _hoisted_7$u = { class: "property-row" };
+const _hoisted_8$t = { class: "property-row" };
+const _hoisted_9$t = { class: "prop-section" };
+const _hoisted_10$t = { class: "expand-icon" };
 const _hoisted_11$t = ["checked"];
 const _hoisted_12$r = {
   key: 0,
@@ -42080,11 +42079,11 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
                   type: "checkbox",
                   checked: cameraData.value.isActiveCamera,
                   onChange: _cache[1] || (_cache[1] = ($event) => update("isActiveCamera", $event.target.checked))
-                }, null, 40, _hoisted_6$v),
+                }, null, 40, _hoisted_6$u),
                 _cache[75] || (_cache[75] = createTextVNode(" Active Camera ", -1))
               ])
             ]),
-            createBaseVNode("div", _hoisted_7$v, [
+            createBaseVNode("div", _hoisted_7$u, [
               _cache[76] || (_cache[76] = createBaseVNode("label", null, "FOV", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("FOV") ?? 50,
@@ -42098,7 +42097,7 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
                 onClick: _cache[3] || (_cache[3] = ($event) => toggleKeyframe("FOV", "animatedFov", 50))
               }, "◆", 2)
             ]),
-            createBaseVNode("div", _hoisted_8$u, [
+            createBaseVNode("div", _hoisted_8$t, [
               _cache[77] || (_cache[77] = createBaseVNode("label", null, "Focal Length", -1)),
               createVNode(unref(ScrubableNumber), {
                 modelValue: getPropertyValue("Focal Length") ?? 50,
@@ -42114,12 +42113,12 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
             ])
           ])) : createCommentVNode("", true)
         ]),
-        createBaseVNode("div", _hoisted_9$u, [
+        createBaseVNode("div", _hoisted_9$t, [
           createBaseVNode("div", {
             class: "section-header",
             onClick: _cache[7] || (_cache[7] = ($event) => toggleSection("dof"))
           }, [
-            createBaseVNode("span", _hoisted_10$u, toDisplayString(expandedSections.value.includes("dof") ? "▼" : "►"), 1),
+            createBaseVNode("span", _hoisted_10$t, toDisplayString(expandedSections.value.includes("dof") ? "▼" : "►"), 1),
             _cache[78] || (_cache[78] = createBaseVNode("span", { class: "section-title" }, "Depth of Field", -1)),
             createBaseVNode("input", {
               type: "checkbox",
@@ -42655,11 +42654,11 @@ const _hoisted_2$u = {
 const _hoisted_3$u = { class: "section-content info-grid" };
 const _hoisted_4$u = { class: "info-row" };
 const _hoisted_5$u = { class: "info-value" };
-const _hoisted_6$u = { class: "info-row" };
-const _hoisted_7$u = { class: "info-value" };
-const _hoisted_8$t = { class: "info-row" };
-const _hoisted_9$t = { class: "info-value" };
-const _hoisted_10$t = { class: "info-row" };
+const _hoisted_6$t = { class: "info-row" };
+const _hoisted_7$t = { class: "info-value" };
+const _hoisted_8$s = { class: "info-row" };
+const _hoisted_9$s = { class: "info-value" };
+const _hoisted_10$s = { class: "info-row" };
 const _hoisted_11$s = { class: "info-value" };
 const _hoisted_12$q = { class: "property-section" };
 const _hoisted_13$q = { class: "section-header" };
@@ -42785,15 +42784,15 @@ const _sfc_main$v = /* @__PURE__ */ defineComponent({
               _cache[0] || (_cache[0] = createBaseVNode("span", { class: "info-label" }, "Name", -1)),
               createBaseVNode("span", _hoisted_5$u, toDisplayString(compInfo.value.name), 1)
             ]),
-            createBaseVNode("div", _hoisted_6$u, [
+            createBaseVNode("div", _hoisted_6$t, [
               _cache[1] || (_cache[1] = createBaseVNode("span", { class: "info-label" }, "Dimensions", -1)),
-              createBaseVNode("span", _hoisted_7$u, toDisplayString(compInfo.value.width) + " x " + toDisplayString(compInfo.value.height), 1)
+              createBaseVNode("span", _hoisted_7$t, toDisplayString(compInfo.value.width) + " x " + toDisplayString(compInfo.value.height), 1)
             ]),
-            createBaseVNode("div", _hoisted_8$t, [
+            createBaseVNode("div", _hoisted_8$s, [
               _cache[2] || (_cache[2] = createBaseVNode("span", { class: "info-label" }, "Duration", -1)),
-              createBaseVNode("span", _hoisted_9$t, toDisplayString(compInfo.value.frameCount) + " frames (" + toDisplayString(formatDuration(compInfo.value.duration)) + ")", 1)
+              createBaseVNode("span", _hoisted_9$s, toDisplayString(compInfo.value.frameCount) + " frames (" + toDisplayString(formatDuration(compInfo.value.duration)) + ")", 1)
             ]),
-            createBaseVNode("div", _hoisted_10$t, [
+            createBaseVNode("div", _hoisted_10$s, [
               _cache[3] || (_cache[3] = createBaseVNode("span", { class: "info-label" }, "Frame Rate", -1)),
               createBaseVNode("span", _hoisted_11$s, toDisplayString(compInfo.value.fps) + " fps", 1)
             ])
@@ -42911,8 +42910,8 @@ const _hoisted_4$t = {
   fill: "none"
 };
 const _hoisted_5$t = ["x1", "y1", "x2", "y2"];
-const _hoisted_6$t = ["cx", "cy"];
-const _hoisted_7$t = { class: "drop-label" };
+const _hoisted_6$s = ["cx", "cy"];
+const _hoisted_7$s = { class: "drop-label" };
 const _sfc_main$u = /* @__PURE__ */ defineComponent({
   __name: "Pickwhip",
   props: {
@@ -43092,7 +43091,7 @@ const _sfc_main$u = /* @__PURE__ */ defineComponent({
               fill: "#4a90d9",
               stroke: "#fff",
               "stroke-width": "1"
-            }, null, 8, _hoisted_6$t)
+            }, null, 8, _hoisted_6$s)
           ], 4)) : createCommentVNode("", true)
         ])),
         (openBlock(), createBlock(Teleport, { to: "body" }, [
@@ -43101,7 +43100,7 @@ const _sfc_main$u = /* @__PURE__ */ defineComponent({
             class: "drop-target-highlight",
             style: normalizeStyle(dropTargetStyle.value)
           }, [
-            createBaseVNode("span", _hoisted_7$t, toDisplayString(currentDropTarget.value.label), 1)
+            createBaseVNode("span", _hoisted_7$s, toDisplayString(currentDropTarget.value.label), 1)
           ], 4)) : createCommentVNode("", true)
         ]))
       ], 512);
@@ -43122,14 +43121,14 @@ const _hoisted_4$s = {
   class: "driver-items"
 };
 const _hoisted_5$s = { class: "driver-header" };
-const _hoisted_6$s = ["onClick"];
-const _hoisted_7$s = { class: "driver-info" };
-const _hoisted_8$s = { class: "target" };
-const _hoisted_9$s = {
+const _hoisted_6$r = ["onClick"];
+const _hoisted_7$r = { class: "driver-info" };
+const _hoisted_8$r = { class: "target" };
+const _hoisted_9$r = {
   key: 0,
   class: "source"
 };
-const _hoisted_10$s = {
+const _hoisted_10$r = {
   key: 1,
   class: "source audio"
 };
@@ -43251,11 +43250,11 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
                   class: normalizeClass(["toggle-btn", { active: driver.enabled }]),
                   onClick: ($event) => toggleDriver(driver.id),
                   title: "Toggle driver"
-                }, " ⚡ ", 10, _hoisted_6$s),
-                createBaseVNode("div", _hoisted_7$s, [
-                  createBaseVNode("span", _hoisted_8$s, toDisplayString(formatProperty(driver.targetProperty)), 1),
+                }, " ⚡ ", 10, _hoisted_6$r),
+                createBaseVNode("div", _hoisted_7$r, [
+                  createBaseVNode("span", _hoisted_8$r, toDisplayString(formatProperty(driver.targetProperty)), 1),
                   _cache[8] || (_cache[8] = createBaseVNode("span", { class: "arrow" }, "←", -1)),
-                  driver.sourceType === "property" ? (openBlock(), createElementBlock("span", _hoisted_9$s, toDisplayString(getSourceLayerName(driver.sourceLayerId)) + "." + toDisplayString(formatProperty(driver.sourceProperty)), 1)) : driver.sourceType === "audio" ? (openBlock(), createElementBlock("span", _hoisted_10$s, " 🎵 " + toDisplayString(driver.audioFeature), 1)) : driver.sourceType === "time" ? (openBlock(), createElementBlock("span", _hoisted_11$r, " ⏱ Time ")) : createCommentVNode("", true)
+                  driver.sourceType === "property" ? (openBlock(), createElementBlock("span", _hoisted_9$r, toDisplayString(getSourceLayerName(driver.sourceLayerId)) + "." + toDisplayString(formatProperty(driver.sourceProperty)), 1)) : driver.sourceType === "audio" ? (openBlock(), createElementBlock("span", _hoisted_10$r, " 🎵 " + toDisplayString(driver.audioFeature), 1)) : driver.sourceType === "time" ? (openBlock(), createElementBlock("span", _hoisted_11$r, " ⏱ Time ")) : createCommentVNode("", true)
                 ]),
                 createBaseVNode("button", {
                   class: "remove-btn",
@@ -43356,14 +43355,14 @@ const _hoisted_4$r = {
   class: "panel-content"
 };
 const _hoisted_5$r = { class: "property-section" };
-const _hoisted_6$r = { class: "expand-icon" };
-const _hoisted_7$r = {
+const _hoisted_6$q = { class: "expand-icon" };
+const _hoisted_7$q = {
   key: 0,
   class: "section-content"
 };
-const _hoisted_8$r = { class: "property-row" };
-const _hoisted_9$r = { class: "value-group" };
-const _hoisted_10$r = { class: "value-group" };
+const _hoisted_8$q = { class: "property-row" };
+const _hoisted_9$q = { class: "value-group" };
+const _hoisted_10$q = { class: "value-group" };
 const _hoisted_11$q = { class: "value-group scale-group" };
 const _hoisted_12$o = { class: "property-row" };
 const _hoisted_13$o = { class: "value-group" };
@@ -43621,21 +43620,21 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
               class: "section-header",
               onClick: _cache[0] || (_cache[0] = ($event) => toggleSection("transform"))
             }, [
-              createBaseVNode("span", _hoisted_6$r, toDisplayString(expandedSections.value.includes("transform") ? "▼" : "►"), 1),
+              createBaseVNode("span", _hoisted_6$q, toDisplayString(expandedSections.value.includes("transform") ? "▼" : "►"), 1),
               _cache[30] || (_cache[30] = createBaseVNode("span", { class: "section-title" }, "Layer Transform", -1)),
               createBaseVNode("span", {
                 class: "reset-link",
                 onClick: withModifiers(resetTransform, ["stop"])
               }, "Reset")
             ]),
-            expandedSections.value.includes("transform") ? (openBlock(), createElementBlock("div", _hoisted_7$r, [
-              createBaseVNode("div", _hoisted_8$r, [
+            expandedSections.value.includes("transform") ? (openBlock(), createElementBlock("div", _hoisted_7$q, [
+              createBaseVNode("div", _hoisted_8$q, [
                 createBaseVNode("span", {
                   class: normalizeClass(["keyframe-toggle", { active: hasKeyframe("anchorPoint") }]),
                   onClick: _cache[1] || (_cache[1] = ($event) => toggleKeyframe("anchorPoint"))
                 }, "◆", 2),
                 _cache[31] || (_cache[31] = createBaseVNode("label", null, "Anchor Point", -1)),
-                createBaseVNode("div", _hoisted_9$r, [
+                createBaseVNode("div", _hoisted_9$q, [
                   createVNode(unref(ScrubableNumber), {
                     modelValue: transform.value.anchorPoint.x,
                     "onUpdate:modelValue": [
@@ -43679,7 +43678,7 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
                   onUnlink: _cache[7] || (_cache[7] = () => onPickwhipUnlink("transform.position.x"))
                 }, null, 8, ["layerId", "linkedTo"])) : createCommentVNode("", true),
                 _cache[32] || (_cache[32] = createBaseVNode("label", null, "Position", -1)),
-                createBaseVNode("div", _hoisted_10$r, [
+                createBaseVNode("div", _hoisted_10$q, [
                   createVNode(unref(ScrubableNumber), {
                     modelValue: transform.value.position.x,
                     "onUpdate:modelValue": [
@@ -43910,11 +43909,11 @@ const _hoisted_4$q = {
   class: "properties-content"
 };
 const _hoisted_5$q = { class: "property-section" };
-const _hoisted_6$q = { class: "property-row" };
-const _hoisted_7$q = ["value"];
-const _hoisted_8$q = { class: "property-section" };
-const _hoisted_9$q = { class: "toggle-icon" };
-const _hoisted_10$q = { class: "section-content" };
+const _hoisted_6$p = { class: "property-row" };
+const _hoisted_7$p = ["value"];
+const _hoisted_8$p = { class: "property-section" };
+const _hoisted_9$p = { class: "toggle-icon" };
+const _hoisted_10$p = { class: "section-content" };
 const _hoisted_11$p = { class: "property-group" };
 const _hoisted_12$n = { class: "xyz-inputs" };
 const _hoisted_13$n = {
@@ -44255,7 +44254,7 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
         camera.value ? (openBlock(), createElementBlock("div", _hoisted_4$q, [
           createBaseVNode("div", _hoisted_5$q, [
             _cache[59] || (_cache[59] = createBaseVNode("div", { class: "section-header" }, "Type", -1)),
-            createBaseVNode("div", _hoisted_6$q, [
+            createBaseVNode("div", _hoisted_6$p, [
               createBaseVNode("select", {
                 value: camera.value.type,
                 onChange: _cache[0] || (_cache[0] = ($event) => updateProperty("type", $event.target.value)),
@@ -44263,18 +44262,18 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
               }, [..._cache[58] || (_cache[58] = [
                 createBaseVNode("option", { value: "one-node" }, "One-Node Camera", -1),
                 createBaseVNode("option", { value: "two-node" }, "Two-Node Camera", -1)
-              ])], 40, _hoisted_7$q)
+              ])], 40, _hoisted_7$p)
             ])
           ]),
-          createBaseVNode("div", _hoisted_8$q, [
+          createBaseVNode("div", _hoisted_8$p, [
             createBaseVNode("div", {
               class: "section-header",
               onClick: _cache[1] || (_cache[1] = ($event) => toggleSection("transform"))
             }, [
-              createBaseVNode("span", _hoisted_9$q, toDisplayString(expandedSections.transform ? "▼" : "►"), 1),
+              createBaseVNode("span", _hoisted_9$p, toDisplayString(expandedSections.transform ? "▼" : "►"), 1),
               _cache[60] || (_cache[60] = createTextVNode(" Transform ", -1))
             ]),
-            withDirectives(createBaseVNode("div", _hoisted_10$q, [
+            withDirectives(createBaseVNode("div", _hoisted_10$p, [
               createBaseVNode("div", _hoisted_11$p, [
                 _cache[61] || (_cache[61] = createBaseVNode("label", null, "Position", -1)),
                 createBaseVNode("div", _hoisted_12$n, [
@@ -44924,11 +44923,11 @@ const _hoisted_3$p = {
 };
 const _hoisted_4$p = { class: "property-row" };
 const _hoisted_5$p = { class: "value-display" };
-const _hoisted_6$p = { class: "property-row" };
-const _hoisted_7$p = { class: "value-display" };
-const _hoisted_8$p = { class: "property-row" };
-const _hoisted_9$p = { class: "value-display" };
-const _hoisted_10$p = { class: "property-row" };
+const _hoisted_6$o = { class: "property-row" };
+const _hoisted_7$o = { class: "value-display" };
+const _hoisted_8$o = { class: "property-row" };
+const _hoisted_9$o = { class: "value-display" };
+const _hoisted_10$o = { class: "property-row" };
 const _hoisted_11$o = {
   key: 0,
   class: "peak-count"
@@ -45233,7 +45232,7 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
               ]),
               createBaseVNode("span", _hoisted_5$p, toDisplayString(peakConfig.value.threshold.toFixed(2)), 1)
             ]),
-            createBaseVNode("div", _hoisted_6$p, [
+            createBaseVNode("div", _hoisted_6$o, [
               _cache[9] || (_cache[9] = createBaseVNode("label", null, "Min Peak Distance", -1)),
               withDirectives(createBaseVNode("input", {
                 type: "range",
@@ -45249,9 +45248,9 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
                   { number: true }
                 ]
               ]),
-              createBaseVNode("span", _hoisted_7$p, toDisplayString(peakConfig.value.minPeaksDistance) + " frames", 1)
+              createBaseVNode("span", _hoisted_7$o, toDisplayString(peakConfig.value.minPeaksDistance) + " frames", 1)
             ]),
-            createBaseVNode("div", _hoisted_8$p, [
+            createBaseVNode("div", _hoisted_8$o, [
               _cache[10] || (_cache[10] = createBaseVNode("label", null, "Multiply", -1)),
               withDirectives(createBaseVNode("input", {
                 type: "range",
@@ -45267,9 +45266,9 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
                   { number: true }
                 ]
               ]),
-              createBaseVNode("span", _hoisted_9$p, toDisplayString(peakConfig.value.multiply.toFixed(1)) + "x", 1)
+              createBaseVNode("span", _hoisted_9$o, toDisplayString(peakConfig.value.multiply.toFixed(1)) + "x", 1)
             ]),
-            createBaseVNode("div", _hoisted_10$p, [
+            createBaseVNode("div", _hoisted_10$o, [
               createBaseVNode("button", {
                 class: "action-btn",
                 onClick: detectPeaks$1
@@ -45614,11 +45613,11 @@ const _hoisted_2$o = {
 const _hoisted_3$o = { class: "audio-info" };
 const _hoisted_4$o = { class: "file-info" };
 const _hoisted_5$o = { class: "file-details" };
-const _hoisted_6$o = { class: "file-name" };
-const _hoisted_7$o = { class: "file-meta" };
-const _hoisted_8$o = { class: "control-section" };
-const _hoisted_9$o = { class: "control-row" };
-const _hoisted_10$o = { class: "waveform-section" };
+const _hoisted_6$n = { class: "file-name" };
+const _hoisted_7$n = { class: "file-meta" };
+const _hoisted_8$n = { class: "control-section" };
+const _hoisted_9$n = { class: "control-row" };
+const _hoisted_10$n = { class: "waveform-section" };
 const _hoisted_11$n = { class: "waveform-display" };
 const _hoisted_12$l = { class: "linker-section" };
 const _hoisted_13$l = {
@@ -45719,8 +45718,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
             createBaseVNode("div", _hoisted_4$o, [
               _cache[3] || (_cache[3] = createBaseVNode("span", { class: "file-icon" }, "🎵", -1)),
               createBaseVNode("div", _hoisted_5$o, [
-                createBaseVNode("span", _hoisted_6$o, toDisplayString(audioFileName.value), 1),
-                createBaseVNode("span", _hoisted_7$o, toDisplayString(audioDuration.value) + " • " + toDisplayString(audioSampleRate.value), 1)
+                createBaseVNode("span", _hoisted_6$n, toDisplayString(audioFileName.value), 1),
+                createBaseVNode("span", _hoisted_7$n, toDisplayString(audioDuration.value) + " • " + toDisplayString(audioSampleRate.value), 1)
               ]),
               createBaseVNode("button", {
                 class: "remove-btn",
@@ -45729,8 +45728,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
               }, "×")
             ])
           ]),
-          createBaseVNode("div", _hoisted_8$o, [
-            createBaseVNode("div", _hoisted_9$o, [
+          createBaseVNode("div", _hoisted_8$n, [
+            createBaseVNode("div", _hoisted_9$n, [
               _cache[4] || (_cache[4] = createBaseVNode("label", null, "Master Vol", -1)),
               createVNode(unref(SliderInput), {
                 modelValue: masterVolume.value,
@@ -45746,7 +45745,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
               }, toDisplayString(isMuted.value ? "🔇" : "🔊"), 3)
             ])
           ]),
-          createBaseVNode("div", _hoisted_10$o, [
+          createBaseVNode("div", _hoisted_10$n, [
             _cache[5] || (_cache[5] = createBaseVNode("div", { class: "section-header" }, [
               createBaseVNode("span", { class: "section-title" }, "Waveform")
             ], -1)),
@@ -48256,17 +48255,17 @@ const _hoisted_2$n = ["src", "alt"];
 const _hoisted_3$n = { class: "texture-info" };
 const _hoisted_4$n = { class: "texture-name" };
 const _hoisted_5$n = { class: "texture-size" };
-const _hoisted_6$n = {
+const _hoisted_6$m = {
   key: 1,
   class: "upload-placeholder"
 };
-const _hoisted_7$n = { class: "map-label" };
-const _hoisted_8$n = {
+const _hoisted_7$m = { class: "map-label" };
+const _hoisted_8$m = {
   key: 0,
   class: "texture-settings"
 };
-const _hoisted_9$n = { class: "setting-row" };
-const _hoisted_10$n = { class: "repeat-inputs" };
+const _hoisted_9$m = { class: "setting-row" };
+const _hoisted_10$m = { class: "repeat-inputs" };
 const _hoisted_11$m = { class: "setting-row" };
 const _hoisted_12$k = { class: "offset-inputs" };
 const _hoisted_13$k = {
@@ -48383,9 +48382,9 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
             }, [..._cache[5] || (_cache[5] = [
               createBaseVNode("i", { class: "pi pi-times" }, null, -1)
             ])])
-          ])) : (openBlock(), createElementBlock("div", _hoisted_6$n, [
+          ])) : (openBlock(), createElementBlock("div", _hoisted_6$m, [
             _cache[6] || (_cache[6] = createBaseVNode("i", { class: "pi pi-image" }, null, -1)),
-            createBaseVNode("span", _hoisted_7$n, toDisplayString(mapLabel.value), 1),
+            createBaseVNode("span", _hoisted_7$m, toDisplayString(mapLabel.value), 1),
             _cache[7] || (_cache[7] = createBaseVNode("span", { class: "hint" }, "Click or drop image", -1))
           ]))
         ], 32),
@@ -48397,10 +48396,10 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
           onChange: onFileSelected,
           style: { "display": "none" }
         }, null, 544),
-        hasTexture.value && __props.showSettings ? (openBlock(), createElementBlock("div", _hoisted_8$n, [
-          createBaseVNode("div", _hoisted_9$n, [
+        hasTexture.value && __props.showSettings ? (openBlock(), createElementBlock("div", _hoisted_8$m, [
+          createBaseVNode("div", _hoisted_9$m, [
             _cache[9] || (_cache[9] = createBaseVNode("label", null, "Repeat", -1)),
-            createBaseVNode("div", _hoisted_10$n, [
+            createBaseVNode("div", _hoisted_10$m, [
               createVNode(unref(ScrubableNumber), {
                 modelValue: __props.repeatX,
                 "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => _ctx.$emit("update:repeatX", $event)),
@@ -48455,11 +48454,11 @@ const _hoisted_2$m = { class: "editor-header" };
 const _hoisted_3$m = ["value"];
 const _hoisted_4$m = { class: "property-section" };
 const _hoisted_5$m = { class: "section-content" };
-const _hoisted_6$m = { class: "property-group" };
-const _hoisted_7$m = { class: "property-group" };
-const _hoisted_8$m = { class: "property-group" };
-const _hoisted_9$m = { class: "property-group" };
-const _hoisted_10$m = { class: "property-row checkbox-row" };
+const _hoisted_6$l = { class: "property-group" };
+const _hoisted_7$l = { class: "property-group" };
+const _hoisted_8$l = { class: "property-group" };
+const _hoisted_9$l = { class: "property-group" };
+const _hoisted_10$l = { class: "property-row checkbox-row" };
 const _hoisted_11$l = ["checked"];
 const _hoisted_12$j = { class: "property-section" };
 const _hoisted_13$j = { class: "section-content" };
@@ -48652,14 +48651,14 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
             _cache[37] || (_cache[37] = createBaseVNode("span", null, "Basic Properties", -1))
           ]),
           withDirectives(createBaseVNode("div", _hoisted_5$m, [
-            createBaseVNode("div", _hoisted_6$m, [
+            createBaseVNode("div", _hoisted_6$l, [
               _cache[38] || (_cache[38] = createBaseVNode("label", null, "Base Color", -1)),
               createVNode(unref(ColorPicker), {
                 modelValue: material.color,
                 "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => updateMaterial("color", $event))
               }, null, 8, ["modelValue"])
             ]),
-            createBaseVNode("div", _hoisted_7$m, [
+            createBaseVNode("div", _hoisted_7$l, [
               _cache[39] || (_cache[39] = createBaseVNode("label", null, "Metalness", -1)),
               createVNode(unref(SliderInput), {
                 modelValue: material.metalness,
@@ -48669,7 +48668,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
                 step: 0.01
               }, null, 8, ["modelValue"])
             ]),
-            createBaseVNode("div", _hoisted_8$m, [
+            createBaseVNode("div", _hoisted_8$l, [
               _cache[40] || (_cache[40] = createBaseVNode("label", null, "Roughness", -1)),
               createVNode(unref(SliderInput), {
                 modelValue: material.roughness,
@@ -48679,7 +48678,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
                 step: 0.01
               }, null, 8, ["modelValue"])
             ]),
-            createBaseVNode("div", _hoisted_9$m, [
+            createBaseVNode("div", _hoisted_9$l, [
               _cache[41] || (_cache[41] = createBaseVNode("label", null, "Opacity", -1)),
               createVNode(unref(SliderInput), {
                 modelValue: material.opacity,
@@ -48689,7 +48688,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
                 step: 0.01
               }, null, 8, ["modelValue"])
             ]),
-            createBaseVNode("div", _hoisted_10$m, [
+            createBaseVNode("div", _hoisted_10$l, [
               createBaseVNode("label", null, [
                 createBaseVNode("input", {
                   type: "checkbox",
@@ -48914,14 +48913,14 @@ const _hoisted_5$l = {
   key: 1,
   class: "preview-icon"
 };
-const _hoisted_6$l = { class: "asset-info" };
-const _hoisted_7$l = { class: "asset-name" };
-const _hoisted_8$l = { class: "asset-meta" };
-const _hoisted_9$l = {
+const _hoisted_6$k = { class: "asset-info" };
+const _hoisted_7$k = { class: "asset-name" };
+const _hoisted_8$k = { class: "asset-meta" };
+const _hoisted_9$k = {
   key: 1,
   class: "upload-placeholder"
 };
-const _hoisted_10$l = { class: "upload-label" };
+const _hoisted_10$k = { class: "upload-label" };
 const _hoisted_11$k = { class: "upload-hint" };
 const _hoisted_12$i = { class: "upload-formats" };
 const _hoisted_13$i = ["accept", "multiple"];
@@ -49209,9 +49208,9 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
                 }, null, 2)
               ]))
             ]),
-            createBaseVNode("div", _hoisted_6$l, [
-              createBaseVNode("span", _hoisted_7$l, toDisplayString(assetName.value), 1),
-              createBaseVNode("span", _hoisted_8$l, toDisplayString(assetMeta.value), 1)
+            createBaseVNode("div", _hoisted_6$k, [
+              createBaseVNode("span", _hoisted_7$k, toDisplayString(assetName.value), 1),
+              createBaseVNode("span", _hoisted_8$k, toDisplayString(assetMeta.value), 1)
             ]),
             createBaseVNode("button", {
               class: "remove-btn",
@@ -49220,11 +49219,11 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
             }, [..._cache[0] || (_cache[0] = [
               createBaseVNode("i", { class: "pi pi-times" }, null, -1)
             ])])
-          ])) : (openBlock(), createElementBlock("div", _hoisted_9$l, [
+          ])) : (openBlock(), createElementBlock("div", _hoisted_9$k, [
             createBaseVNode("i", {
               class: normalizeClass(["pi", placeholderIcon.value])
             }, null, 2),
-            createBaseVNode("span", _hoisted_10$l, toDisplayString(label.value), 1),
+            createBaseVNode("span", _hoisted_10$k, toDisplayString(label.value), 1),
             createBaseVNode("span", _hoisted_11$k, toDisplayString(hint.value), 1),
             createBaseVNode("span", _hoisted_12$i, toDisplayString(acceptedFormatsDisplay.value), 1)
           ]))
@@ -49266,14 +49265,14 @@ const _hoisted_5$k = {
   key: 0,
   class: "settings-content"
 };
-const _hoisted_6$k = { class: "setting-group" };
-const _hoisted_7$k = {
+const _hoisted_6$j = { class: "setting-group" };
+const _hoisted_7$j = {
   key: 0,
   class: "setting-group"
 };
-const _hoisted_8$k = { class: "preset-grid" };
-const _hoisted_9$k = ["onClick"];
-const _hoisted_10$k = { class: "setting-group" };
+const _hoisted_8$j = { class: "preset-grid" };
+const _hoisted_9$j = ["onClick"];
+const _hoisted_10$j = { class: "setting-group" };
 const _hoisted_11$j = { class: "setting-group" };
 const _hoisted_12$h = { class: "rotation-control" };
 const _hoisted_13$h = { class: "setting-group" };
@@ -49367,7 +49366,7 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
           ])
         ]),
         unref(config).enabled ? (openBlock(), createElementBlock("div", _hoisted_5$k, [
-          createBaseVNode("div", _hoisted_6$k, [
+          createBaseVNode("div", _hoisted_6$j, [
             _cache[8] || (_cache[8] = createBaseVNode("label", { class: "group-label" }, "Environment Map (HDRI)", -1)),
             createVNode(AssetUploader, {
               assetType: "hdri",
@@ -49376,9 +49375,9 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
               onRemove: onHdriRemove
             })
           ]),
-          !unref(config).url ? (openBlock(), createElementBlock("div", _hoisted_7$k, [
+          !unref(config).url ? (openBlock(), createElementBlock("div", _hoisted_7$j, [
             _cache[9] || (_cache[9] = createBaseVNode("label", { class: "group-label" }, "Quick Presets", -1)),
-            createBaseVNode("div", _hoisted_8$k, [
+            createBaseVNode("div", _hoisted_8$j, [
               (openBlock(), createElementBlock(Fragment, null, renderList(presets, (preset) => {
                 return createBaseVNode("button", {
                   key: preset.id,
@@ -49390,11 +49389,11 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
                     style: normalizeStyle({ background: preset.color })
                   }, null, 4),
                   createBaseVNode("span", null, toDisplayString(preset.name), 1)
-                ], 10, _hoisted_9$k);
+                ], 10, _hoisted_9$j);
               }), 64))
             ])
           ])) : createCommentVNode("", true),
-          createBaseVNode("div", _hoisted_10$k, [
+          createBaseVNode("div", _hoisted_10$j, [
             _cache[10] || (_cache[10] = createBaseVNode("label", null, "Intensity", -1)),
             createVNode(unref(SliderInput), {
               modelValue: unref(config).intensity,
@@ -49452,14 +49451,14 @@ const _hoisted_2$j = { class: "asset-tabs" };
 const _hoisted_3$j = ["onClick", "title"];
 const _hoisted_4$j = { class: "tab-icon" };
 const _hoisted_5$j = { class: "tab-label" };
-const _hoisted_6$j = { class: "asset-content" };
-const _hoisted_7$j = {
+const _hoisted_6$i = { class: "asset-content" };
+const _hoisted_7$i = {
   key: 0,
   class: "tab-panel"
 };
-const _hoisted_8$j = { class: "panel-toolbar" };
-const _hoisted_9$j = ["value"];
-const _hoisted_10$j = { class: "material-list" };
+const _hoisted_8$i = { class: "panel-toolbar" };
+const _hoisted_9$i = ["value"];
+const _hoisted_10$i = { class: "material-list" };
 const _hoisted_11$i = ["onClick"];
 const _hoisted_12$g = { class: "material-name" };
 const _hoisted_13$g = ["onClick"];
@@ -49715,9 +49714,9 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
             ], 10, _hoisted_3$j);
           }), 64))
         ]),
-        createBaseVNode("div", _hoisted_6$j, [
-          activeTab.value === "materials" ? (openBlock(), createElementBlock("div", _hoisted_7$j, [
-            createBaseVNode("div", _hoisted_8$j, [
+        createBaseVNode("div", _hoisted_6$i, [
+          activeTab.value === "materials" ? (openBlock(), createElementBlock("div", _hoisted_7$i, [
+            createBaseVNode("div", _hoisted_8$i, [
               createBaseVNode("button", {
                 onClick: createMaterial,
                 title: "New Material"
@@ -49735,13 +49734,13 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                   return createBaseVNode("option", {
                     key: preset,
                     value: preset
-                  }, toDisplayString(preset), 9, _hoisted_9$j);
+                  }, toDisplayString(preset), 9, _hoisted_9$i);
                 }), 64))
               ], 544), [
                 [vModelSelect, selectedPreset.value]
               ])
             ]),
-            createBaseVNode("div", _hoisted_10$j, [
+            createBaseVNode("div", _hoisted_10$i, [
               (openBlock(true), createElementBlock(Fragment, null, renderList(materials.value, (mat) => {
                 return openBlock(), createElementBlock("div", {
                   key: mat.id,
@@ -50488,14 +50487,14 @@ const _hoisted_2$i = { class: "panel-content" };
 const _hoisted_3$i = { class: "control-section" };
 const _hoisted_4$i = { class: "mode-toggle" };
 const _hoisted_5$i = ["disabled"];
-const _hoisted_6$i = ["disabled"];
-const _hoisted_7$i = {
+const _hoisted_6$h = ["disabled"];
+const _hoisted_7$h = {
   key: 0,
   class: "control-section"
 };
-const _hoisted_8$i = { class: "control-row" };
-const _hoisted_9$i = ["disabled"];
-const _hoisted_10$i = ["value"];
+const _hoisted_8$h = { class: "control-row" };
+const _hoisted_9$h = ["disabled"];
+const _hoisted_10$h = ["value"];
 const _hoisted_11$h = { class: "control-row" };
 const _hoisted_12$f = ["disabled"];
 const _hoisted_13$f = {
@@ -50797,14 +50796,14 @@ Total frames: ${sequenceResult.value.frames.length}`
                 class: normalizeClass(["mode-btn", { active: exportMode.value === "sequence" }]),
                 onClick: _cache[1] || (_cache[1] = ($event) => exportMode.value = "sequence"),
                 disabled: isExporting.value
-              }, " Frame Sequence ", 10, _hoisted_6$i)
+              }, " Frame Sequence ", 10, _hoisted_6$h)
             ])
           ]),
-          exportMode.value === "video" ? (openBlock(), createElementBlock("div", _hoisted_7$i, [
+          exportMode.value === "video" ? (openBlock(), createElementBlock("div", _hoisted_7$h, [
             _cache[10] || (_cache[10] = createBaseVNode("div", { class: "section-header" }, [
               createBaseVNode("span", { class: "section-title" }, "Video Format")
             ], -1)),
-            createBaseVNode("div", _hoisted_8$i, [
+            createBaseVNode("div", _hoisted_8$h, [
               _cache[7] || (_cache[7] = createBaseVNode("label", null, "Codec", -1)),
               withDirectives(createBaseVNode("select", {
                 "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => selectedCodec.value = $event),
@@ -50814,9 +50813,9 @@ Total frames: ${sequenceResult.value.frames.length}`
                   return openBlock(), createElementBlock("option", {
                     key: codec.value,
                     value: codec.value
-                  }, toDisplayString(codec.label), 9, _hoisted_10$i);
+                  }, toDisplayString(codec.label), 9, _hoisted_10$h);
                 }), 128))
-              ], 8, _hoisted_9$i), [
+              ], 8, _hoisted_9$h), [
                 [vModelSelect, selectedCodec.value]
               ])
             ]),
@@ -50968,11 +50967,11 @@ const _hoisted_2$h = { class: "panel-content" };
 const _hoisted_3$h = { class: "playback-section" };
 const _hoisted_4$h = { class: "control-row" };
 const _hoisted_5$h = { class: "control-row" };
-const _hoisted_6$h = { class: "range-section" };
-const _hoisted_7$h = { class: "range-row" };
-const _hoisted_8$h = ["max"];
-const _hoisted_9$h = ["min", "max"];
-const _hoisted_10$h = { class: "frame-info" };
+const _hoisted_6$g = { class: "range-section" };
+const _hoisted_7$g = { class: "range-row" };
+const _hoisted_8$g = ["max"];
+const _hoisted_9$g = ["min", "max"];
+const _hoisted_10$g = { class: "frame-info" };
 const _hoisted_11$g = { class: "cache-section" };
 const _hoisted_12$e = {
   key: 0,
@@ -51185,8 +51184,8 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
               ])
             ])
           ]),
-          createBaseVNode("div", _hoisted_6$h, [
-            createBaseVNode("div", _hoisted_7$h, [
+          createBaseVNode("div", _hoisted_6$g, [
+            createBaseVNode("div", _hoisted_7$g, [
               createBaseVNode("label", null, [
                 _cache[8] || (_cache[8] = createTextVNode(" Work Area: ", -1)),
                 withDirectives(createBaseVNode("input", {
@@ -51195,7 +51194,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
                   min: 0,
                   max: unref(frameCount) - 1,
                   class: "frame-input"
-                }, null, 8, _hoisted_8$h), [
+                }, null, 8, _hoisted_8$g), [
                   [
                     vModelText,
                     workAreaStart.value,
@@ -51210,7 +51209,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
                   min: workAreaStart.value,
                   max: unref(frameCount),
                   class: "frame-input"
-                }, null, 8, _hoisted_9$h), [
+                }, null, 8, _hoisted_9$g), [
                   [
                     vModelText,
                     workAreaEnd.value,
@@ -51220,7 +51219,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
                 ])
               ])
             ]),
-            createBaseVNode("div", _hoisted_10$h, " Frame " + toDisplayString(unref(currentFrame)) + " / " + toDisplayString(unref(frameCount)) + " (" + toDisplayString(formattedTime.value) + ") ", 1)
+            createBaseVNode("div", _hoisted_10$g, " Frame " + toDisplayString(unref(currentFrame)) + " / " + toDisplayString(unref(frameCount)) + " (" + toDisplayString(formattedTime.value) + ") ", 1)
           ]),
           createBaseVNode("div", _hoisted_11$g, [
             _cache[10] || (_cache[10] = createBaseVNode("div", { class: "section-header" }, "Particle Cache", -1)),
@@ -54407,11 +54406,11 @@ const _hoisted_4$g = {
   class: "welcome-message"
 };
 const _hoisted_5$g = { class: "example-prompts" };
-const _hoisted_6$g = ["onClick"];
-const _hoisted_7$g = { class: "message-header" };
-const _hoisted_8$g = { class: "role-label" };
-const _hoisted_9$g = { class: "timestamp" };
-const _hoisted_10$g = ["innerHTML"];
+const _hoisted_6$f = ["onClick"];
+const _hoisted_7$f = { class: "message-header" };
+const _hoisted_8$f = { class: "role-label" };
+const _hoisted_9$f = { class: "timestamp" };
+const _hoisted_10$f = ["innerHTML"];
 const _hoisted_11$f = {
   key: 0,
   class: "tool-calls"
@@ -54578,7 +54577,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
                   key: example,
                   class: "example-btn",
                   onClick: ($event) => useExample(example)
-                }, toDisplayString(example), 9, _hoisted_6$g);
+                }, toDisplayString(example), 9, _hoisted_6$f);
               }), 64))
             ])
           ])) : createCommentVNode("", true),
@@ -54587,14 +54586,14 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
               key: index,
               class: normalizeClass(["message", message.role])
             }, [
-              createBaseVNode("div", _hoisted_7$g, [
-                createBaseVNode("span", _hoisted_8$g, toDisplayString(message.role === "user" ? "You" : "AI Agent"), 1),
-                createBaseVNode("span", _hoisted_9$g, toDisplayString(formatTime(message.timestamp)), 1)
+              createBaseVNode("div", _hoisted_7$f, [
+                createBaseVNode("span", _hoisted_8$f, toDisplayString(message.role === "user" ? "You" : "AI Agent"), 1),
+                createBaseVNode("span", _hoisted_9$f, toDisplayString(formatTime(message.timestamp)), 1)
               ]),
               createBaseVNode("div", {
                 class: "message-content",
                 innerHTML: formatContent(message.content)
-              }, null, 8, _hoisted_10$g),
+              }, null, 8, _hoisted_10$f),
               message.toolCalls && message.toolCalls.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_11$f, [
                 _cache[8] || (_cache[8] = createBaseVNode("div", { class: "tool-calls-header" }, "Actions taken:", -1)),
                 (openBlock(true), createElementBlock(Fragment, null, renderList(message.toolCalls, (call, i) => {
@@ -55047,14 +55046,14 @@ const _hoisted_2$f = { class: "view-header" };
 const _hoisted_3$f = ["value", "onChange"];
 const _hoisted_4$f = { class: "view-tools" };
 const _hoisted_5$f = ["onClick"];
-const _hoisted_6$f = ["onMousedown", "onWheel"];
-const _hoisted_7$f = { class: "view-info" };
-const _hoisted_8$f = { class: "view-name" };
-const _hoisted_9$f = {
+const _hoisted_6$e = ["onMousedown", "onWheel"];
+const _hoisted_7$e = { class: "view-info" };
+const _hoisted_8$e = { class: "view-name" };
+const _hoisted_9$e = {
   key: 0,
   class: "view-coords"
 };
-const _hoisted_10$f = { class: "layout-controls" };
+const _hoisted_10$e = { class: "layout-controls" };
 const _hoisted_11$e = ["onClick", "title"];
 const _sfc_main$g = /* @__PURE__ */ defineComponent({
   __name: "ViewportRenderer",
@@ -55594,14 +55593,14 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
               onWheel: ($event) => onCanvasWheel($event, index),
               onContextmenu: _cache[0] || (_cache[0] = withModifiers(() => {
               }, ["prevent"]))
-            }, null, 40, _hoisted_6$f),
-            createBaseVNode("div", _hoisted_7$f, [
-              createBaseVNode("span", _hoisted_8$f, toDisplayString(getViewDisplayName(viewType)), 1),
-              isCustomView(viewType) ? (openBlock(), createElementBlock("span", _hoisted_9$f, " θ: " + toDisplayString(Math.round(customViews.value[viewType]?.orbitTheta ?? 0)) + "° φ: " + toDisplayString(Math.round(customViews.value[viewType]?.orbitPhi ?? 0)) + "° ", 1)) : createCommentVNode("", true)
+            }, null, 40, _hoisted_6$e),
+            createBaseVNode("div", _hoisted_7$e, [
+              createBaseVNode("span", _hoisted_8$e, toDisplayString(getViewDisplayName(viewType)), 1),
+              isCustomView(viewType) ? (openBlock(), createElementBlock("span", _hoisted_9$e, " θ: " + toDisplayString(Math.round(customViews.value[viewType]?.orbitTheta ?? 0)) + "° φ: " + toDisplayString(Math.round(customViews.value[viewType]?.orbitPhi ?? 0)) + "° ", 1)) : createCommentVNode("", true)
             ])
           ], 10, _hoisted_1$f);
         }), 128)),
-        createBaseVNode("div", _hoisted_10$f, [
+        createBaseVNode("div", _hoisted_10$e, [
           (openBlock(), createElementBlock(Fragment, null, renderList(layoutOptions, (layoutOption) => {
             return createBaseVNode("button", {
               key: layoutOption.value,
@@ -78865,14 +78864,14 @@ const _hoisted_5$e = {
   key: 0,
   class: "toolbar-group"
 };
-const _hoisted_6$e = ["title"];
-const _hoisted_7$e = {
+const _hoisted_6$d = ["title"];
+const _hoisted_7$d = {
   key: 1,
   class: "toolbar-group"
 };
-const _hoisted_8$e = { class: "tolerance-label" };
-const _hoisted_9$e = { class: "tolerance-value" };
-const _hoisted_10$e = {
+const _hoisted_8$d = { class: "tolerance-label" };
+const _hoisted_9$d = { class: "tolerance-value" };
+const _hoisted_10$d = {
   key: 2,
   class: "toolbar-info"
 };
@@ -79831,7 +79830,7 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
               class: "toolbar-btn",
               onClick: smoothSelectedPoints,
               title: selectedPointIds.value.length > 0 ? "Smooth selected points" : "Smooth all path handles"
-            }, " Smooth" + toDisplayString(selectedPointIds.value.length > 0 ? ` (${selectedPointIds.value.length})` : ""), 9, _hoisted_6$e),
+            }, " Smooth" + toDisplayString(selectedPointIds.value.length > 0 ? ` (${selectedPointIds.value.length})` : ""), 9, _hoisted_6$d),
             createBaseVNode("button", {
               class: "toolbar-btn",
               onClick: simplifySpline,
@@ -79843,8 +79842,8 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
               title: "Toggle closed path"
             }, toDisplayString(isClosed.value ? "Open" : "Close"), 3)
           ])) : createCommentVNode("", true),
-          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_7$e, [
-            createBaseVNode("label", _hoisted_8$e, [
+          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_7$d, [
+            createBaseVNode("label", _hoisted_8$d, [
               _cache[9] || (_cache[9] = createTextVNode(" Tolerance: ", -1)),
               withDirectives(createBaseVNode("input", {
                 type: "range",
@@ -79861,10 +79860,10 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
                   { number: true }
                 ]
               ]),
-              createBaseVNode("span", _hoisted_9$e, toDisplayString(smoothTolerance.value) + "px", 1)
+              createBaseVNode("span", _hoisted_9$d, toDisplayString(smoothTolerance.value) + "px", 1)
             ])
           ])) : createCommentVNode("", true),
-          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_10$e, toDisplayString(visibleControlPoints.value.length) + " points" + toDisplayString(selectedPointIds.value.length > 0 ? ` (${selectedPointIds.value.length} selected)` : ""), 1)) : createCommentVNode("", true),
+          hasControlPoints.value ? (openBlock(), createElementBlock("div", _hoisted_10$d, toDisplayString(visibleControlPoints.value.length) + " points" + toDisplayString(selectedPointIds.value.length > 0 ? ` (${selectedPointIds.value.length} selected)` : ""), 1)) : createCommentVNode("", true),
           selectedPointId.value ? (openBlock(), createElementBlock("div", _hoisted_11$d, [
             createBaseVNode("label", _hoisted_12$c, [
               _cache[10] || (_cache[10] = createTextVNode(" Z: ", -1)),
@@ -80085,28 +80084,17 @@ const _hoisted_1$d = {
   key: 1,
   class: "overlay-controls"
 };
-const _hoisted_2$d = { class: "render-mode-controls" };
-const _hoisted_3$d = {
+const _hoisted_2$d = {
   key: 2,
-  class: "transform-mode-controls"
-};
-const _hoisted_4$d = {
-  key: 3,
-  class: "performance-overlay"
-};
-const _hoisted_5$d = { class: "viewer-controls" };
-const _hoisted_6$d = { class: "zoom-display" };
-const _hoisted_7$d = {
-  key: 4,
   class: "loading-overlay"
 };
-const _hoisted_8$d = ["src"];
-const _hoisted_9$d = {
-  key: 7,
+const _hoisted_3$d = ["src"];
+const _hoisted_4$d = {
+  key: 5,
   class: "segment-loading"
 };
-const _hoisted_10$d = {
-  key: 9,
+const _hoisted_5$d = {
+  key: 7,
   class: "safe-frame-container"
 };
 const _sfc_main$e = /* @__PURE__ */ defineComponent({
@@ -80139,12 +80127,12 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
     });
     const viewportTransform = ref([1, 0, 0, 1, 0, 0]);
     const cameraUpdateTrigger = ref(0);
-    const zoomLevel = ref("fit");
-    const resolution = ref("full");
-    const zoomDisplayPercent = computed(() => Math.round(zoom.value * 100));
+    ref("fit");
+    ref("full");
+    computed(() => Math.round(zoom.value * 100));
     const transformMode = ref("translate");
     const showGrid = ref(true);
-    const showOutsideOverlay = ref(false);
+    ref(false);
     const showSafeFrameGuides = ref(false);
     const isDrawingSegmentBox = ref(false);
     const segmentBoxEnd = ref(null);
@@ -80927,13 +80915,6 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
         centerOnComposition();
       }
     }
-    function toggleGrid() {
-      store.updateViewOptions({ showGrid: !store.viewOptions.showGrid });
-    }
-    function toggleOutsideOverlay() {
-      showOutsideOverlay.value = !showOutsideOverlay.value;
-      showSafeFrameGuides.value = showOutsideOverlay.value;
-    }
     function setZoom(newZoom) {
       newZoom = Math.max(0.1, Math.min(10, newZoom));
       zoom.value = newZoom;
@@ -80942,44 +80923,6 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
       if (engine.value) {
         engine.value.setViewportTransform(viewportTransform.value);
       }
-    }
-    function onZoomSelect() {
-      if (zoomLevel.value === "fit") {
-        fitToView();
-      } else {
-        const newZoom = parseFloat(zoomLevel.value);
-        if (!isNaN(newZoom)) {
-          setZoom(newZoom);
-          if (engine.value) {
-            engine.value.getCameraController().setZoom(newZoom);
-          }
-        }
-      }
-    }
-    function onResolutionChange() {
-      if (!engine.value) return;
-      const comp = store.getActiveComp();
-      if (!comp) return;
-      const fullWidth = comp.settings.width;
-      const fullHeight = comp.settings.height;
-      let factor = 1;
-      switch (resolution.value) {
-        case "half":
-          factor = 0.5;
-          break;
-        case "third":
-          factor = 1 / 3;
-          break;
-        case "quarter":
-          factor = 0.25;
-          break;
-        default:
-          factor = 1;
-      }
-      const newWidth = Math.round(fullWidth * factor);
-      const newHeight = Math.round(fullHeight * factor);
-      engine.value.setResolution(newWidth, newHeight);
-      console.log(`[ThreeCanvas] Resolution changed to ${resolution.value}: ${newWidth}x${newHeight}`);
     }
     async function captureFrame() {
       if (!engine.value) return null;
@@ -81081,12 +81024,12 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             }, null, 512), [
               [vModelCheckbox, showDepthOverlay.value]
             ]),
-            _cache[11] || (_cache[11] = createTextVNode(" Depth Overlay ", -1))
+            _cache[3] || (_cache[3] = createTextVNode(" Depth Overlay ", -1))
           ]),
           withDirectives(createBaseVNode("select", {
             "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => depthColormap.value = $event),
             class: "colormap-select"
-          }, [..._cache[12] || (_cache[12] = [
+          }, [..._cache[4] || (_cache[4] = [
             createBaseVNode("option", { value: "viridis" }, "Viridis", -1),
             createBaseVNode("option", { value: "plasma" }, "Plasma", -1),
             createBaseVNode("option", { value: "grayscale" }, "Grayscale", -1)
@@ -81108,107 +81051,12 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             ]
           ])
         ])) : createCommentVNode("", true),
-        createBaseVNode("div", _hoisted_2$d, [
-          createBaseVNode("button", {
-            class: normalizeClass({ active: renderMode.value === "color" }),
-            onClick: _cache[3] || (_cache[3] = ($event) => setRenderMode("color")),
-            title: "Color View"
-          }, [..._cache[13] || (_cache[13] = [
-            createBaseVNode("i", { class: "pi pi-image" }, null, -1)
-          ])], 2),
-          createBaseVNode("button", {
-            class: normalizeClass({ active: renderMode.value === "depth" }),
-            onClick: _cache[4] || (_cache[4] = ($event) => setRenderMode("depth")),
-            title: "Depth View"
-          }, [..._cache[14] || (_cache[14] = [
-            createBaseVNode("i", { class: "pi pi-box" }, null, -1)
-          ])], 2),
-          createBaseVNode("button", {
-            class: normalizeClass({ active: renderMode.value === "normal" }),
-            onClick: _cache[5] || (_cache[5] = ($event) => setRenderMode("normal")),
-            title: "Normal View"
-          }, [..._cache[15] || (_cache[15] = [
-            createBaseVNode("i", { class: "pi pi-compass" }, null, -1)
-          ])], 2),
-          _cache[19] || (_cache[19] = createBaseVNode("div", { class: "controls-divider" }, null, -1)),
-          createBaseVNode("button", {
-            onClick: resetCamera,
-            title: "Reset Camera (Home)"
-          }, [..._cache[16] || (_cache[16] = [
-            createBaseVNode("i", { class: "pi pi-home" }, null, -1)
-          ])]),
-          _cache[20] || (_cache[20] = createBaseVNode("div", { class: "controls-divider" }, null, -1)),
-          createBaseVNode("button", {
-            class: normalizeClass({ active: showGrid.value }),
-            onClick: toggleGrid,
-            title: "Toggle Grid"
-          }, [..._cache[17] || (_cache[17] = [
-            createBaseVNode("i", { class: "pi pi-th-large" }, null, -1)
-          ])], 2),
-          createBaseVNode("button", {
-            class: normalizeClass({ active: showOutsideOverlay.value }),
-            onClick: toggleOutsideOverlay,
-            title: "Toggle Safe Area Overlay"
-          }, [..._cache[18] || (_cache[18] = [
-            createBaseVNode("i", { class: "pi pi-stop" }, null, -1)
-          ])], 2)
-        ]),
-        unref(store).selectedLayerIds.length > 0 ? (openBlock(), createElementBlock("div", _hoisted_3$d, [
-          createBaseVNode("button", {
-            class: normalizeClass({ active: transformMode.value === "translate" }),
-            onClick: _cache[6] || (_cache[6] = ($event) => setTransformModeTo("translate")),
-            title: "Move (V)"
-          }, [..._cache[21] || (_cache[21] = [
-            createBaseVNode("i", { class: "pi pi-arrows-alt" }, null, -1)
-          ])], 2),
-          createBaseVNode("button", {
-            class: normalizeClass({ active: transformMode.value === "rotate" }),
-            onClick: _cache[7] || (_cache[7] = ($event) => setTransformModeTo("rotate")),
-            title: "Rotate (R)"
-          }, [..._cache[22] || (_cache[22] = [
-            createBaseVNode("i", { class: "pi pi-sync" }, null, -1)
-          ])], 2),
-          createBaseVNode("button", {
-            class: normalizeClass({ active: transformMode.value === "scale" }),
-            onClick: _cache[8] || (_cache[8] = ($event) => setTransformModeTo("scale")),
-            title: "Scale (S)"
-          }, [..._cache[23] || (_cache[23] = [
-            createBaseVNode("i", { class: "pi pi-expand" }, null, -1)
-          ])], 2)
-        ])) : createCommentVNode("", true),
-        showPerformance.value ? (openBlock(), createElementBlock("div", _hoisted_4$d, [
-          createBaseVNode("span", null, "FPS: " + toDisplayString(performanceStats.value.fps), 1),
-          createBaseVNode("span", null, "Draw: " + toDisplayString(performanceStats.value.drawCalls), 1),
-          createBaseVNode("span", null, "Tris: " + toDisplayString(performanceStats.value.triangles), 1)
-        ])) : createCommentVNode("", true),
-        createBaseVNode("div", _hoisted_5$d, [
-          withDirectives(createBaseVNode("select", {
-            "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => zoomLevel.value = $event),
-            class: "zoom-dropdown",
-            onChange: onZoomSelect
-          }, [..._cache[24] || (_cache[24] = [
-            createStaticVNode('<option value="fit" data-v-6e8c0fca>Fit</option><option value="0.25" data-v-6e8c0fca>25%</option><option value="0.33" data-v-6e8c0fca>33%</option><option value="0.5" data-v-6e8c0fca>50%</option><option value="0.75" data-v-6e8c0fca>75%</option><option value="1" data-v-6e8c0fca>100%</option><option value="2" data-v-6e8c0fca>200%</option><option value="4" data-v-6e8c0fca>400%</option>', 8)
-          ])], 544), [
-            [vModelSelect, zoomLevel.value]
-          ]),
-          createBaseVNode("span", _hoisted_6$d, toDisplayString(zoomDisplayPercent.value) + "%", 1),
-          _cache[26] || (_cache[26] = createBaseVNode("div", { class: "viewer-divider" }, null, -1)),
-          withDirectives(createBaseVNode("select", {
-            "onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => resolution.value = $event),
-            class: "resolution-dropdown",
-            onChange: onResolutionChange
-          }, [..._cache[25] || (_cache[25] = [
-            createStaticVNode('<option value="full" data-v-6e8c0fca>Full</option><option value="half" data-v-6e8c0fca>Half</option><option value="third" data-v-6e8c0fca>Third</option><option value="quarter" data-v-6e8c0fca>Quarter</option><option value="custom" data-v-6e8c0fca>Custom</option>', 5)
-          ])], 544), [
-            [vModelSelect, resolution.value]
-          ])
-        ]),
-        loading.value ? (openBlock(), createElementBlock("div", _hoisted_7$d, [..._cache[27] || (_cache[27] = [
+        loading.value ? (openBlock(), createElementBlock("div", _hoisted_2$d, [..._cache[5] || (_cache[5] = [
           createBaseVNode("div", { class: "loading-spinner" }, null, -1),
           createBaseVNode("span", null, "Loading...", -1)
         ])])) : createCommentVNode("", true),
         unref(store).segmentPendingMask ? (openBlock(), createElementBlock("div", {
-          key: 5,
+          key: 3,
           class: "segment-mask-overlay",
           style: normalizeStyle(maskOverlayStyle.value)
         }, [
@@ -81216,23 +81064,23 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             src: "data:image/png;base64," + unref(store).segmentPendingMask.mask,
             class: "mask-preview",
             alt: "Segmentation mask"
-          }, null, 8, _hoisted_8$d)
+          }, null, 8, _hoisted_3$d)
         ], 4)) : createCommentVNode("", true),
         isDrawingSegmentBox.value && unref(store).segmentBoxStart && segmentBoxEnd.value ? (openBlock(), createElementBlock("div", {
-          key: 6,
+          key: 4,
           class: "segment-box-preview",
           style: normalizeStyle(segmentBoxStyle.value)
         }, null, 4)) : createCommentVNode("", true),
-        unref(store).segmentIsLoading ? (openBlock(), createElementBlock("div", _hoisted_9$d, [..._cache[28] || (_cache[28] = [
+        unref(store).segmentIsLoading ? (openBlock(), createElementBlock("div", _hoisted_4$d, [..._cache[6] || (_cache[6] = [
           createBaseVNode("div", { class: "segment-spinner" }, null, -1),
           createBaseVNode("span", null, "Segmenting...", -1)
         ])])) : createCommentVNode("", true),
         unref(store).viewOptions.showCompositionBounds !== false ? (openBlock(), createElementBlock("div", {
-          key: 8,
+          key: 6,
           class: "composition-boundary",
           style: normalizeStyle(compositionBoundaryStyle.value)
         }, null, 4)) : createCommentVNode("", true),
-        showSafeFrameGuides.value ? (openBlock(), createElementBlock("div", _hoisted_10$d, [
+        showSafeFrameGuides.value ? (openBlock(), createElementBlock("div", _hoisted_5$d, [
           createBaseVNode("div", {
             class: "safe-frame-overlay safe-frame-left",
             style: normalizeStyle(safeFrameLeftStyle.value)
@@ -81255,7 +81103,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-6e8c0fca"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-2bc77db0"]]);
 
 const KEYFRAME_SHAPES = {
   // ========================================
@@ -81872,7 +81720,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
   }
 });
 
-const PropertyTrack = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-537bc3fe"]]);
+const PropertyTrack = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-57f91a9c"]]);
 
 const _hoisted_1$b = {
   key: 0,

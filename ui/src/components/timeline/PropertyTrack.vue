@@ -437,31 +437,41 @@ onUnmounted(() => {
 <style scoped>
 .prop-wrapper { width: 100%; display: flex; flex-direction: column; }
 .prop-sidebar {
-  display: grid;
-  /* Must match parent grid. Columns: 24 24 30 24 24 24 1fr 70 70 */
-  grid-template-columns: 24px 24px 30px 24px 24px 24px 1fr 70px 70px;
-  align-items: center;
-  height: 32px;
-  border-bottom: 1px solid #2a2a2a;
-  background: #1a1a1a;
-  font-size: 13px;
-  color: #ccc;
-}
-.indent-spacer { grid-column: span 3; }
-.icon-box { display: flex; justify-content: center; cursor: pointer; }
-.kf-btn.active { color: #f1c40f; }
-.keyframe-toggle.active { color: #3498db; }
-
-/* Content spans from column 7 (Name) to the end */
-.prop-content {
-  grid-column: 7 / -1;
   display: flex;
   align-items: center;
-  padding-right: 10px;
-  overflow: hidden;
+  height: 28px;
+  border-bottom: 1px solid #2a2a2a;
+  background: #1a1a1a;
+  font-size: 12px;
+  color: #ccc;
+  padding-left: 8px;
 }
-.prop-name { min-width: 100px; color: #999; font-size: 13px; }
-.prop-inputs { display: flex; gap: 8px; flex: 1; align-items: center; }
+.indent-spacer { width: 20px; flex-shrink: 0; }
+.icon-box {
+  width: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.icon-box.disabled { visibility: hidden; }
+.kf-btn { font-size: 10px; color: #666; }
+.kf-btn.active { color: #f1c40f; }
+.keyframe-toggle { font-size: 10px; color: #666; }
+.keyframe-toggle.active { color: #3498db; }
+
+/* Content: property name + inputs */
+.prop-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+  gap: 8px;
+}
+.prop-name { width: 100px; flex-shrink: 0; color: #999; font-size: 12px; }
+.prop-inputs { display: flex; gap: 6px; flex: 1; align-items: center; justify-content: flex-end; }
 
 .vec-item { display: flex; align-items: center; gap: 4px; }
 .label { font-size: 12px; font-weight: bold; }

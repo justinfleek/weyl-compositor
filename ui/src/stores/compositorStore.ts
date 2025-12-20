@@ -1075,17 +1075,19 @@ export const useCompositorStore = defineStore('compositor', {
       // Create transform with layer centered in composition
       const layerTransform = createDefaultTransform();
 
-      // For solid layers, anchor point should be at the layer's center
-      // and position should be at the composition center
+      // Set position to composition center
+      // Anchor point should be at layer's own origin (0,0 for text/shapes, layer center for solids)
+      layerTransform.position.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
+
       if (type === 'solid' && layerData) {
+        // Solid layers: anchor at layer's own center
         const layerWidth = layerData.width || compWidth;
         const layerHeight = layerData.height || compHeight;
         layerTransform.anchorPoint.value = { x: layerWidth / 2, y: layerHeight / 2, z: 0 };
-        layerTransform.position.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
       } else {
-        // For other layer types, center position in composition
-        layerTransform.position.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
-        layerTransform.anchorPoint.value = { x: compWidth / 2, y: compHeight / 2, z: 0 };
+        // Text, shape, spline, particles, image, video, etc.: anchor at origin (0,0)
+        // Position directly controls where the layer's origin appears in composition
+        layerTransform.anchorPoint.value = { x: 0, y: 0, z: 0 };
       }
 
       // Initialize layer-specific properties
