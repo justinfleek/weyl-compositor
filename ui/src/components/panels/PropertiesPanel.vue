@@ -270,6 +270,8 @@ import DepthProperties from '@/components/properties/DepthProperties.vue';
 import NormalProperties from '@/components/properties/NormalProperties.vue';
 import GeneratedProperties from '@/components/properties/GeneratedProperties.vue';
 import GroupProperties from '@/components/properties/GroupProperties.vue';
+import ControlProperties from '@/components/properties/ControlProperties.vue';
+import MatteProperties from '@/components/properties/MatteProperties.vue';
 import PropertyLink from '@/components/controls/PropertyLink.vue';
 import DriverList from '@/components/panels/DriverList.vue';
 import type { PropertyPath } from '@/services/propertyDriver';
@@ -386,7 +388,9 @@ const layerPropertiesComponent = computed<Component | null>(() => {
     case 'group':
       return markRaw(GroupProperties);
     case 'control':
+      return markRaw(ControlProperties);
     case 'matte':
+      return markRaw(MatteProperties);
     case 'solid':
     case 'image':
     case 'null':

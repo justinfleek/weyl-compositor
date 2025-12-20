@@ -267,9 +267,13 @@ export function createLayer(
 
     case 'matte':
       layerData = {
-        matteType: 'luminance',
+        matteType: 'luminance' as const,
         invert: false,
-        threshold: 0.5
+        threshold: 0.5,
+        feather: 0,
+        expansion: 0,
+        sourceLayerId: null,
+        previewMode: 'matte' as const
       };
       break;
 
@@ -314,9 +318,11 @@ export function createLayer(
     case 'control':
       // Control layer (null object replacement) - transform-only parent
       layerData = {
-        size: 50,           // Visual size of control icon in editor
-        showAxes: true,     // Show axis indicators
-        showIcon: true      // Show control layer icon
+        size: 50,
+        showAxes: true,
+        showIcon: true,
+        iconShape: 'crosshair' as const,
+        iconColor: '#ffcc00'
       };
       break;
 

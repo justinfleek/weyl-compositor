@@ -748,6 +748,54 @@ export interface GroupLayerData {
 }
 
 // ============================================================
+// CONTROL LAYER DATA - Null object / transform controller
+// ============================================================
+
+export interface ControlLayerData {
+  /** Visual size of control icon in editor */
+  size: number;
+
+  /** Show XYZ axis indicators */
+  showAxes: boolean;
+
+  /** Show control layer icon/gizmo */
+  showIcon: boolean;
+
+  /** Icon shape */
+  iconShape: 'crosshair' | 'diamond' | 'circle' | 'square';
+
+  /** Icon color */
+  iconColor: string;
+}
+
+// ============================================================
+// MATTE LAYER DATA - Procedural matte/mask generation
+// ============================================================
+
+export interface MatteLayerData {
+  /** Matte extraction method */
+  matteType: 'luminance' | 'alpha' | 'red' | 'green' | 'blue' | 'hue' | 'saturation';
+
+  /** Invert the matte */
+  invert: boolean;
+
+  /** Threshold for matte cutoff */
+  threshold: number;
+
+  /** Feather/blur amount */
+  feather: number;
+
+  /** Expand/contract matte edges */
+  expansion: number;
+
+  /** Source layer ID (if extracting matte from another layer) */
+  sourceLayerId: string | null;
+
+  /** Preview mode */
+  previewMode: 'matte' | 'composite' | 'overlay';
+}
+
+// ============================================================
 // LEGACY PARTICLE LAYER DATA (for backwards compatibility)
 // ============================================================
 
