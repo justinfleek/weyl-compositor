@@ -696,20 +696,19 @@ export {
 } from './vectorLOD';
 
 // ============================================================================
-// PUPPET DEFORMATION
+// MESH WARP DEFORMATION
 // ============================================================================
 
 export {
-  PuppetDeformationService,
-  puppetDeformationService,
-  createPuppetMesh,
+  MeshWarpDeformationService,
+  meshWarpDeformation,
+  delaunayTriangulate,
+  calculateWeights,
   deformMesh,
-  getDeformedControlPoints,
-  createDefaultPin,
-  type PuppetPin,
-  type PuppetMesh,
-  type DeformedPoint,
-} from './puppetDeformation';
+  // Backwards compatibility aliases (deprecated)
+  PuppetDeformationService,
+  puppetDeformation,
+} from './meshWarpDeformation';
 
 // ============================================================================
 // IMAGE VECTORIZATION

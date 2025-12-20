@@ -141,6 +141,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import DOMPurify from 'dompurify';
 import { getAIAgent, type AIMessage } from '@/services/ai';
 
 // ============================================================================
@@ -246,11 +247,13 @@ function formatTime(timestamp: number): string {
 
 function formatContent(content: string): string {
   // Convert markdown-style formatting to HTML
-  return content
+  const formatted = content
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\n/g, '<br>');
+  // Sanitize to prevent XSS attacks
+  return DOMPurify.sanitize(formatted);
 }
 
 function formatToolName(name: string): string {

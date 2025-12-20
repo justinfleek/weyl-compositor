@@ -227,6 +227,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import Dialog from 'primevue/dialog';
+import DOMPurify from 'dompurify';
 import { useCompositorStore } from '@/stores/compositorStore';
 import {
   getVectorizeService,
@@ -300,14 +301,13 @@ const canVectorize = computed(() => {
   return !!uploadedImage.value;
 });
 
-// Sanitized SVG for preview (remove scripts, etc.)
+// Sanitized SVG for preview using DOMPurify with SVG-specific config
 const sanitizedSvg = computed(() => {
   if (!result.value?.svg) return '';
-  // Basic sanitization - remove script tags and event handlers
-  return result.value.svg
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/on\w+="[^"]*"/gi, '')
-    .replace(/on\w+='[^']*'/gi, '');
+  return DOMPurify.sanitize(result.value.svg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ['use'],
+  });
 });
 
 // Watch source changes to update preview
