@@ -647,3 +647,85 @@ export {
   type GPUParticleData,
   type WebGPUCapabilities,
 } from './particleGPU';
+
+// ============================================================================
+// TEXT TO VECTOR
+// ============================================================================
+
+export {
+  textToVector,
+  textLayerToSplines,
+  loadFont,
+  loadFontFromBuffer,
+  registerFontUrl,
+  clearFontCache,
+  type TextToVectorResult,
+  type CharacterVectorGroup,
+  type TextToVectorOptions,
+} from './textToVector';
+
+// ============================================================================
+// SVG EXPORT
+// ============================================================================
+
+export {
+  SVGExportService,
+  svgExportService,
+  exportSplineLayerToSVG,
+  exportCompositionToSVG,
+  controlPointsToPathData,
+  type SVGExportOptions,
+  type SVGExportResult,
+} from './svgExport';
+
+// ============================================================================
+// VECTOR LOD
+// ============================================================================
+
+export {
+  VectorLODService,
+  vectorLODService,
+  generateLODLevels,
+  selectLODLevel,
+  simplifyPath,
+  cullOffScreenPoints,
+  DEFAULT_LOD_CONFIG,
+  type LODLevel,
+  type LODConfig,
+  type LODContext,
+} from './vectorLOD';
+
+// ============================================================================
+// PUPPET DEFORMATION
+// ============================================================================
+
+export {
+  PuppetDeformationService,
+  puppetDeformationService,
+  createPuppetMesh,
+  deformMesh,
+  getDeformedControlPoints,
+  createDefaultPin,
+  type PuppetPin,
+  type PuppetMesh,
+  type DeformedPoint,
+} from './puppetDeformation';
+
+// ============================================================================
+// IMAGE VECTORIZATION
+// ============================================================================
+
+export {
+  DEFAULT_VTRACE_OPTIONS,
+  DEFAULT_STARVECTOR_OPTIONS,
+  getVectorizeStatus,
+  loadStarVector,
+  unloadStarVector,
+  vectorizeWithVTracer,
+  vectorizeWithStarVector,
+  type VectorizeStatus,
+  type VectorPath,
+  type VectorizeResult,
+  type VTraceOptions,
+  type StarVectorOptions,
+} from './vectorize';

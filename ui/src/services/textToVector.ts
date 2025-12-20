@@ -1,596 +1,621 @@
 /**
- * Text-to-Vector Service
+ * Text to Vector Service
  *
- * Converts text to editable vector paths using opentype.js for
- * client-side font parsing. Supports grouping by character for
- * per-character animation.
- *
- * Key features:
- * - Convert any text to BezierPath
- * - Per-character path grouping
- * - Support for system fonts (via font URL)
- * - Quadratic to cubic bezier conversion
- * - Proper hole detection for compound glyphs
+ * Converts text layers to editable spline paths using opentype.js.
+ * Supports:
+ * - Font loading and caching
+ * - Glyph path extraction
+ * - Character grouping for animation
+ * - Kerning and spacing
  */
 
-import opentype, { type Font, type Path, type PathCommand, type BoundingBox as OTBoundingBox } from 'opentype.js';
+import opentype from 'opentype.js';
+import type { ControlPoint, Layer, SplineData } from '@/types/project';
 import type { BezierPath, BezierVertex, Point2D } from '@/types/shapes';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('TextToVector');
 
 // ============================================================================
-// TYPES
+// Types
 // ============================================================================
 
-/** Bounding box for vector content */
-export interface VectorBounds {
+export interface TextToVectorResult {
+  /** All paths combined */
+  allPaths: BezierPath[];
+  /** Per-character path groups */
+  characters: CharacterVectorGroup[];
+  /** Bounding box of entire text */
+  bounds: BoundingBox;
+  /** Original text */
+  text: string;
+  /** Font used */
+  fontFamily: string;
+  /** Font size */
+  fontSize: number;
+}
+
+export interface CharacterVectorGroup {
+  /** The character */
+  character: string;
+  /** Index in the original string */
+  charIndex: number;
+  /** Paths for this character (e.g., 'O' has outer and inner) */
+  paths: BezierPath[];
+  /** Bounding box for this character */
+  bounds: BoundingBox;
+  /** X advance (for positioning next character) */
+  advanceWidth: number;
+}
+
+export interface BoundingBox {
   x: number;
   y: number;
   width: number;
   height: number;
 }
 
-/** Vector paths for a single character */
-export interface CharacterVectorGroup {
-  /** The character this group represents */
-  character: string;
-  /** Index of this character in the original text */
-  charIndex: number;
-  /** Vector paths for this character (may include holes) */
-  paths: BezierPath[];
-  /** Bounding box of this character */
-  bounds: VectorBounds;
-  /** X position of this character in the full text */
-  x: number;
-  /** Advance width (distance to next character) */
-  advanceWidth: number;
-}
-
-/** Result of text-to-vector conversion */
-export interface TextToVectorResult {
-  /** Per-character vector groups */
-  characters: CharacterVectorGroup[];
-  /** All paths combined (for simple rendering) */
-  allPaths: BezierPath[];
-  /** Total bounds of the entire text */
-  bounds: VectorBounds;
-  /** Font metrics */
-  metrics: {
-    ascender: number;
-    descender: number;
-    unitsPerEm: number;
-    lineHeight: number;
-  };
-}
-
-/** Options for text-to-vector conversion */
 export interface TextToVectorOptions {
-  /** X position of text start */
-  x?: number;
-  /** Y position of text baseline */
-  y?: number;
-  /** Enable kerning */
-  kerning?: boolean;
+  /** Font size in pixels */
+  fontSize?: number;
+  /** Letter spacing adjustment */
+  letterSpacing?: number;
   /** Simplify paths (reduce point count) */
   simplify?: boolean;
-  /** Simplification tolerance (if simplify is true) */
+  /** Simplification tolerance */
   simplifyTolerance?: number;
+  /** Flatten curves to line segments (for LOD) */
+  flattenCurves?: boolean;
+  /** Curve flattening resolution */
+  curveResolution?: number;
 }
 
 // ============================================================================
-// FONT CACHE
+// Font Cache
 // ============================================================================
 
-/** Cache loaded fonts to avoid repeated network requests */
-const fontCache = new Map<string, Font>();
+/** Cache of loaded fonts */
+const fontCache = new Map<string, opentype.Font>();
+
+/** Font URL mapping (font family -> URL) */
+const fontUrlMap = new Map<string, string>();
 
 /**
- * Load a font from URL
- * @param fontUrl URL to the font file (TTF, OTF, WOFF)
- * @returns Loaded font
+ * Register a font URL for a font family name
  */
-export async function loadFont(fontUrl: string): Promise<Font> {
-  // Check cache first
-  const cached = fontCache.get(fontUrl);
-  if (cached) {
-    return cached;
+export function registerFontUrl(fontFamily: string, url: string): void {
+  fontUrlMap.set(fontFamily.toLowerCase(), url);
+}
+
+/**
+ * Load a font by family name
+ * Returns cached font if already loaded
+ */
+export async function loadFont(fontFamily: string): Promise<opentype.Font> {
+  const key = fontFamily.toLowerCase();
+
+  // Check cache
+  const cached = fontCache.get(key);
+  if (cached) return cached;
+
+  // Get URL from map or try to construct one
+  let url = fontUrlMap.get(key);
+  if (!url) {
+    // Try Google Fonts as fallback
+    url = `https://fonts.gstatic.com/s/${key.replace(/\s+/g, '')}/v1/${key.replace(/\s+/g, '')}-Regular.ttf`;
   }
 
+  logger.info(`Loading font: ${fontFamily} from ${url}`);
+
   try {
-    const font = await opentype.load(fontUrl);
-    fontCache.set(fontUrl, font);
-    logger.info(`Font loaded: ${font.names.fontFamily?.en || 'Unknown'}`);
+    const font = await opentype.load(url);
+    fontCache.set(key, font);
     return font;
   } catch (error) {
-    logger.error(`Failed to load font from ${fontUrl}:`, error);
-    throw new Error(`Failed to load font: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error(`Failed to load font ${fontFamily}:`, error);
+    throw new Error(`Failed to load font: ${fontFamily}`);
   }
 }
 
 /**
- * Load a font from an ArrayBuffer
- * @param buffer Font file data
- * @param cacheKey Optional key for caching
- * @returns Loaded font
+ * Load font from ArrayBuffer
  */
-export function loadFontFromBuffer(buffer: ArrayBuffer, cacheKey?: string): Font {
-  try {
-    const font = opentype.parse(buffer);
-
-    if (cacheKey) {
-      fontCache.set(cacheKey, font);
-    }
-
-    logger.info(`Font parsed: ${font.names.fontFamily?.en || 'Unknown'}`);
-    return font;
-  } catch (error) {
-    logger.error('Failed to parse font buffer:', error);
-    throw new Error(`Failed to parse font: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+export function loadFontFromBuffer(fontFamily: string, buffer: ArrayBuffer): opentype.Font {
+  const font = opentype.parse(buffer);
+  fontCache.set(fontFamily.toLowerCase(), font);
+  return font;
 }
 
 /**
- * Clear the font cache
+ * Clear font cache
  */
 export function clearFontCache(): void {
   fontCache.clear();
-  logger.info('Font cache cleared');
 }
 
 // ============================================================================
-// PATH CONVERSION
+// Text to Vector Conversion
 // ============================================================================
 
-/**
- * Convert quadratic bezier to cubic bezier control points
- * Quadratic: (P0, P1, P2) -> Cubic: (P0, CP1, CP2, P3)
- * CP1 = P0 + 2/3 * (P1 - P0)
- * CP2 = P2 + 2/3 * (P1 - P2)
- */
-function quadToCubic(
-  p0: Point2D,
-  p1: Point2D,  // Quadratic control point
-  p2: Point2D   // End point
-): { cp1: Point2D; cp2: Point2D } {
-  return {
-    cp1: {
-      x: p0.x + (2 / 3) * (p1.x - p0.x),
-      y: p0.y + (2 / 3) * (p1.y - p0.y),
-    },
-    cp2: {
-      x: p2.x + (2 / 3) * (p1.x - p2.x),
-      y: p2.y + (2 / 3) * (p1.y - p2.y),
-    },
-  };
-}
-
-/**
- * Convert opentype.js PathCommands to BezierPath
- */
-function commandsToBezierPath(commands: PathCommand[]): BezierPath[] {
-  const paths: BezierPath[] = [];
-  let currentPath: BezierVertex[] = [];
-  let currentPoint: Point2D = { x: 0, y: 0 };
-  let firstPoint: Point2D = { x: 0, y: 0 };
-  let prevOutHandle: Point2D | null = null;
-
-  const finishPath = (closed: boolean) => {
-    if (currentPath.length > 0) {
-      // Set the last vertex's out handle if we have one pending
-      if (prevOutHandle && currentPath.length > 0) {
-        const lastVertex = currentPath[currentPath.length - 1];
-        lastVertex.outHandle = {
-          x: prevOutHandle.x - lastVertex.point.x,
-          y: prevOutHandle.y - lastVertex.point.y,
-        };
-      }
-
-      // For closed paths, connect the handles properly
-      if (closed && currentPath.length > 1) {
-        // The first vertex's inHandle should connect from last vertex
-        // Already set during processing
-      }
-
-      paths.push({
-        vertices: currentPath,
-        closed,
-      });
-    }
-    currentPath = [];
-    prevOutHandle = null;
-  };
-
-  for (const cmd of commands) {
-    switch (cmd.type) {
-      case 'M': {
-        // Start new path (finish previous if exists)
-        finishPath(false);
-
-        currentPoint = { x: cmd.x, y: cmd.y };
-        firstPoint = { x: cmd.x, y: cmd.y };
-
-        // Add first vertex
-        currentPath.push({
-          point: { x: cmd.x, y: cmd.y },
-          inHandle: { x: 0, y: 0 },
-          outHandle: { x: 0, y: 0 },
-        });
-        break;
-      }
-
-      case 'L': {
-        // Line to - add vertex with zero handles (sharp corner)
-        const endPoint = { x: cmd.x, y: cmd.y };
-
-        // Update previous vertex's out handle to point toward this vertex
-        if (currentPath.length > 0) {
-          const lastVertex = currentPath[currentPath.length - 1];
-          // For straight lines, we could set handles to 1/3 of the way
-          // but for sharp corners, we keep them at zero
-          lastVertex.outHandle = { x: 0, y: 0 };
-        }
-
-        currentPath.push({
-          point: endPoint,
-          inHandle: { x: 0, y: 0 },
-          outHandle: { x: 0, y: 0 },
-        });
-
-        currentPoint = endPoint;
-        prevOutHandle = null;
-        break;
-      }
-
-      case 'C': {
-        // Cubic bezier
-        const cp1 = { x: cmd.x1, y: cmd.y1 };
-        const cp2 = { x: cmd.x2, y: cmd.y2 };
-        const endPoint = { x: cmd.x, y: cmd.y };
-
-        // Set previous vertex's out handle
-        if (currentPath.length > 0) {
-          const lastVertex = currentPath[currentPath.length - 1];
-          lastVertex.outHandle = {
-            x: cp1.x - lastVertex.point.x,
-            y: cp1.y - lastVertex.point.y,
-          };
-        }
-
-        // Add new vertex with in handle from cp2
-        currentPath.push({
-          point: endPoint,
-          inHandle: {
-            x: cp2.x - endPoint.x,
-            y: cp2.y - endPoint.y,
-          },
-          outHandle: { x: 0, y: 0 },
-        });
-
-        currentPoint = endPoint;
-        prevOutHandle = null;
-        break;
-      }
-
-      case 'Q': {
-        // Quadratic bezier - convert to cubic
-        const qControlPoint = { x: cmd.x1, y: cmd.y1 };
-        const endPoint = { x: cmd.x, y: cmd.y };
-
-        const { cp1, cp2 } = quadToCubic(currentPoint, qControlPoint, endPoint);
-
-        // Set previous vertex's out handle
-        if (currentPath.length > 0) {
-          const lastVertex = currentPath[currentPath.length - 1];
-          lastVertex.outHandle = {
-            x: cp1.x - lastVertex.point.x,
-            y: cp1.y - lastVertex.point.y,
-          };
-        }
-
-        // Add new vertex
-        currentPath.push({
-          point: endPoint,
-          inHandle: {
-            x: cp2.x - endPoint.x,
-            y: cp2.y - endPoint.y,
-          },
-          outHandle: { x: 0, y: 0 },
-        });
-
-        currentPoint = endPoint;
-        prevOutHandle = null;
-        break;
-      }
-
-      case 'Z': {
-        // Close path
-        finishPath(true);
-        currentPoint = firstPoint;
-        break;
-      }
-    }
-  }
-
-  // Finish any remaining open path
-  finishPath(false);
-
-  return paths;
-}
-
-/**
- * Convert opentype BoundingBox to our VectorBounds
- */
-function otBoundsToVectorBounds(bounds: OTBoundingBox): VectorBounds {
-  return {
-    x: bounds.x1,
-    y: bounds.y1,
-    width: bounds.x2 - bounds.x1,
-    height: bounds.y2 - bounds.y1,
-  };
-}
-
-/**
- * Calculate combined bounds from multiple paths
- */
-function calculateCombinedBounds(paths: BezierPath[]): VectorBounds {
-  if (paths.length === 0) {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  for (const path of paths) {
-    for (const vertex of path.vertices) {
-      minX = Math.min(minX, vertex.point.x);
-      minY = Math.min(minY, vertex.point.y);
-      maxX = Math.max(maxX, vertex.point.x);
-      maxY = Math.max(maxY, vertex.point.y);
-    }
-  }
-
-  if (!isFinite(minX)) {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-
-  return {
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY,
-  };
-}
-
-// ============================================================================
-// MAIN API
-// ============================================================================
+const DEFAULT_OPTIONS: Required<TextToVectorOptions> = {
+  fontSize: 72,
+  letterSpacing: 0,
+  simplify: false,
+  simplifyTolerance: 0.5,
+  flattenCurves: false,
+  curveResolution: 16,
+};
 
 /**
  * Convert text to vector paths
  *
  * @param text The text to convert
- * @param font Loaded font object
- * @param fontSize Font size in pixels
+ * @param fontFamily Font family name
  * @param options Conversion options
- * @returns Vector paths grouped by character
  */
-export function textToVector(
+export async function textToVector(
   text: string,
-  font: Font,
-  fontSize: number,
-  options: TextToVectorOptions = {}
-): TextToVectorResult {
-  const {
-    x = 0,
-    y = 0,
-    kerning = true,
-  } = options;
+  fontFamily: string,
+  options?: TextToVectorOptions
+): Promise<TextToVectorResult> {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  const characters: CharacterVectorGroup[] = [];
-  const allPaths: BezierPath[] = [];
-  let currentX = x;
+  // Load font
+  const font = await loadFont(fontFamily);
 
-  // Scale factor from font units to pixels
-  const scale = fontSize / font.unitsPerEm;
+  // Get the path from opentype
+  const path = font.getPath(text, 0, 0, opts.fontSize);
 
-  // Process each character
+  // Convert opentype commands to our BezierPath format
+  const allPaths = commandsToBezierPaths(path.commands);
+
+  // Get per-character paths
+  const characters = getCharacterPaths(text, font, opts);
+
+  // Calculate bounds
+  const bbox = path.getBoundingBox();
+  const bounds: BoundingBox = {
+    x: bbox.x1,
+    y: bbox.y1,
+    width: bbox.x2 - bbox.x1,
+    height: bbox.y2 - bbox.y1,
+  };
+
+  return {
+    allPaths,
+    characters,
+    bounds,
+    text,
+    fontFamily,
+    fontSize: opts.fontSize,
+  };
+}
+
+/**
+ * Get paths for each character individually
+ */
+function getCharacterPaths(
+  text: string,
+  font: opentype.Font,
+  opts: Required<TextToVectorOptions>
+): CharacterVectorGroup[] {
+  const groups: CharacterVectorGroup[] = [];
+  let x = 0;
+
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
     const glyph = font.charToGlyph(char);
 
     if (!glyph) {
-      logger.warn(`No glyph found for character: ${char}`);
       continue;
     }
 
-    // Get the glyph path at the current position
-    const glyphPath = glyph.getPath(currentX, y, fontSize);
-    const charPaths = commandsToBezierPath(glyphPath.commands);
+    // Get path for this character
+    const charPath = glyph.getPath(x, 0, opts.fontSize);
+    const paths = commandsToBezierPaths(charPath.commands);
 
-    // Calculate bounds for this character
-    const glyphBounds = glyphPath.getBoundingBox();
-    const bounds = otBoundsToVectorBounds(glyphBounds);
+    // Get bounding box
+    const bbox = charPath.getBoundingBox();
+    const bounds: BoundingBox = {
+      x: bbox.x1,
+      y: bbox.y1,
+      width: bbox.x2 - bbox.x1,
+      height: bbox.y2 - bbox.y1,
+    };
 
     // Calculate advance width
-    const advanceWidth = (glyph.advanceWidth || 0) * scale;
+    const advanceWidth = (glyph.advanceWidth ?? 0) * (opts.fontSize / font.unitsPerEm);
 
-    // Add kerning if enabled and not the last character
-    let kerningValue = 0;
-    if (kerning && i < text.length - 1) {
-      const nextGlyph = font.charToGlyph(text[i + 1]);
-      if (nextGlyph) {
-        kerningValue = font.getKerningValue(glyph, nextGlyph) * scale;
-      }
-    }
-
-    // Add character group
-    characters.push({
+    groups.push({
       character: char,
       charIndex: i,
-      paths: charPaths,
+      paths,
       bounds,
-      x: currentX,
       advanceWidth,
     });
 
-    // Add paths to combined list
-    allPaths.push(...charPaths);
+    // Advance position for next character
+    x += advanceWidth + opts.letterSpacing;
 
-    // Advance position
-    currentX += advanceWidth + kerningValue;
+    // Apply kerning if available
+    if (i < text.length - 1) {
+      const nextGlyph = font.charToGlyph(text[i + 1]);
+      if (nextGlyph) {
+        const kerning = font.getKerningValue(glyph, nextGlyph);
+        x += kerning * (opts.fontSize / font.unitsPerEm);
+      }
+    }
   }
 
-  // Calculate total bounds
-  const totalBounds = calculateCombinedBounds(allPaths);
-
-  // Calculate metrics
-  const metrics = {
-    ascender: font.ascender * scale,
-    descender: font.descender * scale,
-    unitsPerEm: font.unitsPerEm,
-    lineHeight: (font.ascender - font.descender) * scale,
-  };
-
-  return {
-    characters,
-    allPaths,
-    bounds: totalBounds,
-    metrics,
-  };
+  return groups;
 }
 
 /**
- * Convert text to vector paths using a font URL
- *
- * @param text The text to convert
- * @param fontUrl URL to the font file
- * @param fontSize Font size in pixels
- * @param options Conversion options
- * @returns Vector paths grouped by character
+ * Convert opentype path commands to BezierPath array
+ */
+function commandsToBezierPaths(commands: opentype.PathCommand[]): BezierPath[] {
+  const paths: BezierPath[] = [];
+  let currentPath: BezierVertex[] = [];
+  let currentPoint: Point2D = { x: 0, y: 0 };
+  let startPoint: Point2D = { x: 0, y: 0 };
+
+  for (const cmd of commands) {
+    switch (cmd.type) {
+      case 'M': // Move to
+        if (currentPath.length > 0) {
+          paths.push({ vertices: currentPath, closed: false });
+          currentPath = [];
+        }
+        currentPoint = { x: cmd.x, y: cmd.y };
+        startPoint = { ...currentPoint };
+        break;
+
+      case 'L': // Line to
+        currentPath.push({
+          point: { ...currentPoint },
+          inHandle: { x: 0, y: 0 },
+          outHandle: { x: 0, y: 0 },
+        });
+        currentPoint = { x: cmd.x, y: cmd.y };
+        break;
+
+      case 'C': // Cubic bezier
+        currentPath.push({
+          point: { ...currentPoint },
+          inHandle: { x: 0, y: 0 },
+          outHandle: {
+            x: cmd.x1 - currentPoint.x,
+            y: cmd.y1 - currentPoint.y,
+          },
+        });
+        currentPoint = { x: cmd.x, y: cmd.y };
+        break;
+
+      case 'Q': // Quadratic bezier - convert to cubic
+        {
+          const cp1x = currentPoint.x + (2/3) * (cmd.x1 - currentPoint.x);
+          const cp1y = currentPoint.y + (2/3) * (cmd.y1 - currentPoint.y);
+
+          currentPath.push({
+            point: { ...currentPoint },
+            inHandle: { x: 0, y: 0 },
+            outHandle: {
+              x: cp1x - currentPoint.x,
+              y: cp1y - currentPoint.y,
+            },
+          });
+          currentPoint = { x: cmd.x, y: cmd.y };
+        }
+        break;
+
+      case 'Z': // Close path
+        currentPath.push({
+          point: { ...currentPoint },
+          inHandle: { x: 0, y: 0 },
+          outHandle: { x: 0, y: 0 },
+        });
+
+        if (currentPath.length > 0) {
+          paths.push({ vertices: currentPath, closed: true });
+          currentPath = [];
+        }
+        currentPoint = { ...startPoint };
+        break;
+    }
+  }
+
+  if (currentPath.length > 0) {
+    currentPath.push({
+      point: { ...currentPoint },
+      inHandle: { x: 0, y: 0 },
+      outHandle: { x: 0, y: 0 },
+    });
+    paths.push({ vertices: currentPath, closed: false });
+  }
+
+  return paths;
+}
+
+// ============================================================================
+// Layer Conversion
+// ============================================================================
+
+/**
+ * Convert a text layer to spline layers
+ */
+export async function textLayerToSplines(
+  textLayer: Layer,
+  options?: TextToVectorOptions & {
+    groupByCharacter?: boolean;
+    preservePosition?: boolean;
+  }
+): Promise<{ layers: Partial<Layer>[]; result: TextToVectorResult }> {
+  if (textLayer.type !== 'text' || !textLayer.data) {
+    throw new Error('Layer must be a text layer');
+  }
+
+  const textData = textLayer.data as {
+    text?: string;
+    font?: string;
+    fontSize?: number;
+  };
+
+  const text = textData.text || '';
+  const fontFamily = textData.font || 'Arial';
+  const fontSize = options?.fontSize ?? textData.fontSize ?? 72;
+
+  const result = await textToVector(text, fontFamily, { ...options, fontSize });
+
+  const layers: Partial<Layer>[] = [];
+  const groupByCharacter = options?.groupByCharacter ?? true;
+
+  const layerX = (textLayer.transform?.position?.value as any)?.x ?? 0;
+  const layerY = (textLayer.transform?.position?.value as any)?.y ?? 0;
+
+  if (groupByCharacter) {
+    for (const charGroup of result.characters) {
+      if (charGroup.paths.length === 0) continue;
+
+      const controlPoints = bezierPathsToControlPoints(charGroup.paths);
+
+      const splineData: SplineData = {
+        controlPoints,
+        closed: charGroup.paths[0]?.closed ?? false,
+        strokeWidth: 2,
+        strokeColor: '#ffffff',
+        fillColor: 'transparent',
+      };
+
+      layers.push({
+        name: `${textLayer.name} - "${charGroup.character}"`,
+        type: 'spline',
+        data: splineData,
+        transform: {
+          position: {
+            value: {
+              x: layerX + charGroup.bounds.x,
+              y: layerY + charGroup.bounds.y,
+              z: 0,
+            },
+          },
+          rotation: textLayer.transform?.rotation,
+          scale: textLayer.transform?.scale,
+          opacity: textLayer.transform?.opacity,
+          anchor: { value: { x: 0, y: 0, z: 0 } },
+        },
+        inPoint: textLayer.inPoint,
+        outPoint: textLayer.outPoint,
+      });
+    }
+  } else {
+    const allControlPoints = bezierPathsToControlPoints(result.allPaths);
+
+    const splineData: SplineData = {
+      controlPoints: allControlPoints,
+      closed: result.allPaths[0]?.closed ?? false,
+      strokeWidth: 2,
+      strokeColor: '#ffffff',
+      fillColor: 'transparent',
+    };
+
+    layers.push({
+      name: `${textLayer.name} - Vectorized`,
+      type: 'spline',
+      data: splineData,
+      transform: {
+        position: {
+          value: {
+            x: layerX + result.bounds.x,
+            y: layerY + result.bounds.y,
+            z: 0,
+          },
+        },
+        rotation: textLayer.transform?.rotation,
+        scale: textLayer.transform?.scale,
+        opacity: textLayer.transform?.opacity,
+        anchor: { value: { x: 0, y: 0, z: 0 } },
+      },
+      inPoint: textLayer.inPoint,
+      outPoint: textLayer.outPoint,
+    });
+  }
+
+  return { layers, result };
+}
+
+/**
+ * Convert BezierPath array to ControlPoint array
+ */
+function bezierPathsToControlPoints(paths: BezierPath[]): ControlPoint[] {
+  const controlPoints: ControlPoint[] = [];
+  let globalIndex = 0;
+
+  for (const path of paths) {
+    for (let i = 0; i < path.vertices.length; i++) {
+      const v = path.vertices[i];
+
+      controlPoints.push({
+        id: `cp_${globalIndex++}`,
+        x: v.point.x,
+        y: v.point.y,
+        handleIn: v.inHandle.x !== 0 || v.inHandle.y !== 0
+          ? { x: v.point.x + v.inHandle.x, y: v.point.y + v.inHandle.y }
+          : undefined,
+        handleOut: v.outHandle.x !== 0 || v.outHandle.y !== 0
+          ? { x: v.point.x + v.outHandle.x, y: v.point.y + v.outHandle.y }
+          : undefined,
+        type: getPointType(v),
+      });
+    }
+  }
+
+  return controlPoints;
+}
+
+/**
+ * Determine control point type based on handles
+ */
+function getPointType(v: BezierVertex): 'corner' | 'smooth' | 'symmetric' {
+  const hasIn = v.inHandle.x !== 0 || v.inHandle.y !== 0;
+  const hasOut = v.outHandle.x !== 0 || v.outHandle.y !== 0;
+
+  if (!hasIn && !hasOut) {
+    return 'corner';
+  }
+
+  if (hasIn && hasOut) {
+    const inLen = Math.sqrt(v.inHandle.x ** 2 + v.inHandle.y ** 2);
+    const outLen = Math.sqrt(v.outHandle.x ** 2 + v.outHandle.y ** 2);
+
+    if (Math.abs(inLen - outLen) < 0.1) {
+      const cross = v.inHandle.x * v.outHandle.y - v.inHandle.y * v.outHandle.x;
+      if (Math.abs(cross) < 0.1) {
+        return 'symmetric';
+      }
+    }
+    return 'smooth';
+  }
+
+  return 'corner';
+}
+
+// ============================================================================
+// URL-Based Text to Vector (for layerActions integration)
+// ============================================================================
+
+export interface TextToVectorFromUrlOptions {
+  x?: number;
+  y?: number;
+  kerning?: boolean;
+  letterSpacing?: number;
+}
+
+/**
+ * Convert text to vector paths using a font URL directly
+ * Used by layerActions for text-to-spline conversion
  */
 export async function textToVectorFromUrl(
   text: string,
   fontUrl: string,
   fontSize: number,
-  options: TextToVectorOptions = {}
+  options?: TextToVectorFromUrlOptions
 ): Promise<TextToVectorResult> {
-  const font = await loadFont(fontUrl);
-  return textToVector(text, font, fontSize, options);
-}
+  const opts = {
+    x: options?.x ?? 0,
+    y: options?.y ?? 0,
+    kerning: options?.kerning ?? true,
+    letterSpacing: options?.letterSpacing ?? 0,
+  };
 
-/**
- * Get a single combined path for all text
- * Useful when you don't need per-character grouping
- *
- * @param text The text to convert
- * @param font Loaded font object
- * @param fontSize Font size in pixels
- * @param options Conversion options
- * @returns Single combined BezierPath array
- */
-export function textToSinglePath(
-  text: string,
-  font: Font,
-  fontSize: number,
-  options: TextToVectorOptions = {}
-): BezierPath[] {
-  const { allPaths } = textToVector(text, font, fontSize, options);
-  return allPaths;
-}
+  // Load font from URL
+  let font: opentype.Font;
+  try {
+    font = await opentype.load(fontUrl);
+  } catch (error) {
+    logger.error(`Failed to load font from URL ${fontUrl}:`, error);
+    throw new Error(`Failed to load font from URL: ${fontUrl}`);
+  }
 
-/**
- * Get available glyphs in a font
- *
- * @param font Loaded font object
- * @returns Array of available characters
- */
-export function getAvailableGlyphs(font: Font): string[] {
-  const chars: string[] = [];
+  // Get the path from opentype
+  const path = font.getPath(text, opts.x, opts.y, fontSize);
 
-  for (let i = 0; i < font.numGlyphs; i++) {
-    const glyph = font.glyphs.get(i);
-    if (glyph && glyph.unicode !== undefined) {
-      chars.push(String.fromCodePoint(glyph.unicode));
+  // Convert opentype commands to our BezierPath format
+  const allPaths = commandsToBezierPaths(path.commands);
+
+  // Get per-character paths
+  const characters: CharacterVectorGroup[] = [];
+  let x = opts.x;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const glyph = font.charToGlyph(char);
+
+    if (!glyph) {
+      continue;
+    }
+
+    // Get path for this character
+    const charPath = glyph.getPath(x, opts.y, fontSize);
+    const paths = commandsToBezierPaths(charPath.commands);
+
+    // Get bounding box
+    const bbox = charPath.getBoundingBox();
+    const bounds: BoundingBox = {
+      x: bbox.x1,
+      y: bbox.y1,
+      width: bbox.x2 - bbox.x1,
+      height: bbox.y2 - bbox.y1,
+    };
+
+    // Calculate advance width
+    const advanceWidth = (glyph.advanceWidth ?? 0) * (fontSize / font.unitsPerEm);
+
+    characters.push({
+      character: char,
+      charIndex: i,
+      paths,
+      bounds,
+      advanceWidth,
+    });
+
+    // Advance position for next character
+    x += advanceWidth + opts.letterSpacing;
+
+    // Apply kerning if available and enabled
+    if (opts.kerning && i < text.length - 1) {
+      const nextGlyph = font.charToGlyph(text[i + 1]);
+      if (nextGlyph) {
+        const kerning = font.getKerningValue(glyph, nextGlyph);
+        x += kerning * (fontSize / font.unitsPerEm);
+      }
     }
   }
 
-  return chars;
-}
+  // Calculate overall bounds
+  const pathBbox = path.getBoundingBox();
+  const bounds: BoundingBox = {
+    x: pathBbox.x1,
+    y: pathBbox.y1,
+    width: pathBbox.x2 - pathBbox.x1,
+    height: pathBbox.y2 - pathBbox.y1,
+  };
 
-/**
- * Check if a font supports a specific character
- *
- * @param font Loaded font object
- * @param char Character to check
- * @returns Whether the font has a glyph for this character
- */
-export function fontHasChar(font: Font, char: string): boolean {
-  return font.hasChar(char);
-}
-
-/**
- * Get font metrics
- *
- * @param font Loaded font object
- * @param fontSize Font size in pixels
- * @returns Font metrics scaled to the given size
- */
-export function getFontMetrics(font: Font, fontSize: number): {
-  ascender: number;
-  descender: number;
-  lineHeight: number;
-  unitsPerEm: number;
-} {
-  const scale = fontSize / font.unitsPerEm;
   return {
-    ascender: font.ascender * scale,
-    descender: font.descender * scale,
-    lineHeight: (font.ascender - font.descender) * scale,
-    unitsPerEm: font.unitsPerEm,
+    allPaths,
+    characters,
+    bounds,
+    text,
+    fontFamily: font.names.fontFamily?.en || 'Unknown',
+    fontSize,
   };
 }
 
-/**
- * Measure text width without converting to paths
- *
- * @param text Text to measure
- * @param font Loaded font object
- * @param fontSize Font size in pixels
- * @param kerning Enable kerning
- * @returns Text width in pixels
- */
-export function measureTextWidth(
-  text: string,
-  font: Font,
-  fontSize: number,
-  kerning: boolean = true
-): number {
-  return font.getAdvanceWidth(text, fontSize, { kerning });
-}
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export const TextToVector = {
-  // Main conversion
+export default {
   textToVector,
   textToVectorFromUrl,
-  textToSinglePath,
-
-  // Font loading
+  textLayerToSplines,
   loadFont,
   loadFontFromBuffer,
+  registerFontUrl,
   clearFontCache,
-
-  // Utilities
-  getAvailableGlyphs,
-  fontHasChar,
-  getFontMetrics,
-  measureTextWidth,
 };
-
-export default TextToVector;

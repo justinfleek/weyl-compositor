@@ -725,7 +725,7 @@ function evaluateFunction(name, ctx, params) {
   return ctx.value;
 }
 
-const logger$9 = createLogger("PathMorphing");
+const logger$8 = createLogger("PathMorphing");
 const DEFAULT_MORPH_CONFIG = {
   pointMatchingStrategy: "subdivide-shorter",
   correspondenceMethod: "nearest-rotation"
@@ -980,7 +980,7 @@ function rotateVertices(path, offset, reverse = false) {
 function prepareMorphPaths(source, target, config = {}) {
   const cfg = { ...DEFAULT_MORPH_CONFIG, ...config };
   if (source.vertices.length === 0 || target.vertices.length === 0) {
-    logger$9.warn("Cannot morph empty paths");
+    logger$8.warn("Cannot morph empty paths");
     return {
       source: clonePath$1(source),
       target: clonePath$1(target),
@@ -1043,7 +1043,7 @@ function morphPaths(source, target, t) {
   if (t === 0) return clonePath$1(source);
   if (t === 1) return clonePath$1(target);
   if (source.vertices.length !== target.vertices.length) {
-    logger$9.warn("Paths have different vertex counts - use prepareMorphPaths() first");
+    logger$8.warn("Paths have different vertex counts - use prepareMorphPaths() first");
     const count = Math.min(source.vertices.length, target.vertices.length);
     source = { vertices: source.vertices.slice(0, count), closed: source.closed };
     target = { vertices: target.vertices.slice(0, count), closed: target.closed };
@@ -9310,7 +9310,7 @@ function secureUUID() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-const logger$8 = createLogger("ProjectStorage");
+const logger$7 = createLogger("ProjectStorage");
 const API_BASE = "/weyl/compositor";
 function isValidProjectId(projectId) {
   const uuidPattern = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
@@ -9319,7 +9319,7 @@ function isValidProjectId(projectId) {
 }
 async function saveProject(project, projectId) {
   try {
-    logger$8.info(`Saving project${projectId ? ` (${projectId})` : ""}...`);
+    logger$7.info(`Saving project${projectId ? ` (${projectId})` : ""}...`);
     const response = await fetch(`${API_BASE}/save_project`, {
       method: "POST",
       headers: {
@@ -9332,13 +9332,13 @@ async function saveProject(project, projectId) {
     });
     const result = await response.json();
     if (result.status === "success") {
-      logger$8.info(`Project saved: ${result.project_id}`);
+      logger$7.info(`Project saved: ${result.project_id}`);
     } else {
-      logger$8.error(`Failed to save project: ${result.message}`);
+      logger$7.error(`Failed to save project: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$8.error("Error saving project:", error);
+    logger$7.error("Error saving project:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -9347,24 +9347,24 @@ async function saveProject(project, projectId) {
 }
 async function loadProject(projectId) {
   if (!isValidProjectId(projectId)) {
-    logger$8.error(`Invalid project ID format: ${projectId}`);
+    logger$7.error(`Invalid project ID format: ${projectId}`);
     return {
       status: "error",
       message: "Invalid project ID format"
     };
   }
   try {
-    logger$8.info(`Loading project: ${projectId}...`);
+    logger$7.info(`Loading project: ${projectId}...`);
     const response = await fetch(`${API_BASE}/load_project/${encodeURIComponent(projectId)}`);
     const result = await response.json();
     if (result.status === "success") {
-      logger$8.info(`Project loaded: ${projectId}`);
+      logger$7.info(`Project loaded: ${projectId}`);
     } else {
-      logger$8.error(`Failed to load project: ${result.message}`);
+      logger$7.error(`Failed to load project: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$8.error("Error loading project:", error);
+    logger$7.error("Error loading project:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -9373,17 +9373,17 @@ async function loadProject(projectId) {
 }
 async function listProjects() {
   try {
-    logger$8.info("Listing projects...");
+    logger$7.info("Listing projects...");
     const response = await fetch(`${API_BASE}/list_projects`);
     const result = await response.json();
     if (result.status === "success") {
-      logger$8.info(`Found ${result.projects?.length || 0} projects`);
+      logger$7.info(`Found ${result.projects?.length || 0} projects`);
     } else {
-      logger$8.error(`Failed to list projects: ${result.message}`);
+      logger$7.error(`Failed to list projects: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$8.error("Error listing projects:", error);
+    logger$7.error("Error listing projects:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -9392,19 +9392,19 @@ async function listProjects() {
 }
 async function deleteProject(projectId) {
   try {
-    logger$8.info(`Deleting project: ${projectId}...`);
+    logger$7.info(`Deleting project: ${projectId}...`);
     const response = await fetch(`${API_BASE}/delete_project/${encodeURIComponent(projectId)}`, {
       method: "DELETE"
     });
     const result = await response.json();
     if (result.status === "success") {
-      logger$8.info(`Project deleted: ${projectId}`);
+      logger$7.info(`Project deleted: ${projectId}`);
     } else {
-      logger$8.error(`Failed to delete project: ${result.message}`);
+      logger$7.error(`Failed to delete project: ${result.message}`);
     }
     return result;
   } catch (error) {
-    logger$8.error("Error deleting project:", error);
+    logger$7.error("Error deleting project:", error);
     return {
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
@@ -15441,7 +15441,7 @@ function getComfyUIClient(serverAddress) {
   return defaultClient;
 }
 
-const logger$7 = createLogger("MemoryBudget");
+const logger$6 = createLogger("MemoryBudget");
 const VRAM_ESTIMATES = {
   // AI Models
   "model:qwen-image-layered": 28800,
@@ -15516,7 +15516,7 @@ async function initializeGPUDetection() {
         estimatedVRAM,
         tier
       };
-      logger$7.info(`GPU detected: ${renderer} (~${estimatedVRAM}MB VRAM, tier: ${tier})`);
+      logger$6.info(`GPU detected: ${renderer} (~${estimatedVRAM}MB VRAM, tier: ${tier})`);
     } else {
       gpuInfo.value = {
         vendor: "Unknown",
@@ -15525,11 +15525,11 @@ async function initializeGPUDetection() {
         // Conservative 4GB
         tier: "low"
       };
-      logger$7.warn("WebGL not available, using conservative estimates");
+      logger$6.warn("WebGL not available, using conservative estimates");
     }
     isInitialized.value = true;
   } catch (error) {
-    logger$7.error("GPU detection failed:", error);
+    logger$6.error("GPU detection failed:", error);
     gpuInfo.value = {
       vendor: "Unknown",
       renderer: "Unknown",
@@ -15550,14 +15550,14 @@ function registerAllocation(id, name, category, estimatedMB, options) {
     unloadFn: options?.unloadFn
   };
   allocations.set(id, allocation);
-  logger$7.debug(`Registered: ${name} (${estimatedMB}MB) - Total: ${totalUsageMB.value}MB`);
+  logger$6.debug(`Registered: ${name} (${estimatedMB}MB) - Total: ${totalUsageMB.value}MB`);
   checkAndLogWarning();
 }
 function unregisterAllocation(id) {
   const alloc = allocations.get(id);
   if (alloc) {
     allocations.delete(id);
-    logger$7.debug(`Unregistered: ${alloc.name} - Total: ${totalUsageMB.value}MB`);
+    logger$6.debug(`Unregistered: ${alloc.name} - Total: ${totalUsageMB.value}MB`);
   }
 }
 function getWarning() {
@@ -15636,9 +15636,9 @@ async function freeMemory(targetMB) {
         await item.unloadFn();
         freed += item.estimatedMB;
         unregisterAllocation(item.id);
-        logger$7.info(`Freed ${formatMB(item.estimatedMB)} by unloading "${item.name}"`);
+        logger$6.info(`Freed ${formatMB(item.estimatedMB)} by unloading "${item.name}"`);
       } catch (error) {
-        logger$7.error(`Failed to unload "${item.name}":`, error);
+        logger$6.error(`Failed to unload "${item.name}":`, error);
       }
     }
   }
@@ -15694,9 +15694,9 @@ function checkAndLogWarning() {
   const warning = getWarning();
   if (warning) {
     if (warning.level === "critical") {
-      logger$7.error(warning.message);
+      logger$6.error(warning.message);
     } else if (warning.level === "warning") {
-      logger$7.warn(warning.message);
+      logger$6.warn(warning.message);
     }
   }
 }
@@ -15708,7 +15708,7 @@ const memoryState = {
   usageByCategory,
   gpuInfo};
 
-const logger$6 = createLogger("LayerDecomposition");
+const logger$5 = createLogger("LayerDecomposition");
 const MODEL_ALLOCATION_ID = "model:qwen-image-layered";
 class LayerDecompositionService {
   baseUrl;
@@ -15728,7 +15728,7 @@ class LayerDecompositionService {
       }
       throw new Error(result.message || "Failed to get model status");
     } catch (error) {
-      logger$6.error("Failed to get model status:", error);
+      logger$5.error("Failed to get model status:", error);
       throw error;
     }
   }
@@ -15748,9 +15748,9 @@ class LayerDecompositionService {
         throw new Error(result.message);
       }
       onProgress?.("complete", 100);
-      logger$6.info("Model download complete");
+      logger$5.info("Model download complete");
     } catch (error) {
-      logger$6.error("Model download failed:", error);
+      logger$5.error("Model download failed:", error);
       throw error;
     }
   }
@@ -15780,9 +15780,9 @@ class LayerDecompositionService {
           unloadFn: () => this.unloadModel()
         }
       );
-      logger$6.info("Model loaded:", result.message);
+      logger$5.info("Model loaded:", result.message);
     } catch (error) {
-      logger$6.error("Model load failed:", error);
+      logger$5.error("Model load failed:", error);
       throw error;
     }
   }
@@ -15799,9 +15799,9 @@ class LayerDecompositionService {
         throw new Error(result.message);
       }
       unregisterAllocation(MODEL_ALLOCATION_ID);
-      logger$6.info("Model unloaded");
+      logger$5.info("Model unloaded");
     } catch (error) {
-      logger$6.error("Model unload failed:", error);
+      logger$5.error("Model unload failed:", error);
       throw error;
     }
   }
@@ -15829,10 +15829,10 @@ class LayerDecompositionService {
       if (result.status === "error") {
         throw new Error(result.message);
       }
-      logger$6.info(`Decomposition complete: ${result.layers.length} layers`);
+      logger$5.info(`Decomposition complete: ${result.layers.length} layers`);
       return result.layers;
     } catch (error) {
-      logger$6.error("Decomposition failed:", error);
+      logger$5.error("Decomposition failed:", error);
       throw error;
     }
   }
@@ -15870,9 +15870,9 @@ class LayerDecompositionService {
         onProgress?.("cleanup", "Freeing GPU memory...");
         try {
           await this.unloadModel();
-          logger$6.info("Model auto-unloaded to free GPU memory");
+          logger$5.info("Model auto-unloaded to free GPU memory");
         } catch (unloadError) {
-          logger$6.warn("Failed to auto-unload model:", unloadError);
+          logger$5.warn("Failed to auto-unload model:", unloadError);
         }
       }
     }
@@ -15895,7 +15895,7 @@ class LayerDecompositionService {
         const analysis = analyzeLayerContent(imageData);
         layer.label = generateLabelFromAnalysis(analysis, i, layers.length);
       } catch (error) {
-        logger$6.warn(`Failed to analyze layer ${i}:`, error);
+        logger$5.warn(`Failed to analyze layer ${i}:`, error);
       }
     }
   }
@@ -16578,7 +16578,7 @@ const _export_sfc = (sfc, props) => {
 
 const DecomposeDialog = /* @__PURE__ */ _export_sfc(_sfc_main$M, [["__scopeId", "data-v-7dd86d9c"]]);
 
-const logger$5 = createLogger("Vectorize");
+const logger$4 = createLogger("Vectorize");
 const STARVECTOR_ALLOCATION_ID = "model:starvector-1b";
 const DEFAULT_VTRACE_OPTIONS = {
   mode: "spline",
@@ -16614,7 +16614,7 @@ class VectorizeService {
       }
       throw new Error(result.message || "Failed to get status");
     } catch (error) {
-      logger$5.error("Failed to get vectorize status:", error);
+      logger$4.error("Failed to get vectorize status:", error);
       throw error;
     }
   }
@@ -16650,10 +16650,10 @@ class VectorizeService {
       if (result.status === "error") {
         throw new Error(result.message);
       }
-      logger$5.info(`Traced image: ${result.pathCount} paths`);
+      logger$4.info(`Traced image: ${result.pathCount} paths`);
       return result;
     } catch (error) {
-      logger$5.error("Image tracing failed:", error);
+      logger$4.error("Image tracing failed:", error);
       throw error;
     }
   }
@@ -16683,10 +16683,10 @@ class VectorizeService {
       if (result.status === "error") {
         throw new Error(result.message);
       }
-      logger$5.info(`AI vectorized: ${result.pathCount} paths`);
+      logger$4.info(`AI vectorized: ${result.pathCount} paths`);
       return result;
     } catch (error) {
-      logger$5.error("AI vectorization failed:", error);
+      logger$4.error("AI vectorization failed:", error);
       throw error;
     }
   }
@@ -16718,9 +16718,9 @@ class VectorizeService {
         }
       );
       onProgress?.("complete", "StarVector model loaded");
-      logger$5.info("StarVector model loaded");
+      logger$4.info("StarVector model loaded");
     } catch (error) {
-      logger$5.error("Failed to load StarVector:", error);
+      logger$4.error("Failed to load StarVector:", error);
       throw error;
     }
   }
@@ -16737,9 +16737,9 @@ class VectorizeService {
         throw new Error(result.message);
       }
       unregisterAllocation(STARVECTOR_ALLOCATION_ID);
-      logger$5.info("StarVector model unloaded");
+      logger$4.info("StarVector model unloaded");
     } catch (error) {
-      logger$5.error("Failed to unload StarVector:", error);
+      logger$4.error("Failed to unload StarVector:", error);
       throw error;
     }
   }
@@ -17418,233 +17418,162 @@ const _sfc_main$L = /* @__PURE__ */ defineComponent({
 
 const VectorizeDialog = /* @__PURE__ */ _export_sfc(_sfc_main$L, [["__scopeId", "data-v-bdfd2d6e"]]);
 
-const logger$4 = createLogger("SVGExport");
-const DEFAULT_SVG_OPTIONS = {
+const DEFAULT_OPTIONS = {
   includeStrokes: true,
   includeFills: true,
-  precision: 2,
+  precision: 3,
+  viewBox: { x: 0, y: 0, width: 1920, height: 1080 },
   includeTransforms: true,
-  standalone: true,
-  includeIds: true,
-  optimize: false,
-  includeMetadata: true
+  includeMetadata: true,
+  minify: false
 };
-function round(value, precision) {
-  const multiplier = Math.pow(10, precision);
-  return Math.round(value * multiplier) / multiplier;
-}
-function formatNumber(value, precision) {
-  const rounded = round(value, precision);
-  return rounded.toString();
-}
-function sanitizeId(str) {
-  return str.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/^([0-9])/, "_$1");
-}
-function controlPointsToPathData(points, closed, precision = 2) {
-  if (points.length === 0) {
-    return "";
+class SVGExportService {
+  options;
+  constructor(options) {
+    this.options = { ...DEFAULT_OPTIONS, ...options };
   }
-  const fmt = (n) => formatNumber(n, precision);
-  const parts = [];
-  parts.push(`M${fmt(points[0].x)},${fmt(points[0].y)}`);
-  for (let i = 0; i < points.length - 1; i++) {
-    const curr = points[i];
-    const next = points[i + 1];
-    const cp1x = curr.handleOut ? curr.handleOut.x : curr.x;
-    const cp1y = curr.handleOut ? curr.handleOut.y : curr.y;
-    const cp2x = next.handleIn ? next.handleIn.x : next.x;
-    const cp2y = next.handleIn ? next.handleIn.y : next.y;
-    const isLine = Math.abs(cp1x - curr.x) < 0.01 && Math.abs(cp1y - curr.y) < 0.01 && Math.abs(cp2x - next.x) < 0.01 && Math.abs(cp2y - next.y) < 0.01;
-    if (isLine) {
-      parts.push(`L${fmt(next.x)},${fmt(next.y)}`);
-    } else {
-      parts.push(
-        `C${fmt(cp1x)},${fmt(cp1y)} ${fmt(cp2x)},${fmt(cp2y)} ${fmt(next.x)},${fmt(next.y)}`
-      );
+  exportSplineLayer(layer, options) {
+    const opts = { ...this.options, ...options };
+    const warnings = [];
+    if (layer.type !== "spline" || !layer.data) {
+      warnings.push("Layer is not a spline layer");
+      return { svg: "", width: 0, height: 0, pathCount: 0, warnings };
     }
-  }
-  if (closed && points.length > 1) {
-    const last = points[points.length - 1];
-    const first = points[0];
-    const cp1x = last.handleOut ? last.handleOut.x : last.x;
-    const cp1y = last.handleOut ? last.handleOut.y : last.y;
-    const cp2x = first.handleIn ? first.handleIn.x : first.x;
-    const cp2y = first.handleIn ? first.handleIn.y : first.y;
-    const isLine = Math.abs(cp1x - last.x) < 0.01 && Math.abs(cp1y - last.y) < 0.01 && Math.abs(cp2x - first.x) < 0.01 && Math.abs(cp2y - first.y) < 0.01;
-    if (!isLine) {
-      parts.push(
-        `C${fmt(cp1x)},${fmt(cp1y)} ${fmt(cp2x)},${fmt(cp2y)} ${fmt(first.x)},${fmt(first.y)}`
-      );
-    }
-    parts.push("Z");
-  }
-  return parts.join(" ");
-}
-function getStrokeAttributes(splineData, precision) {
-  const attrs = [];
-  const hasStroke = splineData.stroke && splineData.strokeWidth > 0;
-  if (hasStroke) {
-    attrs.push(`stroke="${splineData.stroke}"`);
-    if (splineData.strokeOpacity !== void 0 && splineData.strokeOpacity < 100) {
-      attrs.push(`stroke-opacity="${(splineData.strokeOpacity / 100).toFixed(2)}"`);
-    }
-    attrs.push(`stroke-width="${formatNumber(splineData.strokeWidth, precision)}"`);
-    const lineCap = splineData.strokeLineCap ?? "round";
-    const lineJoin = splineData.strokeLineJoin ?? "round";
-    if (lineCap !== "butt") attrs.push(`stroke-linecap="${lineCap}"`);
-    if (lineJoin !== "miter") attrs.push(`stroke-linejoin="${lineJoin}"`);
-    const dashArray = splineData.strokeDashArray;
-    if (dashArray) {
-      const dashValues = Array.isArray(dashArray) ? dashArray : dashArray.value;
-      if (dashValues && dashValues.length > 0) {
-        attrs.push(`stroke-dasharray="${dashValues.join(" ")}"`);
-        const dashOffset = splineData.strokeDashOffset;
-        if (dashOffset !== void 0) {
-          const offsetValue = typeof dashOffset === "number" ? dashOffset : dashOffset.value;
-          if (offsetValue !== 0) {
-            attrs.push(`stroke-dashoffset="${offsetValue}"`);
-          }
-        }
-      }
-    }
-  } else {
-    attrs.push('stroke="none"');
-  }
-  return attrs.join(" ");
-}
-function getFillAttributes(splineData, _precision) {
-  const attrs = [];
-  const hasFill = splineData.fill && splineData.fill !== "";
-  if (hasFill) {
-    attrs.push(`fill="${splineData.fill}"`);
-    if (splineData.fillOpacity !== void 0 && splineData.fillOpacity < 100) {
-      attrs.push(`fill-opacity="${(splineData.fillOpacity / 100).toFixed(2)}"`);
-    }
-  } else {
-    attrs.push('fill="none"');
-  }
-  return attrs.join(" ");
-}
-function exportSplineLayer(layer, options = {}) {
-  const opts = { ...DEFAULT_SVG_OPTIONS, ...options };
-  if (layer.type !== "spline" || !layer.data) {
-    logger$4.warn("exportSplineLayer: Not a spline layer");
-    return "";
-  }
-  const splineData = layer.data;
-  const points = splineData.controlPoints || [];
-  if (points.length === 0) {
-    return "";
-  }
-  const pathData = controlPointsToPathData(points, splineData.closed || false, opts.precision);
-  const attrs = [];
-  if (opts.includeIds) {
-    attrs.push(`id="${sanitizeId(layer.name)}"`);
-  }
-  attrs.push(`d="${pathData}"`);
-  if (opts.includeStrokes) {
-    attrs.push(getStrokeAttributes(splineData, opts.precision));
-  }
-  if (opts.includeFills) {
-    attrs.push(getFillAttributes(splineData));
-  }
-  if (opts.includeTransforms && layer.transform) {
-    const transforms = [];
-    const posValue = layer.transform.position?.value;
-    if (posValue && (posValue.x !== 0 || posValue.y !== 0)) {
-      transforms.push(
-        `translate(${formatNumber(posValue.x, opts.precision)}, ${formatNumber(posValue.y, opts.precision)})`
-      );
-    }
-    const rotValue = layer.transform.rotation?.value;
-    if (rotValue && rotValue !== 0) {
-      const anchorValue = layer.transform.anchorPoint?.value;
-      const anchorX = anchorValue?.x ?? 0;
-      const anchorY = anchorValue?.y ?? 0;
-      transforms.push(
-        `rotate(${formatNumber(rotValue, opts.precision)}, ${formatNumber(anchorX, opts.precision)}, ${formatNumber(anchorY, opts.precision)})`
-      );
-    }
-    const scaleValue = layer.transform.scale?.value;
-    if (scaleValue && (scaleValue.x !== 100 || scaleValue.y !== 100)) {
-      const sx = scaleValue.x / 100;
-      const sy = scaleValue.y / 100;
-      transforms.push(`scale(${formatNumber(sx, opts.precision)}, ${formatNumber(sy, opts.precision)})`);
-    }
-    if (transforms.length > 0) {
-      attrs.push(`transform="${transforms.join(" ")}"`);
-    }
-  }
-  return `<path ${attrs.join(" ")}/>`;
-}
-function calculateBounds(layers) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const layer of layers) {
-    if (layer.type !== "spline" || !layer.data) continue;
     const splineData = layer.data;
-    const points = splineData.controlPoints || [];
-    for (const point of points) {
-      minX = Math.min(minX, point.x);
-      minY = Math.min(minY, point.y);
-      maxX = Math.max(maxX, point.x);
-      maxY = Math.max(maxY, point.y);
-      if (point.handleIn) {
-        minX = Math.min(minX, point.handleIn.x);
-        minY = Math.min(minY, point.handleIn.y);
-        maxX = Math.max(maxX, point.handleIn.x);
-        maxY = Math.max(maxY, point.handleIn.y);
+    const pathData = this.controlPointsToPathData(
+      splineData.controlPoints,
+      splineData.closed ?? false,
+      opts.precision
+    );
+    const strokeAttr = opts.includeStrokes ? 'stroke="' + (splineData.strokeColor || "#000") + '" stroke-width="' + (splineData.strokeWidth || 1) + '"' : 'stroke="none"';
+    const fillAttr = opts.includeFills ? 'fill="' + (splineData.fillColor || "none") + '"' : 'fill="none"';
+    let transformAttr = "";
+    if (opts.includeTransforms && layer.transform) {
+      transformAttr = this.buildTransformAttribute(layer);
+    }
+    const bounds = this.calculateBounds(splineData.controlPoints);
+    const viewBox = opts.viewBox || {
+      x: bounds.minX - 10,
+      y: bounds.minY - 10,
+      width: bounds.maxX - bounds.minX + 20,
+      height: bounds.maxY - bounds.minY + 20
+    };
+    const nl = opts.minify ? "" : "\n";
+    const ind = opts.minify ? "" : "  ";
+    let svg = '<?xml version="1.0" encoding="UTF-8"?>' + nl;
+    svg += '<svg xmlns="http://www.w3.org/2000/svg" ';
+    svg += 'viewBox="' + viewBox.x + " " + viewBox.y + " " + viewBox.width + " " + viewBox.height + '" ';
+    svg += 'width="' + viewBox.width + '" height="' + viewBox.height + '">' + nl;
+    if (opts.includeMetadata) {
+      svg += ind + "<!-- Exported from Weyl Compositor -->" + nl;
+    }
+    const trAttr = transformAttr ? ' transform="' + transformAttr + '"' : "";
+    svg += ind + '<path d="' + pathData + '" ' + strokeAttr + " " + fillAttr + trAttr + "/>" + nl;
+    svg += "</svg>";
+    return { svg, width: viewBox.width, height: viewBox.height, pathCount: 1, warnings };
+  }
+  exportComposition(composition, layers, options) {
+    const opts = { ...this.options, ...options };
+    const warnings = [];
+    const width = composition.settings.width;
+    const height = composition.settings.height;
+    const viewBox = opts.viewBox || { x: 0, y: 0, width, height };
+    const nl = opts.minify ? "" : "\n";
+    const ind = opts.minify ? "" : "  ";
+    let svg = '<?xml version="1.0" encoding="UTF-8"?>' + nl;
+    svg += '<svg xmlns="http://www.w3.org/2000/svg" ';
+    svg += 'viewBox="' + viewBox.x + " " + viewBox.y + " " + viewBox.width + " " + viewBox.height + '" ';
+    svg += 'width="' + width + '" height="' + height + '">' + nl;
+    let pathCount = 0;
+    for (const layer of layers) {
+      if (layer.type !== "spline" || !layer.data) continue;
+      const splineData = layer.data;
+      const pathData = this.controlPointsToPathData(
+        splineData.controlPoints,
+        splineData.closed ?? false,
+        opts.precision
+      );
+      const strokeAttr = opts.includeStrokes ? 'stroke="' + (splineData.strokeColor || "#000") + '" stroke-width="' + (splineData.strokeWidth || 1) + '"' : 'stroke="none"';
+      const fillAttr = opts.includeFills ? 'fill="' + (splineData.fillColor || "none") + '"' : 'fill="none"';
+      let transformAttr = "";
+      if (opts.includeTransforms && layer.transform) {
+        transformAttr = this.buildTransformAttribute(layer);
       }
-      if (point.handleOut) {
-        minX = Math.min(minX, point.handleOut.x);
-        minY = Math.min(minY, point.handleOut.y);
-        maxX = Math.max(maxX, point.handleOut.x);
-        maxY = Math.max(maxY, point.handleOut.y);
+      const trAttr = transformAttr ? ' transform="' + transformAttr + '"' : "";
+      svg += ind + '<g id="' + this.sanitizeId(layer.id) + '">' + nl;
+      svg += ind + ind + '<path d="' + pathData + '" ' + strokeAttr + " " + fillAttr + trAttr + "/>" + nl;
+      svg += ind + "</g>" + nl;
+      pathCount++;
+    }
+    svg += "</svg>";
+    return { svg, width, height, pathCount, warnings };
+  }
+  controlPointsToPathData(points, closed, precision = 3) {
+    if (points.length === 0) return "";
+    const fmt = (n) => n.toFixed(precision).replace(/.?0+$/, "");
+    let d = "M" + fmt(points[0].x) + "," + fmt(points[0].y);
+    for (let i = 0; i < points.length - 1; i++) {
+      const curr = points[i];
+      const next = points[i + 1];
+      const cp1 = curr.handleOut || { x: curr.x, y: curr.y };
+      const cp2 = next.handleIn || { x: next.x, y: next.y };
+      const isLine = Math.abs(cp1.x - curr.x) < 0.01 && Math.abs(cp1.y - curr.y) < 0.01 && Math.abs(cp2.x - next.x) < 0.01 && Math.abs(cp2.y - next.y) < 0.01;
+      if (isLine) {
+        d += " L" + fmt(next.x) + "," + fmt(next.y);
+      } else {
+        d += " C" + fmt(cp1.x) + "," + fmt(cp1.y) + " " + fmt(cp2.x) + "," + fmt(cp2.y) + " " + fmt(next.x) + "," + fmt(next.y);
       }
     }
+    if (closed && points.length > 1) {
+      d += " Z";
+    }
+    return d;
   }
-  if (!isFinite(minX)) {
-    return { x: 0, y: 0, width: 100, height: 100 };
+  buildTransformAttribute(layer) {
+    const transforms = [];
+    const t = layer.transform;
+    if (!t) return "";
+    const pos = t.position?.value;
+    if (pos && (pos.x || pos.y)) {
+      transforms.push("translate(" + (pos.x || 0) + "," + (pos.y || 0) + ")");
+    }
+    const rot = t.rotation?.value;
+    if (rot) {
+      transforms.push("rotate(" + rot + ")");
+    }
+    const scale = t.scale?.value;
+    if (scale && (scale.x !== 100 || scale.y !== 100)) {
+      transforms.push("scale(" + (scale.x || 100) / 100 + "," + (scale.y || 100) / 100 + ")");
+    }
+    return transforms.join(" ");
   }
-  const padding = 10;
-  return {
-    x: minX - padding,
-    y: minY - padding,
-    width: maxX - minX + padding * 2,
-    height: maxY - minY + padding * 2
-  };
+  calculateBounds(points) {
+    if (points.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of points) {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    }
+    return { minX, minY, maxX, maxY };
+  }
+  sanitizeId(id) {
+    return id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  }
 }
-function exportLayers(layers, options = {}) {
-  const opts = { ...DEFAULT_SVG_OPTIONS, ...options };
-  const splineLayers = layers.filter((l) => l.type === "spline" && l.data);
-  if (splineLayers.length === 0) {
-    logger$4.warn("exportLayers: No spline layers to export");
-    return "";
-  }
-  const viewBox = opts.viewBox ?? calculateBounds(splineLayers);
-  const lines = [];
-  if (opts.standalone) {
-    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
-  }
-  if (opts.includeMetadata) {
-    lines.push("<!-- Generated by Weyl Compositor -->");
-  }
-  const viewBoxStr = `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`;
-  lines.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBoxStr}" width="${viewBox.width}" height="${viewBox.height}">`
-  );
-  for (const layer of splineLayers) {
-    if (!layer.visible) continue;
-    const pathElement = exportSplineLayer(layer, opts);
-    if (pathElement) {
-      lines.push(`  ${pathElement}`);
+const svgExportService = new SVGExportService();
+function exportSplineLayer(layer, options) {
+  return svgExportService.exportSplineLayer(layer, options).svg;
+}
+function exportLayers(layers, options) {
+  const composition = {
+    settings: {
+      width: options?.viewBox?.width ?? 1920,
+      height: options?.viewBox?.height ?? 1080
     }
-  }
-  lines.push("</svg>");
-  let output = lines.join(opts.optimize ? "" : "\n");
-  return output;
+  };
+  return svgExportService.exportComposition(composition, layers, options).svg;
 }
 
 const _hoisted_1$J = { class: "project-panel" };
@@ -45821,7 +45750,7 @@ function simplifyPolygon(points, tolerance) {
   const first = points[0];
   const last = points[points.length - 1];
   for (let i = 1; i < points.length - 1; i++) {
-    const d = perpendicularDistance$1(points[i], first, last);
+    const d = perpendicularDistance(points[i], first, last);
     if (d > maxDist) {
       maxDist = d;
       maxIndex = i;
@@ -45834,7 +45763,7 @@ function simplifyPolygon(points, tolerance) {
   }
   return [first, last];
 }
-function perpendicularDistance$1(point, lineStart, lineEnd) {
+function perpendicularDistance(point, lineStart, lineEnd) {
   const dx = lineEnd.x - lineStart.x;
   const dy = lineEnd.y - lineStart.y;
   const lineLengthSq = dx * dx + dy * dy;
@@ -46459,7 +46388,7 @@ function douglasPeucker(points, tolerance) {
   const start = points[0];
   const end = points[points.length - 1];
   for (let i = 1; i < points.length - 1; i++) {
-    const dist = perpendicularDistance$1(points[i], start, end);
+    const dist = perpendicularDistance(points[i], start, end);
     if (dist > maxDist) {
       maxDist = dist;
       maxIndex = i;
@@ -46611,258 +46540,237 @@ const ShapeOperations = {
 };
 
 const logger$3 = createLogger("VectorLOD");
-function perpendicularDistance(point, lineStart, lineEnd) {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  const lineLengthSq = dx * dx + dy * dy;
-  if (lineLengthSq === 0) {
-    const ddx2 = point.x - lineStart.x;
-    const ddy2 = point.y - lineStart.y;
-    return Math.sqrt(ddx2 * ddx2 + ddy2 * ddy2);
-  }
-  const t = Math.max(0, Math.min(
-    1,
-    ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
-  ));
-  const projection = {
-    x: lineStart.x + t * dx,
-    y: lineStart.y + t * dy
-  };
-  const ddx = point.x - projection.x;
-  const ddy = point.y - projection.y;
-  return Math.sqrt(ddx * ddx + ddy * ddy);
-}
-function simplifyControlPoints(points, tolerance) {
-  if (points.length <= 2) {
-    return points.map(cloneControlPoint);
-  }
-  let maxDist = 0;
-  let maxIndex = 0;
-  const first = points[0];
-  const last = points[points.length - 1];
-  for (let i = 1; i < points.length - 1; i++) {
-    const dist = perpendicularDistance(
-      { x: points[i].x, y: points[i].y },
-      { x: first.x, y: first.y },
-      { x: last.x, y: last.y }
-    );
-    if (dist > maxDist) {
-      maxDist = dist;
-      maxIndex = i;
-    }
-  }
-  if (maxDist > tolerance) {
-    const left = simplifyControlPoints(points.slice(0, maxIndex + 1), tolerance);
-    const right = simplifyControlPoints(points.slice(maxIndex), tolerance);
-    return [...left.slice(0, -1), ...right];
-  }
-  return [cloneControlPoint(first), cloneControlPoint(last)];
-}
-function cloneControlPoint(point) {
-  return {
-    ...point,
-    handleIn: point.handleIn ? { ...point.handleIn } : null,
-    handleOut: point.handleOut ? { ...point.handleOut } : null
-  };
-}
-function generateLODLevels(controlPoints, numLevels = 4, baseTolerance = 2) {
-  if (controlPoints.length === 0) {
-    return [];
-  }
-  const levels = [];
-  for (let i = 0; i < numLevels; i++) {
-    const factor = Math.pow(2, numLevels - 1 - i);
-    const tolerance = i === numLevels - 1 ? 0 : baseTolerance * factor;
-    let simplifiedPoints;
-    if (tolerance === 0) {
-      simplifiedPoints = controlPoints.map(cloneControlPoint);
-    } else {
-      simplifiedPoints = simplifyControlPoints(controlPoints, tolerance);
-    }
-    levels.push({
-      tolerance,
-      controlPoints: simplifiedPoints,
-      pointCount: simplifiedPoints.length,
-      quality: i
-    });
-  }
-  logger$3.debug(
-    `Generated ${numLevels} LOD levels:`,
-    levels.map((l) => `L${l.quality}: ${l.pointCount} points`).join(", ")
-  );
-  return levels;
-}
-function selectLODLevel(levels, context) {
-  if (levels.length === 0) {
-    return null;
-  }
-  let selectedIndex = levels.length - 1;
-  if (context.isPlaying) {
-    if (context.actualFps < context.targetFps * 0.8) {
-      selectedIndex = Math.max(0, selectedIndex - 2);
-    } else if (context.actualFps < context.targetFps * 0.95) {
-      selectedIndex = Math.max(0, selectedIndex - 1);
-    } else {
-      selectedIndex = Math.max(0, Math.floor(levels.length / 2));
-    }
-  }
-  if (context.isScrubbing) {
-    selectedIndex = 0;
-  }
-  if (context.zoom < 0.25) {
-    selectedIndex = Math.min(selectedIndex, 0);
-  } else if (context.zoom < 0.5) {
-    selectedIndex = Math.min(selectedIndex, 1);
-  } else if (context.zoom < 1) {
-    selectedIndex = Math.min(selectedIndex, Math.floor(levels.length / 2));
-  }
-  return levels[selectedIndex];
-}
-function isPointInRect(point, rect, margin = 0) {
-  return point.x >= rect.x - margin && point.x <= rect.x + rect.width + margin && point.y >= rect.y - margin && point.y <= rect.y + rect.height + margin;
-}
-function doesSegmentIntersectRect(p1, p2, rect, margin = 0) {
-  if (isPointInRect(p1, rect, margin) || isPointInRect(p2, rect, margin)) {
-    return true;
-  }
-  const expandedRect = {
-    x: rect.x - margin,
-    y: rect.y - margin,
-    width: rect.width + margin * 2,
-    height: rect.height + margin * 2
-  };
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  if (dx !== 0) {
-    const t1 = (expandedRect.x - p1.x) / dx;
-    const t2 = (expandedRect.x + expandedRect.width - p1.x) / dx;
-    for (const t of [t1, t2]) {
-      if (t >= 0 && t <= 1) {
-        const y = p1.y + t * dy;
-        if (y >= expandedRect.y && y <= expandedRect.y + expandedRect.height) {
-          return true;
-        }
-      }
-    }
-  }
-  if (dy !== 0) {
-    const t1 = (expandedRect.y - p1.y) / dy;
-    const t2 = (expandedRect.y + expandedRect.height - p1.y) / dy;
-    for (const t of [t1, t2]) {
-      if (t >= 0 && t <= 1) {
-        const x = p1.x + t * dx;
-        if (x >= expandedRect.x && x <= expandedRect.x + expandedRect.width) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-function cullOffScreenPoints(points, viewport, margin = 50) {
-  if (points.length === 0) {
-    return [];
-  }
-  if (points.length === 1) {
-    return isPointInRect(points[0], viewport, margin) ? [cloneControlPoint(points[0])] : [];
-  }
-  const visibleIndices = /* @__PURE__ */ new Set();
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    if (doesSegmentIntersectRect(
-      { x: p1.x, y: p1.y },
-      { x: p2.x, y: p2.y },
-      viewport,
-      margin
-    )) {
-      visibleIndices.add(i);
-      visibleIndices.add(i + 1);
-    }
-  }
-  const first = points[0];
-  const last = points[points.length - 1];
-  if (doesSegmentIntersectRect(
-    { x: last.x, y: last.y },
-    { x: first.x, y: first.y },
-    viewport,
-    margin
-  )) {
-    visibleIndices.add(0);
-    visibleIndices.add(points.length - 1);
-  }
-  return Array.from(visibleIndices).sort((a, b) => a - b).map((i) => cloneControlPoint(points[i]));
-}
+const DEFAULT_LOD_CONFIG = {
+  enabled: true,
+  mode: "both",
+  levels: [],
+  maxPointsForPreview: 100,
+  simplificationTolerance: 2,
+  cullingEnabled: true,
+  cullMargin: 50
+};
 class VectorLODService {
+  // Cache for generated LOD levels by layer ID
   lodCache = /* @__PURE__ */ new Map();
   /**
-   * Generate LOD levels for a layer
+   * Generate LOD levels for a set of control points
    *
-   * @param layerId Layer identifier for caching
-   * @param controlPoints Original control points
-   * @param numLevels Number of LOD levels
-   * @param baseTolerance Base simplification tolerance
-   * @returns Generated LOD levels
+   * @param layerId Layer ID for caching (optional - pass empty string to skip caching)
+   * @param controlPoints Original high-quality points
+   * @param levelCount Number of LOD levels to generate
+   * @param baseTolerance Base tolerance for simplification
+   * @returns Array of LOD levels from highest to lowest quality
    */
-  generateLODLevels(layerId, controlPoints, numLevels = 4, baseTolerance = 2) {
-    const levels = generateLODLevels(controlPoints, numLevels, baseTolerance);
-    this.lodCache.set(layerId, levels);
+  generateLODLevels(layerId, controlPoints, levelCount = 4, baseTolerance = 2) {
+    if (layerId && this.lodCache.has(layerId)) {
+      return this.lodCache.get(layerId);
+    }
+    const levels = [];
+    const originalCount = controlPoints.length;
+    levels.push({
+      tolerance: 0,
+      controlPoints: [...controlPoints],
+      pointCount: originalCount,
+      complexity: 1
+    });
+    const toleranceMultipliers = [0.5, 1, 2, 5, 10];
+    for (let i = 0; i < Math.min(levelCount - 1, toleranceMultipliers.length); i++) {
+      const tolerance = baseTolerance * toleranceMultipliers[i];
+      const simplified = this.simplifyPath(controlPoints, tolerance);
+      const prevCount = levels[levels.length - 1].pointCount;
+      if (simplified.length < prevCount * 0.9) {
+        levels.push({
+          tolerance,
+          controlPoints: simplified,
+          pointCount: simplified.length,
+          complexity: simplified.length / originalCount
+        });
+      }
+    }
+    if (layerId) {
+      this.lodCache.set(layerId, levels);
+    }
+    logger$3.debug("Generated LOD levels:", levels.map((l) => l.pointCount));
     return levels;
   }
   /**
-   * Get cached LOD levels for a layer
+   * Clear LOD cache for a specific layer or all layers
    */
-  getLODLevels(layerId) {
-    return this.lodCache.get(layerId);
+  clearCache(layerId) {
+    if (layerId) {
+      this.lodCache.delete(layerId);
+    } else {
+      this.lodCache.clear();
+    }
   }
   /**
-   * Clear LOD cache for a layer
-   */
-  clearLODLevels(layerId) {
-    this.lodCache.delete(layerId);
-  }
-  /**
-   * Select appropriate LOD level
+   * Select appropriate LOD level based on context
    */
   selectLODLevel(levels, context) {
-    return selectLODLevel(levels, context);
-  }
-  /**
-   * Get control points for a layer at appropriate LOD
-   *
-   * @param layerId Layer identifier
-   * @param context Rendering context
-   * @param fallbackPoints Fallback points if no LOD data
-   * @returns Control points at appropriate detail level
-   */
-  getControlPointsAtLOD(layerId, context, fallbackPoints) {
-    const levels = this.lodCache.get(layerId);
-    if (!levels || levels.length === 0) {
-      return fallbackPoints;
+    if (levels.length === 0) {
+      throw new Error("No LOD levels available");
     }
-    const level = selectLODLevel(levels, context);
-    return level ? level.controlPoints : fallbackPoints;
+    if (levels.length === 1) {
+      return levels[0];
+    }
+    let targetQuality = 1;
+    if (context.zoom < 1) {
+      targetQuality *= Math.max(0.2, context.zoom);
+    }
+    if (context.isPlaying) {
+      targetQuality *= 0.7;
+    }
+    if (context.targetFPS && context.currentFPS) {
+      const fpsRatio = context.currentFPS / context.targetFPS;
+      if (fpsRatio < 0.8) {
+        targetQuality *= fpsRatio;
+      }
+    }
+    let bestLevel = levels[0];
+    let bestDiff = Math.abs(levels[0].complexity - targetQuality);
+    for (const level of levels) {
+      const diff = Math.abs(level.complexity - targetQuality);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestLevel = level;
+      }
+    }
+    return bestLevel;
   }
   /**
-   * Cull off-screen points
+   * Cull points outside viewport
+   * Returns indices of visible points
    */
   cullOffScreenPoints(points, viewport, margin = 50) {
-    return cullOffScreenPoints(points, viewport, margin);
+    const minX = viewport.x - margin;
+    const minY = viewport.y - margin;
+    const maxX = viewport.x + viewport.width + margin;
+    const maxY = viewport.y + viewport.height + margin;
+    const visible = /* @__PURE__ */ new Set();
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) {
+        visible.add(Math.max(0, i - 1));
+        visible.add(i);
+        visible.add(Math.min(points.length - 1, i + 1));
+      }
+    }
+    if (visible.size === 0) {
+      return [];
+    }
+    const culled = [];
+    for (let i = 0; i < points.length; i++) {
+      if (visible.has(i)) {
+        culled.push(points[i]);
+      }
+    }
+    return culled;
   }
   /**
-   * Check if LOD should be used for given point count
+   * Simplify path using Ramer-Douglas-Peucker algorithm
    */
-  shouldUseLOD(pointCount, config) {
-    return config.enabled && pointCount > config.maxPointsForPreview;
+  simplifyPath(points, tolerance) {
+    if (points.length <= 2) return [...points];
+    const simplePoints = points.map((p) => ({ x: p.x, y: p.y }));
+    const simplified = this.rdpSimplify(simplePoints, tolerance);
+    const result = [];
+    let simplifiedIndex = 0;
+    for (let i = 0; i < points.length && simplifiedIndex < simplified.length; i++) {
+      const p = points[i];
+      const s = simplified[simplifiedIndex];
+      if (Math.abs(p.x - s.x) < 0.01 && Math.abs(p.y - s.y) < 0.01) {
+        result.push({ ...p });
+        simplifiedIndex++;
+      }
+    }
+    if (result.length < 2 && points.length >= 2) {
+      return [points[0], points[points.length - 1]];
+    }
+    return result;
   }
   /**
-   * Clear all cached LOD data
+   * Ramer-Douglas-Peucker line simplification
    */
-  clearAllLOD() {
-    this.lodCache.clear();
+  rdpSimplify(points, tolerance) {
+    if (points.length <= 2) return points;
+    let maxDist = 0;
+    let maxIndex = 0;
+    const first = points[0];
+    const last = points[points.length - 1];
+    for (let i = 1; i < points.length - 1; i++) {
+      const d = this.perpendicularDistance(points[i], first, last);
+      if (d > maxDist) {
+        maxDist = d;
+        maxIndex = i;
+      }
+    }
+    if (maxDist > tolerance) {
+      const left = this.rdpSimplify(points.slice(0, maxIndex + 1), tolerance);
+      const right = this.rdpSimplify(points.slice(maxIndex), tolerance);
+      return [...left.slice(0, -1), ...right];
+    }
+    return [first, last];
+  }
+  /**
+   * Calculate perpendicular distance from point to line
+   */
+  perpendicularDistance(point, lineStart, lineEnd) {
+    const dx = lineEnd.x - lineStart.x;
+    const dy = lineEnd.y - lineStart.y;
+    const lineLengthSq = dx * dx + dy * dy;
+    if (lineLengthSq === 0) {
+      return Math.sqrt(
+        (point.x - lineStart.x) ** 2 + (point.y - lineStart.y) ** 2
+      );
+    }
+    const t = Math.max(0, Math.min(
+      1,
+      ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
+    ));
+    const projX = lineStart.x + t * dx;
+    const projY = lineStart.y + t * dy;
+    return Math.sqrt((point.x - projX) ** 2 + (point.y - projY) ** 2);
+  }
+  /**
+   * Estimate rendering complexity of a path
+   */
+  estimateComplexity(points) {
+    let complexity = points.length;
+    for (const p of points) {
+      if (p.handleIn || p.handleOut) {
+        complexity += 0.5;
+      }
+    }
+    return complexity;
+  }
+  /**
+   * Check if LOD should be used for a spline
+   */
+  shouldUseLOD(splineData, context) {
+    if (!splineData.lod?.enabled) return false;
+    const pointCount = splineData.controlPoints.length;
+    if (pointCount < 50) return false;
+    if (context.isPlaying && splineData.lod.mode !== "zoom") return true;
+    if (context.zoom < 0.5 && splineData.lod.mode !== "playback") return true;
+    return false;
+  }
+  /**
+   * Auto-generate LOD config for a spline if point count exceeds threshold
+   */
+  autoGenerateLOD(splineData, threshold = 200) {
+    if (splineData.controlPoints.length < threshold) {
+      return null;
+    }
+    const levels = this.generateLODLevels("", splineData.controlPoints, 4, 2);
+    return {
+      ...DEFAULT_LOD_CONFIG,
+      enabled: true,
+      levels
+    };
   }
 }
-const vectorLOD = new VectorLODService();
+const vectorLODService = new VectorLODService();
+const vectorLOD = vectorLODService;
 
 const DEFAULT_WARP_WEIGHT_OPTIONS = {
   method: "inverse-distance",

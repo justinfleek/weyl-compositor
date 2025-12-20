@@ -1,83 +1,68 @@
 /**
- * Vector Level of Detail (LOD) Service
+ * Vector LOD (Level of Detail) Service
  *
- * Provides automatic level-of-detail management for complex vector paths.
- * Improves playback performance by using simplified paths when appropriate.
- *
- * Key features:
- * - Generate multiple LOD levels from control points
- * - Automatic LOD selection based on zoom and playback state
- * - Viewport culling for off-screen geometry
- * - Path simplification using Douglas-Peucker algorithm
+ * Provides level-of-detail optimization for complex vector paths.
+ * Generates simplified versions for:
+ * - Playback preview (faster rendering)
+ * - Zoomed out views
+ * - Export optimization
  */
 
-import type { ControlPoint } from '@/types/project';
+import type { ControlPoint, SplineData } from '@/types/project';
+import type { BezierPath, BezierVertex, Point2D } from '@/types/shapes';
 import { createLogger } from '@/utils/logger';
 
 const logger = createLogger('VectorLOD');
 
 // ============================================================================
-// TYPES
+// Types
 // ============================================================================
 
-/** A single LOD level */
 export interface LODLevel {
-  /** Simplification tolerance used to generate this level */
+  /** Simplification tolerance used */
   tolerance: number;
-  /** Control points at this LOD level */
+  /** Simplified control points */
   controlPoints: ControlPoint[];
-  /** Number of points in this level */
+  /** Point count at this level */
   pointCount: number;
-  /** Quality level (0 = lowest, higher = better) */
-  quality: number;
+  /** Estimated rendering cost (0-1) */
+  complexity: number;
 }
 
-/** Context for LOD selection */
-export interface LODContext {
-  /** Current viewport zoom level (1 = 100%) */
-  zoom: number;
-  /** Is the composition currently playing */
-  isPlaying: boolean;
-  /** Is user actively scrubbing/dragging */
-  isScrubbing: boolean;
-  /** Current frame rate target */
-  targetFps: number;
-  /** Actual achieved frame rate */
-  actualFps: number;
-  /** Viewport dimensions */
-  viewport: {
-    width: number;
-    height: number;
-  };
-}
-
-/** LOD configuration */
 export interface LODConfig {
   /** Enable LOD system */
   enabled: boolean;
-  /** LOD mode: when to use simplified paths */
-  mode: 'zoom' | 'playback' | 'both' | 'auto';
+  /** When to use LOD */
+  mode: 'zoom' | 'playback' | 'both';
   /** Pre-generated LOD levels */
   levels: LODLevel[];
-  /** Maximum points before considering LOD */
+  /** Max points for preview mode */
   maxPointsForPreview: number;
-  /** Base tolerance for simplification */
+  /** Base simplification tolerance */
   simplificationTolerance: number;
   /** Enable viewport culling */
   cullingEnabled: boolean;
-  /** Margin around viewport for culling (pixels) */
+  /** Margin for culling (pixels) */
   cullMargin: number;
 }
 
-/** Rectangle for viewport/bounds calculations */
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export interface LODContext {
+  /** Current zoom level (1 = 100%) */
+  zoom: number;
+  /** Whether playback is active */
+  isPlaying: boolean;
+  /** Viewport bounds */
+  viewport?: { x: number; y: number; width: number; height: number };
+  /** Target FPS (for adaptive LOD) */
+  targetFPS?: number;
+  /** Current FPS (for adaptive LOD) */
+  currentFPS?: number;
 }
 
-/** Default LOD configuration */
+// ============================================================================
+// Default Configuration
+// ============================================================================
+
 export const DEFAULT_LOD_CONFIG: LODConfig = {
   enabled: true,
   mode: 'both',
@@ -89,470 +74,352 @@ export const DEFAULT_LOD_CONFIG: LODConfig = {
 };
 
 // ============================================================================
-// SIMPLIFICATION ALGORITHM
-// ============================================================================
-
-interface Point2D {
-  x: number;
-  y: number;
-}
-
-/**
- * Calculate perpendicular distance from point to line segment
- */
-function perpendicularDistance(
-  point: Point2D,
-  lineStart: Point2D,
-  lineEnd: Point2D
-): number {
-  const dx = lineEnd.x - lineStart.x;
-  const dy = lineEnd.y - lineStart.y;
-  const lineLengthSq = dx * dx + dy * dy;
-
-  if (lineLengthSq === 0) {
-    // Line is a point - return distance to that point
-    const ddx = point.x - lineStart.x;
-    const ddy = point.y - lineStart.y;
-    return Math.sqrt(ddx * ddx + ddy * ddy);
-  }
-
-  // Project point onto line
-  const t = Math.max(0, Math.min(1,
-    ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
-  ));
-
-  const projection = {
-    x: lineStart.x + t * dx,
-    y: lineStart.y + t * dy,
-  };
-
-  const ddx = point.x - projection.x;
-  const ddy = point.y - projection.y;
-  return Math.sqrt(ddx * ddx + ddy * ddy);
-}
-
-/**
- * Simplify control points using Ramer-Douglas-Peucker algorithm
- * Preserves curve structure by keeping handles
- *
- * @param points Original control points
- * @param tolerance Maximum allowed deviation
- * @returns Simplified control points
- */
-export function simplifyControlPoints(
-  points: ControlPoint[],
-  tolerance: number
-): ControlPoint[] {
-  if (points.length <= 2) {
-    return points.map(cloneControlPoint);
-  }
-
-  // Find point with maximum distance
-  let maxDist = 0;
-  let maxIndex = 0;
-
-  const first = points[0];
-  const last = points[points.length - 1];
-
-  for (let i = 1; i < points.length - 1; i++) {
-    const dist = perpendicularDistance(
-      { x: points[i].x, y: points[i].y },
-      { x: first.x, y: first.y },
-      { x: last.x, y: last.y }
-    );
-    if (dist > maxDist) {
-      maxDist = dist;
-      maxIndex = i;
-    }
-  }
-
-  // If max distance exceeds tolerance, recursively simplify
-  if (maxDist > tolerance) {
-    const left = simplifyControlPoints(points.slice(0, maxIndex + 1), tolerance);
-    const right = simplifyControlPoints(points.slice(maxIndex), tolerance);
-
-    // Combine results, avoiding duplicate at the split point
-    return [...left.slice(0, -1), ...right];
-  }
-
-  // Otherwise, just keep endpoints
-  return [cloneControlPoint(first), cloneControlPoint(last)];
-}
-
-/**
- * Clone a control point
- */
-function cloneControlPoint(point: ControlPoint): ControlPoint {
-  return {
-    ...point,
-    handleIn: point.handleIn ? { ...point.handleIn } : null,
-    handleOut: point.handleOut ? { ...point.handleOut } : null,
-  };
-}
-
-// ============================================================================
-// LOD GENERATION
-// ============================================================================
-
-/**
- * Generate multiple LOD levels from control points
- *
- * @param controlPoints Original high-quality control points
- * @param numLevels Number of LOD levels to generate (default 4)
- * @param baseTolerance Starting tolerance for lowest quality level
- * @returns Array of LOD levels from lowest to highest quality
- */
-export function generateLODLevels(
-  controlPoints: ControlPoint[],
-  numLevels: number = 4,
-  baseTolerance: number = 2.0
-): LODLevel[] {
-  if (controlPoints.length === 0) {
-    return [];
-  }
-
-  const levels: LODLevel[] = [];
-
-  // Generate levels with decreasing tolerance (increasing quality)
-  // Level 0: lowest quality (highest tolerance)
-  // Level N-1: highest quality (original points)
-
-  for (let i = 0; i < numLevels; i++) {
-    // Tolerance decreases exponentially
-    // Level 0: baseTolerance * 4
-    // Level 1: baseTolerance * 2
-    // Level 2: baseTolerance
-    // Level N-1: 0 (original)
-    const factor = Math.pow(2, numLevels - 1 - i);
-    const tolerance = i === numLevels - 1 ? 0 : baseTolerance * factor;
-
-    let simplifiedPoints: ControlPoint[];
-    if (tolerance === 0) {
-      // Highest quality - use original points
-      simplifiedPoints = controlPoints.map(cloneControlPoint);
-    } else {
-      simplifiedPoints = simplifyControlPoints(controlPoints, tolerance);
-    }
-
-    levels.push({
-      tolerance,
-      controlPoints: simplifiedPoints,
-      pointCount: simplifiedPoints.length,
-      quality: i,
-    });
-  }
-
-  logger.debug(
-    `Generated ${numLevels} LOD levels:`,
-    levels.map(l => `L${l.quality}: ${l.pointCount} points`).join(', ')
-  );
-
-  return levels;
-}
-
-// ============================================================================
-// LOD SELECTION
-// ============================================================================
-
-/**
- * Select appropriate LOD level based on current context
- *
- * @param levels Available LOD levels
- * @param context Current rendering context
- * @returns Best LOD level for the context
- */
-export function selectLODLevel(
-  levels: LODLevel[],
-  context: LODContext
-): LODLevel | null {
-  if (levels.length === 0) {
-    return null;
-  }
-
-  // Default to highest quality
-  let selectedIndex = levels.length - 1;
-
-  // During playback, use lower quality
-  if (context.isPlaying) {
-    // Use lower quality if frame rate is suffering
-    if (context.actualFps < context.targetFps * 0.8) {
-      selectedIndex = Math.max(0, selectedIndex - 2);
-    } else if (context.actualFps < context.targetFps * 0.95) {
-      selectedIndex = Math.max(0, selectedIndex - 1);
-    } else {
-      // Playback is smooth, use medium quality
-      selectedIndex = Math.max(0, Math.floor(levels.length / 2));
-    }
-  }
-
-  // During scrubbing, use lowest quality for responsiveness
-  if (context.isScrubbing) {
-    selectedIndex = 0;
-  }
-
-  // Adjust for zoom level
-  if (context.zoom < 0.25) {
-    // Very zoomed out - use lowest quality
-    selectedIndex = Math.min(selectedIndex, 0);
-  } else if (context.zoom < 0.5) {
-    // Zoomed out - use low quality
-    selectedIndex = Math.min(selectedIndex, 1);
-  } else if (context.zoom < 1) {
-    // Slightly zoomed out - use medium quality
-    selectedIndex = Math.min(selectedIndex, Math.floor(levels.length / 2));
-  }
-  // At 100% zoom or higher, allow full quality based on performance
-
-  return levels[selectedIndex];
-}
-
-// ============================================================================
-// VIEWPORT CULLING
-// ============================================================================
-
-/**
- * Check if a point is within or near a rectangle
- */
-function isPointInRect(point: Point2D, rect: Rect, margin: number = 0): boolean {
-  return (
-    point.x >= rect.x - margin &&
-    point.x <= rect.x + rect.width + margin &&
-    point.y >= rect.y - margin &&
-    point.y <= rect.y + rect.height + margin
-  );
-}
-
-/**
- * Check if a line segment intersects or is near a rectangle
- */
-function doesSegmentIntersectRect(
-  p1: Point2D,
-  p2: Point2D,
-  rect: Rect,
-  margin: number = 0
-): boolean {
-  // Simple check: if either endpoint is inside, intersects
-  if (isPointInRect(p1, rect, margin) || isPointInRect(p2, rect, margin)) {
-    return true;
-  }
-
-  // Check if line crosses the expanded rectangle
-  const expandedRect = {
-    x: rect.x - margin,
-    y: rect.y - margin,
-    width: rect.width + margin * 2,
-    height: rect.height + margin * 2,
-  };
-
-  // Check line-rectangle intersection using parametric line
-  // This is a simplified check that may have false positives but no false negatives
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-
-  // Check if line crosses horizontal edges
-  if (dx !== 0) {
-    const t1 = (expandedRect.x - p1.x) / dx;
-    const t2 = (expandedRect.x + expandedRect.width - p1.x) / dx;
-
-    for (const t of [t1, t2]) {
-      if (t >= 0 && t <= 1) {
-        const y = p1.y + t * dy;
-        if (y >= expandedRect.y && y <= expandedRect.y + expandedRect.height) {
-          return true;
-        }
-      }
-    }
-  }
-
-  // Check if line crosses vertical edges
-  if (dy !== 0) {
-    const t1 = (expandedRect.y - p1.y) / dy;
-    const t2 = (expandedRect.y + expandedRect.height - p1.y) / dy;
-
-    for (const t of [t1, t2]) {
-      if (t >= 0 && t <= 1) {
-        const x = p1.x + t * dx;
-        if (x >= expandedRect.x && x <= expandedRect.x + expandedRect.width) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-/**
- * Filter control points to only those visible in the viewport
- * Keeps points whose segments intersect the viewport plus margin
- *
- * @param points All control points
- * @param viewport Visible viewport rectangle
- * @param margin Extra margin around viewport (pixels)
- * @returns Control points visible in viewport
- */
-export function cullOffScreenPoints(
-  points: ControlPoint[],
-  viewport: Rect,
-  margin: number = 50
-): ControlPoint[] {
-  if (points.length === 0) {
-    return [];
-  }
-
-  if (points.length === 1) {
-    return isPointInRect(points[0], viewport, margin) ? [cloneControlPoint(points[0])] : [];
-  }
-
-  const visibleIndices = new Set<number>();
-
-  // Check each segment
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-
-    if (doesSegmentIntersectRect(
-      { x: p1.x, y: p1.y },
-      { x: p2.x, y: p2.y },
-      viewport,
-      margin
-    )) {
-      visibleIndices.add(i);
-      visibleIndices.add(i + 1);
-    }
-  }
-
-  // If closed path, check closing segment
-  const first = points[0];
-  const last = points[points.length - 1];
-  if (doesSegmentIntersectRect(
-    { x: last.x, y: last.y },
-    { x: first.x, y: first.y },
-    viewport,
-    margin
-  )) {
-    visibleIndices.add(0);
-    visibleIndices.add(points.length - 1);
-  }
-
-  // Return visible points
-  return Array.from(visibleIndices)
-    .sort((a, b) => a - b)
-    .map(i => cloneControlPoint(points[i]));
-}
-
-// ============================================================================
-// SERVICE CLASS
+// Vector LOD Service
 // ============================================================================
 
 export class VectorLODService {
+  // Cache for generated LOD levels by layer ID
   private lodCache = new Map<string, LODLevel[]>();
 
   /**
-   * Generate LOD levels for a layer
+   * Generate LOD levels for a set of control points
    *
-   * @param layerId Layer identifier for caching
-   * @param controlPoints Original control points
-   * @param numLevels Number of LOD levels
-   * @param baseTolerance Base simplification tolerance
-   * @returns Generated LOD levels
+   * @param layerId Layer ID for caching (optional - pass empty string to skip caching)
+   * @param controlPoints Original high-quality points
+   * @param levelCount Number of LOD levels to generate
+   * @param baseTolerance Base tolerance for simplification
+   * @returns Array of LOD levels from highest to lowest quality
    */
   generateLODLevels(
     layerId: string,
     controlPoints: ControlPoint[],
-    numLevels: number = 4,
+    levelCount: number = 4,
     baseTolerance: number = 2.0
   ): LODLevel[] {
-    const levels = generateLODLevels(controlPoints, numLevels, baseTolerance);
-    this.lodCache.set(layerId, levels);
+    // Check cache first
+    if (layerId && this.lodCache.has(layerId)) {
+      return this.lodCache.get(layerId)!;
+    }
+
+    const levels: LODLevel[] = [];
+    const originalCount = controlPoints.length;
+
+    // Level 0: Original quality
+    levels.push({
+      tolerance: 0,
+      controlPoints: [...controlPoints],
+      pointCount: originalCount,
+      complexity: 1,
+    });
+
+    // Generate progressively simplified levels based on base tolerance
+    const toleranceMultipliers = [0.5, 1, 2, 5, 10];
+
+    for (let i = 0; i < Math.min(levelCount - 1, toleranceMultipliers.length); i++) {
+      const tolerance = baseTolerance * toleranceMultipliers[i];
+      const simplified = this.simplifyPath(controlPoints, tolerance);
+
+      // Only add if meaningfully different from previous
+      const prevCount = levels[levels.length - 1].pointCount;
+      if (simplified.length < prevCount * 0.9) {
+        levels.push({
+          tolerance,
+          controlPoints: simplified,
+          pointCount: simplified.length,
+          complexity: simplified.length / originalCount,
+        });
+      }
+    }
+
+    // Cache the result
+    if (layerId) {
+      this.lodCache.set(layerId, levels);
+    }
+
+    logger.debug('Generated LOD levels:', levels.map(l => l.pointCount));
     return levels;
   }
 
   /**
-   * Get cached LOD levels for a layer
+   * Clear LOD cache for a specific layer or all layers
    */
-  getLODLevels(layerId: string): LODLevel[] | undefined {
-    return this.lodCache.get(layerId);
+  clearCache(layerId?: string): void {
+    if (layerId) {
+      this.lodCache.delete(layerId);
+    } else {
+      this.lodCache.clear();
+    }
   }
 
   /**
-   * Clear LOD cache for a layer
+   * Select appropriate LOD level based on context
    */
-  clearLODLevels(layerId: string): void {
-    this.lodCache.delete(layerId);
-  }
-
-  /**
-   * Select appropriate LOD level
-   */
-  selectLODLevel(levels: LODLevel[], context: LODContext): LODLevel | null {
-    return selectLODLevel(levels, context);
-  }
-
-  /**
-   * Get control points for a layer at appropriate LOD
-   *
-   * @param layerId Layer identifier
-   * @param context Rendering context
-   * @param fallbackPoints Fallback points if no LOD data
-   * @returns Control points at appropriate detail level
-   */
-  getControlPointsAtLOD(
-    layerId: string,
-    context: LODContext,
-    fallbackPoints: ControlPoint[]
-  ): ControlPoint[] {
-    const levels = this.lodCache.get(layerId);
-
-    if (!levels || levels.length === 0) {
-      return fallbackPoints;
+  selectLODLevel(levels: LODLevel[], context: LODContext): LODLevel {
+    if (levels.length === 0) {
+      throw new Error('No LOD levels available');
     }
 
-    const level = selectLODLevel(levels, context);
-    return level ? level.controlPoints : fallbackPoints;
+    // Always return highest quality if LOD not needed
+    if (levels.length === 1) {
+      return levels[0];
+    }
+
+    // Calculate desired quality (0-1)
+    let targetQuality = 1;
+
+    // Reduce quality when zoomed out
+    if (context.zoom < 1) {
+      targetQuality *= Math.max(0.2, context.zoom);
+    }
+
+    // Reduce quality during playback
+    if (context.isPlaying) {
+      targetQuality *= 0.7;
+    }
+
+    // Adaptive: reduce quality if FPS is dropping
+    if (context.targetFPS && context.currentFPS) {
+      const fpsRatio = context.currentFPS / context.targetFPS;
+      if (fpsRatio < 0.8) {
+        targetQuality *= fpsRatio;
+      }
+    }
+
+    // Find level closest to target quality
+    let bestLevel = levels[0];
+    let bestDiff = Math.abs(levels[0].complexity - targetQuality);
+
+    for (const level of levels) {
+      const diff = Math.abs(level.complexity - targetQuality);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestLevel = level;
+      }
+    }
+
+    return bestLevel;
   }
 
   /**
-   * Cull off-screen points
+   * Cull points outside viewport
+   * Returns indices of visible points
    */
   cullOffScreenPoints(
     points: ControlPoint[],
-    viewport: Rect,
+    viewport: { x: number; y: number; width: number; height: number },
     margin: number = 50
   ): ControlPoint[] {
-    return cullOffScreenPoints(points, viewport, margin);
+    const minX = viewport.x - margin;
+    const minY = viewport.y - margin;
+    const maxX = viewport.x + viewport.width + margin;
+    const maxY = viewport.y + viewport.height + margin;
+
+    // Find visible segments (keep points on either side of visible ones)
+    const visible = new Set<number>();
+
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) {
+        // Point is visible, also keep neighbors for smooth curves
+        visible.add(Math.max(0, i - 1));
+        visible.add(i);
+        visible.add(Math.min(points.length - 1, i + 1));
+      }
+    }
+
+    // If nothing visible, return empty (or could return first/last)
+    if (visible.size === 0) {
+      return [];
+    }
+
+    // Build culled array preserving order
+    const culled: ControlPoint[] = [];
+    for (let i = 0; i < points.length; i++) {
+      if (visible.has(i)) {
+        culled.push(points[i]);
+      }
+    }
+
+    return culled;
   }
 
   /**
-   * Check if LOD should be used for given point count
+   * Simplify path using Ramer-Douglas-Peucker algorithm
    */
-  shouldUseLOD(pointCount: number, config: LODConfig): boolean {
-    return config.enabled && pointCount > config.maxPointsForPreview;
+  simplifyPath(points: ControlPoint[], tolerance: number): ControlPoint[] {
+    if (points.length <= 2) return [...points];
+
+    // Convert to simple point array for algorithm
+    const simplePoints = points.map(p => ({ x: p.x, y: p.y }));
+    const simplified = this.rdpSimplify(simplePoints, tolerance);
+
+    // Map back to control points
+    const result: ControlPoint[] = [];
+    let simplifiedIndex = 0;
+
+    for (let i = 0; i < points.length && simplifiedIndex < simplified.length; i++) {
+      const p = points[i];
+      const s = simplified[simplifiedIndex];
+      
+      if (Math.abs(p.x - s.x) < 0.01 && Math.abs(p.y - s.y) < 0.01) {
+        result.push({ ...p });
+        simplifiedIndex++;
+      }
+    }
+
+    // Ensure we have at least the endpoints
+    if (result.length < 2 && points.length >= 2) {
+      return [points[0], points[points.length - 1]];
+    }
+
+    return result;
   }
 
   /**
-   * Clear all cached LOD data
+   * Ramer-Douglas-Peucker line simplification
    */
-  clearAllLOD(): void {
-    this.lodCache.clear();
+  private rdpSimplify(points: Point2D[], tolerance: number): Point2D[] {
+    if (points.length <= 2) return points;
+
+    // Find point with max distance from line between first and last
+    let maxDist = 0;
+    let maxIndex = 0;
+    const first = points[0];
+    const last = points[points.length - 1];
+
+    for (let i = 1; i < points.length - 1; i++) {
+      const d = this.perpendicularDistance(points[i], first, last);
+      if (d > maxDist) {
+        maxDist = d;
+        maxIndex = i;
+      }
+    }
+
+    // If max distance > tolerance, recursively simplify
+    if (maxDist > tolerance) {
+      const left = this.rdpSimplify(points.slice(0, maxIndex + 1), tolerance);
+      const right = this.rdpSimplify(points.slice(maxIndex), tolerance);
+      return [...left.slice(0, -1), ...right];
+    }
+
+    // Otherwise, return just endpoints
+    return [first, last];
+  }
+
+  /**
+   * Calculate perpendicular distance from point to line
+   */
+  private perpendicularDistance(point: Point2D, lineStart: Point2D, lineEnd: Point2D): number {
+    const dx = lineEnd.x - lineStart.x;
+    const dy = lineEnd.y - lineStart.y;
+    const lineLengthSq = dx * dx + dy * dy;
+
+    if (lineLengthSq === 0) {
+      return Math.sqrt(
+        (point.x - lineStart.x) ** 2 + (point.y - lineStart.y) ** 2
+      );
+    }
+
+    const t = Math.max(0, Math.min(1,
+      ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSq
+    ));
+
+    const projX = lineStart.x + t * dx;
+    const projY = lineStart.y + t * dy;
+
+    return Math.sqrt((point.x - projX) ** 2 + (point.y - projY) ** 2);
+  }
+
+  /**
+   * Estimate rendering complexity of a path
+   */
+  estimateComplexity(points: ControlPoint[]): number {
+    let complexity = points.length;
+
+    // Add weight for curves (points with handles)
+    for (const p of points) {
+      if (p.handleIn || p.handleOut) {
+        complexity += 0.5;
+      }
+    }
+
+    return complexity;
+  }
+
+  /**
+   * Check if LOD should be used for a spline
+   */
+  shouldUseLOD(splineData: SplineData, context: LODContext): boolean {
+    if (!splineData.lod?.enabled) return false;
+    
+    const pointCount = splineData.controlPoints.length;
+    
+    // Skip LOD for simple paths
+    if (pointCount < 50) return false;
+
+    // Use LOD during playback
+    if (context.isPlaying && splineData.lod.mode !== 'zoom') return true;
+
+    // Use LOD when zoomed out
+    if (context.zoom < 0.5 && splineData.lod.mode !== 'playback') return true;
+
+    return false;
+  }
+
+  /**
+   * Auto-generate LOD config for a spline if point count exceeds threshold
+   */
+  autoGenerateLOD(splineData: SplineData, threshold: number = 200): LODConfig | null {
+    if (splineData.controlPoints.length < threshold) {
+      return null;
+    }
+
+    const levels = this.generateLODLevels('', splineData.controlPoints, 4, 2.0);
+
+    return {
+      ...DEFAULT_LOD_CONFIG,
+      enabled: true,
+      levels,
+    };
   }
 }
 
 // ============================================================================
-// SINGLETON INSTANCE
+// Singleton Instance
 // ============================================================================
 
-export const vectorLOD = new VectorLODService();
+export const vectorLODService = new VectorLODService();
+
+// Alias for backward compatibility
+export const vectorLOD = vectorLODService;
 
 // ============================================================================
-// EXPORTS
+// Convenience Functions
 // ============================================================================
 
-export const VectorLOD = {
-  generateLODLevels,
-  selectLODLevel,
-  simplifyControlPoints,
-  cullOffScreenPoints,
-};
+export function generateLODLevels(
+  layerId: string,
+  points: ControlPoint[],
+  levelCount?: number,
+  baseTolerance?: number
+): LODLevel[] {
+  return vectorLODService.generateLODLevels(layerId, points, levelCount, baseTolerance);
+}
 
-export default vectorLOD;
+export function selectLODLevel(levels: LODLevel[], context: LODContext): LODLevel {
+  return vectorLODService.selectLODLevel(levels, context);
+}
+
+export function simplifyPath(points: ControlPoint[], tolerance: number): ControlPoint[] {
+  return vectorLODService.simplifyPath(points, tolerance);
+}
+
+export function cullOffScreenPoints(
+  points: ControlPoint[],
+  viewport: { x: number; y: number; width: number; height: number },
+  margin?: number
+): ControlPoint[] {
+  return vectorLODService.cullOffScreenPoints(points, viewport, margin);
+}
+
+export default vectorLODService;
