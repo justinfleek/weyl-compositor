@@ -56080,121 +56080,141 @@ class SceneManager {
    * Shows a grid inside the composition area for spatial reference
    */
   updateCompositionGrid(divisions = 20) {
-    if (this.compositionGrid) {
-      this.overlayGroup.remove(this.compositionGrid);
-      this.compositionGrid.traverse((obj) => {
-        if (obj instanceof Line) {
-          obj.geometry.dispose();
-          obj.material.dispose();
-        }
+    try {
+      if (this.compositionGrid) {
+        this.overlayGroup.remove(this.compositionGrid);
+        this.compositionGrid.traverse((obj) => {
+          if (obj instanceof Line) {
+            obj.geometry.dispose();
+            obj.material.dispose();
+          }
+        });
+      }
+      const w = this.compositionWidth;
+      const h = this.compositionHeight;
+      const gridGroup = new Group();
+      gridGroup.name = "compositionGrid";
+      const material = new LineBasicMaterial({
+        color: 3355443,
+        transparent: true,
+        opacity: 0.5,
+        depthTest: false
       });
-    }
-    const w = this.compositionWidth;
-    const h = this.compositionHeight;
-    const gridGroup = new Group();
-    gridGroup.name = "compositionGrid";
-    const material = new LineBasicMaterial({
-      color: 3355443,
-      transparent: true,
-      opacity: 0.5,
-      depthTest: false
-    });
-    const stepX = w / divisions;
-    for (let i = 0; i <= divisions; i++) {
-      const x = i * stepX;
-      const points = [
-        new Vector3(x, 0, 0),
-        new Vector3(x, -h, 0)
+      const stepX = w / divisions;
+      for (let i = 0; i <= divisions; i++) {
+        const x = i * stepX;
+        const points = [
+          new Vector3(x, 0, 0),
+          new Vector3(x, -h, 0)
+        ];
+        const geometry = new BufferGeometry().setFromPoints(points);
+        const line = new Line(geometry, material.clone());
+        gridGroup.add(line);
+      }
+      const stepY = h / divisions;
+      for (let i = 0; i <= divisions; i++) {
+        const y = -i * stepY;
+        const points = [
+          new Vector3(0, y, 0),
+          new Vector3(w, y, 0)
+        ];
+        const geometry = new BufferGeometry().setFromPoints(points);
+        const line = new Line(geometry, material.clone());
+        gridGroup.add(line);
+      }
+      const centerX = w / 2;
+      const centerY = -h / 2;
+      const axisLength = Math.min(w, h) / 4;
+      const xAxisMaterial = new LineBasicMaterial({
+        color: 16729156,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        linewidth: 2
+      });
+      const xAxisPoints = [
+        new Vector3(centerX, centerY, 0),
+        new Vector3(centerX + axisLength, centerY, 0)
       ];
-      const geometry = new BufferGeometry().setFromPoints(points);
-      const line = new Line(geometry, material.clone());
-      gridGroup.add(line);
-    }
-    const stepY = h / divisions;
-    for (let i = 0; i <= divisions; i++) {
-      const y = -i * stepY;
-      const points = [
-        new Vector3(0, y, 0),
-        new Vector3(w, y, 0)
+      const xAxisGeom = new BufferGeometry().setFromPoints(xAxisPoints);
+      gridGroup.add(new Line(xAxisGeom, xAxisMaterial));
+      const yAxisMaterial = new LineBasicMaterial({
+        color: 4521796,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        linewidth: 2
+      });
+      const yAxisPoints = [
+        new Vector3(centerX, centerY, 0),
+        new Vector3(centerX, centerY + axisLength, 0)
       ];
-      const geometry = new BufferGeometry().setFromPoints(points);
-      const line = new Line(geometry, material.clone());
-      gridGroup.add(line);
+      const yAxisGeom = new BufferGeometry().setFromPoints(yAxisPoints);
+      gridGroup.add(new Line(yAxisGeom, yAxisMaterial));
+      const zAxisMaterial = new LineBasicMaterial({
+        color: 4474111,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        linewidth: 2
+      });
+      const zAxisPoints = [
+        new Vector3(centerX, centerY, 0),
+        new Vector3(centerX, centerY, axisLength)
+      ];
+      const zAxisGeom = new BufferGeometry().setFromPoints(zAxisPoints);
+      gridGroup.add(new Line(zAxisGeom, zAxisMaterial));
+      try {
+        const originMarkerGeom = new SphereGeometry(4, 8, 8);
+        const originMarkerMat = new MeshBasicMaterial({
+          color: 16777215,
+          transparent: true,
+          opacity: 0.8,
+          depthTest: false
+        });
+        const originMarker = new Mesh(originMarkerGeom, originMarkerMat);
+        originMarker.position.set(centerX, centerY, 0);
+        originMarker.renderOrder = 998;
+        gridGroup.add(originMarker);
+      } catch (meshError) {
+        console.warn("[SceneManager] Could not create origin marker mesh, using crosshair fallback");
+        const crossSize = 8;
+        const crossMat = new LineBasicMaterial({ color: 16777215, depthTest: false });
+        const crossH = new BufferGeometry().setFromPoints([
+          new Vector3(centerX - crossSize, centerY, 0),
+          new Vector3(centerX + crossSize, centerY, 0)
+        ]);
+        const crossV = new BufferGeometry().setFromPoints([
+          new Vector3(centerX, centerY - crossSize, 0),
+          new Vector3(centerX, centerY + crossSize, 0)
+        ]);
+        gridGroup.add(new Line(crossH, crossMat));
+        gridGroup.add(new Line(crossV, crossMat.clone()));
+      }
+      const centerMaterial = new LineBasicMaterial({
+        color: 5592405,
+        transparent: true,
+        opacity: 0.5,
+        depthTest: false
+      });
+      const vCenterPoints = [
+        new Vector3(centerX, 0, 0),
+        new Vector3(centerX, -h, 0)
+      ];
+      const vCenterGeom = new BufferGeometry().setFromPoints(vCenterPoints);
+      gridGroup.add(new Line(vCenterGeom, centerMaterial));
+      const hCenterPoints = [
+        new Vector3(0, centerY, 0),
+        new Vector3(w, centerY, 0)
+      ];
+      const hCenterGeom = new BufferGeometry().setFromPoints(hCenterPoints);
+      gridGroup.add(new Line(hCenterGeom, centerMaterial.clone()));
+      gridGroup.renderOrder = 997;
+      this.compositionGrid = gridGroup;
+      this.overlayGroup.add(gridGroup);
+    } catch (error) {
+      console.warn("[SceneManager] Failed to create composition grid:", error);
     }
-    const centerX = w / 2;
-    const centerY = -h / 2;
-    const axisLength = Math.min(w, h) / 4;
-    const xAxisMaterial = new LineBasicMaterial({
-      color: 16729156,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      linewidth: 2
-    });
-    const xAxisPoints = [
-      new Vector3(centerX, centerY, 0),
-      new Vector3(centerX + axisLength, centerY, 0)
-    ];
-    const xAxisGeom = new BufferGeometry().setFromPoints(xAxisPoints);
-    gridGroup.add(new Line(xAxisGeom, xAxisMaterial));
-    const yAxisMaterial = new LineBasicMaterial({
-      color: 4521796,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      linewidth: 2
-    });
-    const yAxisPoints = [
-      new Vector3(centerX, centerY, 0),
-      new Vector3(centerX, centerY + axisLength, 0)
-    ];
-    const yAxisGeom = new BufferGeometry().setFromPoints(yAxisPoints);
-    gridGroup.add(new Line(yAxisGeom, yAxisMaterial));
-    const zAxisMaterial = new LineBasicMaterial({
-      color: 4474111,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      linewidth: 2
-    });
-    const zAxisPoints = [
-      new Vector3(centerX, centerY, 0),
-      new Vector3(centerX, centerY, axisLength)
-    ];
-    const zAxisGeom = new BufferGeometry().setFromPoints(zAxisPoints);
-    gridGroup.add(new Line(zAxisGeom, zAxisMaterial));
-    const originMarkerGeom = new SphereGeometry(4, 8, 8);
-    const originMarkerMat = new MeshBasicMaterial({
-      color: 16777215,
-      transparent: true,
-      opacity: 0.8,
-      depthTest: false
-    });
-    const originMarker = new Mesh(originMarkerGeom, originMarkerMat);
-    originMarker.position.set(centerX, centerY, 0);
-    originMarker.renderOrder = 998;
-    gridGroup.add(originMarker);
-    const centerMaterial = new LineBasicMaterial({
-      color: 5592405,
-      transparent: true,
-      opacity: 0.5,
-      depthTest: false
-    });
-    const vCenterPoints = [
-      new Vector3(centerX, 0, 0),
-      new Vector3(centerX, -h, 0)
-    ];
-    const vCenterGeom = new BufferGeometry().setFromPoints(vCenterPoints);
-    gridGroup.add(new Line(vCenterGeom, centerMaterial));
-    const hCenterPoints = [
-      new Vector3(0, centerY, 0),
-      new Vector3(w, centerY, 0)
-    ];
-    const hCenterGeom = new BufferGeometry().setFromPoints(hCenterPoints);
-    gridGroup.add(new Line(hCenterGeom, centerMaterial.clone()));
-    gridGroup.renderOrder = 997;
-    this.compositionGrid = gridGroup;
-    this.overlayGroup.add(gridGroup);
   }
   /**
    * Show/hide composition grid
@@ -56209,40 +56229,44 @@ class SceneManager {
    * Creates a large plane with a rectangular hole for the composition area
    */
   updateOutsideOverlay() {
-    if (this.outsideOverlay) {
-      this.overlayGroup.remove(this.outsideOverlay);
-      this.outsideOverlay.geometry.dispose();
-      this.outsideOverlay.material.dispose();
+    try {
+      if (this.outsideOverlay) {
+        this.overlayGroup.remove(this.outsideOverlay);
+        this.outsideOverlay.geometry.dispose();
+        this.outsideOverlay.material.dispose();
+      }
+      const w = this.compositionWidth;
+      const h = this.compositionHeight;
+      const size = Math.max(w, h) * 10;
+      const outer = new Shape();
+      outer.moveTo(-size, size);
+      outer.lineTo(size + w, size);
+      outer.lineTo(size + w, -size - h);
+      outer.lineTo(-size, -size - h);
+      outer.lineTo(-size, size);
+      const hole = new Path$1();
+      hole.moveTo(0, 0);
+      hole.lineTo(0, -h);
+      hole.lineTo(w, -h);
+      hole.lineTo(w, 0);
+      hole.lineTo(0, 0);
+      outer.holes.push(hole);
+      const geometry = new ShapeGeometry(outer);
+      const material = new MeshBasicMaterial({
+        color: 0,
+        transparent: true,
+        opacity: 0.6,
+        side: DoubleSide,
+        depthTest: false
+      });
+      this.outsideOverlay = new Mesh(geometry, material);
+      this.outsideOverlay.name = "outsideOverlay";
+      this.outsideOverlay.position.z = -2;
+      this.outsideOverlay.renderOrder = 996;
+      this.overlayGroup.add(this.outsideOverlay);
+    } catch (error) {
+      console.warn("[SceneManager] Failed to create outside overlay:", error);
     }
-    const w = this.compositionWidth;
-    const h = this.compositionHeight;
-    const size = Math.max(w, h) * 10;
-    const outer = new Shape();
-    outer.moveTo(-size, size);
-    outer.lineTo(size + w, size);
-    outer.lineTo(size + w, -size - h);
-    outer.lineTo(-size, -size - h);
-    outer.lineTo(-size, size);
-    const hole = new Path$1();
-    hole.moveTo(0, 0);
-    hole.lineTo(0, -h);
-    hole.lineTo(w, -h);
-    hole.lineTo(w, 0);
-    hole.lineTo(0, 0);
-    outer.holes.push(hole);
-    const geometry = new ShapeGeometry(outer);
-    const material = new MeshBasicMaterial({
-      color: 0,
-      transparent: true,
-      opacity: 0.6,
-      side: DoubleSide,
-      depthTest: false
-    });
-    this.outsideOverlay = new Mesh(geometry, material);
-    this.outsideOverlay.name = "outsideOverlay";
-    this.outsideOverlay.position.z = -2;
-    this.outsideOverlay.renderOrder = 996;
-    this.overlayGroup.add(this.outsideOverlay);
   }
   /**
    * Show/hide outside overlay

@@ -598,146 +598,169 @@ export class SceneManager {
    * Shows a grid inside the composition area for spatial reference
    */
   updateCompositionGrid(divisions: number = 20): void {
-    // Remove existing grid
-    if (this.compositionGrid) {
-      this.overlayGroup.remove(this.compositionGrid);
-      this.compositionGrid.traverse((obj) => {
-        if (obj instanceof THREE.Line) {
-          obj.geometry.dispose();
-          (obj.material as THREE.Material).dispose();
-        }
+    try {
+      // Remove existing grid
+      if (this.compositionGrid) {
+        this.overlayGroup.remove(this.compositionGrid);
+        this.compositionGrid.traverse((obj) => {
+          if (obj instanceof THREE.Line) {
+            obj.geometry.dispose();
+            (obj.material as THREE.Material).dispose();
+          }
+        });
+      }
+
+      const w = this.compositionWidth;
+      const h = this.compositionHeight;
+      const gridGroup = new THREE.Group();
+      gridGroup.name = 'compositionGrid';
+
+      const material = new THREE.LineBasicMaterial({
+        color: 0x333333,
+        transparent: true,
+        opacity: 0.5,
+        depthTest: false,
       });
-    }
 
-    const w = this.compositionWidth;
-    const h = this.compositionHeight;
-    const gridGroup = new THREE.Group();
-    gridGroup.name = 'compositionGrid';
+      // Vertical lines - grid at z=0 (composition plane)
+      const stepX = w / divisions;
+      for (let i = 0; i <= divisions; i++) {
+        const x = i * stepX;
+        const points = [
+          new THREE.Vector3(x, 0, 0),
+          new THREE.Vector3(x, -h, 0),
+        ];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material.clone());
+        gridGroup.add(line);
+      }
 
-    const material = new THREE.LineBasicMaterial({
-      color: 0x333333,
-      transparent: true,
-      opacity: 0.5,
-      depthTest: false,
-    });
+      // Horizontal lines
+      const stepY = h / divisions;
+      for (let i = 0; i <= divisions; i++) {
+        const y = -i * stepY;
+        const points = [
+          new THREE.Vector3(0, y, 0),
+          new THREE.Vector3(w, y, 0),
+        ];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material.clone());
+        gridGroup.add(line);
+      }
 
-    // Vertical lines - grid at z=0 (composition plane)
-    const stepX = w / divisions;
-    for (let i = 0; i <= divisions; i++) {
-      const x = i * stepX;
-      const points = [
-        new THREE.Vector3(x, 0, 0),
-        new THREE.Vector3(x, -h, 0),
+      // Center crosshair and XYZ axes at composition center
+      // This is where 3D objects with anchor (0,0,0) should appear
+      const centerX = w / 2;
+      const centerY = -h / 2;
+      const axisLength = Math.min(w, h) / 4; // Proportional axis length
+
+      // X axis (red) - horizontal from center
+      const xAxisMaterial = new THREE.LineBasicMaterial({
+        color: 0xff4444,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        linewidth: 2,
+      });
+      const xAxisPoints = [
+        new THREE.Vector3(centerX, centerY, 0),
+        new THREE.Vector3(centerX + axisLength, centerY, 0),
       ];
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const line = new THREE.Line(geometry, material.clone());
-      gridGroup.add(line);
-    }
+      const xAxisGeom = new THREE.BufferGeometry().setFromPoints(xAxisPoints);
+      gridGroup.add(new THREE.Line(xAxisGeom, xAxisMaterial));
 
-    // Horizontal lines
-    const stepY = h / divisions;
-    for (let i = 0; i <= divisions; i++) {
-      const y = -i * stepY;
-      const points = [
-        new THREE.Vector3(0, y, 0),
-        new THREE.Vector3(w, y, 0),
+      // Y axis (green) - vertical from center (up is positive)
+      const yAxisMaterial = new THREE.LineBasicMaterial({
+        color: 0x44ff44,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        linewidth: 2,
+      });
+      const yAxisPoints = [
+        new THREE.Vector3(centerX, centerY, 0),
+        new THREE.Vector3(centerX, centerY + axisLength, 0),
       ];
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const line = new THREE.Line(geometry, material.clone());
-      gridGroup.add(line);
+      const yAxisGeom = new THREE.BufferGeometry().setFromPoints(yAxisPoints);
+      gridGroup.add(new THREE.Line(yAxisGeom, yAxisMaterial));
+
+      // Z axis (blue) - depth from center (toward camera)
+      const zAxisMaterial = new THREE.LineBasicMaterial({
+        color: 0x4444ff,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+        linewidth: 2,
+      });
+      const zAxisPoints = [
+        new THREE.Vector3(centerX, centerY, 0),
+        new THREE.Vector3(centerX, centerY, axisLength),
+      ];
+      const zAxisGeom = new THREE.BufferGeometry().setFromPoints(zAxisPoints);
+      gridGroup.add(new THREE.Line(zAxisGeom, zAxisMaterial));
+
+      // Origin marker (white dot at center) - use Line instead of Mesh for compatibility
+      try {
+        const originMarkerGeom = new THREE.SphereGeometry(4, 8, 8);
+        const originMarkerMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.8,
+          depthTest: false,
+        });
+        const originMarker = new THREE.Mesh(originMarkerGeom, originMarkerMat);
+        originMarker.position.set(centerX, centerY, 0);
+        originMarker.renderOrder = 998;
+        gridGroup.add(originMarker);
+      } catch (meshError) {
+        // Mesh creation failed (likely Three.js multi-instance conflict)
+        // Fall back to a simple crosshair at the origin
+        console.warn('[SceneManager] Could not create origin marker mesh, using crosshair fallback');
+        const crossSize = 8;
+        const crossMat = new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false });
+        const crossH = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(centerX - crossSize, centerY, 0),
+          new THREE.Vector3(centerX + crossSize, centerY, 0),
+        ]);
+        const crossV = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(centerX, centerY - crossSize, 0),
+          new THREE.Vector3(centerX, centerY + crossSize, 0),
+        ]);
+        gridGroup.add(new THREE.Line(crossH, crossMat));
+        gridGroup.add(new THREE.Line(crossV, crossMat.clone()));
+      }
+
+      // Subtle center crosshair lines (dimmer than axes)
+      const centerMaterial = new THREE.LineBasicMaterial({
+        color: 0x555555,
+        transparent: true,
+        opacity: 0.5,
+        depthTest: false,
+      });
+
+      // Vertical center line (full height)
+      const vCenterPoints = [
+        new THREE.Vector3(centerX, 0, 0),
+        new THREE.Vector3(centerX, -h, 0),
+      ];
+      const vCenterGeom = new THREE.BufferGeometry().setFromPoints(vCenterPoints);
+      gridGroup.add(new THREE.Line(vCenterGeom, centerMaterial));
+
+      // Horizontal center line (full width)
+      const hCenterPoints = [
+        new THREE.Vector3(0, centerY, 0),
+        new THREE.Vector3(w, centerY, 0),
+      ];
+      const hCenterGeom = new THREE.BufferGeometry().setFromPoints(hCenterPoints);
+      gridGroup.add(new THREE.Line(hCenterGeom, centerMaterial.clone()));
+
+      gridGroup.renderOrder = 997;
+      this.compositionGrid = gridGroup;
+      this.overlayGroup.add(gridGroup);
+    } catch (error) {
+      console.warn('[SceneManager] Failed to create composition grid:', error);
+      // Grid is not critical for functionality, continue without it
     }
-
-    // Center crosshair and XYZ axes at composition center
-    // This is where 3D objects with anchor (0,0,0) should appear
-    const centerX = w / 2;
-    const centerY = -h / 2;
-    const axisLength = Math.min(w, h) / 4; // Proportional axis length
-
-    // X axis (red) - horizontal from center
-    const xAxisMaterial = new THREE.LineBasicMaterial({
-      color: 0xff4444,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      linewidth: 2,
-    });
-    const xAxisPoints = [
-      new THREE.Vector3(centerX, centerY, 0),
-      new THREE.Vector3(centerX + axisLength, centerY, 0),
-    ];
-    const xAxisGeom = new THREE.BufferGeometry().setFromPoints(xAxisPoints);
-    gridGroup.add(new THREE.Line(xAxisGeom, xAxisMaterial));
-
-    // Y axis (green) - vertical from center (up is positive)
-    const yAxisMaterial = new THREE.LineBasicMaterial({
-      color: 0x44ff44,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      linewidth: 2,
-    });
-    const yAxisPoints = [
-      new THREE.Vector3(centerX, centerY, 0),
-      new THREE.Vector3(centerX, centerY + axisLength, 0),
-    ];
-    const yAxisGeom = new THREE.BufferGeometry().setFromPoints(yAxisPoints);
-    gridGroup.add(new THREE.Line(yAxisGeom, yAxisMaterial));
-
-    // Z axis (blue) - depth from center (toward camera)
-    const zAxisMaterial = new THREE.LineBasicMaterial({
-      color: 0x4444ff,
-      transparent: true,
-      opacity: 0.9,
-      depthTest: false,
-      linewidth: 2,
-    });
-    const zAxisPoints = [
-      new THREE.Vector3(centerX, centerY, 0),
-      new THREE.Vector3(centerX, centerY, axisLength),
-    ];
-    const zAxisGeom = new THREE.BufferGeometry().setFromPoints(zAxisPoints);
-    gridGroup.add(new THREE.Line(zAxisGeom, zAxisMaterial));
-
-    // Origin marker (white dot at center)
-    const originMarkerGeom = new THREE.SphereGeometry(4, 8, 8);
-    const originMarkerMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.8,
-      depthTest: false,
-    });
-    const originMarker = new THREE.Mesh(originMarkerGeom, originMarkerMat);
-    originMarker.position.set(centerX, centerY, 0);
-    originMarker.renderOrder = 998;
-    gridGroup.add(originMarker);
-
-    // Subtle center crosshair lines (dimmer than axes)
-    const centerMaterial = new THREE.LineBasicMaterial({
-      color: 0x555555,
-      transparent: true,
-      opacity: 0.5,
-      depthTest: false,
-    });
-
-    // Vertical center line (full height)
-    const vCenterPoints = [
-      new THREE.Vector3(centerX, 0, 0),
-      new THREE.Vector3(centerX, -h, 0),
-    ];
-    const vCenterGeom = new THREE.BufferGeometry().setFromPoints(vCenterPoints);
-    gridGroup.add(new THREE.Line(vCenterGeom, centerMaterial));
-
-    // Horizontal center line (full width)
-    const hCenterPoints = [
-      new THREE.Vector3(0, centerY, 0),
-      new THREE.Vector3(w, centerY, 0),
-    ];
-    const hCenterGeom = new THREE.BufferGeometry().setFromPoints(hCenterPoints);
-    gridGroup.add(new THREE.Line(hCenterGeom, centerMaterial.clone()));
-
-    gridGroup.renderOrder = 997;
-    this.compositionGrid = gridGroup;
-    this.overlayGroup.add(gridGroup);
   }
 
   /**
@@ -754,51 +777,56 @@ export class SceneManager {
    * Creates a large plane with a rectangular hole for the composition area
    */
   updateOutsideOverlay(): void {
-    // Remove existing overlay
-    if (this.outsideOverlay) {
-      this.overlayGroup.remove(this.outsideOverlay);
-      this.outsideOverlay.geometry.dispose();
-      (this.outsideOverlay.material as THREE.Material).dispose();
+    try {
+      // Remove existing overlay
+      if (this.outsideOverlay) {
+        this.overlayGroup.remove(this.outsideOverlay);
+        this.outsideOverlay.geometry.dispose();
+        (this.outsideOverlay.material as THREE.Material).dispose();
+      }
+
+      const w = this.compositionWidth;
+      const h = this.compositionHeight;
+
+      // Create a large plane with a hole using ShapeGeometry
+      const size = Math.max(w, h) * 10; // Large enough to cover viewport
+
+      // Outer shape (large rectangle)
+      const outer = new THREE.Shape();
+      outer.moveTo(-size, size);
+      outer.lineTo(size + w, size);
+      outer.lineTo(size + w, -size - h);
+      outer.lineTo(-size, -size - h);
+      outer.lineTo(-size, size);
+
+      // Inner hole (composition bounds) - wind in opposite direction
+      const hole = new THREE.Path();
+      hole.moveTo(0, 0);
+      hole.lineTo(0, -h);
+      hole.lineTo(w, -h);
+      hole.lineTo(w, 0);
+      hole.lineTo(0, 0);
+
+      outer.holes.push(hole);
+
+      const geometry = new THREE.ShapeGeometry(outer);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide,
+        depthTest: false,
+      });
+
+      this.outsideOverlay = new THREE.Mesh(geometry, material);
+      this.outsideOverlay.name = 'outsideOverlay';
+      this.outsideOverlay.position.z = -2; // Behind composition but in front of far background
+      this.outsideOverlay.renderOrder = 996;
+      this.overlayGroup.add(this.outsideOverlay);
+    } catch (error) {
+      console.warn('[SceneManager] Failed to create outside overlay:', error);
+      // Overlay is not critical for functionality, continue without it
     }
-
-    const w = this.compositionWidth;
-    const h = this.compositionHeight;
-
-    // Create a large plane with a hole using ShapeGeometry
-    const size = Math.max(w, h) * 10; // Large enough to cover viewport
-
-    // Outer shape (large rectangle)
-    const outer = new THREE.Shape();
-    outer.moveTo(-size, size);
-    outer.lineTo(size + w, size);
-    outer.lineTo(size + w, -size - h);
-    outer.lineTo(-size, -size - h);
-    outer.lineTo(-size, size);
-
-    // Inner hole (composition bounds) - wind in opposite direction
-    const hole = new THREE.Path();
-    hole.moveTo(0, 0);
-    hole.lineTo(0, -h);
-    hole.lineTo(w, -h);
-    hole.lineTo(w, 0);
-    hole.lineTo(0, 0);
-
-    outer.holes.push(hole);
-
-    const geometry = new THREE.ShapeGeometry(outer);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.6,
-      side: THREE.DoubleSide,
-      depthTest: false,
-    });
-
-    this.outsideOverlay = new THREE.Mesh(geometry, material);
-    this.outsideOverlay.name = 'outsideOverlay';
-    this.outsideOverlay.position.z = -2; // Behind composition but in front of far background
-    this.outsideOverlay.renderOrder = 996;
-    this.overlayGroup.add(this.outsideOverlay);
   }
 
   /**
