@@ -331,6 +331,7 @@ const safeFrameBounds = computed(() => {
   const _ = [zoom.value, viewportTransform.value, canvasWidth.value, canvasHeight.value, cameraUpdateTrigger.value];
 
   if (!containerRef.value || !engine.value) {
+    console.log('[ThreeCanvas] safeFrameBounds: no container or engine');
     return { left: 0, top: 0, right: 0, bottom: 0 };
   }
 
@@ -339,8 +340,18 @@ const safeFrameBounds = computed(() => {
   const compWidth = store.width || 1920;
   const compHeight = store.height || 1080;
 
+  // Check for valid viewport dimensions
+  if (viewportWidth <= 0 || viewportHeight <= 0) {
+    console.log('[ThreeCanvas] safeFrameBounds: invalid viewport dimensions', viewportWidth, viewportHeight);
+    return { left: 0, top: 0, right: 0, bottom: 0 };
+  }
+
   // Get the camera to project 3D points to screen
   const camera = engine.value.getCameraController().camera;
+
+  // Ensure camera matrices are up to date
+  camera.updateMatrixWorld(true);
+  camera.updateProjectionMatrix();
 
   // Composition corners in world space (Y is negated in Three.js coordinate system)
   const topLeft = new THREE.Vector3(0, 0, 0);
@@ -355,6 +366,8 @@ const safeFrameBounds = computed(() => {
   const top = (-topLeft.y + 1) / 2 * viewportHeight;
   const right = (bottomRight.x + 1) / 2 * viewportWidth;
   const bottom = (-bottomRight.y + 1) / 2 * viewportHeight;
+
+  console.log('[ThreeCanvas] safeFrameBounds:', { left, top, right, bottom, viewportWidth, viewportHeight, compWidth, compHeight });
 
   return { left, top, right, bottom };
 });

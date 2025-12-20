@@ -7878,7 +7878,7 @@ function createEmptyProject(width, height) {
     frameCount: 81,
     fps: 16,
     duration: 81 / 16,
-    backgroundColor: "#000000",
+    backgroundColor: "#1a1a2e",
     autoResizeToContent: true
   };
   return {
@@ -26020,7 +26020,7 @@ const useCompositorStore = defineStore("compositor", {
         frameCount: settings?.frameCount ?? activeComp?.settings.frameCount ?? 81,
         fps: settings?.fps ?? activeComp?.settings.fps ?? 16,
         duration: 0,
-        backgroundColor: settings?.backgroundColor ?? "#000000",
+        backgroundColor: settings?.backgroundColor ?? "#1a1a2e",
         autoResizeToContent: settings?.autoResizeToContent ?? true
       };
       defaultSettings.duration = defaultSettings.frameCount / defaultSettings.fps;
@@ -80149,13 +80149,20 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
     });
     const safeFrameBounds = computed(() => {
       if (!containerRef.value || !engine.value) {
+        console.log("[ThreeCanvas] safeFrameBounds: no container or engine");
         return { left: 0, top: 0, right: 0, bottom: 0 };
       }
       const viewportWidth = canvasWidth.value;
       const viewportHeight = canvasHeight.value;
       const compWidth = store.width || 1920;
       const compHeight = store.height || 1080;
+      if (viewportWidth <= 0 || viewportHeight <= 0) {
+        console.log("[ThreeCanvas] safeFrameBounds: invalid viewport dimensions", viewportWidth, viewportHeight);
+        return { left: 0, top: 0, right: 0, bottom: 0 };
+      }
       const camera = engine.value.getCameraController().camera;
+      camera.updateMatrixWorld(true);
+      camera.updateProjectionMatrix();
       const topLeft = new Vector3(0, 0, 0);
       const bottomRight = new Vector3(compWidth, -compHeight, 0);
       topLeft.project(camera);
@@ -80164,6 +80171,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
       const top = (-topLeft.y + 1) / 2 * viewportHeight;
       const right = (bottomRight.x + 1) / 2 * viewportWidth;
       const bottom = (-bottomRight.y + 1) / 2 * viewportHeight;
+      console.log("[ThreeCanvas] safeFrameBounds:", { left, top, right, bottom, viewportWidth, viewportHeight, compWidth, compHeight });
       return { left, top, right, bottom };
     });
     const safeFrameLeftStyle = computed(() => {
@@ -81147,7 +81155,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             class: "zoom-dropdown",
             onChange: onZoomSelect
           }, [..._cache[24] || (_cache[24] = [
-            createStaticVNode('<option value="fit" data-v-4afb400a>Fit</option><option value="0.25" data-v-4afb400a>25%</option><option value="0.33" data-v-4afb400a>33%</option><option value="0.5" data-v-4afb400a>50%</option><option value="0.75" data-v-4afb400a>75%</option><option value="1" data-v-4afb400a>100%</option><option value="2" data-v-4afb400a>200%</option><option value="4" data-v-4afb400a>400%</option>', 8)
+            createStaticVNode('<option value="fit" data-v-6e8c0fca>Fit</option><option value="0.25" data-v-6e8c0fca>25%</option><option value="0.33" data-v-6e8c0fca>33%</option><option value="0.5" data-v-6e8c0fca>50%</option><option value="0.75" data-v-6e8c0fca>75%</option><option value="1" data-v-6e8c0fca>100%</option><option value="2" data-v-6e8c0fca>200%</option><option value="4" data-v-6e8c0fca>400%</option>', 8)
           ])], 544), [
             [vModelSelect, zoomLevel.value]
           ]),
@@ -81158,7 +81166,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             class: "resolution-dropdown",
             onChange: onResolutionChange
           }, [..._cache[25] || (_cache[25] = [
-            createStaticVNode('<option value="full" data-v-4afb400a>Full</option><option value="half" data-v-4afb400a>Half</option><option value="third" data-v-4afb400a>Third</option><option value="quarter" data-v-4afb400a>Quarter</option><option value="custom" data-v-4afb400a>Custom</option>', 5)
+            createStaticVNode('<option value="full" data-v-6e8c0fca>Full</option><option value="half" data-v-6e8c0fca>Half</option><option value="third" data-v-6e8c0fca>Third</option><option value="quarter" data-v-6e8c0fca>Quarter</option><option value="custom" data-v-6e8c0fca>Custom</option>', 5)
           ])], 544), [
             [vModelSelect, resolution.value]
           ])
@@ -81215,7 +81223,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-4afb400a"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-6e8c0fca"]]);
 
 const KEYFRAME_SHAPES = {
   // ========================================

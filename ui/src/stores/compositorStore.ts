@@ -429,7 +429,7 @@ export const useCompositorStore = defineStore('compositor', {
         frameCount: settings?.frameCount ?? activeComp?.settings.frameCount ?? 81,
         fps: settings?.fps ?? activeComp?.settings.fps ?? 16,
         duration: 0,
-        backgroundColor: settings?.backgroundColor ?? '#000000',
+        backgroundColor: settings?.backgroundColor ?? '#1a1a2e',
         autoResizeToContent: settings?.autoResizeToContent ?? true
       };
       defaultSettings.duration = defaultSettings.frameCount / defaultSettings.fps;
