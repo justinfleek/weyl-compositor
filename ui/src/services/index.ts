@@ -644,8 +644,8 @@ export {
   type GPUParticleConfig,
   type GPUGravityWell,
   type GPUVortex,
-  type GPUParticleData,
-  type WebGPUCapabilities,
+  // GPUParticleData already exported from gpuParticleRenderer (line 90)
+  // WebGPUCapabilities exported from webgpuRenderer (line 982)
 } from './particleGPU';
 
 // ============================================================================
@@ -687,7 +687,7 @@ export {
   vectorLODService,
   generateLODLevels,
   selectLODLevel,
-  simplifyPath,
+  simplifyPath as simplifyPathLOD, // Alias to avoid conflict with shapeOperations.simplifyPath
   cullOffScreenPoints,
   DEFAULT_LOD_CONFIG,
   type LODLevel,
@@ -717,14 +717,259 @@ export {
 export {
   DEFAULT_VTRACE_OPTIONS,
   DEFAULT_STARVECTOR_OPTIONS,
-  getVectorizeStatus,
-  loadStarVector,
-  unloadStarVector,
-  vectorizeWithVTracer,
-  vectorizeWithStarVector,
+  VectorizeService,
+  getVectorizeService,
+  normalizeControlPoints,
+  mergePaths as mergeVectorPaths, // Alias to avoid conflict with shapeOperations.mergePaths
+  filterSmallPaths,
+  simplifyPath as simplifyPathVectorize, // Alias to avoid conflict with shapeOperations.simplifyPath
+  autoGroupPoints,
   type VectorizeStatus,
   type VectorPath,
   type VectorizeResult,
   type VTraceOptions,
   type StarVectorOptions,
 } from './vectorize';
+
+// ============================================================================
+// AI GENERATION (Lazy-loaded models)
+// ============================================================================
+
+export {
+  type AIModelType,
+  type ModelStatus,
+  type ModelInfo,
+  type DepthEstimationOptions,
+  type NormalMapOptions,
+  type SegmentationOptions,
+  type GenerationOptions,
+  type InferenceResult,
+  type SegmentationResult as AISegmentationResult, // Alias to avoid conflict with segmentation
+  aiGeneration,
+  estimateDepth,
+  generateNormalMap,
+  segmentAtPoint,
+  getAvailableModels,
+  isAIBackendConnected,
+} from './aiGeneration';
+
+// ============================================================================
+// AUDIO WORKER CLIENT
+// ============================================================================
+
+export {
+  type AudioAnalysisProgress,
+  type AnalyzeOptions,
+  analyzeAudioInWorker,
+  loadAndAnalyzeAudio,
+  cancelAnalysis,
+  terminateWorker,
+} from './audioWorkerClient';
+
+// ============================================================================
+// CAMERA ENHANCEMENTS
+// ============================================================================
+
+export {
+  type CameraShakeConfig,
+  type RackFocusConfig,
+  type AutoFocusConfig,
+  type MotionBlurEstimate,
+  SHAKE_PRESETS,
+  DEFAULT_SHAKE_CONFIG,
+  DEFAULT_RACK_FOCUS,
+  DEFAULT_AUTOFOCUS,
+  CameraShake,
+  getRackFocusDistance,
+  generateRackFocusKeyframes,
+  calculateAutoFocusDistance,
+  estimateMotionBlur,
+  generateMotionBlurKeyframes,
+  createCameraShake,
+  createRackFocus,
+  createAutoFocus,
+} from './cameraEnhancements';
+
+// ============================================================================
+// LAYER DECOMPOSITION (AI-powered)
+// ============================================================================
+
+export {
+  type DecompositionModelStatus,
+  type DecomposedLayer,
+  type DecompositionOptions,
+  type DecompositionResult,
+  LayerDecompositionService,
+  getLayerDecompositionService,
+  canvasToDataUrl,
+  imageToDataUrl,
+  dataUrlToImage,
+} from './layerDecomposition';
+
+// ============================================================================
+// LAYER EVALUATION CACHE
+// ============================================================================
+
+export {
+  markLayerDirty,
+  markAllLayersDirty,
+  getLayerVersion,
+  getGlobalVersion,
+  getCachedEvaluation,
+  setCachedEvaluation,
+  clearLayerCache,
+  clearEvaluationCache,
+  getEvaluationCacheStats,
+  evaluateLayerCached,
+  evaluateLayersCached,
+} from './layerEvaluationCache';
+
+// ============================================================================
+// LAZY LOADER (Dynamic module loading)
+// ============================================================================
+
+export {
+  loadWebGPURenderer,
+  loadMatteExporter,
+  loadJSZip,
+  loadMP4Muxer,
+  loadWebMMuxer,
+  loadParticleSystem,
+  loadMath3D,
+  loadCameraTrajectory,
+  loadDepthflow,
+  preloadCommonModules,
+  preloadExportModules,
+  clearModuleCache,
+  clearAllModuleCache,
+  getModuleCacheStats,
+} from './lazyLoader';
+
+// ============================================================================
+// MASK GENERATOR
+// ============================================================================
+
+export {
+  type MaskShapeType,
+  type MaskGeneratorOptions,
+  type AffineTransformParams,
+  generateMask,
+  maskToImageData,
+  maskToCanvas,
+  maskToDataURL,
+  generateMaskSequence,
+} from './maskGenerator';
+
+// ============================================================================
+// MEMORY BUDGET (GPU/VRAM tracking)
+// ============================================================================
+
+export {
+  type MemoryAllocation,
+  type MemoryCategory,
+  type MemoryWarning,
+  type GPUInfo,
+  VRAM_ESTIMATES,
+  totalUsageMB,
+  usageByCategory,
+  availableVRAM,
+  usagePercent,
+  warningLevel,
+  allocationList,
+  unloadableItems,
+  initializeGPUDetection,
+  registerAllocation,
+  unregisterAllocation,
+  updateAllocation,
+  getWarning,
+  canAllocate,
+  freeMemory,
+  getMemorySummary,
+  memoryState,
+} from './memoryBudget';
+
+// ============================================================================
+// PATH MORPHING
+// ============================================================================
+
+export {
+  type MorphConfig,
+  type PreparedMorphPaths,
+  DEFAULT_MORPH_CONFIG,
+  prepareMorphPaths,
+  morphPaths,
+  morphPathsAuto,
+  getCorrespondence,
+  isBezierPath,
+  PathMorphing,
+} from './pathMorphing';
+
+// ============================================================================
+// PERSISTENCE SERVICE (IndexedDB storage)
+// ============================================================================
+
+export {
+  type StoredProject,
+  type RecentProject,
+  type UserSettings,
+  type StoredAsset,
+  type AIConversation,
+  // Alias to avoid conflict with projectStorage exports
+  saveProject as saveProjectIndexedDB,
+  getProject as getProjectIndexedDB,
+  deleteProject as deleteProjectIndexedDB,
+  listProjects as listProjectsIndexedDB,
+  saveAsset,
+  getAsset,
+  getProjectAssets,
+  deleteAsset,
+  deleteProjectAssets,
+  saveAIConversation,
+  getAIConversation,
+  getProjectAIConversations,
+  deleteAIConversation,
+  getSettings,
+  saveSettings,
+  getSetting,
+  setSetting,
+  getRecentProjects,
+  addToRecentProjects,
+  removeFromRecentProjects,
+  clearRecentProjects,
+  getLastProjectId,
+  setLastProjectId,
+  getStorageEstimate,
+  clearAllData,
+  exportAllData,
+  importData,
+  initPersistence,
+} from './persistenceService';
+
+// SEGMENT TO MASK exports are already included via ./segmentation re-export (lines 423-446)
+
+// ============================================================================
+// TEXT ANIMATOR
+// ============================================================================
+
+export {
+  type TextAnimatorPreset,
+  DEFAULT_RANGE_SELECTOR,
+  DEFAULT_ANIMATOR_PROPERTIES,
+  TEXT_ANIMATOR_PRESETS,
+  TEXT_ANIMATOR_PRESET_LIST,
+  createTextAnimator,
+  applyTextAnimatorPreset,
+  calculateCharacterInfluence,
+} from './textAnimator';
+
+// ============================================================================
+// WEBGPU RENDERER
+// ============================================================================
+
+export {
+  type WebGPUCapabilities,
+  type BlurParams,
+  type ColorCorrectionParams,
+  webgpuRenderer,
+  getWebGPUStats,
+} from './webgpuRenderer';

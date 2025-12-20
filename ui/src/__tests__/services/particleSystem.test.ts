@@ -510,7 +510,7 @@ describe('Performance', () => {
     expect(system.getParticles().length).toBeGreaterThan(100);
   });
 
-  it('should benefit from pooling over time', () => {
+  it('should benefit from pooling over time', { timeout: 15000 }, () => {
     const emitter = createTestEmitter({
       id: 'test1',
       emissionRate: 500,

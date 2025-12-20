@@ -38,8 +38,7 @@ function createControlPoint(
     y,
     handleIn: null,
     handleOut: null,
-    selected: false,
-    cornerType: 'smooth',
+    type: 'smooth',
     group: undefined,
   };
 }
@@ -88,7 +87,7 @@ function createGridControlPoints(
 function createAnimatableProperty<T>(
   name: string,
   value: T,
-  type: string = 'number'
+  type: 'number' | 'color' | 'position' | 'enum' | 'vector3' = 'number'
 ): AnimatableProperty<T> {
   return {
     id: `prop_${name}_${Date.now()}`,
@@ -559,8 +558,7 @@ describe('MeshWarpDeformationService', () => {
           y: 0,
           handleIn: { x: -10, y: 0 },
           handleOut: { x: 10, y: 0 },
-          selected: false,
-          cornerType: 'smooth',
+          type: 'smooth',
           group: undefined,
         },
       ];
