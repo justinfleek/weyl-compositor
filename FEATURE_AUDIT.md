@@ -1,6 +1,11 @@
 # Weyl Compositor - Complete Feature Audit
 
-**Generated:** 2024-12
+> **⚠️ OUTDATED WARNING (December 20, 2024):**
+> This document references Fabric.js which has been replaced by Three.js.
+> References to `CompositionCanvas.vue` should be `ThreeCanvas.vue`.
+> For current status, see `PROJECT_STATUS.md` and `HANDOFF.md`.
+
+**Generated:** 2024-12 (OUTDATED)
 **Status Legend:**
 - [x] Working
 - [?] Untested / Unclear

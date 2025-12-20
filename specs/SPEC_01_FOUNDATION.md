@@ -1,6 +1,9 @@
 # Weyl Motion Graphics Compositor for ComfyUI
 ## Complete Technical Specification v1.0
 
+> **⚠️ NOTE (December 2024):** This spec contains historical references to Fabric.js.
+> Canvas rendering now uses **Three.js**. See implementation status below.
+
 **Purpose**: This is the authoritative specification for building an After Effects-caliber motion graphics compositor as an embedded ComfyUI extension. This document is designed to be handed directly to Claude Code or any developer for implementation.
 
 **Target**: Phase 1 MVP - 81 frames at 16fps, spline drawing on depth maps, text animation along paths, matte export for Wan video generation.

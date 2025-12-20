@@ -1,6 +1,14 @@
 # Weyl Motion Graphics Compositor for ComfyUI
 ## Complete Technical Specification v1.0
 
+> **⚠️ OUTDATED - DO NOT USE (December 20, 2024):**
+> This specification was the original design document and is NO LONGER ACCURATE.
+> - Fabric.js has been replaced by Three.js
+> - Many architectural decisions have changed
+> - For current architecture, see `CLAUDE.md` and `HANDOFF.md`
+> - For current types, see `ui/src/types/project.ts`
+> - This file is kept for historical reference only.
+
 **Purpose**: This is the authoritative specification for building an After Effects-caliber motion graphics compositor as an embedded ComfyUI extension. This document is designed to be handed directly to Claude Code or any developer for implementation.
 
 **Target**: Phase 1 MVP - 81 frames at 16fps, spline drawing on depth maps, text animation along paths, matte export for Wan video generation.
