@@ -23,7 +23,14 @@
   @emits pathUpdated - Spline path modified
 -->
 <template>
-  <div class="three-canvas" ref="containerRef">
+  <div
+    class="three-canvas"
+    ref="containerRef"
+    @dragover.prevent="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+    :class="{ 'drag-over': isDragOver }"
+  >
     <canvas ref="canvasRef" />
 
     <SplineEditor
@@ -397,6 +404,67 @@ const compositionBoundaryStyle = computed(() => {
 // Computed
 const hasDepthMap = computed(() => store.depthMap !== null);
 const isPenMode = computed(() => store.currentTool === 'pen');
+
+// Drag and drop state
+const isDragOver = ref(false);
+
+function onDragOver(event: DragEvent) {
+  if (event.dataTransfer?.types.includes('application/project-item')) {
+    isDragOver.value = true;
+  }
+}
+
+function onDragLeave() {
+  isDragOver.value = false;
+}
+
+function onDrop(event: DragEvent) {
+  isDragOver.value = false;
+
+  const data = event.dataTransfer?.getData('application/project-item');
+  if (!data) return;
+
+  try {
+    const item = JSON.parse(data) as {
+      id: string;
+      name: string;
+      type: 'composition' | 'footage' | 'solid' | 'audio' | 'folder';
+    };
+
+    console.log('[ThreeCanvas] Dropped item:', item);
+
+    // Handle footage items (images/videos)
+    if (item.type === 'footage') {
+      const asset = store.project.assets[item.id];
+      if (asset) {
+        if (asset.type === 'image') {
+          const layer = store.createLayer('image', item.name);
+          if (layer) {
+            (layer.data as any).assetId = item.id;
+            (layer.data as any).source = asset.data;
+            store.selectLayer(layer.id);
+            console.log('[ThreeCanvas] Created image layer from drop:', item.name);
+          }
+        } else if (asset.type === 'video') {
+          const layer = store.createLayer('video', item.name);
+          if (layer) {
+            (layer.data as any).assetId = item.id;
+            store.selectLayer(layer.id);
+            console.log('[ThreeCanvas] Created video layer from drop:', item.name);
+          }
+        }
+      }
+    } else if (item.type === 'solid') {
+      const layer = store.createLayer('solid', item.name);
+      if (layer) {
+        store.selectLayer(layer.id);
+        console.log('[ThreeCanvas] Created solid layer from drop:', item.name);
+      }
+    }
+  } catch (e) {
+    console.error('[ThreeCanvas] Failed to handle drop:', e);
+  }
+}
 
 const activeSplineLayerId = computed(() => {
   const selectedLayer = store.selectedLayer;
@@ -1498,6 +1566,12 @@ defineExpose({
   min-height: 0;
   overflow: hidden;
   background: #1a1a1a;
+}
+
+.three-canvas.drag-over {
+  outline: 2px dashed var(--weyl-accent, #8B5CF6);
+  outline-offset: -4px;
+  background: rgba(139, 92, 246, 0.1);
 }
 
 .three-canvas canvas {

@@ -205,14 +205,14 @@
           <span class="icon">↪</span>
         </button>
         <div class="divider"></div>
-        <button @click="showHDPreview = true" title="HD Preview (`)">
-          <span class="icon">🖥</span> HD
+        <button @click="showHDPreview = true" title="Full Resolution Preview (`)">
+          <span class="icon">🖥</span> Preview
         </button>
-        <button @click="showExportDialog = true" title="Export Matte">
-          <span class="icon">📤</span> Matte
+        <button @click="showExportDialog = true" title="Export frame sequence for AI processing">
+          <span class="icon">📤</span> Export
         </button>
-        <button @click="showComfyUIExportDialog = true" title="Export to ComfyUI">
-          <span class="icon">🎬</span> ComfyUI
+        <button @click="showComfyUIExportDialog = true" title="Send to ComfyUI workflow">
+          <span class="icon">🔗</span> ComfyUI
         </button>
       </div>
     </div>

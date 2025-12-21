@@ -5,24 +5,6 @@
       <div class="header-actions">
         <button @click="triggerFileImport" title="Import File (Ctrl+I)">📥</button>
         <div class="dropdown-container">
-          <button @click="showExportMenu = !showExportMenu" title="Export">📤</button>
-          <div v-if="showExportMenu" class="dropdown-menu">
-            <button @click="exportSelectedLayerSVG" :disabled="!hasSelectedSplineLayer">
-              ✒ Export Selected Layer as SVG
-            </button>
-            <button @click="exportCompositionSVG">
-              🎬 Export Composition as SVG
-            </button>
-            <hr class="menu-divider" />
-            <button @click="exportSelectedLayerSVGDownload" :disabled="!hasSelectedSplineLayer">
-              💾 Download Selected as SVG
-            </button>
-            <button @click="exportCompositionSVGDownload">
-              💾 Download Composition as SVG
-            </button>
-          </div>
-        </div>
-        <div class="dropdown-container">
           <button @click="showNewMenu = !showNewMenu" title="New Item">+</button>
           <div v-if="showNewMenu" class="dropdown-menu">
             <button @click="createNewComposition">🎬 New Composition</button>
@@ -74,6 +56,31 @@
         placeholder="Search project..."
         class="search-input"
       />
+    </div>
+
+    <!-- Asset Preview Area -->
+    <div v-if="selectedPreview" class="preview-area">
+      <div class="preview-thumbnail">
+        <img
+          v-if="selectedPreview.type === 'image'"
+          :src="selectedPreview.url"
+          :alt="selectedPreview.name"
+        />
+        <video
+          v-else-if="selectedPreview.type === 'video'"
+          :src="selectedPreview.url"
+          muted
+          loop
+          autoplay
+        />
+        <div v-else class="preview-placeholder">
+          <span class="preview-icon">{{ selectedPreview.icon }}</span>
+        </div>
+      </div>
+      <div class="preview-info">
+        <div class="preview-name">{{ selectedPreview.name }}</div>
+        <div class="preview-details">{{ selectedPreview.details }}</div>
+      </div>
     </div>
 
     <div class="panel-content">
@@ -188,7 +195,6 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 // State
 const showSearch = ref(false);
 const showNewMenu = ref(false);
-const showExportMenu = ref(false);
 const showDecomposeDialog = ref(false);
 const showVectorizeDialog = ref(false);
 const searchQuery = ref('');
@@ -272,6 +278,75 @@ const filteredRootItems = computed(() => {
   );
 });
 
+// Preview data for the selected item
+const selectedPreview = computed(() => {
+  if (!selectedItem.value) return null;
+
+  // Find the item
+  let item: ProjectItem | null = null;
+  for (const folder of folders.value) {
+    const found = folder.items.find(i => i.id === selectedItem.value);
+    if (found) {
+      item = found;
+      break;
+    }
+  }
+  if (!item) {
+    item = items.value.find(i => i.id === selectedItem.value) || null;
+  }
+  if (!item) return null;
+
+  // Get asset data if available
+  const asset = store.project.assets[item.id];
+
+  if (item.type === 'footage' && asset) {
+    if (asset.type === 'image') {
+      return {
+        type: 'image',
+        url: asset.data as string,
+        name: item.name,
+        details: asset.width && asset.height ? `${asset.width} × ${asset.height}` : 'Image',
+        icon: '🖼'
+      };
+    } else if (asset.type === 'video') {
+      return {
+        type: 'video',
+        url: asset.data as string,
+        name: item.name,
+        details: `${item.width || '?'} × ${item.height || '?'} • ${item.fps || '?'}fps`,
+        icon: '🎬'
+      };
+    }
+  } else if (item.type === 'composition') {
+    const comp = store.getComposition(item.id);
+    return {
+      type: 'composition',
+      url: null,
+      name: item.name,
+      details: comp ? `${comp.settings.width} × ${comp.settings.height} • ${comp.settings.frameRate}fps` : 'Composition',
+      icon: '🎬'
+    };
+  } else if (item.type === 'solid') {
+    return {
+      type: 'solid',
+      url: null,
+      name: item.name,
+      details: 'Solid Layer',
+      icon: '⬜'
+    };
+  } else if (item.type === 'audio') {
+    return {
+      type: 'audio',
+      url: null,
+      name: item.name,
+      details: 'Audio File',
+      icon: '🔊'
+    };
+  }
+
+  return null;
+});
+
 const selectedItemDetails = computed(() => {
   if (!selectedItem.value) return null;
 
@@ -326,10 +401,13 @@ function openItem(item: ProjectItem) {
       const layerType = item.type === 'solid' ? 'solid' : 'image';
       const layer = store.createLayer(layerType, item.name);
       if (layer && asset.data) {
-        // Link the asset to the layer
-        store.updateLayerData(layer.id, { assetId: item.id });
+        // Link the asset to the layer AND provide the source URL
+        store.updateLayerData(layer.id, {
+          assetId: item.id,
+          source: asset.data  // The actual image/video URL
+        });
       }
-      console.log('[ProjectPanel] Created layer from asset:', layer.id, item.name);
+      console.log('[ProjectPanel] Created layer from asset:', layer?.id, item.name);
     }
   } else if (item.type === 'audio') {
     // Load audio into the audio panel
@@ -438,7 +516,6 @@ function getSelectedSplineLayer() {
 }
 
 function exportSelectedLayerSVG() {
-  showExportMenu.value = false;
   const layer = getSelectedSplineLayer();
   if (!layer) {
     console.warn('[ProjectPanel] No spline layer selected');
@@ -459,7 +536,6 @@ function exportSelectedLayerSVG() {
 }
 
 function exportCompositionSVG() {
-  showExportMenu.value = false;
   const comp = store.activeComposition;
   if (!comp) {
     console.warn('[ProjectPanel] No active composition');
@@ -494,7 +570,6 @@ function downloadSVG(svgContent: string, filename: string) {
 }
 
 function exportSelectedLayerSVGDownload() {
-  showExportMenu.value = false;
   const layer = getSelectedSplineLayer();
   if (!layer) {
     console.warn('[ProjectPanel] No spline layer selected');
@@ -512,7 +587,6 @@ function exportSelectedLayerSVGDownload() {
 }
 
 function exportCompositionSVGDownload() {
-  showExportMenu.value = false;
   const comp = store.activeComposition;
   if (!comp) {
     console.warn('[ProjectPanel] No active composition');
@@ -708,7 +782,9 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .dropdown-menu button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   padding: 8px 12px;
   border: none;
@@ -748,6 +824,68 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 .search-input:focus {
   outline: none;
   border-color: #4a90d9;
+}
+
+/* Asset Preview Area */
+.preview-area {
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  padding: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.preview-thumbnail {
+  width: 80px;
+  height: 60px;
+  background: #0a0a0a;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.preview-thumbnail img,
+.preview-thumbnail video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.preview-icon {
+  font-size: 24px;
+  opacity: 0.6;
+}
+
+.preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-details {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
 }
 
 .panel-content {

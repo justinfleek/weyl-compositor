@@ -385,9 +385,11 @@ function onDrop(event: DragEvent) {
         } else if (asset.type === 'image') {
           const layer = store.createLayer('image', item.name);
           if (layer) {
+            // Set both assetId and source URL for the image to render
             (layer.data as any).assetId = item.id;
+            (layer.data as any).source = asset.data; // The actual image URL
             store.selectLayer(layer.id);
-            console.log('[TimelinePanel] Created image layer from asset:', item.name);
+            console.log('[TimelinePanel] Created image layer from asset:', item.name, 'source:', asset.data);
           }
         }
       } else {

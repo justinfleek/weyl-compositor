@@ -2736,7 +2736,7 @@ export function createEmptyProject(width: number, height: number): WeylProject {
     frameCount: 81,
     fps: 16,
     duration: 81 / 16,
-    backgroundColor: '#050505',
+    backgroundColor: '#2d2d2d',
     autoResizeToContent: true
   };
 
