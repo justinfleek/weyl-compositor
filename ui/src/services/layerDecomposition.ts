@@ -26,6 +26,24 @@ const MODEL_ALLOCATION_ID = 'model:qwen-image-layered';
 // Types
 // ============================================================================
 
+export interface ModelVerification {
+  verified: boolean;
+  files_checked: number;
+  files_valid: number;
+  files_invalid: string[];
+  files_missing: string[];
+  message: string;
+}
+
+export interface DownloadProgress {
+  current_file: string;
+  files_completed: number;
+  total_files: number;
+  bytes_downloaded: number;
+  total_bytes: number;
+  stage: 'idle' | 'starting' | 'downloading' | 'verifying' | 'complete' | 'error';
+}
+
 export interface DecompositionModelStatus {
   downloaded: boolean;
   loaded: boolean;
@@ -33,6 +51,8 @@ export interface DecompositionModelStatus {
   error: string | null;
   model_path: string;
   model_size_gb: number;
+  verification: ModelVerification | null;
+  download_progress: DownloadProgress | null;
 }
 
 export interface DecomposedLayer {
@@ -107,12 +127,95 @@ export class LayerDecompositionService {
         throw new Error(result.message);
       }
 
+      // Check verification result
+      if (result.verification && !result.verification.verified && result.verification.files_invalid.length > 0) {
+        throw new Error(`Model verification failed: ${result.verification.message}`);
+      }
+
       onProgress?.('complete', 100);
       logger.info('Model download complete');
     } catch (error) {
       logger.error('Model download failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get current download progress
+   */
+  async getDownloadProgress(): Promise<DownloadProgress> {
+    try {
+      const response = await fetch(`${this.baseUrl}/weyl/decomposition/progress`);
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        return result.data;
+      }
+
+      throw new Error(result.message || 'Failed to get download progress');
+    } catch (error) {
+      logger.error('Failed to get download progress:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify model integrity using SHA256 hashes
+   */
+  async verifyModel(): Promise<ModelVerification> {
+    try {
+      const response = await fetch(`${this.baseUrl}/weyl/decomposition/verify`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      return result.data;
+    } catch (error) {
+      logger.error('Failed to verify model:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Poll download progress at intervals
+   *
+   * @param onProgress - Callback for progress updates
+   * @param intervalMs - Polling interval (default 1000ms)
+   * @returns Stop function to cancel polling
+   */
+  pollDownloadProgress(
+    onProgress: (progress: DownloadProgress) => void,
+    intervalMs: number = 1000
+  ): () => void {
+    let stopped = false;
+
+    const poll = async () => {
+      if (stopped) return;
+
+      try {
+        const progress = await this.getDownloadProgress();
+        onProgress(progress);
+
+        // Stop polling if download is complete or errored
+        if (progress.stage === 'complete' || progress.stage === 'error' || progress.stage === 'idle') {
+          return;
+        }
+
+        // Continue polling
+        setTimeout(poll, intervalMs);
+      } catch (error) {
+        logger.warn('Progress poll failed:', error);
+        if (!stopped) {
+          setTimeout(poll, intervalMs * 2); // Backoff on error
+        }
+      }
+    };
+
+    poll();
+
+    return () => {
+      stopped = true;
+    };
   }
 
   /**

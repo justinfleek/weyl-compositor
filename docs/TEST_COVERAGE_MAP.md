@@ -313,4 +313,4 @@ export function createTestKeyframe<T>(value: T, frame: number): Keyframe<T> {
 - [DOCS_REVIEW.md](./DOCS_REVIEW.md) - Spec compliance including test status
 - [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) - Service API documentation
 
-*Generated: December 19, 2024*
+*Generated: December 19, 2025*

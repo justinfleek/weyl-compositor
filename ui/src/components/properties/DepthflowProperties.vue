@@ -89,6 +89,10 @@
             v-if="config.animatedZoom"
             :property="config.animatedZoom"
             :layer-id="layer.id"
+            propertyPath="data.animatedZoom"
+            @keyframeAdded="onKeyframeChange"
+            @keyframeRemoved="onKeyframeChange"
+            @animationToggled="onAnimationToggled"
           />
           <input
             type="range"
@@ -106,6 +110,10 @@
             v-if="config.animatedOffsetX"
             :property="config.animatedOffsetX"
             :layer-id="layer.id"
+            propertyPath="data.animatedOffsetX"
+            @keyframeAdded="onKeyframeChange"
+            @keyframeRemoved="onKeyframeChange"
+            @animationToggled="onAnimationToggled"
           />
           <input
             type="range"
@@ -123,6 +131,10 @@
             v-if="config.animatedOffsetY"
             :property="config.animatedOffsetY"
             :layer-id="layer.id"
+            propertyPath="data.animatedOffsetY"
+            @keyframeAdded="onKeyframeChange"
+            @keyframeRemoved="onKeyframeChange"
+            @animationToggled="onAnimationToggled"
           />
           <input
             type="range"
@@ -140,6 +152,10 @@
             v-if="config.animatedRotation"
             :property="config.animatedRotation"
             :layer-id="layer.id"
+            propertyPath="data.animatedRotation"
+            @keyframeAdded="onKeyframeChange"
+            @keyframeRemoved="onKeyframeChange"
+            @animationToggled="onAnimationToggled"
           />
           <input
             type="range"
@@ -167,6 +183,10 @@
             v-if="config.animatedDepthScale"
             :property="config.animatedDepthScale"
             :layer-id="layer.id"
+            propertyPath="data.animatedDepthScale"
+            @keyframeAdded="onKeyframeChange"
+            @keyframeRemoved="onKeyframeChange"
+            @animationToggled="onAnimationToggled"
           />
           <input
             type="range"
@@ -697,6 +717,18 @@ onUnmounted(() => {
     cancelAnimationFrame(previewAnimationId.value);
   }
 });
+
+// Keyframe event handlers
+function onKeyframeChange() {
+  // Keyframe was added or removed - trigger update
+  emit('update', {});
+}
+
+function onAnimationToggled(animated: boolean) {
+  // Animation was enabled or disabled
+  console.log('[DepthflowProperties] Animation toggled:', animated);
+  emit('update', {});
+}
 </script>
 
 <style scoped>

@@ -145,6 +145,16 @@
           <div class="time-ruler" :style="{ width: computedWidthStyle }" @mousedown="startRulerScrub">
              <canvas ref="rulerCanvas" height="30"></canvas>
 
+             <!-- Work Area Bar -->
+             <div v-if="hasWorkArea" class="work-area-bar" :style="workAreaStyle"
+                  @dblclick.stop="clearWorkArea"
+                  title="Work Area (B/N to set, double-click to clear)">
+               <div class="work-area-handle work-area-handle-left"
+                    @mousedown.stop="startWorkAreaDrag('start', $event)"></div>
+               <div class="work-area-handle work-area-handle-right"
+                    @mousedown.stop="startWorkAreaDrag('end', $event)"></div>
+             </div>
+
              <div class="playhead-head" :style="{ left: playheadPositionPct + '%' }"></div>
              <div class="playhead-hit-area"
                   :style="{ left: playheadPositionPct + '%' }"
@@ -184,11 +194,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject, type Ref } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+import { useAudioStore } from '@/stores/audioStore';
+import { usePlaybackStore } from '@/stores/playbackStore';
 import EnhancedLayerTrack from './EnhancedLayerTrack.vue';
 import CompositionTabs from './CompositionTabs.vue';
 import { findNearestSnap } from '@/services/timelineSnap';
+
+// Inject work area state from WorkspaceLayout
+const workAreaStart = inject<Ref<number | null>>('workAreaStart', ref(null));
+const workAreaEnd = inject<Ref<number | null>>('workAreaEnd', ref(null));
 
 const emit = defineEmits<{
   (e: 'openCompositionSettings'): void;
@@ -196,6 +212,8 @@ const emit = defineEmits<{
 }>();
 
 const store = useCompositorStore();
+const audioStore = useAudioStore();
+const playbackStore = usePlaybackStore();
 const zoomPercent = ref(0); // 0 = fit to viewport, 100 = max zoom
 const sidebarWidth = ref(450); // Increased width for better visibility of layer names
 const expandedLayers = ref<Record<string, boolean>>({});
@@ -237,6 +255,28 @@ const timelineWidth = computed(() => {
 });
 
 const computedWidthStyle = computed(() => timelineWidth.value + 'px');
+
+// Work area computed properties
+const hasWorkArea = computed(() => workAreaStart.value !== null && workAreaEnd.value !== null);
+const workAreaLeftPct = computed(() => {
+  if (workAreaStart.value === null) return 0;
+  return (workAreaStart.value / store.frameCount) * 100;
+});
+const workAreaWidthPct = computed(() => {
+  if (workAreaStart.value === null || workAreaEnd.value === null) return 100;
+  const start = Math.min(workAreaStart.value, workAreaEnd.value);
+  const end = Math.max(workAreaStart.value, workAreaEnd.value);
+  return ((end - start) / store.frameCount) * 100;
+});
+const workAreaStyle = computed(() => {
+  if (!hasWorkArea.value) return { display: 'none' };
+  const start = Math.min(workAreaStart.value!, workAreaEnd.value!);
+  const end = Math.max(workAreaStart.value!, workAreaEnd.value!);
+  return {
+    left: (start / store.frameCount) * 100 + '%',
+    width: ((end - start) / store.frameCount) * 100 + '%'
+  };
+});
 
 const sidebarGridStyle = computed(() => ({
   display: 'grid',
@@ -460,6 +500,9 @@ function startRulerScrub(e: MouseEvent) {
   const rect = rulerCanvas.value!.getBoundingClientRect();
   const scrollX = rulerScrollRef.value?.scrollLeft || trackScrollRef.value?.scrollLeft || 0;
 
+  // Track if this is an audio scrub (Ctrl held at start)
+  const isAudioScrub = e.ctrlKey || e.metaKey;
+
   const update = (ev: MouseEvent) => {
     const currentScrollX = rulerScrollRef.value?.scrollLeft || trackScrollRef.value?.scrollLeft || 0;
     const x = (ev.clientX - rect.left) + currentScrollX;
@@ -478,12 +521,24 @@ function startRulerScrub(e: MouseEvent) {
       }
     }
 
-    store.setFrame(Math.round(f));
+    const frame = Math.round(f);
+    store.setFrame(frame);
+
+    // Ctrl+drag: Audio scrub - play short audio snippet at current position
+    if (isAudioScrub || ev.ctrlKey || ev.metaKey) {
+      audioStore.scrubAudio(frame, store.fps);
+    }
   };
 
   update(e);
   window.addEventListener('mousemove', update);
-  window.addEventListener('mouseup', () => window.removeEventListener('mousemove', update), { once: true });
+  window.addEventListener('mouseup', () => {
+    window.removeEventListener('mousemove', update);
+    // Stop any audio scrub when mouse is released
+    if (isAudioScrub) {
+      audioStore.stopAudio();
+    }
+  }, { once: true });
 }
 
 function startResize(e: MouseEvent) {
@@ -492,6 +547,46 @@ function startResize(e: MouseEvent) {
   const onMove = (ev: MouseEvent) => { sidebarWidth.value = Math.max(450, startW + (ev.clientX - startX)); };
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', () => window.removeEventListener('mousemove', onMove), { once: true });
+}
+
+// Work Area functions
+function clearWorkArea() {
+  workAreaStart.value = null;
+  workAreaEnd.value = null;
+  playbackStore.clearWorkArea();
+}
+
+function startWorkAreaDrag(handle: 'start' | 'end', e: MouseEvent) {
+  const rect = rulerCanvas.value!.getBoundingClientRect();
+  const scrollX = rulerScrollRef.value?.scrollLeft || trackScrollRef.value?.scrollLeft || 0;
+
+  const update = (ev: MouseEvent) => {
+    const currentScrollX = rulerScrollRef.value?.scrollLeft || trackScrollRef.value?.scrollLeft || 0;
+    const x = (ev.clientX - rect.left) + currentScrollX;
+    let frame = Math.round(Math.max(0, Math.min(store.frameCount - 1, (x / timelineWidth.value) * store.frameCount)));
+
+    if (handle === 'start') {
+      // Clamp start to be before end
+      if (workAreaEnd.value !== null) {
+        frame = Math.min(frame, workAreaEnd.value - 1);
+      }
+      workAreaStart.value = frame;
+    } else {
+      // Clamp end to be after start
+      if (workAreaStart.value !== null) {
+        frame = Math.max(frame, workAreaStart.value + 1);
+      }
+      workAreaEnd.value = frame;
+    }
+  };
+
+  update(e);
+  window.addEventListener('mousemove', update);
+  window.addEventListener('mouseup', () => {
+    window.removeEventListener('mousemove', update);
+    // Sync final work area to playbackStore
+    playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
+  }, { once: true });
 }
 
 // Scroll synchronization between sidebar and track area
@@ -718,6 +813,39 @@ watch(() => [computedWidthStyle.value, zoomPercent.value, store.frameCount], () 
   border-bottom: 1px solid #000;
   cursor: pointer;
   z-index: 10;
+}
+
+/* Work Area Bar */
+.work-area-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(74, 144, 217, 0.25);
+  border-left: 2px solid #4a90d9;
+  border-right: 2px solid #4a90d9;
+  z-index: 5;
+  cursor: move;
+  box-sizing: border-box;
+}
+.work-area-bar:hover {
+  background: rgba(74, 144, 217, 0.35);
+}
+.work-area-handle {
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 6;
+}
+.work-area-handle-left {
+  left: -5px;
+}
+.work-area-handle-right {
+  right: -5px;
+}
+.work-area-handle:hover {
+  background: rgba(74, 144, 217, 0.5);
 }
 
 /* Track scroll area - scrolls both horizontally and vertically */

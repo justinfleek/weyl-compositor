@@ -86,6 +86,9 @@
               :property="speedMapProperty"
               :layerId="layer.id"
               propertyPath="data.speedMap"
+              @keyframeAdded="onKeyframeChange"
+              @keyframeRemoved="onKeyframeChange"
+              @animationToggled="onAnimationToggled"
             />
           </div>
         </div>
@@ -105,6 +108,55 @@
             <option value="pixel-motion">Pixel Motion</option>
           </select>
         </div>
+      </div>
+    </div>
+
+    <!-- Timewarp -->
+    <div class="property-section">
+      <div class="section-header">
+        <span>Timewarp</span>
+        <label class="header-toggle">
+          <input type="checkbox" :checked="timewarpEnabled" @change="toggleTimewarp" />
+        </label>
+      </div>
+      <div class="section-content" v-if="timewarpEnabled">
+        <div class="property-row">
+          <label>Speed</label>
+          <div class="control-with-keyframe">
+            <ScrubableNumber
+              :modelValue="timewarpSpeedValue"
+              @update:modelValue="updateTimewarpSpeed"
+              unit="%"
+              :min="1"
+              :max="400"
+              :precision="1"
+            />
+            <KeyframeToggle
+              v-if="timewarpSpeedProperty"
+              :property="timewarpSpeedProperty"
+              :layerId="layer.id"
+              propertyPath="data.timewarpSpeed"
+              @keyframeAdded="onKeyframeChange"
+              @keyframeRemoved="onKeyframeChange"
+              @animationToggled="onAnimationToggled"
+            />
+          </div>
+        </div>
+        <div class="property-row">
+          <label>Method</label>
+          <select :value="videoData.timewarpMethod || 'frame-mix'" @change="updateTimewarpMethod" class="select-input">
+            <option value="whole-frames">Whole Frames</option>
+            <option value="frame-mix">Frame Mix</option>
+            <option value="pixel-motion">Pixel Motion</option>
+          </select>
+        </div>
+        <div class="preset-buttons">
+          <button class="preset-btn" @click="applyTimewarpPreset('slow-fast')" title="Start slow, end fast">Slow→Fast</button>
+          <button class="preset-btn" @click="applyTimewarpPreset('fast-slow')" title="Start fast, end slow">Fast→Slow</button>
+          <button class="preset-btn" @click="applyTimewarpPreset('impact')" title="Slow motion at impact point">Impact</button>
+          <button class="preset-btn" @click="applyTimewarpPreset('rewind')" title="Normal→Reverse→Normal">Rewind</button>
+        </div>
+        <p class="hint">Keyframe Speed % for smooth speed ramps. Uses curve editor easing.</p>
       </div>
     </div>
 
@@ -134,6 +186,10 @@
               v-if="audioLevel"
               :property="audioLevel"
               :layerId="layer.id"
+              propertyPath="audio.level"
+              @keyframeAdded="onKeyframeChange"
+              @keyframeRemoved="onKeyframeChange"
+              @animationToggled="onAnimationToggled"
             />
           </div>
         </div>
@@ -271,6 +327,77 @@ function updateFrameBlending(e: Event) {
   emit('update');
 }
 
+// Timewarp computed properties
+const timewarpEnabled = computed(() => {
+  return videoData.value.timewarpEnabled ?? false;
+});
+
+const timewarpSpeedProperty = computed(() => {
+  return videoData.value.timewarpSpeed;
+});
+
+const timewarpSpeedValue = computed(() => {
+  const prop = timewarpSpeedProperty.value;
+  if (!prop) return 100;
+  return prop.value;
+});
+
+function toggleTimewarp(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const updates: Partial<VideoData> = {
+    timewarpEnabled: target.checked
+  };
+
+  // Initialize timewarpSpeed property if enabling and not set
+  if (target.checked && !videoData.value.timewarpSpeed) {
+    updates.timewarpSpeed = {
+      value: 100,
+      type: 'number',
+      animated: false,
+      keyframes: []
+    };
+    updates.timewarpMethod = 'frame-mix';
+  }
+
+  store.updateVideoLayerData(props.layer.id, updates);
+  emit('update');
+}
+
+function updateTimewarpSpeed(val: number) {
+  const data = props.layer.data as VideoData;
+  if (data.timewarpSpeed) {
+    data.timewarpSpeed.value = val;
+  }
+  emit('update');
+}
+
+function updateTimewarpMethod(e: Event) {
+  const target = e.target as HTMLSelectElement;
+  store.updateVideoLayerData(props.layer.id, {
+    timewarpMethod: target.value as 'whole-frames' | 'frame-mix' | 'pixel-motion'
+  });
+  emit('update');
+}
+
+function applyTimewarpPreset(preset: 'slow-fast' | 'fast-slow' | 'impact' | 'rewind') {
+  // Import the preset creator
+  import('@/services/timewarp').then(({ createSpeedRampPreset }) => {
+    const layerStart = props.layer.startFrame ?? 0;
+    const layerEnd = props.layer.endFrame ?? store.frameCount;
+    const duration = layerEnd - layerStart;
+    const fps = store.fps || 30;
+
+    const presetProperty = createSpeedRampPreset(preset, layerStart, duration, fps);
+
+    store.updateVideoLayerData(props.layer.id, {
+      timewarpEnabled: true,
+      timewarpSpeed: presetProperty,
+      timewarpMethod: 'pixel-motion'
+    });
+    emit('update');
+  });
+}
+
 function updateAudioEnabled(e: Event) {
   const target = e.target as HTMLInputElement;
   store.updateVideoLayerData(props.layer.id, { audioEnabled: target.checked });
@@ -287,6 +414,18 @@ function updateLevel(val: number) {
     props.layer.audio.level.value = val;
     emit('update');
   }
+}
+
+// Keyframe event handlers
+function onKeyframeChange() {
+  // Keyframe was added or removed - trigger update
+  emit('update');
+}
+
+function onAnimationToggled(animated: boolean) {
+  // Animation was enabled or disabled
+  console.log('[VideoProperties] Animation toggled:', animated);
+  emit('update');
 }
 </script>
 
@@ -406,6 +545,31 @@ function updateLevel(val: number) {
   color: #666;
   margin: 4px 0 0 0;
   font-style: italic;
+}
+
+/* Preset Buttons */
+.preset-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.preset-btn {
+  padding: 4px 10px;
+  background: var(--weyl-surface-3, #222);
+  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-radius: var(--weyl-radius-pill, 999px);
+  color: var(--weyl-text-secondary, #9ca3af);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-btn:hover {
+  background: var(--weyl-surface-4, #2a2a2a);
+  color: var(--weyl-text-primary, #e5e5e5);
+  border-color: var(--weyl-accent, #8b5cf6);
 }
 
 /* Waveform */

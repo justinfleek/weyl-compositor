@@ -35,3 +35,17 @@ export type {
 
 // System prompt
 export { SYSTEM_PROMPT } from './systemPrompt';
+
+// Depth estimation
+export {
+  LLMDepthEstimator,
+  getLLMDepthEstimator,
+  estimateDepthsHeuristic,
+} from './depthEstimation';
+export type {
+  LayerDepthEstimate,
+  DepthEstimationResult,
+  LayerAnalysisInput,
+  DepthEstimationOptions,
+  LLMProvider,
+} from './depthEstimation';

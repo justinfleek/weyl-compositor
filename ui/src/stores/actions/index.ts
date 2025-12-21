@@ -32,3 +32,6 @@ export * from './propertyDriverActions';
 
 // Cache actions (frame caching)
 export * from './cacheActions';
+
+// Layer decomposition actions (Qwen-Image-Layered integration)
+export * from './layerDecompositionActions';

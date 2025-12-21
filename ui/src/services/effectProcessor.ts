@@ -350,6 +350,17 @@ export function evaluateEffectParameters(
 }
 
 /**
+ * Context passed to time-based effects
+ * Provides frame, fps, and layer information needed for temporal effects
+ */
+export interface EffectContext {
+  frame: number;
+  fps: number;
+  layerId: string;
+  compositionId?: string;
+}
+
+/**
  * Process a stack of effects on an input canvas
  *
  * Effects are processed in order (top to bottom in the UI).
@@ -360,13 +371,15 @@ export function evaluateEffectParameters(
  * @param inputCanvas - Source canvas to process
  * @param frame - Current frame for animation evaluation
  * @param quality - Quality hint ('draft' for fast preview, 'high' for full quality)
+ * @param context - Optional context for time-based effects (frame, fps, layerId)
  * @returns Processed canvas with all effects applied
  */
 export function processEffectStack(
   effects: EffectInstance[],
   inputCanvas: HTMLCanvasElement,
   frame: number,
-  quality: 'draft' | 'high' = 'high'
+  quality: 'draft' | 'high' = 'high',
+  context?: EffectContext
 ): EffectStackResult {
   // Create a working copy of the input
   const workCanvas = document.createElement('canvas');
@@ -394,6 +407,22 @@ export function processEffectStack(
 
     // Evaluate parameters at current frame
     const params = evaluateEffectParameters(effect, frame);
+
+    // Inject context for time-based effects (Echo, Posterize Time, etc.)
+    // These effects need frame, fps, and layerId to access frame buffers
+    if (context) {
+      params._frame = context.frame;
+      params._fps = context.fps;
+      params._layerId = context.layerId;
+      if (context.compositionId) {
+        params._compositionId = context.compositionId;
+      }
+    } else {
+      // Fallback: use the frame parameter at minimum
+      params._frame = frame;
+      params._fps = 30; // Default fps
+      params._layerId = 'default';
+    }
 
     // Apply the effect
     try {

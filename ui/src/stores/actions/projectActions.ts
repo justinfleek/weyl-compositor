@@ -60,8 +60,9 @@ export function undo(store: ProjectStore): boolean {
   if (store.historyIndex <= 0) return false;
 
   store.historyIndex--;
-  // History stack contains raw objects, safe to clone directly
-  store.project = structuredClone(store.historyStack[store.historyIndex]) as WeylProject;
+  // Use toRaw to deproxy Pinia's reactive wrapper before cloning
+  const historyEntry = toRaw(store.historyStack[store.historyIndex]);
+  store.project = structuredClone(historyEntry) as WeylProject;
   return true;
 }
 
@@ -72,8 +73,9 @@ export function redo(store: ProjectStore): boolean {
   if (store.historyIndex >= store.historyStack.length - 1) return false;
 
   store.historyIndex++;
-  // History stack contains raw objects, safe to clone directly
-  store.project = structuredClone(store.historyStack[store.historyIndex]) as WeylProject;
+  // Use toRaw to deproxy Pinia's reactive wrapper before cloning
+  const historyEntry = toRaw(store.historyStack[store.historyIndex]);
+  store.project = structuredClone(historyEntry) as WeylProject;
   return true;
 }
 
@@ -371,4 +373,236 @@ export function resetProject(store: ProjectStore): void {
   store.hasUnsavedChanges = false;
   clearHistory(store);
   storeLogger.info('Project reset to default state');
+}
+
+// ============================================================================
+// ASSET MANAGEMENT
+// ============================================================================
+
+/**
+ * Find all asset IDs that are actually used by layers in all compositions
+ */
+export function findUsedAssetIds(store: ProjectStore): Set<string> {
+  const usedIds = new Set<string>();
+
+  // Iterate through all compositions
+  for (const comp of Object.values(store.project.compositions)) {
+    for (const layer of comp.layers) {
+      // Check layer data for asset references
+      if (layer.data && typeof layer.data === 'object') {
+        const data = layer.data as Record<string, any>;
+
+        // Common asset ID field
+        if (data.assetId && typeof data.assetId === 'string') {
+          usedIds.add(data.assetId);
+        }
+
+        // Source asset ID (for derived assets)
+        if (data.sourceAssetId && typeof data.sourceAssetId === 'string') {
+          usedIds.add(data.sourceAssetId);
+        }
+
+        // Model layer with material references
+        if (data.materials && Array.isArray(data.materials)) {
+          for (const mat of data.materials) {
+            if (mat.textureId) usedIds.add(mat.textureId);
+            if (mat.normalMapId) usedIds.add(mat.normalMapId);
+            if (mat.roughnessMapId) usedIds.add(mat.roughnessMapId);
+          }
+        }
+
+        // Particle sprite sheet
+        if (data.spriteSheetAssetId) {
+          usedIds.add(data.spriteSheetAssetId);
+        }
+
+        // Environment map
+        if (data.environmentMapId) {
+          usedIds.add(data.environmentMapId);
+        }
+      }
+    }
+  }
+
+  return usedIds;
+}
+
+/**
+ * Remove unused assets from the project (Reduce Project)
+ * Returns the number of assets removed
+ */
+export function removeUnusedAssets(store: ProjectStore): { removed: number; assetNames: string[] } {
+  const usedIds = findUsedAssetIds(store);
+  const assets = store.project.assets;
+  const removedNames: string[] = [];
+  let removedCount = 0;
+
+  // Find and remove unused assets
+  for (const assetId of Object.keys(assets)) {
+    if (!usedIds.has(assetId)) {
+      const asset = assets[assetId];
+      removedNames.push(asset.filename || assetId);
+      delete assets[assetId];
+      removedCount++;
+    }
+  }
+
+  if (removedCount > 0) {
+    store.project.meta.modified = new Date().toISOString();
+    pushHistory(store);
+    storeLogger.info(`Removed ${removedCount} unused assets:`, removedNames);
+  }
+
+  return { removed: removedCount, assetNames: removedNames };
+}
+
+/**
+ * Get statistics about asset usage
+ */
+export function getAssetUsageStats(store: ProjectStore): {
+  total: number;
+  used: number;
+  unused: number;
+  unusedNames: string[];
+} {
+  const usedIds = findUsedAssetIds(store);
+  const assets = store.project.assets;
+  const unusedNames: string[] = [];
+
+  for (const assetId of Object.keys(assets)) {
+    if (!usedIds.has(assetId)) {
+      unusedNames.push(assets[assetId].filename || assetId);
+    }
+  }
+
+  return {
+    total: Object.keys(assets).length,
+    used: usedIds.size,
+    unused: unusedNames.length,
+    unusedNames
+  };
+}
+
+/**
+ * Collect Files - Package project and all used assets into a ZIP
+ */
+export async function collectFiles(
+  store: ProjectStore,
+  options: {
+    includeUnused?: boolean;
+    projectName?: string;
+  } = {}
+): Promise<Blob> {
+  const { includeUnused = false, projectName } = options;
+
+  // Dynamically import JSZip
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+
+  // Create project folder
+  const folderName = projectName || store.project.meta.name || 'weyl-project';
+  const folder = zip.folder(folderName);
+  if (!folder) throw new Error('Failed to create ZIP folder');
+
+  // Get assets to include
+  const usedIds = includeUnused ? null : findUsedAssetIds(store);
+  const assets = store.project.assets;
+  const assetsFolder = folder.folder('assets');
+
+  // Collect asset files
+  const assetManifest: Record<string, string> = {}; // assetId -> relative path
+
+  for (const [assetId, asset] of Object.entries(assets)) {
+    // Skip unused assets if not including them
+    if (usedIds && !usedIds.has(assetId)) continue;
+
+    const filename = asset.filename || `${assetId}.${getExtensionForAsset(asset)}`;
+    assetManifest[assetId] = `assets/${filename}`;
+
+    // Add asset data to ZIP
+    if (asset.data) {
+      // Asset has inline data (base64 or data URL)
+      if (asset.data.startsWith('data:')) {
+        // Data URL - extract base64 part
+        const base64Data = asset.data.split(',')[1];
+        if (base64Data) {
+          assetsFolder?.file(filename, base64Data, { base64: true });
+        }
+      } else if (asset.data.startsWith('blob:') || asset.data.startsWith('http')) {
+        // URL - fetch the data
+        try {
+          const response = await fetch(asset.data);
+          const blob = await response.blob();
+          assetsFolder?.file(filename, blob);
+        } catch (e) {
+          storeLogger.warn(`Failed to fetch asset ${assetId}:`, e);
+        }
+      } else {
+        // Assume it's base64
+        assetsFolder?.file(filename, asset.data, { base64: true });
+      }
+    }
+  }
+
+  // Create a copy of the project with updated asset paths
+  const exportProject = structuredClone(toRaw(store.project));
+  (exportProject.meta as any).exportedAt = new Date().toISOString();
+
+  // Add asset manifest to project
+  (exportProject as any)._assetManifest = assetManifest;
+
+  // Save project JSON
+  folder.file('project.weyl.json', JSON.stringify(exportProject, null, 2));
+
+  // Generate ZIP
+  const zipBlob = await zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+
+  storeLogger.info(`Collected files: ${Object.keys(assetManifest).length} assets, project JSON`);
+  return zipBlob;
+}
+
+/**
+ * Helper to get file extension for an asset
+ */
+function getExtensionForAsset(asset: any): string {
+  if (asset.filename) {
+    const ext = asset.filename.split('.').pop();
+    if (ext) return ext;
+  }
+
+  switch (asset.type) {
+    case 'image': return 'png';
+    case 'video': return 'mp4';
+    case 'audio': return 'mp3';
+    case 'model': return 'glb';
+    case 'pointcloud': return 'ply';
+    default: return 'bin';
+  }
+}
+
+/**
+ * Trigger Collect Files download
+ */
+export async function downloadCollectedFiles(
+  store: ProjectStore,
+  options: { includeUnused?: boolean } = {}
+): Promise<void> {
+  const projectName = store.project.meta.name || 'weyl-project';
+  const zipBlob = await collectFiles(store, { ...options, projectName });
+
+  // Trigger download
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${projectName}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  storeLogger.info(`Downloaded collected files: ${projectName}.zip`);
 }

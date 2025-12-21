@@ -230,10 +230,25 @@ describe('MotionBlurProcessor', () => {
   });
 
   describe('resize', () => {
-    it('should handle resize', () => {
+    it('should handle resize and apply blur at new dimensions', () => {
       processor.resize(300, 200);
-      // No error thrown means success
-      expect(true).toBe(true);
+
+      // Create a canvas at new dimensions
+      const resizedCanvas = createTestCanvas(300, 200);
+      const ctx = resizedCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(0, 0, 300, 200);
+      }
+
+      // Enable blur and apply - should work with new dimensions
+      processor.setSettings({ enabled: true, type: 'standard' });
+      const velocity = { x: 10, y: 0, rotation: 0, scale: 0 };
+      const result = processor.applyMotionBlur(resizedCanvas, velocity, 0);
+
+      expect(result).toBeDefined();
+      expect(result.width).toBe(300);
+      expect(result.height).toBe(200);
     });
   });
 
@@ -328,17 +343,27 @@ describe('MotionBlurProcessor', () => {
 
   describe('frame buffer management', () => {
     it('should accumulate frames for temporal blur', () => {
-      processor.setSettings({ enabled: true, type: 'standard' });
+      processor.setSettings({ enabled: true, type: 'standard', samplesPerFrame: 8 });
       const velocity = { x: 5, y: 0, rotation: 0, scale: 0 };
 
-      // Apply multiple frames
+      // Apply multiple frames and collect results
+      const results: OffscreenCanvas[] = [];
       for (let i = 0; i < 5; i++) {
-        processor.applyMotionBlur(sourceCanvas, velocity, i);
+        const result = processor.applyMotionBlur(sourceCanvas, velocity, i);
+        results.push(result);
       }
 
-      // The processor should maintain a frame buffer
-      // This tests that it doesn't crash with multiple frames
-      expect(true).toBe(true);
+      // All results should be valid canvases with correct dimensions
+      expect(results.length).toBe(5);
+      results.forEach((result, index) => {
+        expect(result).toBeDefined();
+        expect(result.width).toBe(100);
+        expect(result.height).toBe(100);
+      });
+
+      // Final result should be defined
+      const finalResult = results[results.length - 1];
+      expect(finalResult).toBeDefined();
     });
   });
 

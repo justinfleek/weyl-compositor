@@ -203,6 +203,22 @@
        </div>
     </div>
 
+    <div class="prop-section">
+      <div class="section-title">Paragraph</div>
+      <div class="row">
+         <label>First Line Indent</label>
+         <ScrubableNumber :modelValue="textData.firstLineIndent || 0" @update:modelValue="v => updateData('firstLineIndent', v)" :min="-500" :max="500" />
+      </div>
+      <div class="row">
+         <label>Space Before</label>
+         <ScrubableNumber :modelValue="textData.spaceBefore || 0" @update:modelValue="v => updateData('spaceBefore', v)" :min="0" :max="500" />
+      </div>
+      <div class="row">
+         <label>Space After</label>
+         <ScrubableNumber :modelValue="textData.spaceAfter || 0" @update:modelValue="v => updateData('spaceAfter', v)" :min="0" :max="500" />
+      </div>
+    </div>
+
     <div class="prop-section checkbox">
        <label>
          <input type="checkbox" :checked="textData.perCharacter3D" @change="updateData('perCharacter3D', !textData.perCharacter3D)" />

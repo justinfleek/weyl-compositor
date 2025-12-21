@@ -250,4 +250,4 @@
 - [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) - Service APIs
 - [EFFECT_PARAMETERS.md](./EFFECT_PARAMETERS.md) - Effect documentation
 
-*Generated: December 19, 2024*
+*Generated: December 19, 2025*

@@ -20,38 +20,31 @@
 
       <div class="row">
         <label>Type</label>
-        <select :value="generatedData.generationType" @change="updateData('generationType', ($event.target as HTMLSelectElement).value)">
+        <select :value="generatedData.generationType" @change="onGenerationTypeChange(($event.target as HTMLSelectElement).value)">
           <option value="depth">Depth Map</option>
           <option value="normal">Normal Map</option>
           <option value="edge">Edge Detection</option>
+          <option value="pose">Pose Estimation</option>
+          <option value="video">Video (Pose/Normal)</option>
           <option value="segment">Segmentation</option>
-          <option value="inpaint">Inpainting</option>
-          <option value="custom">Custom</option>
+          <option value="custom">All Models</option>
         </select>
       </div>
 
       <div class="row">
         <label>Model</label>
         <select :value="generatedData.model" @change="updateData('model', ($event.target as HTMLSelectElement).value)">
-          <optgroup label="Depth Models">
-            <option value="depth-anything-v2">Depth Anything V2</option>
-            <option value="midas">MiDaS</option>
-            <option value="zoedepth">ZoeDepth</option>
-          </optgroup>
-          <optgroup label="Normal Models">
-            <option value="normal-bae">Normal BAE</option>
-            <option value="omnidata">Omnidata</option>
-          </optgroup>
-          <optgroup label="Edge Models">
-            <option value="canny">Canny Edge</option>
-            <option value="hed">HED</option>
-            <option value="pidinet">PidiNet</option>
-          </optgroup>
-          <optgroup label="Segmentation">
-            <option value="sam">SAM</option>
-            <option value="oneformer">OneFormer</option>
+          <optgroup v-for="(preprocessors, category) in preprocessorGroups" :key="category" :label="category">
+            <option v-for="p in preprocessors" :key="p.id" :value="p.id">
+              {{ p.display_name }}
+            </option>
           </optgroup>
         </select>
+      </div>
+
+      <!-- Model Description -->
+      <div v-if="currentPreprocessor" class="model-description">
+        {{ currentPreprocessor.description }}
       </div>
     </div>
 
@@ -108,9 +101,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import type { Layer, GeneratedLayerData } from '@/types/project';
+import {
+  PREPROCESSOR_REGISTRY,
+  getPreprocessorsForType,
+  getDefaultPreprocessor,
+  generateFromLayer,
+  type PreprocessorInfo,
+} from '@/services/preprocessorService';
 
 const props = defineProps<{
   layer: Layer;
@@ -122,6 +122,9 @@ const emit = defineEmits<{
 
 const store = useCompositorStore();
 
+// Progress message shown during generation
+const progressMessage = ref('');
+
 const generatedData = computed(() => props.layer.data as GeneratedLayerData);
 
 // Get layers that can be sources (images, video, other layers - not this one)
@@ -130,6 +133,30 @@ const sourceLayers = computed(() => {
     l.id !== props.layer.id &&
     ['image', 'video', 'solid', 'text', 'spline', 'shape'].includes(l.type)
   );
+});
+
+// Get available preprocessors based on selected generation type
+const availablePreprocessors = computed((): PreprocessorInfo[] => {
+  return getPreprocessorsForType(generatedData.value.generationType || 'depth');
+});
+
+// Group preprocessors by category for the dropdown
+const preprocessorGroups = computed(() => {
+  const groups: Record<string, PreprocessorInfo[]> = {};
+  for (const p of availablePreprocessors.value) {
+    const category = p.category.charAt(0).toUpperCase() + p.category.slice(1);
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(p);
+  }
+  return groups;
+});
+
+// Get the current preprocessor info
+const currentPreprocessor = computed((): PreprocessorInfo | null => {
+  const model = generatedData.value.model || getDefaultPreprocessor(generatedData.value.generationType || 'depth');
+  return PREPROCESSOR_REGISTRY[model] || null;
 });
 
 const statusIcon = computed(() => {
@@ -145,7 +172,7 @@ const statusIcon = computed(() => {
 const statusText = computed(() => {
   switch (generatedData.value.status) {
     case 'pending': return 'Not generated';
-    case 'generating': return 'Generating...';
+    case 'generating': return progressMessage.value || 'Generating...';
     case 'complete': return 'Complete';
     case 'error': return 'Error';
     default: return 'Unknown';
@@ -156,17 +183,61 @@ function updateData<K extends keyof GeneratedLayerData>(key: K, value: Generated
   emit('update', { [key]: value } as Partial<GeneratedLayerData>);
 }
 
-function regenerate() {
-  // Set status to generating - actual generation would be handled by AI service
-  emit('update', { status: 'generating' });
+// When generation type changes, update to the default preprocessor for that type
+function onGenerationTypeChange(type: string) {
+  updateData('generationType', type as GeneratedLayerData['generationType']);
+  updateData('model', getDefaultPreprocessor(type));
+}
 
-  // Simulate generation (in real app, this would call the AI service)
-  setTimeout(() => {
+async function regenerate() {
+  const sourceLayerId = generatedData.value.sourceLayerId;
+  if (!sourceLayerId) {
+    emit('update', { status: 'error', errorMessage: 'No source layer selected' });
+    return;
+  }
+
+  const preprocessorId = generatedData.value.model || getDefaultPreprocessor(generatedData.value.generationType || 'depth');
+
+  // Set status to generating
+  emit('update', { status: 'generating', errorMessage: undefined });
+  progressMessage.value = 'Starting...';
+
+  try {
+    // Call the real preprocessor backend
+    const result = await generateFromLayer(
+      sourceLayerId,
+      props.layer.id,
+      preprocessorId,
+      {
+        resolution: 512, // TODO: Make configurable
+      },
+      store.currentFrame,
+      (status) => {
+        progressMessage.value = status;
+      }
+    );
+
+    if (result.success && result.assetId) {
+      emit('update', {
+        status: 'complete',
+        generatedAssetId: result.assetId,
+        lastGenerated: new Date().toISOString(),
+        errorMessage: undefined,
+      });
+    } else {
+      emit('update', {
+        status: 'error',
+        errorMessage: result.error || 'Generation failed',
+      });
+    }
+  } catch (error) {
     emit('update', {
-      status: 'complete',
-      lastGenerated: new Date().toISOString()
+      status: 'error',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
     });
-  }, 2000);
+  } finally {
+    progressMessage.value = '';
+  }
 }
 
 function clearGenerated() {
@@ -351,5 +422,15 @@ function formatTime(isoString: string): string {
   font-size: 12px;
   color: #666;
   text-align: center;
+}
+
+.model-description {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: rgba(74, 144, 217, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.4;
 }
 </style>

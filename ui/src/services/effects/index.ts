@@ -8,6 +8,7 @@ import { registerBlurEffects } from './blurRenderer';
 import { registerColorEffects } from './colorRenderer';
 import { registerDistortEffects } from './distortRenderer';
 import { registerGenerateEffects } from './generateRenderer';
+import { registerTimeEffects } from './timeRenderer';
 
 /**
  * Initialize all effect renderers
@@ -18,6 +19,7 @@ export function initializeEffects(): void {
   registerColorEffects();
   registerDistortEffects();
   registerGenerateEffects();
+  registerTimeEffects();
 }
 
 // Re-export blur effects
@@ -67,6 +69,14 @@ export {
   getNoiseTileCacheStats
 } from './generateRenderer';
 
+// Re-export time effects
+export {
+  echoRenderer,
+  posterizeTimeRenderer,
+  timeDisplacementRenderer,
+  clearAllFrameBuffers
+} from './timeRenderer';
+
 // Mask system
 export {
   renderMask,
@@ -74,3 +84,19 @@ export {
   applyTrackMatte,
   applyMasksToLayer
 } from './maskRenderer';
+
+// Matte edge effects (choker, spill suppressor, feathering)
+export {
+  applyChoker,
+  applySpillSuppressor,
+  applyEdgeFeather,
+  extractAlpha,
+  applyAlpha,
+  analyzeEdgeQuality,
+  createDefaultChokerParams,
+  createGreenScreenSpillParams,
+  createBlueScreenSpillParams,
+  type ChokerParams,
+  type SpillSuppressorParams,
+  type EdgeFeatherParams,
+} from './matteEdge';

@@ -168,24 +168,96 @@ export async function executeToolCall(toolCall: ToolCall): Promise<any> {
 // LAYER MANAGEMENT HANDLERS
 // ============================================================================
 
+/**
+ * Validate required arguments exist and have correct types
+ */
+function validateArgs(
+  args: Record<string, any>,
+  schema: Record<string, { type: string; required?: boolean }>
+): { valid: boolean; error?: string } {
+  for (const [key, spec] of Object.entries(schema)) {
+    const value = args[key];
+
+    // Check required fields
+    if (spec.required && (value === undefined || value === null)) {
+      return { valid: false, error: `Missing required argument: ${key}` };
+    }
+
+    // Skip type check if value is undefined and not required
+    if (value === undefined || value === null) continue;
+
+    // Type validation
+    const actualType = Array.isArray(value) ? 'array' : typeof value;
+    if (spec.type === 'array' && !Array.isArray(value)) {
+      return { valid: false, error: `Argument ${key} must be an array` };
+    } else if (spec.type !== 'array' && spec.type !== 'any' && actualType !== spec.type) {
+      return { valid: false, error: `Argument ${key} must be ${spec.type}, got ${actualType}` };
+    }
+  }
+  return { valid: true };
+}
+
 function executeCreateLayer(
   context: ExecutionContext,
   args: Record<string, any>
 ): { layerId: string; message: string } {
   const { store } = context;
+
+  // Validate arguments
+  const validation = validateArgs(args, {
+    type: { type: 'string', required: true },
+    name: { type: 'string', required: false },
+    properties: { type: 'object', required: false },
+    position: { type: 'object', required: false },
+    inPoint: { type: 'number', required: false },
+    outPoint: { type: 'number', required: false },
+  });
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
   const { type, name, properties, position, inPoint, outPoint } = args;
 
-  // Map tool type names to internal types
+  // Complete mapping of all 24 layer types
   const typeMap: Record<string, LayerType> = {
+    // Core layer types
     solid: 'solid',
     text: 'text',
     shape: 'shape',
     spline: 'spline',
-    particles: 'particles',
+    path: 'path',
     image: 'image',
+    video: 'video',
+    audio: 'audio',
+
+    // 3D layers
     camera: 'camera',
-    control: 'null',  // Control layer maps to null type
+    light: 'light',
+    model: 'model',
+    pointcloud: 'pointcloud',
+
+    // Particle systems (both names supported)
+    particle: 'particle',
+    particles: 'particles',
+
+    // Special layers
+    control: 'control',
+    null: 'null',           // Legacy, maps to control
+    group: 'group',
     nested: 'nestedComp',
+    nestedComp: 'nestedComp',
+    matte: 'matte',
+
+    // AI/Generated layers
+    depth: 'depth',
+    normal: 'normal',
+    generated: 'generated',
+    depthflow: 'depthflow',
+
+    // Effect layers
+    effectLayer: 'effectLayer',
+    adjustment: 'adjustment',  // @deprecated alias for effectLayer
+    'effect-layer': 'effectLayer',  // kebab-case alias
   };
 
   const internalType = typeMap[type] || type;

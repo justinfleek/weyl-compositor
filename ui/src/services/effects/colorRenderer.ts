@@ -543,19 +543,42 @@ export function createLiftCurve(shadowLift: number = 0, highlightLift: number = 
  * - glow_threshold: 0-255, pixels above this brightness glow (default 128)
  * - glow_radius: 0-200, blur radius for glow (default 20)
  * - glow_intensity: 0-400, intensity multiplier (default 100)
- * - glow_colors: 'original' | 'a_over_b' | 'custom' (default 'original')
- * - glow_color_a: color for glow (when using custom colors)
- * - glow_color_b: color for secondary glow
+ * - glow_colors: 'original' | 'ab' (default 'original')
+ * - color_a: color for glow (when using 'ab' mode)
+ * - color_b: color for secondary glow
+ * - color_looping: 'none' | 'sawtooth_ab' | 'sawtooth_ba' | 'triangle'
+ * - color_looping_speed: cycles per second (default 1)
+ * - glow_dimensions: 'both' | 'horizontal' | 'vertical'
  * - glow_operation: 'add' | 'screen' | 'lighten' (default 'add')
  */
 export function glowRenderer(
   input: EffectStackResult,
-  params: EvaluatedEffectParams
+  params: EvaluatedEffectParams,
+  frame?: number
 ): EffectStackResult {
   const threshold = params.glow_threshold ?? 128;
   const radius = params.glow_radius ?? 20;
-  const intensity = (params.glow_intensity ?? 100) / 100;
-  const operation = params.glow_operation ?? 'add';
+  // Support both new 'glow_intensity' (0-10 range) and legacy (0-400 percentage)
+  const rawIntensity = params.glow_intensity ?? 100;
+  const intensity = rawIntensity <= 10 ? rawIntensity : rawIntensity / 100;
+
+  // Support both 'composite_original' (from definition) and legacy 'glow_operation'
+  // composite_original: 'on-top' | 'behind' | 'none'
+  // glow_operation: 'add' | 'screen' | 'lighten'
+  const composite = params.composite_original ?? 'on-top';
+  const operation = params.glow_operation ?? (composite === 'on-top' ? 'add' : 'lighten');
+
+  // Glow Colors (original or custom A/B colors)
+  const glowColors = params.glow_colors ?? 'original';
+  const colorA = params.color_a ?? { r: 255, g: 255, b: 255, a: 1 };
+  const colorB = params.color_b ?? { r: 255, g: 128, b: 0, a: 1 };
+
+  // Color Looping (animated color cycling)
+  const colorLooping = params.color_looping ?? 'none';
+  const colorLoopingSpeed = params.color_looping_speed ?? 1;
+
+  // Glow Dimensions (horizontal, vertical, or both)
+  const glowDimensions = params.glow_dimensions ?? 'both';
 
   // No glow if intensity is 0 or radius is 0
   if (intensity === 0 || radius === 0) {
@@ -564,6 +587,39 @@ export function glowRenderer(
 
   const { width, height } = input.canvas;
   const output = createMatchingCanvas(input.canvas);
+
+  // Calculate color looping blend factor
+  let colorBlend = 0; // 0 = Color A, 1 = Color B
+  if (colorLooping !== 'none' && frame !== undefined) {
+    const fps = 16; // Default Weyl fps
+    const time = frame / fps;
+    const cycle = (time * colorLoopingSpeed) % 1;
+
+    switch (colorLooping) {
+      case 'sawtooth_ab':
+        // A → B → A → B (smooth ramp from A to B, then snap back)
+        colorBlend = cycle;
+        break;
+      case 'sawtooth_ba':
+        // B → A → B → A (smooth ramp from B to A, then snap back)
+        colorBlend = 1 - cycle;
+        break;
+      case 'triangle':
+        // A → B → A (ping-pong)
+        colorBlend = cycle < 0.5 ? cycle * 2 : 2 - cycle * 2;
+        break;
+      default:
+        colorBlend = 0;
+    }
+  }
+
+  // Calculate the effective glow color (lerp between A and B)
+  const effectiveColor = glowColors === 'ab' ? {
+    r: colorA.r + (colorB.r - colorA.r) * colorBlend,
+    g: colorA.g + (colorB.g - colorA.g) * colorBlend,
+    b: colorA.b + (colorB.b - colorA.b) * colorBlend,
+    a: colorA.a + (colorB.a - colorA.a) * colorBlend
+  } : null;
 
   // Step 1: Extract bright areas above threshold
   const thresholdCanvas = document.createElement('canvas');
@@ -586,9 +642,18 @@ export function glowRenderer(
     if (lum > threshold) {
       // Keep pixels above threshold, scaled by intensity
       const scale = ((lum - threshold) / (255 - threshold)) * intensity;
-      thresholdData.data[i] = Math.min(255, r * scale);
-      thresholdData.data[i + 1] = Math.min(255, g * scale);
-      thresholdData.data[i + 2] = Math.min(255, b * scale);
+
+      if (effectiveColor) {
+        // Apply custom glow color, using luminance as intensity
+        thresholdData.data[i] = Math.min(255, effectiveColor.r * scale);
+        thresholdData.data[i + 1] = Math.min(255, effectiveColor.g * scale);
+        thresholdData.data[i + 2] = Math.min(255, effectiveColor.b * scale);
+      } else {
+        // Original colors
+        thresholdData.data[i] = Math.min(255, r * scale);
+        thresholdData.data[i + 1] = Math.min(255, g * scale);
+        thresholdData.data[i + 2] = Math.min(255, b * scale);
+      }
       thresholdData.data[i + 3] = a;
     } else {
       // Set to transparent
@@ -601,34 +666,101 @@ export function glowRenderer(
 
   thresholdCtx.putImageData(thresholdData, 0, 0);
 
-  // Step 2: Blur the threshold image
+  // Step 2: Blur the threshold image (with dimension control)
   const blurCanvas = document.createElement('canvas');
   blurCanvas.width = width;
   blurCanvas.height = height;
   const blurCtx = blurCanvas.getContext('2d')!;
 
-  blurCtx.filter = `blur(${radius}px)`;
-  blurCtx.drawImage(thresholdCanvas, 0, 0);
+  // Apply directional or full blur based on glow dimensions
+  if (glowDimensions === 'horizontal') {
+    // Horizontal-only blur: apply blur, then scale vertically to 1px and stretch back
+    // This is a CSS filter approximation - true directional blur would need pixel manipulation
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = 1;
+    const tempCtx = tempCanvas.getContext('2d')!;
 
-  // Step 3: Composite glow with original
-  // First draw original
-  output.ctx.drawImage(input.canvas, 0, 0);
+    // Draw threshold to 1-pixel height (average vertically)
+    tempCtx.drawImage(thresholdCanvas, 0, 0, width, 1);
 
-  // Then add glow using selected blend mode
-  switch (operation) {
-    case 'screen':
-      output.ctx.globalCompositeOperation = 'screen';
-      break;
-    case 'lighten':
-      output.ctx.globalCompositeOperation = 'lighten';
-      break;
-    case 'add':
-    default:
-      output.ctx.globalCompositeOperation = 'lighter';
-      break;
+    // Apply horizontal blur
+    const blurTemp = document.createElement('canvas');
+    blurTemp.width = width;
+    blurTemp.height = 1;
+    const blurTempCtx = blurTemp.getContext('2d')!;
+    blurTempCtx.filter = `blur(${radius}px)`;
+    blurTempCtx.drawImage(tempCanvas, 0, 0);
+
+    // Stretch back to full height
+    blurCtx.drawImage(blurTemp, 0, 0, width, height);
+
+    // Multiply with original threshold to restore vertical detail
+    blurCtx.globalCompositeOperation = 'multiply';
+    blurCtx.filter = `blur(${radius}px)`;
+    blurCtx.drawImage(thresholdCanvas, 0, 0);
+    blurCtx.globalCompositeOperation = 'source-over';
+  } else if (glowDimensions === 'vertical') {
+    // Vertical-only blur: similar approach but rotated
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 1;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext('2d')!;
+
+    // Draw threshold to 1-pixel width (average horizontally)
+    tempCtx.drawImage(thresholdCanvas, 0, 0, 1, height);
+
+    // Apply vertical blur
+    const blurTemp = document.createElement('canvas');
+    blurTemp.width = 1;
+    blurTemp.height = height;
+    const blurTempCtx = blurTemp.getContext('2d')!;
+    blurTempCtx.filter = `blur(${radius}px)`;
+    blurTempCtx.drawImage(tempCanvas, 0, 0);
+
+    // Stretch back to full width
+    blurCtx.drawImage(blurTemp, 0, 0, width, height);
+
+    // Multiply with original threshold to restore horizontal detail
+    blurCtx.globalCompositeOperation = 'multiply';
+    blurCtx.filter = `blur(${radius}px)`;
+    blurCtx.drawImage(thresholdCanvas, 0, 0);
+    blurCtx.globalCompositeOperation = 'source-over';
+  } else {
+    // Both dimensions - standard blur
+    blurCtx.filter = `blur(${radius}px)`;
+    blurCtx.drawImage(thresholdCanvas, 0, 0);
   }
 
-  output.ctx.drawImage(blurCanvas, 0, 0);
+  // Step 3: Composite glow with original based on composite mode
+  if (composite === 'none') {
+    // Show glow only, no original
+    output.ctx.drawImage(blurCanvas, 0, 0);
+  } else if (composite === 'behind') {
+    // Draw glow first, then original on top
+    output.ctx.drawImage(blurCanvas, 0, 0);
+    output.ctx.globalCompositeOperation = 'source-over';
+    output.ctx.drawImage(input.canvas, 0, 0);
+  } else {
+    // 'on-top' mode (default): Draw original, then glow on top with blend mode
+    output.ctx.drawImage(input.canvas, 0, 0);
+
+    // Add glow using selected blend mode
+    switch (operation) {
+      case 'screen':
+        output.ctx.globalCompositeOperation = 'screen';
+        break;
+      case 'lighten':
+        output.ctx.globalCompositeOperation = 'lighten';
+        break;
+      case 'add':
+      default:
+        output.ctx.globalCompositeOperation = 'lighter';
+        break;
+    }
+
+    output.ctx.drawImage(blurCanvas, 0, 0);
+  }
 
   // Reset composite operation
   output.ctx.globalCompositeOperation = 'source-over';

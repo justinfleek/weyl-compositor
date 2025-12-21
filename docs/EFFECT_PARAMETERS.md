@@ -873,6 +873,6 @@ for (let i = 0; i < 256; i++) {
 
 ---
 
-*Generated: December 19, 2024*
+*Generated: December 19, 2025*
 *Effects: 22 total*
 *Categories: 4 (Blur, Color, Distort, Generate)*

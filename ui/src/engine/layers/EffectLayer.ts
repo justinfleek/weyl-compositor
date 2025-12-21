@@ -178,7 +178,15 @@ export class EffectLayer extends BaseLayer {
     // Apply effects to the source canvas
     try {
       const qualityHint = this.isDraftQuality() ? 'draft' : 'high';
-      const result = processEffectStack(this.effects, sourceCanvas, frame, qualityHint);
+
+      // Build context for time-based effects (Echo, Posterize Time)
+      const effectContext = {
+        frame,
+        fps: 16, // Default project fps (Wan 2.1 standard)
+        layerId: this.id
+      };
+
+      const result = processEffectStack(this.effects, sourceCanvas, frame, qualityHint, effectContext);
 
       // Create texture from result
       this.updateResultTexture(result.canvas);

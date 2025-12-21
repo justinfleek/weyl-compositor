@@ -25,6 +25,13 @@ interface AudioState {
   loadingPhase: string;
   loadingError: string | null;
 
+  // Playback state
+  audioContext: AudioContext | null;
+  audioSource: AudioBufferSourceNode | null;
+  isPlayingAudio: boolean;
+  audioStartTime: number;
+  audioStartOffset: number;
+
   // Peak detection
   peakData: PeakData | null;
 
@@ -45,6 +52,11 @@ export const useAudioStore = defineStore('audio', {
     loadingProgress: 0,
     loadingPhase: '',
     loadingError: null,
+    audioContext: null,
+    audioSource: null,
+    isPlayingAudio: false,
+    audioStartTime: 0,
+    audioStartOffset: 0,
     peakData: null,
     legacyMappings: new Map(),
     reactiveMappings: [],
@@ -322,6 +334,143 @@ export const useAudioStore = defineStore('audio', {
     getValuesForLayerAtFrame(layerId: string, frame: number): Map<TargetParameter, number> {
       if (!this.reactiveMapper) return new Map();
       return this.reactiveMapper.getValuesForLayerAtFrame(layerId, frame);
+    },
+
+    // ============================================================
+    // AUDIO PLAYBACK (Ctrl+. for audio-only preview)
+    // ============================================================
+
+    /**
+     * Initialize audio context if needed
+     */
+    ensureAudioContext(): AudioContext {
+      if (!this.audioContext) {
+        this.audioContext = new AudioContext();
+      }
+      return this.audioContext;
+    },
+
+    /**
+     * Play audio from a specific frame
+     * @param frame - Current frame to start from
+     * @param fps - Frames per second for time calculation
+     */
+    playAudioFromFrame(frame: number, fps: number): void {
+      if (!this.audioBuffer) {
+        storeLogger.debug('No audio loaded');
+        return;
+      }
+
+      // Stop any existing playback
+      this.stopAudio();
+
+      const context = this.ensureAudioContext();
+
+      // Resume context if suspended (browser autoplay policy)
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+
+      // Calculate start time in seconds
+      const startTime = frame / fps;
+
+      // Create new source
+      this.audioSource = context.createBufferSource();
+      this.audioSource.buffer = this.audioBuffer;
+      this.audioSource.connect(context.destination);
+
+      // Store start info for getCurrentTime calculation
+      this.audioStartTime = context.currentTime;
+      this.audioStartOffset = startTime;
+      this.isPlayingAudio = true;
+
+      // Start playback from offset
+      this.audioSource.start(0, startTime);
+
+      // Handle playback end
+      this.audioSource.onended = () => {
+        this.isPlayingAudio = false;
+      };
+
+      storeLogger.debug('Audio playback started at frame', frame, 'time', startTime);
+    },
+
+    /**
+     * Stop audio playback
+     */
+    stopAudio(): void {
+      if (this.audioSource) {
+        try {
+          this.audioSource.stop();
+        } catch {
+          // Ignore error if source already stopped
+        }
+        this.audioSource.disconnect();
+        this.audioSource = null;
+      }
+      this.isPlayingAudio = false;
+      storeLogger.debug('Audio playback stopped');
+    },
+
+    /**
+     * Toggle audio playback (Ctrl+.)
+     * @param frame - Current frame
+     * @param fps - Frames per second
+     */
+    toggleAudioPlayback(frame: number, fps: number): void {
+      if (this.isPlayingAudio) {
+        this.stopAudio();
+      } else {
+        this.playAudioFromFrame(frame, fps);
+      }
+    },
+
+    /**
+     * Get current audio playback time in seconds
+     */
+    getCurrentAudioTime(): number {
+      if (!this.isPlayingAudio || !this.audioContext) return 0;
+      return this.audioStartOffset + (this.audioContext.currentTime - this.audioStartTime);
+    },
+
+    /**
+     * Scrub audio at a specific position (for Ctrl+drag audio scrub)
+     * This plays a short snippet of audio at the given frame
+     * @param frame - Frame to scrub to
+     * @param fps - Frames per second
+     */
+    scrubAudio(frame: number, fps: number): void {
+      if (!this.audioBuffer) return;
+
+      const context = this.ensureAudioContext();
+
+      // Resume context if suspended
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+
+      // Stop any existing scrub playback
+      if (this.audioSource) {
+        try {
+          this.audioSource.stop();
+        } catch {
+          // Ignore
+        }
+        this.audioSource.disconnect();
+      }
+
+      // Calculate time position
+      const time = frame / fps;
+      const scrubDuration = 0.1; // Play 100ms of audio
+
+      // Create and play short snippet
+      this.audioSource = context.createBufferSource();
+      this.audioSource.buffer = this.audioBuffer;
+      this.audioSource.connect(context.destination);
+
+      // Start at frame time, play for scrubDuration
+      const endTime = Math.min(time + scrubDuration, this.audioBuffer.duration);
+      this.audioSource.start(0, time, endTime - time);
     },
   },
 });

@@ -338,6 +338,161 @@ if (typeof globalThis.requestAnimationFrame === 'undefined') {
 }
 
 // ============================================================================
+// Override document.createElement for canvas elements
+// ============================================================================
+
+// Store the original createElement
+const originalCreateElement = document.createElement.bind(document);
+
+// Override to return mock canvas for canvas elements
+document.createElement = function(tagName: string, options?: ElementCreationOptions): any {
+  if (tagName.toLowerCase() === 'canvas') {
+    const mockCanvas = {
+      width: 300,
+      height: 150,
+      style: {},
+      _context2d: null as MockOffscreenCanvasRenderingContext2D | null,
+      getContext(contextId: string, _options?: any): any {
+        if (contextId === '2d') {
+          if (!this._context2d) {
+            const offscreen = new MockOffscreenCanvas(this.width, this.height);
+            this._context2d = offscreen.getContext('2d') as MockOffscreenCanvasRenderingContext2D;
+            // Sync canvas reference
+            (this._context2d as any).canvas = this;
+          }
+          return this._context2d;
+        }
+        return null;
+      },
+      toDataURL(_type?: string, _quality?: number): string {
+        return 'data:image/png;base64,mockdata';
+      },
+      toBlob(callback: BlobCallback, type?: string, _quality?: number): void {
+        callback(new Blob(['mock-image-data'], { type: type || 'image/png' }));
+      },
+      getBoundingClientRect() {
+        return { top: 0, left: 0, right: this.width, bottom: this.height, width: this.width, height: this.height, x: 0, y: 0, toJSON: () => ({}) };
+      },
+      addEventListener() {},
+      removeEventListener() {},
+      setAttribute() {},
+      getAttribute() { return null; },
+    };
+    return mockCanvas as unknown as HTMLCanvasElement;
+  }
+  return originalCreateElement(tagName, options);
+};
+
+// ============================================================================
+// Mock getComputedStyle for SVGLoader
+// ============================================================================
+
+// Override getComputedStyle to support SVG element style parsing
+const originalGetComputedStyle = globalThis.getComputedStyle;
+
+// Create a comprehensive mock CSSStyleDeclaration for SVG elements
+function createMockCSSStyleDeclaration(): CSSStyleDeclaration {
+  const styleValues: Record<string, string> = {
+    'fill': '#000000',
+    'stroke': 'none',
+    'stroke-width': '1',
+    'fill-opacity': '1',
+    'stroke-opacity': '1',
+    'opacity': '1',
+    'display': 'inline',
+    'visibility': 'visible',
+    'color': '#000000',
+    'font-family': 'sans-serif',
+    'font-size': '16px',
+    'font-weight': '400',
+    'font-style': 'normal',
+    'text-decoration': 'none',
+    'transform': 'none',
+    'clip-path': 'none',
+    'mask': 'none',
+    'filter': 'none',
+  };
+
+  // Use a Proxy to return empty string for any unknown property (not undefined)
+  const handler: ProxyHandler<any> = {
+    get(target, prop) {
+      // Handle known methods/properties
+      if (prop === 'getPropertyValue') {
+        return (name: string) => styleValues[name] ?? '';
+      }
+      if (prop === 'getPropertyPriority') {
+        return () => '';
+      }
+      if (prop === 'item') {
+        return (_index: number) => '';
+      }
+      if (prop === 'length') {
+        return 0;
+      }
+      if (prop === 'parentRule') {
+        return null;
+      }
+      if (prop === 'cssText') {
+        return '';
+      }
+      if (prop === 'removeProperty') {
+        return () => '';
+      }
+      if (prop === 'setProperty') {
+        return () => {};
+      }
+      if (prop === Symbol.iterator) {
+        return function* () {};
+      }
+      // For any style property, return the value or empty string
+      if (typeof prop === 'string') {
+        return styleValues[prop] ?? '';
+      }
+      return undefined;
+    }
+  };
+
+  return new Proxy({}, handler) as unknown as CSSStyleDeclaration;
+}
+
+(globalThis as any).getComputedStyle = function(element: Element, pseudoElt?: string | null): CSSStyleDeclaration {
+  // For SVG elements or any element in test environment
+  if (element instanceof SVGElement || element?.constructor?.name?.includes('SVG') || element?.tagName?.toLowerCase() === 'svg') {
+    return createMockCSSStyleDeclaration();
+  }
+
+  // For other HTML elements, also provide a mock
+  if (element instanceof HTMLElement || element?.nodeType === 1) {
+    return createMockCSSStyleDeclaration();
+  }
+
+  // Fall back to original for other elements
+  if (originalGetComputedStyle) {
+    try {
+      return originalGetComputedStyle(element, pseudoElt);
+    } catch {
+      return createMockCSSStyleDeclaration();
+    }
+  }
+
+  // Default mock for non-browser environments
+  return createMockCSSStyleDeclaration();
+};
+
+// ============================================================================
+// SVGElement mock for Three.js SVGLoader
+// ============================================================================
+
+if (typeof globalThis.SVGElement === 'undefined') {
+  (globalThis as any).SVGElement = class SVGElement extends Element {
+    constructor() {
+      // @ts-ignore - need to call super
+      super();
+    }
+  };
+}
+
+// ============================================================================
 // Export for direct use in tests
 // ============================================================================
 

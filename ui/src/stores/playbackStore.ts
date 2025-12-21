@@ -13,6 +13,9 @@ interface PlaybackState {
   playbackStartTime: number | null;
   playbackStartFrame: number;
   loopPlayback: boolean;
+  // Work area bounds (null = use full composition)
+  workAreaStart: number | null;
+  workAreaEnd: number | null;
 }
 
 export const usePlaybackStore = defineStore('playback', {
@@ -22,13 +25,36 @@ export const usePlaybackStore = defineStore('playback', {
     playbackStartTime: null,
     playbackStartFrame: 0,
     loopPlayback: true,
+    workAreaStart: null,
+    workAreaEnd: null,
   }),
 
   getters: {
     playing: (state) => state.isPlaying,
+    hasWorkArea: (state) => state.workAreaStart !== null && state.workAreaEnd !== null,
+    effectiveStartFrame: (state) => state.workAreaStart ?? 0,
+    effectiveEndFrame: (state) => (frameCount: number) => state.workAreaEnd ?? frameCount - 1,
   },
 
   actions: {
+    /**
+     * Set work area bounds
+     */
+    setWorkArea(start: number | null, end: number | null): void {
+      this.workAreaStart = start;
+      this.workAreaEnd = end;
+      storeLogger.debug('Work area set:', { start, end });
+    },
+
+    /**
+     * Clear work area
+     */
+    clearWorkArea(): void {
+      this.workAreaStart = null;
+      this.workAreaEnd = null;
+      storeLogger.debug('Work area cleared');
+    },
+
     /**
      * Start playback
      * @param fps - Frames per second
@@ -48,6 +74,19 @@ export const usePlaybackStore = defineStore('playback', {
       this.playbackStartTime = performance.now();
       this.playbackStartFrame = currentFrame;
 
+      // Determine effective playback range (work area or full comp)
+      const rangeStart = this.workAreaStart ?? 0;
+      const rangeEnd = this.workAreaEnd ?? frameCount - 1;
+      const rangeLength = rangeEnd - rangeStart + 1;
+
+      // If current frame is outside work area, jump to work area start
+      if (this.workAreaStart !== null && this.workAreaEnd !== null) {
+        if (currentFrame < rangeStart || currentFrame > rangeEnd) {
+          currentFrame = rangeStart;
+          onFrame(currentFrame);
+        }
+      }
+
       const frameDuration = 1000 / fps;
       let lastFrameTime = this.playbackStartTime;
 
@@ -59,12 +98,13 @@ export const usePlaybackStore = defineStore('playback', {
           const framesToAdvance = Math.floor(elapsed / frameDuration);
           let newFrame = currentFrame + framesToAdvance;
 
-          // Handle looping or stopping at end
-          if (newFrame >= frameCount) {
+          // Handle looping or stopping at end of work area / composition
+          if (newFrame > rangeEnd) {
             if (this.loopPlayback) {
-              newFrame = newFrame % frameCount;
+              // Loop within work area
+              newFrame = rangeStart + ((newFrame - rangeStart) % rangeLength);
             } else {
-              newFrame = frameCount - 1;
+              newFrame = rangeEnd;
               this.stop();
               onFrame(newFrame);
               return;
@@ -80,7 +120,7 @@ export const usePlaybackStore = defineStore('playback', {
       };
 
       this.playbackRequestId = requestAnimationFrame(tick);
-      storeLogger.debug('Playback started at frame', currentFrame);
+      storeLogger.debug('Playback started at frame', currentFrame, 'range:', rangeStart, '-', rangeEnd);
     },
 
     /**

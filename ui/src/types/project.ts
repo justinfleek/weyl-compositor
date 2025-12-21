@@ -196,6 +196,58 @@ export interface AssetReference {
  */
 export type AutoOrientMode = 'off' | 'toCamera' | 'alongPath' | 'toPointOfInterest';
 
+/**
+ * Follow Path Constraint - Position a layer along a path/spline layer
+ *
+ * Uses arc-length parameterization for smooth, uniform motion along the path.
+ * Works with both 'spline' and 'path' layer types.
+ */
+export interface FollowPathConstraint {
+  /** Enable/disable the constraint */
+  enabled: boolean;
+
+  /** ID of the path or spline layer to follow */
+  pathLayerId: string;
+
+  /** Progress along the path (0 = start, 1 = end) - ANIMATABLE */
+  progress: AnimatableProperty<number>;
+
+  /** Perpendicular offset from the path (pixels) - positive = right of tangent */
+  offset: AnimatableProperty<number>;
+
+  /** Offset distance along the path (0-1 normalized) */
+  tangentOffset: number;
+
+  /** Auto-orient layer rotation to path tangent */
+  autoOrient: boolean;
+
+  /** Additional rotation offset when auto-orienting (degrees) */
+  rotationOffset: AnimatableProperty<number>;
+
+  /** Banking/tilt on curves (like a car on a racetrack) */
+  banking: AnimatableProperty<number>;
+
+  /** Loop behavior when progress goes beyond 0-1 */
+  loopMode: 'clamp' | 'loop' | 'pingpong';
+}
+
+/**
+ * Create default Follow Path constraint
+ */
+export function createFollowPathConstraint(pathLayerId: string): FollowPathConstraint {
+  return {
+    enabled: true,
+    pathLayerId,
+    progress: createAnimatableProperty('Progress', 0, 'number'),
+    offset: createAnimatableProperty('Offset', 0, 'number'),
+    tangentOffset: 0,
+    autoOrient: true,
+    rotationOffset: createAnimatableProperty('Rotation Offset', 0, 'number'),
+    banking: createAnimatableProperty('Banking', 0, 'number'),
+    loopMode: 'clamp',
+  };
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -206,6 +258,7 @@ export interface Layer {
   minimized?: boolean;        // Minimized layer (hide when minimized mode enabled)
   threeD: boolean;            // 3D Layer Switch
   autoOrient?: AutoOrientMode; // Auto-orient behavior (billboard to camera, along path, etc.)
+  followPath?: FollowPathConstraint; // Constrain layer position to follow a path layer
   motionBlur: boolean;        // Motion Blur Switch
   motionBlurSettings?: LayerMotionBlurSettings;  // Detailed motion blur configuration
   flattenTransform?: boolean; // Flatten Transform / Continuously Rasterize
@@ -282,7 +335,9 @@ export type LayerType =
   | 'nestedComp' // Nested composition
   | 'matte'      // Procedural matte (animated patterns for track mattes)
   | 'model'      // 3D model (GLTF, OBJ, FBX, USD)
-  | 'pointcloud'; // Point cloud (PLY, PCD, LAS)
+  | 'pointcloud' // Point cloud (PLY, PCD, LAS)
+  | 'effectLayer'// Effect layer (effects apply to layers below)
+  | 'adjustment';// @deprecated Use 'effectLayer' instead
 
 // ============================================================
 // MOTION BLUR SETTINGS
@@ -363,15 +418,19 @@ export type LayerDataMap = {
   shape: ShapeLayerData;
   model: ModelLayerData;
   pointcloud: PointCloudLayerData;
-  // Layers with no special data
-  depth: null;
-  normal: null;
-  image: null;
-  audio: null;
-  light: null;
-  solid: null;
-  null: null;
-  group: null;
+  // Layers with specialized data defined above
+  image: ImageLayerData;
+  depth: DepthLayerData;
+  normal: NormalLayerData;
+  audio: AudioLayerData;
+  control: ControlLayerData;
+  // Layers with specialized data (previously null)
+  light: LightLayerData;
+  solid: SolidLayerData;
+  null: NullLayerData;
+  group: GroupLayerData;
+  effectLayer: EffectLayerData;
+  adjustment: EffectLayerData;  // @deprecated - use effectLayer
 };
 
 /**
@@ -398,7 +457,65 @@ export function getLayerData<T extends keyof LayerDataMap>(
   return null;
 }
 
-export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'add' | 'difference';
+/**
+ * Blend Modes - Full Photoshop/After Effects compatibility
+ * Organized by category matching industry standard groupings
+ */
+export type BlendMode =
+  // Normal
+  | 'normal'
+  | 'dissolve'
+  // Darken
+  | 'darken'
+  | 'multiply'
+  | 'color-burn'
+  | 'linear-burn'
+  | 'darker-color'
+  // Lighten
+  | 'lighten'
+  | 'screen'
+  | 'color-dodge'
+  | 'linear-dodge'
+  | 'lighter-color'
+  | 'add'
+  // Contrast
+  | 'overlay'
+  | 'soft-light'
+  | 'hard-light'
+  | 'vivid-light'
+  | 'linear-light'
+  | 'pin-light'
+  | 'hard-mix'
+  // Inversion
+  | 'difference'
+  | 'exclusion'
+  | 'subtract'
+  | 'divide'
+  // Component (HSL)
+  | 'hue'
+  | 'saturation'
+  | 'color'
+  | 'luminosity'
+  // AE-specific
+  | 'stencil-alpha'
+  | 'stencil-luma'
+  | 'silhouette-alpha'
+  | 'silhouette-luma'
+  | 'alpha-add'
+  | 'luminescent-premul';
+
+/**
+ * Blend mode categories for UI organization
+ */
+export const BLEND_MODE_CATEGORIES = {
+  normal: ['normal', 'dissolve'],
+  darken: ['darken', 'multiply', 'color-burn', 'linear-burn', 'darker-color'],
+  lighten: ['lighten', 'screen', 'color-dodge', 'linear-dodge', 'lighter-color', 'add'],
+  contrast: ['overlay', 'soft-light', 'hard-light', 'vivid-light', 'linear-light', 'pin-light', 'hard-mix'],
+  inversion: ['difference', 'exclusion', 'subtract', 'divide'],
+  component: ['hue', 'saturation', 'color', 'luminosity'],
+  utility: ['stencil-alpha', 'stencil-luma', 'silhouette-alpha', 'silhouette-luma', 'alpha-add', 'luminescent-premul']
+} as const;
 
 // ============================================================
 // MASK SYSTEM - Professional mask paths and track mattes
@@ -769,6 +886,137 @@ export interface ControlLayerData {
 }
 
 // ============================================================
+// EFFECT LAYER DATA - Effects apply to layers below
+// (Previously called Adjustment Layer - renamed for trade dress)
+// ============================================================
+
+export interface EffectLayerData {
+  /** Effect layer flag (always true for effect layers) */
+  effectLayer: boolean;
+
+  /** @deprecated Use effectLayer - backwards compatibility */
+  adjustmentLayer: boolean;
+
+  /** Layer label color for organization */
+  color: string;
+}
+
+/**
+ * Create default effect layer data
+ */
+export function createDefaultEffectLayerData(): EffectLayerData {
+  return {
+    effectLayer: true,
+    adjustmentLayer: true,  // Backwards compatibility
+    color: '#FF6B6B',       // Default red color for effect layers
+  };
+}
+
+// ============================================================
+// LIGHT LAYER DATA - Point, spot, directional, ambient lights
+// ============================================================
+
+export interface LightLayerData {
+  /** Light type */
+  lightType: 'point' | 'spot' | 'directional' | 'ambient';
+
+  /** Light color */
+  color: string;
+
+  /** Light intensity (0-100+) */
+  intensity: number;
+
+  /** Light radius (for point/spot lights) */
+  radius: number;
+
+  /** Falloff type */
+  falloff: 'none' | 'linear' | 'quadratic' | 'smooth';
+
+  /** Falloff distance */
+  falloffDistance: number;
+
+  /** Cast shadows */
+  castShadows: boolean;
+
+  /** Shadow darkness (0-100) */
+  shadowDarkness: number;
+
+  /** Shadow diffusion/softness */
+  shadowDiffusion: number;
+
+  // Spot light specific
+  /** Cone angle for spot lights (degrees) */
+  coneAngle?: number;
+
+  /** Penumbra for spot light soft edge (0-1) */
+  penumbra?: number;
+
+  /** Target position for spot/directional lights */
+  target?: { x: number; y: number; z: number };
+}
+
+/**
+ * Create default light layer data
+ */
+export function createDefaultLightLayerData(): LightLayerData {
+  return {
+    lightType: 'point',
+    color: '#ffffff',
+    intensity: 100,
+    radius: 500,
+    falloff: 'none',
+    falloffDistance: 500,
+    castShadows: false,
+    shadowDarkness: 100,
+    shadowDiffusion: 0,
+  };
+}
+
+// ============================================================
+// SOLID LAYER DATA - Solid color rectangle
+// ============================================================
+
+export interface SolidLayerData {
+  /** Fill color */
+  color: string;
+
+  /** Width (defaults to composition width) */
+  width: number;
+
+  /** Height (defaults to composition height) */
+  height: number;
+}
+
+/**
+ * Create default solid layer data
+ */
+export function createDefaultSolidLayerData(width = 1920, height = 1080): SolidLayerData {
+  return {
+    color: '#808080',
+    width,
+    height,
+  };
+}
+
+// ============================================================
+// NULL LAYER DATA - Invisible transform controller
+// ============================================================
+
+export interface NullLayerData {
+  /** Visual size of null icon in editor */
+  size: number;
+}
+
+/**
+ * Create default null layer data
+ */
+export function createDefaultNullLayerData(): NullLayerData {
+  return {
+    size: 40,
+  };
+}
+
+// ============================================================
 // MATTE LAYER DATA - Procedural matte/mask generation
 // ============================================================
 
@@ -833,6 +1081,13 @@ export interface VideoData {
   /** @deprecated Use 'speedMap' instead */
   timeRemap?: AnimatableProperty<number>;
 
+  // Timewarp - animatable speed with integration for smooth ramps
+  // Unlike speedMap (which keyframes source time), Timewarp keyframes SPEED
+  // and integrates the speed curve to calculate source frame
+  timewarpEnabled?: boolean;
+  timewarpSpeed?: AnimatableProperty<number>;  // Speed % (100 = normal, 200 = 2x, 50 = 0.5x)
+  timewarpMethod?: 'whole-frames' | 'frame-mix' | 'pixel-motion';
+
   // Frame blending for speed changes
   frameBlending: 'none' | 'frame-mix' | 'pixel-motion';
 
@@ -858,6 +1113,11 @@ export interface NestedCompData {
   timeRemapEnabled?: boolean;
   /** @deprecated Use 'speedMap' instead */
   timeRemap?: AnimatableProperty<number>;
+
+  // Timewarp - animatable speed with integration for smooth ramps
+  timewarpEnabled?: boolean;
+  timewarpSpeed?: AnimatableProperty<number>;  // Speed % (100 = normal, 200 = 2x, 50 = 0.5x)
+  timewarpMethod?: 'whole-frames' | 'frame-mix' | 'pixel-motion';
 
   // Flatten transform (render nested layers in parent's 3D space)
   flattenTransform: boolean;

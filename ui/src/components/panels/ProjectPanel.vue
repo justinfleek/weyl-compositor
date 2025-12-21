@@ -26,6 +26,8 @@
           <button @click="showNewMenu = !showNewMenu" title="New Item">+</button>
           <div v-if="showNewMenu" class="dropdown-menu">
             <button @click="createNewComposition">🎬 New Composition</button>
+            <button @click="createNewFolder">📁 New Folder</button>
+            <hr class="menu-divider" />
             <button @click="createNewSolid">⬜ New Solid</button>
             <button @click="createNewText">T New Text</button>
             <button @click="createNewControl">□ New Control</button>
@@ -192,6 +194,7 @@ const showVectorizeDialog = ref(false);
 const searchQuery = ref('');
 const selectedItem = ref<string | null>(null);
 const expandedFolders = ref<string[]>(['compositions', 'footage']);
+const customFolders = ref<Folder[]>([]);
 
 // Check if selected layer is a spline layer
 const hasSelectedSplineLayer = computed(() => {
@@ -216,7 +219,7 @@ const folders = computed<Folder[]>(() => {
     duration: comp.settings.frameCount
   }));
 
-  return [
+  const systemFolders: Folder[] = [
     {
       id: 'compositions',
       name: 'Compositions',
@@ -241,6 +244,8 @@ const folders = computed<Folder[]>(() => {
       items: []
     }
   ];
+
+  return [...systemFolders, ...customFolders.value];
 });
 
 const items = ref<ProjectItem[]>([]);
@@ -309,14 +314,59 @@ function selectItem(itemId: string) {
 
 function openItem(item: ProjectItem) {
   if (item.type === 'composition') {
-    // Open composition in viewer
-    console.log('Opening composition:', item.name);
+    // Switch to composition (opens in timeline and viewer)
+    store.switchComposition(item.id);
+  } else if (item.type === 'folder') {
+    // Toggle folder expansion
+    toggleFolder(item.id);
+  } else if (item.type === 'footage' || item.type === 'solid') {
+    // Add footage/solid as a new layer at the current frame
+    const asset = store.project.assets[item.id];
+    if (asset) {
+      const layerType = item.type === 'solid' ? 'solid' : 'image';
+      const layer = store.addLayer(layerType, item.name);
+      if (layer && asset.data) {
+        // Link the asset to the layer
+        store.updateLayerData(layer.id, { assetId: item.id });
+      }
+    }
+  } else if (item.type === 'audio') {
+    // Load audio into the audio panel
+    const asset = store.project.assets[item.id];
+    if (asset && asset.data) {
+      // Fetch the audio data and load it
+      fetch(asset.data as string)
+        .then(response => response.blob())
+        .then(blob => {
+          const file = new File([blob], item.name, { type: blob.type || 'audio/mpeg' });
+          import('@/stores/audioStore').then(({ useAudioStore }) => {
+            const audioStore = useAudioStore();
+            const fps = store.activeComposition?.settings.frameRate || 16;
+            audioStore.loadAudio(file, fps);
+          });
+        })
+        .catch(err => console.error('[ProjectPanel] Failed to load audio:', err));
+    }
   }
 }
 
 function createNewComposition() {
   showNewMenu.value = false;
   emit('openCompositionSettings');
+}
+
+function createNewFolder() {
+  showNewMenu.value = false;
+  const folderNumber = customFolders.value.length + 1;
+  const newFolder: Folder = {
+    id: `folder_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: `Folder ${folderNumber}`,
+    items: []
+  };
+  customFolders.value.push(newFolder);
+  expandedFolders.value.push(newFolder.id);
+  selectedItem.value = newFolder.id;
+  console.log('[ProjectPanel] Created folder:', newFolder.name);
 }
 
 function createNewSolid() {

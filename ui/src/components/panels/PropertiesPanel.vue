@@ -14,8 +14,14 @@
         </div>
 
         <div v-if="expandedSections.includes('transform')" class="section-content">
+          <!-- Solo Mode Indicator -->
+          <div v-if="soloModeActive" class="solo-indicator">
+            Showing: {{ soloedProperty === 'animated' ? 'Animated Properties' : soloedProperty?.charAt(0).toUpperCase() + soloedProperty?.slice(1) }}
+            <span class="solo-hint">(Press same key to show all)</span>
+          </div>
+
           <!-- Anchor Point -->
-          <div class="property-row">
+          <div class="property-row" v-show="showAnchor">
             <span class="keyframe-toggle" :class="{ active: hasKeyframe('anchorPoint') }" @click="toggleKeyframe('anchorPoint')">◆</span>
             <label>Anchor Point</label>
             <div class="value-group">
@@ -39,7 +45,7 @@
           </div>
 
           <!-- Position -->
-          <div class="property-row" :class="{ 'has-driver': hasDriver('transform.position.x') }">
+          <div class="property-row" v-show="showPosition" :class="{ 'has-driver': hasDriver('transform.position.x') }">
             <span class="keyframe-toggle" :class="{ active: hasKeyframe('position') }" @click="toggleKeyframe('position')">◆</span>
             <PropertyLink
               v-if="selectedLayer"
@@ -71,7 +77,7 @@
           </div>
 
           <!-- Scale -->
-          <div class="property-row" :class="{ 'has-driver': hasDriver('transform.scale.x') || hasDriver('transform.scale.y') }">
+          <div class="property-row" v-show="showScale" :class="{ 'has-driver': hasDriver('transform.scale.x') || hasDriver('transform.scale.y') }">
             <span class="keyframe-toggle" :class="{ active: hasKeyframe('scale') }" @click="toggleKeyframe('scale')">◆</span>
             <label>Scale</label>
             <div class="value-group scale-group">
@@ -110,7 +116,7 @@
 
           <!-- 3D Rotations -->
           <template v-if="selectedLayer?.threeD">
-            <div class="property-row">
+            <div class="property-row" v-show="showRotation">
               <span class="keyframe-toggle" :class="{ active: hasKeyframe('orientation') }" @click="toggleKeyframe('orientation')">◆</span>
               <label>Orientation</label>
               <div class="value-group">
@@ -119,21 +125,21 @@
                 <ScrubableNumber v-model="transform.orientationZ" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
-            <div class="property-row">
+            <div class="property-row" v-show="showRotation">
               <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotationX') }" @click="toggleKeyframe('rotationX')">◆</span>
               <label>X Rotation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.rotationX" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
-            <div class="property-row">
+            <div class="property-row" v-show="showRotation">
               <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotationY') }" @click="toggleKeyframe('rotationY')">◆</span>
               <label>Y Rotation</label>
               <div class="value-group">
                 <ScrubableNumber v-model="transform.rotationY" suffix="°" @update:modelValue="updateTransform" />
               </div>
             </div>
-            <div class="property-row">
+            <div class="property-row" v-show="showRotation">
               <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotationZ') }" @click="toggleKeyframe('rotationZ')">◆</span>
               <label>Z Rotation</label>
               <div class="value-group">
@@ -143,7 +149,7 @@
           </template>
           <!-- 2D Rotation -->
           <template v-else>
-            <div class="property-row" :class="{ 'has-driver': hasDriver('transform.rotation') }">
+            <div class="property-row" v-show="showRotation" :class="{ 'has-driver': hasDriver('transform.rotation') }">
               <span class="keyframe-toggle" :class="{ active: hasKeyframe('rotation') }" @click="toggleKeyframe('rotation')">◆</span>
               <label>Rotation</label>
               <div class="value-group">
@@ -153,7 +159,7 @@
           </template>
 
           <!-- Opacity -->
-          <div class="property-row" :class="{ 'has-driver': hasDriver('opacity') }">
+          <div class="property-row" v-show="showOpacity" :class="{ 'has-driver': hasDriver('opacity') }">
             <span class="keyframe-toggle" :class="{ active: hasKeyframe('opacity') }" @click="toggleKeyframe('opacity')">◆</span>
             <label>Opacity</label>
             <div class="value-group opacity-value">
@@ -248,8 +254,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, markRaw, type Component } from 'vue';
+import { ref, computed, watch, markRaw, inject, type Component, type Ref } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+
+// Inject soloedProperty from parent for P/S/R/T/A/U shortcuts
+type SoloedProperty = 'position' | 'scale' | 'rotation' | 'opacity' | 'anchor' | 'animated' | null;
+const soloedProperty = inject<Ref<SoloedProperty>>('soloedProperty', ref(null));
 import { ScrubableNumber, SliderInput } from '@/components/controls';
 import type { BlendMode } from '@/types/project';
 import { createAnimatableProperty } from '@/types/project';
@@ -323,6 +333,62 @@ const blendModes = [
 
 // Computed
 const selectedLayer = computed(() => store.selectedLayer);
+
+// Property solo visibility - determines which properties are shown based on P/S/R/T/A/U shortcuts
+const showAnchor = computed(() => {
+  const solo = soloedProperty.value;
+  if (!solo) return true;
+  if (solo === 'anchor') return true;
+  if (solo === 'animated') {
+    // Show if this property has keyframes
+    return selectedLayer.value?.transform?.anchorPoint?.animated || false;
+  }
+  return false;
+});
+
+const showPosition = computed(() => {
+  const solo = soloedProperty.value;
+  if (!solo) return true;
+  if (solo === 'position') return true;
+  if (solo === 'animated') {
+    return selectedLayer.value?.transform?.position?.animated || false;
+  }
+  return false;
+});
+
+const showScale = computed(() => {
+  const solo = soloedProperty.value;
+  if (!solo) return true;
+  if (solo === 'scale') return true;
+  if (solo === 'animated') {
+    return selectedLayer.value?.transform?.scale?.animated || false;
+  }
+  return false;
+});
+
+const showRotation = computed(() => {
+  const solo = soloedProperty.value;
+  if (!solo) return true;
+  if (solo === 'rotation') return true;
+  if (solo === 'animated') {
+    const t = selectedLayer.value?.transform;
+    return t?.rotation?.animated || t?.rotationX?.animated || t?.rotationY?.animated || t?.rotationZ?.animated || t?.orientation?.animated || false;
+  }
+  return false;
+});
+
+const showOpacity = computed(() => {
+  const solo = soloedProperty.value;
+  if (!solo) return true;
+  if (solo === 'opacity') return true;
+  if (solo === 'animated') {
+    return selectedLayer.value?.opacity?.animated || false;
+  }
+  return false;
+});
+
+// Show indicator when in solo mode
+const soloModeActive = computed(() => soloedProperty.value !== null);
 
 // Get layers that can be parents (exclude self and children to prevent cycles)
 const availableParents = computed(() => {
@@ -664,23 +730,24 @@ function resetTransform() {
   const centerX = comp.settings.width / 2;
   const centerY = comp.settings.height / 2;
 
-  transform.anchorPoint.x = centerX;
-  transform.anchorPoint.y = centerY;
-  transform.anchorPoint.z = 0;
-  transform.position.x = centerX;
-  transform.position.y = centerY;
-  transform.position.z = 0;
-  transform.scale.x = 100;
-  transform.scale.y = 100;
-  transform.scale.z = 100;
-  transform.rotation = 0;
-  transform.rotationX = 0;
-  transform.rotationY = 0;
-  transform.rotationZ = 0;
-  transform.orientationX = 0;
-  transform.orientationY = 0;
-  transform.orientationZ = 0;
-  transform.opacity = 100;
+  // Fix: Use transform.value since transform is a ref
+  transform.value.anchorPoint.x = centerX;
+  transform.value.anchorPoint.y = centerY;
+  transform.value.anchorPoint.z = 0;
+  transform.value.position.x = centerX;
+  transform.value.position.y = centerY;
+  transform.value.position.z = 0;
+  transform.value.scale.x = 100;
+  transform.value.scale.y = 100;
+  transform.value.scale.z = 100;
+  transform.value.rotation = 0;
+  transform.value.rotationX = 0;
+  transform.value.rotationY = 0;
+  transform.value.rotationZ = 0;
+  transform.value.orientationX = 0;
+  transform.value.orientationY = 0;
+  transform.value.orientationZ = 0;
+  transform.value.opacity = 100;
 
   updateTransform();
 }
@@ -714,6 +781,25 @@ function hasDriver(property: PropertyPath): boolean {
 .panel-title {
   font-weight: 600;
   font-size: 12px;
+}
+
+/* Solo mode indicator */
+.solo-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #c4b5fd;
+}
+
+.solo-hint {
+  color: #888;
+  font-size: 10px;
 }
 
 .panel-content {

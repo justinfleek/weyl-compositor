@@ -711,6 +711,30 @@ export {
 } from './meshWarpDeformation';
 
 // ============================================================================
+// 3D MESH DEFORMATION (Squash/Stretch, Bounce, 3D Pins)
+// ============================================================================
+
+export {
+  MeshDeformation3DService,
+  meshDeformation3D,
+  calculateSquashStretch,
+  calculateVelocityAtFrame,
+  calculateBounceOffset,
+  calculateImpactSquash,
+  calculate3DPinWeight,
+  deform3DPosition,
+  createDefault3DPin,
+  applySquashStretchToObject,
+  deformGeometryWithPins,
+  DEFAULT_SQUASH_STRETCH,
+  DEFAULT_BOUNCE,
+  type SquashStretchConfig,
+  type BounceConfig,
+  type Deformation3DPin,
+  type Deformation3DResult,
+} from './meshDeformation3D';
+
+// ============================================================================
 // IMAGE VECTORIZATION
 // ============================================================================
 
@@ -973,3 +997,39 @@ export {
   webgpuRenderer,
   getWebGPUStats,
 } from './webgpuRenderer';
+
+// ============================================================================
+// ONION SKINNING
+// ============================================================================
+
+export {
+  type OpacityFalloff,
+  type OnionSkinConfig,
+  type OnionSkinFrame,
+  type OnionSkinRenderData,
+  DEFAULT_ONION_SKIN_CONFIG,
+  ONION_SKIN_PRESETS,
+  calculateOpacity,
+  parseColor,
+  calculateOnionSkinFrames,
+  OnionSkinningService,
+  compositeOnionSkinFrame,
+  onionSkinning,
+} from './onionSkinning';
+
+// ============================================================================
+// GAUSSIAN SPLATTING (3DGS)
+// ============================================================================
+
+export {
+  type GaussianPrimitive,
+  type GaussianSplatScene,
+  type GaussianRenderQuality,
+  DEFAULT_QUALITY as DEFAULT_3DGS_QUALITY,
+  createGaussianBuffers,
+  createGaussianPoints,
+  GaussianSplattingService,
+  sortGaussiansByDepth,
+  reorderBuffers,
+  gaussianSplatting,
+} from './gaussianSplatting';

@@ -77,6 +77,7 @@ export function updateEffectParameter(
 
   effect.parameters[paramKey].value = value;
   store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 }
 
 /**

@@ -225,4 +225,4 @@ export function applyMasksToLayer(
 - [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) for index of all categories
 - [EFFECT_PARAMETERS.md](./EFFECT_PARAMETERS.md) for detailed parameter documentation
 
-*Generated: December 19, 2024*
+*Generated: December 19, 2025*

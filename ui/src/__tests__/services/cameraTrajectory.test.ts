@@ -315,41 +315,69 @@ describe('getTrajectoryPosition', () => {
 
   describe('Arc trajectories', () => {
     it('should arc left for arc_left', () => {
-      const config = { ...baseConfig, type: 'arc_left' as TrajectoryType };
-      const result = getTrajectoryPosition(config, 0.5);
+      // amplitude 0.25 = quarter circle arc (preset default)
+      // arcAngle = easedT * amplitude * 2π
+      // At t=1.0: arcAngle = 1.0 * 0.25 * 2π = π/2 (90 degrees)
+      const config = { ...baseConfig, type: 'arc_left' as TrajectoryType, amplitude: 0.25, easing: 'linear' as const };
+      const start = getTrajectoryPosition(config, 0);
+      const mid = getTrajectoryPosition(config, 0.5);
+      const end = getTrajectoryPosition(config, 1);
 
-      // Should be defined and create curved path
-      expect(result.position).toBeDefined();
-      expect(result.target).toBeDefined();
+      // At t=0: arcAngle=0, x=center.x+sin(0)*dist=960, z=center.z-cos(0)*dist=-1000
+      expect(start.position.x).toBeCloseTo(960, 1);
+      expect(start.position.z).toBeCloseTo(-1000, 1);
+
+      // At t=0.5: arcAngle=π/4 (45°), x=960+sin(45°)*1000≈1667, z=0-cos(45°)*1000≈-707
+      expect(mid.position.x).toBeGreaterThan(start.position.x);
+      expect(mid.position.z).toBeGreaterThan(start.position.z); // Less negative
+
+      // At t=1.0: arcAngle=π/2 (90°), x=960+sin(90°)*1000=1960, z=0-cos(90°)*1000=0
+      expect(end.position.x).toBeCloseTo(1960, 0);
+      expect(end.position.z).toBeCloseTo(0, 0);
     });
 
     it('should arc right for arc_right', () => {
-      const config = { ...baseConfig, type: 'arc_right' as TrajectoryType };
-      const result = getTrajectoryPosition(config, 0.5);
+      // arc_right uses negative amplitude (-0.25) to go the other direction
+      const config = { ...baseConfig, type: 'arc_right' as TrajectoryType, amplitude: -0.25, easing: 'linear' as const };
+      const start = getTrajectoryPosition(config, 0);
+      const mid = getTrajectoryPosition(config, 0.5);
+      const end = getTrajectoryPosition(config, 1);
 
-      expect(result.position).toBeDefined();
-      expect(result.target).toBeDefined();
+      // At t=0: same as arc_left, starts at same position
+      expect(start.position.x).toBeCloseTo(960, 1);
+      expect(start.position.z).toBeCloseTo(-1000, 1);
+
+      // At t=0.5: arcAngle=-π/4 (-45°), x=960+sin(-45°)*1000≈253
+      expect(mid.position.x).toBeLessThan(start.position.x);
+
+      // At t=1.0: arcAngle=-π/2 (-90°), x=960+sin(-90°)*1000=-40
+      expect(end.position.x).toBeCloseTo(-40, 0);
+      expect(end.position.z).toBeCloseTo(0, 0);
     });
   });
 
   describe('Zoom trajectories', () => {
-    it('should return position for zoom_in (zoom handled by keyframes)', () => {
+    it('should maintain constant position for zoom_in (zoom is focal length change)', () => {
       const config = { ...baseConfig, type: 'zoom_in' as TrajectoryType };
       const start = getTrajectoryPosition(config, 0);
       const end = getTrajectoryPosition(config, 1);
 
-      // Position should be defined - zoom is handled separately in keyframe generation
-      expect(start.position).toBeDefined();
-      expect(end.position).toBeDefined();
+      // Zoom doesn't change camera position - it changes focal length
+      // Position should remain at base position throughout
+      expect(start.position.x).toBeCloseTo(end.position.x, 1);
+      expect(start.position.y).toBeCloseTo(end.position.y, 1);
+      expect(start.position.z).toBeCloseTo(end.position.z, 1);
     });
 
-    it('should return position for zoom_out (zoom handled by keyframes)', () => {
+    it('should maintain constant position for zoom_out (zoom is focal length change)', () => {
       const config = { ...baseConfig, type: 'zoom_out' as TrajectoryType };
       const start = getTrajectoryPosition(config, 0);
       const end = getTrajectoryPosition(config, 1);
 
-      expect(start.position).toBeDefined();
-      expect(end.position).toBeDefined();
+      // Zoom doesn't change camera position - it changes focal length
+      expect(start.position.x).toBeCloseTo(end.position.x, 1);
+      expect(start.position.y).toBeCloseTo(end.position.y, 1);
+      expect(start.position.z).toBeCloseTo(end.position.z, 1);
     });
   });
 
@@ -373,26 +401,86 @@ describe('getTrajectoryPosition', () => {
   });
 
   describe('Easing configurations', () => {
-    it('should apply ease-in easing', () => {
-      const config = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'ease-in' as const };
-      const result = getTrajectoryPosition(config, 0.5);
+    it('should apply ease-in easing - slower start than linear', () => {
+      const linearConfig = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'linear' as const };
+      const easeInConfig = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'ease-in' as const };
 
-      // With ease-in, position at t=0.5 should be less advanced
-      expect(result.position).toBeDefined();
+      // Get positions at t=0.25 (early in animation where ease-in should lag behind linear)
+      const linearResult = getTrajectoryPosition(linearConfig, 0.25);
+      const easeInResult = getTrajectoryPosition(easeInConfig, 0.25);
+
+      // For orbit, measure distance traveled from start position
+      const startPos = getTrajectoryPosition(linearConfig, 0).position;
+
+      const linearDist = Math.sqrt(
+        Math.pow(linearResult.position.x - startPos.x, 2) +
+        Math.pow(linearResult.position.z - startPos.z, 2)
+      );
+      const easeInDist = Math.sqrt(
+        Math.pow(easeInResult.position.x - startPos.x, 2) +
+        Math.pow(easeInResult.position.z - startPos.z, 2)
+      );
+
+      // Ease-in should have traveled less distance at early time (slower start)
+      expect(easeInDist).toBeLessThan(linearDist);
     });
 
-    it('should apply ease-out easing', () => {
-      const config = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'ease-out' as const };
-      const result = getTrajectoryPosition(config, 0.5);
+    it('should apply ease-out easing - faster start than linear', () => {
+      const linearConfig = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'linear' as const };
+      const easeOutConfig = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'ease-out' as const };
 
-      expect(result.position).toBeDefined();
+      // Get positions at t=0.25 (early in animation where ease-out should be ahead of linear)
+      const linearResult = getTrajectoryPosition(linearConfig, 0.25);
+      const easeOutResult = getTrajectoryPosition(easeOutConfig, 0.25);
+
+      const startPos = getTrajectoryPosition(linearConfig, 0).position;
+
+      const linearDist = Math.sqrt(
+        Math.pow(linearResult.position.x - startPos.x, 2) +
+        Math.pow(linearResult.position.z - startPos.z, 2)
+      );
+      const easeOutDist = Math.sqrt(
+        Math.pow(easeOutResult.position.x - startPos.x, 2) +
+        Math.pow(easeOutResult.position.z - startPos.z, 2)
+      );
+
+      // Ease-out should have traveled more distance at early time (faster start)
+      expect(easeOutDist).toBeGreaterThan(linearDist);
     });
 
-    it('should apply ease-in-out easing', () => {
-      const config = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'ease-in-out' as const };
-      const result = getTrajectoryPosition(config, 0.5);
+    it('should apply ease-in-out easing - slower start and end than linear', () => {
+      const linearConfig = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'linear' as const };
+      const easeInOutConfig = { ...baseConfig, type: 'orbit' as TrajectoryType, easing: 'ease-in-out' as const };
 
-      expect(result.position).toBeDefined();
+      // For ease-in-out: slow at start, fast in middle, slow at end
+      // Compare against linear at various time points
+      const startPos = getTrajectoryPosition(linearConfig, 0).position;
+
+      // Get positions at t=0.2 (early: ease-in-out should lag behind linear)
+      const linear02 = getTrajectoryPosition(linearConfig, 0.2);
+      const easeInOut02 = getTrajectoryPosition(easeInOutConfig, 0.2);
+
+      // Calculate arc distance from start (using angular distance in orbit)
+      const getArcAngle = (pos: { x: number; z: number }) => {
+        const dx = pos.x - 960; // center.x
+        const dz = pos.z - 0;   // center.z
+        return Math.atan2(dx, -dz);
+      };
+
+      const linearAngle02 = getArcAngle(linear02.position);
+      const easeInOutAngle02 = getArcAngle(easeInOut02.position);
+
+      // At t=0.2, ease-in-out is in "slow start" phase, should have smaller angle
+      expect(Math.abs(easeInOutAngle02)).toBeLessThan(Math.abs(linearAngle02));
+
+      // At t=0.5, both should be at same position (midpoint of ease-in-out)
+      const linear05 = getTrajectoryPosition(linearConfig, 0.5);
+      const easeInOut05 = getTrajectoryPosition(easeInOutConfig, 0.5);
+      const linearAngle05 = getArcAngle(linear05.position);
+      const easeInOutAngle05 = getArcAngle(easeInOut05.position);
+
+      // At midpoint, ease-in-out should be caught up with linear (within small tolerance)
+      expect(Math.abs(easeInOutAngle05 - linearAngle05)).toBeLessThan(0.5);
     });
   });
 });
@@ -565,51 +653,95 @@ describe('Utility Functions', () => {
 // ============================================================================
 
 describe('Edge Cases', () => {
-  it('should handle zero duration', () => {
-    const config = createTrajectoryFromPreset('orbit', { duration: 0 });
+  it('should handle zero duration - returns base position', () => {
+    const config = createTrajectoryFromPreset('orbit', {
+      duration: 0,
+      center: { x: 960, y: 540, z: 0 },
+      baseDistance: 1000
+    });
     const result = getTrajectoryPosition(config, 0);
 
-    // Should not crash
-    expect(result.position).toBeDefined();
+    // With zero duration, should return base position (starting point)
+    expect(result.position.x).toBeCloseTo(960, 1);
+    expect(result.position.z).toBeCloseTo(-1000, 1);
+    expect(result.target.x).toBeCloseTo(960, 1);
   });
 
-  it('should handle negative amplitude', () => {
-    const config = createTrajectoryFromPreset('orbit', {
+  it('should handle negative amplitude - orbits in opposite direction', () => {
+    const positiveConfig = createTrajectoryFromPreset('orbit', {
+      duration: 100,
+      amplitude: 1,
+      center: { x: 960, y: 540, z: 0 },
+      baseDistance: 1000
+    });
+    const negativeConfig = createTrajectoryFromPreset('orbit', {
       duration: 100,
       amplitude: -1,
       center: { x: 960, y: 540, z: 0 },
       baseDistance: 1000
     });
 
-    // Should orbit in opposite direction
-    const result = getTrajectoryPosition(config, 0.25);
-    expect(result.position).toBeDefined();
+    // At t=0.25, positive amplitude goes clockwise (x increases)
+    // negative amplitude should go counter-clockwise (x decreases)
+    const positiveResult = getTrajectoryPosition(positiveConfig, 0.25);
+    const negativeResult = getTrajectoryPosition(negativeConfig, 0.25);
+
+    // They should be on opposite sides of center X
+    expect(positiveResult.position.x).toBeGreaterThan(960);
+    expect(negativeResult.position.x).toBeLessThan(960);
   });
 
-  it('should handle very large loop count', () => {
-    const config = createTrajectoryFromPreset('orbit', {
+  it('should handle very large loop count - completes multiple orbits', () => {
+    const singleLoopConfig = createTrajectoryFromPreset('orbit', {
       duration: 100,
-      loops: 100,
+      loops: 1,
+      center: { x: 960, y: 540, z: 0 },
+      baseDistance: 1000
+    });
+    const multiLoopConfig = createTrajectoryFromPreset('orbit', {
+      duration: 100,
+      loops: 4,
       center: { x: 960, y: 540, z: 0 },
       baseDistance: 1000
     });
 
-    const result = getTrajectoryPosition(config, 0.5);
-    expect(result.position).toBeDefined();
+    // At t=0.25, single loop is at 90 degrees
+    // At t=0.25 with 4 loops, it has completed 1 full orbit (back to start)
+    const singleResult = getTrajectoryPosition(singleLoopConfig, 0.25);
+    const multiResult = getTrajectoryPosition(multiLoopConfig, 0.25);
+
+    // Single loop at t=0.25 should be at 90 degrees (x offset)
+    expect(singleResult.position.x).toBeGreaterThan(960 + 500); // Should be near x=1960
+
+    // Multi loop (4 loops) at t=0.25 = 1 full loop, back near start
+    expect(multiResult.position.x).toBeCloseTo(960, 0);
+    expect(multiResult.position.z).toBeCloseTo(-1000, 0);
   });
 
-  it('should handle t values outside 0-1', () => {
+  it('should handle t values outside 0-1 - extrapolates trajectory', () => {
     const config = createTrajectoryFromPreset('orbit', {
       duration: 100,
       center: { x: 960, y: 540, z: 0 },
       baseDistance: 1000
     });
 
-    // Should not crash for out-of-range t
+    const atZero = getTrajectoryPosition(config, 0);
+    const atOne = getTrajectoryPosition(config, 1);
     const resultNegative = getTrajectoryPosition(config, -0.5);
     const resultOver = getTrajectoryPosition(config, 1.5);
 
-    expect(resultNegative.position).toBeDefined();
-    expect(resultOver.position).toBeDefined();
+    // For orbit, t=-0.5 should be half-orbit backward from start
+    // The position should be valid (not NaN) and continue the trajectory
+    expect(Number.isFinite(resultNegative.position.x)).toBe(true);
+    expect(Number.isFinite(resultNegative.position.z)).toBe(true);
+    expect(Number.isFinite(resultOver.position.x)).toBe(true);
+    expect(Number.isFinite(resultOver.position.z)).toBe(true);
+
+    // t=1.5 continues orbit beyond full circle (half way through second orbit)
+    // Should be at different position than t=0.5
+    const atHalf = getTrajectoryPosition(config, 0.5);
+    // Both 0.5 and 1.5 represent same angular position for 1 loop orbit
+    expect(resultOver.position.x).toBeCloseTo(atHalf.position.x, 0);
+    expect(resultOver.position.z).toBeCloseTo(atHalf.position.z, 0);
   });
 });

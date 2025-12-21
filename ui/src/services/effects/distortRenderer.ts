@@ -213,24 +213,219 @@ export function warpRenderer(
 // ============================================================================
 
 /**
+ * Extract channel value from pixel based on channel type
+ */
+function getChannelValue(
+  r: number, g: number, b: number, a: number,
+  channel: string
+): number {
+  switch (channel) {
+    case 'red': return r;
+    case 'green': return g;
+    case 'blue': return b;
+    case 'alpha': return a;
+    case 'luminance':
+    default:
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+}
+
+/**
+ * Generate procedural displacement map (noise-based)
+ */
+function generateProceduralMap(
+  width: number,
+  height: number,
+  mapType: string,
+  scale: number
+): ImageData {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      let value = 128; // Neutral (no displacement)
+
+      switch (mapType) {
+        case 'noise':
+          // Simple pseudo-random noise
+          value = Math.floor(Math.random() * 256);
+          break;
+        case 'gradient-h':
+          // Horizontal gradient
+          value = Math.floor((x / width) * 255);
+          break;
+        case 'gradient-v':
+          // Vertical gradient
+          value = Math.floor((y / height) * 255);
+          break;
+        case 'radial':
+          // Radial gradient from center
+          const cx = width / 2;
+          const cy = height / 2;
+          const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+          const maxDist = Math.sqrt(cx ** 2 + cy ** 2);
+          value = Math.floor((1 - dist / maxDist) * 255);
+          break;
+        case 'sine-h':
+          // Horizontal sine wave
+          value = Math.floor(128 + 127 * Math.sin((x / width) * Math.PI * 2 * scale));
+          break;
+        case 'sine-v':
+          // Vertical sine wave
+          value = Math.floor(128 + 127 * Math.sin((y / height) * Math.PI * 2 * scale));
+          break;
+        case 'checker':
+          // Checkerboard pattern
+          const tileSize = Math.max(1, Math.floor(width / (scale * 10)));
+          const checkX = Math.floor(x / tileSize) % 2;
+          const checkY = Math.floor(y / tileSize) % 2;
+          value = (checkX + checkY) % 2 === 0 ? 255 : 0;
+          break;
+        default:
+          value = 128;
+      }
+
+      data[i] = value;     // R
+      data[i + 1] = value; // G
+      data[i + 2] = value; // B
+      data[i + 3] = 255;   // A
+    }
+  }
+
+  return imageData;
+}
+
+/**
  * Displacement Map effect renderer
- * Displaces pixels based on a map layer (stub - requires layer access)
+ * Displaces pixels based on a displacement map
  *
  * Parameters:
- * - displacement_map_layer: layer reference
- * - use_for_horizontal: 'red' | 'green' | 'blue' | 'alpha' | 'luminance'
- * - max_horizontal: pixels
- * - use_for_vertical: 'red' | 'green' | 'blue' | 'alpha' | 'luminance'
- * - max_vertical: pixels
+ * - displacement_map_layer: layer ID (future) or 'procedural:type' for built-in patterns
+ * - use_for_horizontal: 'red' | 'green' | 'blue' | 'alpha' | 'luminance' | 'off'
+ * - max_horizontal: pixels (-999 to 999)
+ * - use_for_vertical: 'red' | 'green' | 'blue' | 'alpha' | 'luminance' | 'off'
+ * - max_vertical: pixels (-999 to 999)
+ * - map_type: 'noise' | 'gradient-h' | 'gradient-v' | 'radial' | 'sine-h' | 'sine-v' | 'checker'
+ * - map_scale: scale factor for procedural maps (1-10)
+ * - wrap_pixels: 'off' | 'tiles' | 'mirror'
  */
 export function displacementMapRenderer(
   input: EffectStackResult,
   params: EvaluatedEffectParams
 ): EffectStackResult {
-  // Displacement map requires a reference layer which isn't available yet
-  // For now, return pass-through
-  // TODO: Implement when layer reference system is available
-  return input;
+  const useHorizontal = params.use_for_horizontal ?? 'luminance';
+  const useVertical = params.use_for_vertical ?? 'luminance';
+  const maxHorizontal = params.max_horizontal ?? 0;
+  const maxVertical = params.max_vertical ?? 0;
+  const mapType = params.map_type ?? 'noise';
+  const mapScale = params.map_scale ?? 1;
+  const wrapMode = params.wrap_pixels ?? 'off';
+
+  // No displacement if both are off or zero
+  if ((useHorizontal === 'off' || maxHorizontal === 0) &&
+      (useVertical === 'off' || maxVertical === 0)) {
+    return input;
+  }
+
+  const { width, height } = input.canvas;
+  const output = createMatchingCanvas(input.canvas);
+
+  // Get input pixels
+  const inputData = input.ctx.getImageData(0, 0, width, height);
+  const src = inputData.data;
+
+  // Generate or load displacement map
+  // Future: if params.displacement_map_layer is a valid layer ID, use that layer's rendered output
+  const dispMap = generateProceduralMap(width, height, mapType, mapScale);
+  const mapData = dispMap.data;
+
+  // Create output
+  const outputData = output.ctx.createImageData(width, height);
+  const dst = outputData.data;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+
+      // Get displacement map values at this pixel
+      const mapR = mapData[i];
+      const mapG = mapData[i + 1];
+      const mapB = mapData[i + 2];
+      const mapA = mapData[i + 3];
+
+      // Calculate displacement amounts (map value 128 = no displacement)
+      let dx = 0;
+      let dy = 0;
+
+      if (useHorizontal !== 'off' && maxHorizontal !== 0) {
+        const hValue = getChannelValue(mapR, mapG, mapB, mapA, useHorizontal);
+        dx = ((hValue - 128) / 128) * maxHorizontal;
+      }
+
+      if (useVertical !== 'off' && maxVertical !== 0) {
+        const vValue = getChannelValue(mapR, mapG, mapB, mapA, useVertical);
+        dy = ((vValue - 128) / 128) * maxVertical;
+      }
+
+      // Calculate source coordinates
+      let srcX = x - dx;
+      let srcY = y - dy;
+
+      // Handle edge wrapping
+      if (wrapMode === 'tiles') {
+        srcX = ((srcX % width) + width) % width;
+        srcY = ((srcY % height) + height) % height;
+      } else if (wrapMode === 'mirror') {
+        srcX = Math.abs(srcX);
+        srcY = Math.abs(srcY);
+        if (Math.floor(srcX / width) % 2 === 1) srcX = width - 1 - (srcX % width);
+        else srcX = srcX % width;
+        if (Math.floor(srcY / height) % 2 === 1) srcY = height - 1 - (srcY % height);
+        else srcY = srcY % height;
+      } else {
+        // Clamp to edges
+        srcX = Math.max(0, Math.min(width - 1, srcX));
+        srcY = Math.max(0, Math.min(height - 1, srcY));
+      }
+
+      // Bilinear interpolation for smooth results
+      const x0 = Math.floor(srcX);
+      const y0 = Math.floor(srcY);
+      const x1 = Math.min(x0 + 1, width - 1);
+      const y1 = Math.min(y0 + 1, height - 1);
+      const fx = srcX - x0;
+      const fy = srcY - y0;
+
+      const i00 = (y0 * width + x0) * 4;
+      const i10 = (y0 * width + x1) * 4;
+      const i01 = (y1 * width + x0) * 4;
+      const i11 = (y1 * width + x1) * 4;
+
+      // Interpolate each channel
+      for (let c = 0; c < 4; c++) {
+        const v00 = src[i00 + c];
+        const v10 = src[i10 + c];
+        const v01 = src[i01 + c];
+        const v11 = src[i11 + c];
+
+        dst[i + c] = Math.round(
+          v00 * (1 - fx) * (1 - fy) +
+          v10 * fx * (1 - fy) +
+          v01 * (1 - fx) * fy +
+          v11 * fx * fy
+        );
+      }
+    }
+  }
+
+  output.ctx.putImageData(outputData, 0, 0);
+  return output;
 }
 
 // ============================================================================

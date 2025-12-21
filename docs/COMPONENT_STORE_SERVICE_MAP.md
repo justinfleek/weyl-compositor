@@ -320,4 +320,4 @@ Target property receives source property value
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
 - [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) - Service API index
 
-*Generated: December 19, 2024*
+*Generated: December 19, 2025*

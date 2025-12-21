@@ -446,6 +446,112 @@ export function fractalNoiseRenderer(
 }
 
 // ============================================================================
+// ADD GRAIN EFFECT
+// ============================================================================
+
+/**
+ * Add Grain effect renderer
+ * Adds film grain texture to the image
+ *
+ * Parameters:
+ * - intensity: 0-1, amount of grain (default 0.5)
+ * - size: 0.5-4, grain size multiplier (default 1)
+ * - softness: 0-1, blur amount on grain (default 0)
+ * - animate: boolean, randomize grain per frame (default true)
+ * - color: boolean, colored vs monochrome grain (default false)
+ */
+export function addGrainRenderer(
+  input: EffectStackResult,
+  params: EvaluatedEffectParams,
+  frame?: number
+): EffectStackResult {
+  const intensity = params.intensity ?? 0.5;
+  const size = params.size ?? 1;
+  const softness = params.softness ?? 0;
+  const animate = params.animate ?? true;
+  const colorGrain = params.color ?? false;
+
+  // No grain if intensity is 0
+  if (intensity === 0) {
+    return input;
+  }
+
+  const { width, height } = input.canvas;
+  const output = createMatchingCanvas(input.canvas);
+
+  // Copy original image
+  output.ctx.drawImage(input.canvas, 0, 0);
+
+  // Generate grain at potentially reduced resolution based on size
+  const grainScale = Math.max(1, Math.round(size));
+  const grainWidth = Math.ceil(width / grainScale);
+  const grainHeight = Math.ceil(height / grainScale);
+
+  // Create grain canvas
+  const grainCanvas = document.createElement('canvas');
+  grainCanvas.width = grainWidth;
+  grainCanvas.height = grainHeight;
+  const grainCtx = grainCanvas.getContext('2d')!;
+  const grainData = grainCtx.createImageData(grainWidth, grainHeight);
+  const grain = grainData.data;
+
+  // Seed for deterministic grain when not animating
+  const seed = animate ? (frame ?? 0) * 12345 : 42;
+  let rngState = seed;
+
+  // Simple seeded random
+  const seededRandom = () => {
+    rngState = (rngState * 1103515245 + 12345) & 0x7fffffff;
+    return rngState / 0x7fffffff;
+  };
+
+  // Generate grain pixels
+  for (let i = 0; i < grain.length; i += 4) {
+    if (colorGrain) {
+      // Colored grain - independent RGB noise
+      grain[i] = Math.round((seededRandom() - 0.5) * 255 * intensity + 128);
+      grain[i + 1] = Math.round((seededRandom() - 0.5) * 255 * intensity + 128);
+      grain[i + 2] = Math.round((seededRandom() - 0.5) * 255 * intensity + 128);
+    } else {
+      // Monochrome grain
+      const grainValue = Math.round((seededRandom() - 0.5) * 255 * intensity + 128);
+      grain[i] = grainValue;
+      grain[i + 1] = grainValue;
+      grain[i + 2] = grainValue;
+    }
+    grain[i + 3] = 255;
+  }
+
+  grainCtx.putImageData(grainData, 0, 0);
+
+  // Apply softness (blur) to grain if needed
+  if (softness > 0) {
+    const blurAmount = softness * 2;
+    grainCtx.filter = `blur(${blurAmount}px)`;
+    grainCtx.drawImage(grainCanvas, 0, 0);
+    grainCtx.filter = 'none';
+  }
+
+  // Composite grain onto output using overlay blend mode
+  output.ctx.globalCompositeOperation = 'overlay';
+  output.ctx.globalAlpha = intensity;
+
+  // Scale grain up if size > 1
+  if (grainScale > 1) {
+    output.ctx.imageSmoothingEnabled = false;
+    output.ctx.drawImage(grainCanvas, 0, 0, width, height);
+    output.ctx.imageSmoothingEnabled = true;
+  } else {
+    output.ctx.drawImage(grainCanvas, 0, 0);
+  }
+
+  output.ctx.globalCompositeOperation = 'source-over';
+  output.ctx.globalAlpha = 1;
+
+  return output;
+}
+
+// ============================================================================
 // REGISTRATION
 // ============================================================================
 
@@ -456,6 +562,7 @@ export function registerGenerateEffects(): void {
   registerEffectRenderer('fill', fillRenderer);
   registerEffectRenderer('gradient-ramp', gradientRampRenderer);
   registerEffectRenderer('fractal-noise', fractalNoiseRenderer);
+  registerEffectRenderer('add-grain', addGrainRenderer);
 }
 
 export default {

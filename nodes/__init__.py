@@ -10,4 +10,11 @@ from . import weyl_layer_decomposition  # noqa: F401
 # Import vectorization service to register routes (no exports needed)
 from . import weyl_vectorize  # noqa: F401
 
+# Import ControlNet preprocessors from open-source community projects
+# See controlnet_preprocessors.py for full attribution to:
+# - Fannovel16 (comfyui_controlnet_aux)
+# - Binyr/AIWarper (NormalCrafter)
+# - Kijai (ComfyUI-WanAnimatePreprocess)
+from . import controlnet_preprocessors  # noqa: F401
+
 __all__ = ['CompositorEditorNode']

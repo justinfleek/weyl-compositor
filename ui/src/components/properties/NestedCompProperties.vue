@@ -55,6 +55,9 @@
               :property="speedMapProperty"
               :layerId="layer.id"
               propertyPath="data.speedMap"
+              @keyframeAdded="onKeyframeChange"
+              @keyframeRemoved="onKeyframeChange"
+              @animationToggled="onAnimationToggled"
             />
           </div>
         </div>
@@ -241,6 +244,18 @@ function updateFlattenTransform(e: Event) {
   // Also update the layer-level flag
   store.updateLayer(props.layer.id, { flattenTransform: enabled });
   emit('update', { flattenTransform: enabled });
+}
+
+// Keyframe event handlers
+function onKeyframeChange() {
+  // Keyframe was added or removed - trigger update
+  emit('update', {});
+}
+
+function onAnimationToggled(animated: boolean) {
+  // Animation was enabled or disabled
+  console.log('[NestedCompProperties] Animation toggled:', animated);
+  emit('update', {});
 }
 </script>
 

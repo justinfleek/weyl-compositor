@@ -1,7 +1,7 @@
 # Weyl Motion Graphics Compositor for ComfyUI
 ## Complete Technical Specification v1.0
 
-> **⚠️ OUTDATED - DO NOT USE (December 20, 2024):**
+> **⚠️ OUTDATED - DO NOT USE (December 20, 2025):**
 > This specification was the original design document and is NO LONGER ACCURATE.
 > - Fabric.js has been replaced by Three.js
 > - Many architectural decisions have changed

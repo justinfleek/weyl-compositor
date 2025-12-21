@@ -848,7 +848,16 @@ export abstract class BaseLayer implements LayerInstance {
       // Pass quality mode to effect processor
       // Draft mode uses faster, lower-quality effect rendering
       const qualityHint = this.isDraftQuality() ? 'draft' : 'high';
-      const result = processEffectStack(this.effects, sourceCanvas, frame, qualityHint);
+
+      // Build context for time-based effects (Echo, Posterize Time)
+      // These effects need frame, fps, and layerId to access frame buffers
+      const effectContext = {
+        frame,
+        fps: 16, // Default project fps (Wan 2.1 standard)
+        layerId: this.id
+      };
+
+      const result = processEffectStack(this.effects, sourceCanvas, frame, qualityHint, effectContext);
       let processedCanvas = result.canvas;
 
       // Apply motion blur as final step if enabled

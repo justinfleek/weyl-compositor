@@ -3,13 +3,27 @@
     <div v-if="layoutMode === 'sidebar'" class="prop-sidebar" :class="{ selected: isSelected }" :style="gridStyle" @click="selectProp">
       <div class="indent-spacer"></div>
 
-      <!-- Animation toggle (left), then keyframe diamond - hidden if property is not animatable -->
+      <!-- Animation toggle (left), then keyframe navigator - hidden if property is not animatable -->
       <template v-if="property.animatable !== false">
-        <div class="icon-box" @click.stop="toggleAnim">
+        <div class="icon-box" @click.stop="toggleAnim" title="Toggle Animation">
           <span class="keyframe-toggle" :class="{ active: property.animated }">◆</span>
         </div>
 
-        <div class="icon-box" @click.stop="addKeyframeAtCurrent">
+        <!-- Keyframe Navigator: ◀ ◆ ▶ -->
+        <div class="keyframe-nav" v-if="property.animated">
+          <button class="nav-btn" @click.stop="goToPrevKeyframe" :disabled="!hasPrevKeyframe" title="Previous Keyframe (J)">
+            <span>◀</span>
+          </button>
+          <button class="nav-btn kf-indicator" @click.stop="addKeyframeAtCurrent" :class="{ active: hasKeyframeAtCurrent }" title="Add/Remove Keyframe">
+            <span>◆</span>
+          </button>
+          <button class="nav-btn" @click.stop="goToNextKeyframe" :disabled="!hasNextKeyframe" title="Next Keyframe (K)">
+            <span>▶</span>
+          </button>
+        </div>
+
+        <!-- Simple add keyframe when not animated -->
+        <div class="icon-box" v-else @click.stop="addKeyframeAtCurrent">
           <span class="kf-btn" :class="{ active: hasKeyframeAtCurrent }">◇</span>
         </div>
       </template>
@@ -221,6 +235,36 @@ const selectionBoxStyle = computed(() => {
 
 const hasKeyframeAtCurrent = computed(() => props.property.keyframes?.some((k:any) => k.frame === store.currentFrame));
 const isSelected = computed(() => store.selectedPropertyPath === props.propertyPath);
+
+// Keyframe navigator computed properties
+const sortedKeyframes = computed(() => {
+  const kfs = props.property.keyframes || [];
+  return [...kfs].sort((a: any, b: any) => a.frame - b.frame);
+});
+
+const hasPrevKeyframe = computed(() => {
+  return sortedKeyframes.value.some((kf: any) => kf.frame < store.currentFrame);
+});
+
+const hasNextKeyframe = computed(() => {
+  return sortedKeyframes.value.some((kf: any) => kf.frame > store.currentFrame);
+});
+
+// Keyframe navigator functions
+function goToPrevKeyframe() {
+  const prevKfs = sortedKeyframes.value.filter((kf: any) => kf.frame < store.currentFrame);
+  if (prevKfs.length > 0) {
+    const prevKf = prevKfs[prevKfs.length - 1];
+    store.setFrame(prevKf.frame);
+  }
+}
+
+function goToNextKeyframe() {
+  const nextKf = sortedKeyframes.value.find((kf: any) => kf.frame > store.currentFrame);
+  if (nextKf) {
+    store.setFrame(nextKf.frame);
+  }
+}
 
 function toggleAnim() { store.setPropertyAnimated(props.layerId, props.propertyPath, !props.property.animated); }
 function addKeyframeAtCurrent() { store.addKeyframe(props.layerId, props.propertyPath, props.property.value); }
@@ -460,6 +504,53 @@ onUnmounted(() => {
 .kf-btn.active { color: #f1c40f; }
 .keyframe-toggle { font-size: 10px; color: #666; }
 .keyframe-toggle.active { color: #3498db; }
+
+/* Keyframe Navigator */
+.keyframe-nav {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 4px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 8px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.1s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #333;
+  color: #fff;
+}
+
+.nav-btn:disabled {
+  color: #444;
+  cursor: not-allowed;
+}
+
+.nav-btn.kf-indicator {
+  font-size: 10px;
+  color: #666;
+}
+
+.nav-btn.kf-indicator.active {
+  color: #f1c40f;
+}
+
+.nav-btn.kf-indicator:hover {
+  color: #f1c40f;
+}
 
 /* Content: property name + inputs */
 .prop-content {

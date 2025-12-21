@@ -650,6 +650,94 @@ export const BUILT_IN_PARTICLE_PRESETS: ParticlePreset[] = [
       velocitySpread: 120,
     }
   },
+  {
+    id: 'builtin-particle-path-light',
+    name: 'Path Light',
+    category: 'particle',
+    description: 'Glowing lights that follow spline edges - perfect for logo edge tracing',
+    tags: ['path', 'light', 'glow', 'edge', 'trace', 'logo', 'outline', 'neon'],
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    config: {
+      maxParticles: 200,
+      emissionRate: 40,         // Moderate emission for smooth coverage
+      lifespan: 2.5,            // Long enough to traverse logo edges
+      startSize: 6,             // Visible glow point
+      endSize: 2,               // Fade out smaller
+      startColor: '#ffffff',    // Bright white core
+      endColor: '#00ffff',      // Cyan glow tail
+      gravity: 0,               // No gravity - follow path only
+      turbulenceStrength: 3,    // Minimal turbulence for clean edge following
+      velocitySpread: 15,       // Tight spread along path tangent
+    }
+  },
+  {
+    id: 'builtin-particle-path-light-warm',
+    name: 'Path Light (Warm)',
+    category: 'particle',
+    description: 'Warm glowing lights for edge tracing - gold/amber variant',
+    tags: ['path', 'light', 'glow', 'edge', 'warm', 'gold', 'amber'],
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    config: {
+      maxParticles: 200,
+      emissionRate: 40,
+      lifespan: 2.5,
+      startSize: 6,
+      endSize: 2,
+      startColor: '#ffffff',
+      endColor: '#ffaa00',      // Amber/gold glow
+      gravity: 0,
+      turbulenceStrength: 3,
+      velocitySpread: 15,
+    }
+  },
+  {
+    id: 'builtin-particle-path-light-neon',
+    name: 'Path Light (Neon)',
+    category: 'particle',
+    description: 'Intense neon lights for edge tracing - magenta/pink variant',
+    tags: ['path', 'light', 'glow', 'edge', 'neon', 'pink', 'magenta'],
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    config: {
+      maxParticles: 300,
+      emissionRate: 60,         // Higher emission for intense neon look
+      lifespan: 1.8,
+      startSize: 8,             // Larger for neon glow
+      endSize: 3,
+      startColor: '#ff88ff',    // Pink core
+      endColor: '#ff00ff',      // Magenta trail
+      gravity: 0,
+      turbulenceStrength: 5,
+      velocitySpread: 20,
+    }
+  },
+  {
+    id: 'builtin-particle-path-comet',
+    name: 'Path Comet',
+    category: 'particle',
+    description: 'Comet-like particles with long trails - great for motion paths',
+    tags: ['path', 'comet', 'trail', 'motion', 'streak'],
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    config: {
+      maxParticles: 50,
+      emissionRate: 10,         // Sparse for distinct comets
+      lifespan: 3,              // Long life for visible trails
+      startSize: 10,
+      endSize: 1,               // Sharp tail falloff
+      startColor: '#ffffff',
+      endColor: '#0066ff',      // Blue trail
+      gravity: 0,
+      turbulenceStrength: 0,    // No turbulence - pure path following
+      velocitySpread: 5,        // Very tight to path
+    }
+  },
 ];
 
 export const BUILT_IN_PATH_EFFECT_PRESETS: PathEffectPreset[] = [

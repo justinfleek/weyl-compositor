@@ -1,7 +1,17 @@
 <template>
   <div class="track-wrapper" v-if="layer">
     <template v-if="layoutMode === 'sidebar'">
-      <div class="sidebar-row" :class="{ selected: isSelected }" @mousedown="selectLayer" @contextmenu.prevent="showContextMenu">
+      <div class="sidebar-row"
+           :class="{ selected: isSelected, 'drag-over': isDragTarget }"
+           @mousedown="selectLayer"
+           @contextmenu.prevent="showContextMenu"
+           draggable="true"
+           @dragstart="onDragStart"
+           @dragend="onDragEnd"
+           @dragover.prevent="onDragOver"
+           @dragleave="onDragLeave"
+           @drop="onDrop"
+      >
         <!-- AV Features (visibility, audio, isolate, lock) -->
         <div class="av-features">
           <div class="icon-col" @mousedown.stop="toggleVis" :title="layer.visible ? 'Hide' : 'Show'">
@@ -168,6 +178,66 @@ const store = useCompositorStore();
 const localExpanded = ref(false);
 const isExpanded = computed(() => props.isExpandedExternal ?? localExpanded.value);
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
+
+// Drag reorder state
+const isDragTarget = ref(false);
+
+function onDragStart(event: DragEvent) {
+  event.dataTransfer?.setData('application/layer-reorder', props.layer.id);
+  event.dataTransfer!.effectAllowed = 'move';
+}
+
+function onDragEnd() {
+  isDragTarget.value = false;
+}
+
+function onDragOver(event: DragEvent) {
+  const data = event.dataTransfer?.types.includes('application/layer-reorder');
+  if (data) {
+    isDragTarget.value = true;
+  }
+}
+
+function onDragLeave() {
+  isDragTarget.value = false;
+}
+
+function onDrop(event: DragEvent) {
+  isDragTarget.value = false;
+
+  // Check for Alt+drag asset replacement
+  if (event.altKey) {
+    const projectItemData = event.dataTransfer?.getData('application/project-item');
+    if (projectItemData) {
+      try {
+        const item = JSON.parse(projectItemData);
+        if (item && (item.type === 'asset' || item.type === 'composition')) {
+          // Replace layer source with new asset
+          store.replaceLayerSource(props.layer.id, item);
+          console.log(`[Weyl] Replaced layer source: ${props.layer.name} → ${item.name}`);
+          return;
+        }
+      } catch (e) {
+        console.error('[Weyl] Failed to parse project item for replacement:', e);
+      }
+    }
+  }
+
+  // Normal layer reorder handling
+  const draggedLayerId = event.dataTransfer?.getData('application/layer-reorder');
+  if (!draggedLayerId || draggedLayerId === props.layer.id) return;
+
+  // Find the indices
+  const layers = store.layers;
+  const draggedIndex = layers.findIndex(l => l.id === draggedLayerId);
+  const targetIndex = layers.findIndex(l => l.id === props.layer.id);
+
+  if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+    store.moveLayer(draggedLayerId, targetIndex);
+    console.log(`[Weyl] Moved layer from index ${draggedIndex} to ${targetIndex}`);
+  }
+}
+
 // Only video and audio layers have audio capability
 const hasAudioCapability = computed(() => ['video', 'audio', 'nestedComp'].includes(props.layer.type));
 // Check if layer is a text layer (for Convert to Splines feature)
@@ -353,6 +423,53 @@ const dragStartX = ref(0);
 const dragStartInPoint = ref(0);
 const dragStartOutPoint = ref(0);
 
+// Timeline snap functionality (Shift key enables snapping)
+const SNAP_TOLERANCE = 5; // frames
+
+function getSnapTargets(): number[] {
+  const targets: number[] = [];
+
+  // Add playhead position
+  targets.push(store.currentFrame);
+
+  // Add all other layer in/out points
+  const layers = props.allLayers || store.layers;
+  for (const layer of layers) {
+    if (layer.id === props.layer.id) continue; // Skip self
+    if (layer.inPoint !== undefined) targets.push(layer.inPoint);
+    if (layer.outPoint !== undefined) targets.push(layer.outPoint);
+  }
+
+  // Add composition start/end
+  targets.push(0);
+  targets.push(props.frameCount - 1);
+
+  // Add markers if available
+  const composition = store.activeComposition;
+  if (composition?.markers) {
+    for (const marker of composition.markers) {
+      targets.push(marker.frame);
+    }
+  }
+
+  return [...new Set(targets)]; // Remove duplicates
+}
+
+function snapToNearest(value: number, targets: number[]): number {
+  let nearest = value;
+  let minDist = SNAP_TOLERANCE + 1;
+
+  for (const target of targets) {
+    const dist = Math.abs(value - target);
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = target;
+    }
+  }
+
+  return minDist <= SNAP_TOLERANCE ? nearest : value;
+}
+
 function startDrag(e: MouseEvent) {
   isDragging.value = true;
   dragStartX.value = e.clientX;
@@ -386,6 +503,25 @@ function onDrag(e: MouseEvent) {
   let newInPoint = dragStartInPoint.value + framesDelta;
   let newOutPoint = newInPoint + duration;
 
+  // Snap when Shift is held
+  if (e.shiftKey) {
+    const targets = getSnapTargets();
+    const snappedIn = snapToNearest(newInPoint, targets);
+    const snappedOut = snapToNearest(newOutPoint, targets);
+
+    // Prefer snapping to whichever edge is closer to a target
+    const inDist = Math.abs(snappedIn - newInPoint);
+    const outDist = Math.abs(snappedOut - newOutPoint);
+
+    if (inDist <= outDist && inDist <= SNAP_TOLERANCE) {
+      newInPoint = snappedIn;
+      newOutPoint = snappedIn + duration;
+    } else if (outDist <= SNAP_TOLERANCE) {
+      newOutPoint = snappedOut;
+      newInPoint = snappedOut - duration;
+    }
+  }
+
   // Clamp to valid range
   if (newInPoint < 0) {
     newInPoint = 0;
@@ -404,6 +540,12 @@ function onResizeLeft(e: MouseEvent) {
   const framesDelta = Math.round(dx / props.pixelsPerFrame);
   let newInPoint = dragStartInPoint.value + framesDelta;
 
+  // Snap when Shift is held
+  if (e.shiftKey) {
+    const targets = getSnapTargets();
+    newInPoint = snapToNearest(newInPoint, targets);
+  }
+
   // Clamp: can't go below 0 or past outPoint
   const outPoint = props.layer.outPoint ?? (props.frameCount - 1);
   newInPoint = Math.max(0, Math.min(newInPoint, outPoint - 1));
@@ -415,6 +557,12 @@ function onResizeRight(e: MouseEvent) {
   const dx = e.clientX - dragStartX.value;
   const framesDelta = Math.round(dx / props.pixelsPerFrame);
   let newOutPoint = dragStartOutPoint.value + framesDelta;
+
+  // Snap when Shift is held
+  if (e.shiftKey) {
+    const targets = getSnapTargets();
+    newOutPoint = snapToNearest(newOutPoint, targets);
+  }
 
   // Clamp: can't go past frameCount or before inPoint
   const inPoint = props.layer.inPoint ?? 0;
@@ -607,6 +755,12 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .sidebar-row.selected { background: #333; color: #fff; border-left: 2px solid #4a90d9; }
+.sidebar-row.drag-over {
+  background: #2a4a6a;
+  border-top: 2px solid #4a90d9;
+  margin-top: -2px;
+}
+.sidebar-row:hover:not(.drag-over) { background: #2a2a2a; }
 
 /* AV Features section (visibility, audio, isolate, lock) */
 .av-features {

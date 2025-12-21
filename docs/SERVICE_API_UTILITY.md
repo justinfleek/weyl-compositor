@@ -410,4 +410,4 @@ import { exportCameraTrajectory, trajectoriesToNpy } from '@/services/modelExpor
 
 **See also**: [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) for index of all categories.
 
-*Generated: December 19, 2024*
+*Generated: December 19, 2025*

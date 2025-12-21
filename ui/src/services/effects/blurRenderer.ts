@@ -993,9 +993,16 @@ export function radialBlurRenderer(
 ): EffectStackResult {
   const type = params.type ?? 'spin';
   const amount = Math.max(0, Math.min(100, params.amount ?? 10));
-  const centerX = (params.center_x ?? 50) / 100;
-  const centerY = (params.center_y ?? 50) / 100;
-  const quality = params.quality ?? 'good';
+
+  // Support both point format (from definition: { x: 0.5, y: 0.5 }) and legacy center_x/center_y
+  const center = params.center as { x: number; y: number } | undefined;
+  const centerX = center?.x ?? (params.center_x ?? 50) / 100;
+  const centerY = center?.y ?? (params.center_y ?? 50) / 100;
+
+  // Support both 'antialiasing' (from definition) and legacy 'quality'
+  const antialiasing = params.antialiasing ?? params.quality ?? 'high';
+  // Map antialiasing values to quality settings
+  const quality = antialiasing === 'low' ? 'draft' : antialiasing === 'medium' ? 'good' : 'best';
 
   if (amount <= 0) {
     return input;
@@ -1115,7 +1122,8 @@ export function boxBlurRenderer(
   input: EffectStackResult,
   params: EvaluatedEffectParams
 ): EffectStackResult {
-  const radius = Math.max(0, Math.min(100, Math.round(params.radius ?? 5)));
+  // Support both 'blur_radius' (from definition) and legacy 'radius'
+  const radius = Math.max(0, Math.min(100, Math.round(params.blur_radius ?? params.radius ?? 5)));
   const iterations = Math.max(1, Math.min(5, params.iterations ?? 1));
 
   if (radius <= 0) {
@@ -1205,7 +1213,8 @@ export function sharpenRenderer(
   input: EffectStackResult,
   params: EvaluatedEffectParams
 ): EffectStackResult {
-  const amount = (params.amount ?? 100) / 100;
+  // Support both 'sharpen_amount' (from definition) and legacy 'amount'
+  const amount = (params.sharpen_amount ?? params.amount ?? 50) / 100;
   const radius = Math.max(1, Math.min(100, params.radius ?? 1));
   const threshold = params.threshold ?? 0;
 

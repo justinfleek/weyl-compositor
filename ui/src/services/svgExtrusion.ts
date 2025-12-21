@@ -67,6 +67,41 @@ export interface ParsedSVGDocument {
   };
 }
 
+/**
+ * Cap Profile Type - Controls the edge profile on front/back faces
+ * Like Cinema 4D/Blender fillet caps for smooth, rounded edges
+ */
+export type CapProfileType =
+  | 'flat'        // Standard flat cap (default)
+  | 'fillet'      // Rounded inward (concave) - smooth transition
+  | 'convex'      // Rounded outward (bulging)
+  | 'concave'     // Rounded inward (scooped)
+  | 'steps'       // Stepped/terraced profile
+  | 'custom';     // Custom profile curve
+
+/**
+ * Cap Profile Configuration - Cinema 4D/Blender style fillet caps
+ */
+export interface CapProfileConfig {
+  /** Profile type for the cap edges */
+  type: CapProfileType;
+
+  /** Radius of the fillet/rounding (pixels) */
+  radius: number;
+
+  /** Number of segments for smooth rounding (3-32) */
+  segments: number;
+
+  /** Depth of the cap profile (how far it extends into the extrusion) */
+  depth: number;
+
+  /** Profile tension for custom curves (0 = linear, 1 = smooth) */
+  tension: number;
+
+  /** Custom profile curve points for 'custom' type (0-1 normalized) */
+  customProfile?: Array<{ x: number; y: number }>;
+}
+
 /** Extrusion configuration */
 export interface ExtrusionConfig {
   depth: number;           // Extrusion depth (0-100)
@@ -77,10 +112,129 @@ export interface ExtrusionConfig {
   bevelSegments: number;
   curveSegments: number;   // Segments for curved paths
   steps: number;           // Extrusion steps
+
+  // ============================================
+  // Fillet Cap Options (Cinema 4D/Blender style)
+  // ============================================
+
+  /** Enable fillet caps on front face */
+  frontCapEnabled?: boolean;
+  /** Front cap profile configuration */
+  frontCap?: CapProfileConfig;
+
+  /** Enable fillet caps on back face */
+  backCapEnabled?: boolean;
+  /** Back cap profile configuration */
+  backCap?: CapProfileConfig;
+
+  /** Apply same profile to both front and back */
+  symmetricCaps?: boolean;
+
   // Material options
   frontMaterial?: THREE.Material;
   sideMaterial?: THREE.Material;
   backMaterial?: THREE.Material;
+}
+
+/**
+ * Create default fillet cap profile
+ */
+export function createDefaultCapProfile(type: CapProfileType = 'fillet'): CapProfileConfig {
+  return {
+    type,
+    radius: 2,
+    segments: 8,
+    depth: 2,
+    tension: 0.5,
+  };
+}
+
+/**
+ * Generate profile curve points for cap geometry
+ * Returns an array of points describing the cap cross-section
+ */
+export function generateCapProfileCurve(config: CapProfileConfig): THREE.Vector2[] {
+  const points: THREE.Vector2[] = [];
+  const { type, radius, segments, depth, tension, customProfile } = config;
+
+  switch (type) {
+    case 'flat':
+      // Simple flat cap - just two points
+      points.push(new THREE.Vector2(0, 0));
+      points.push(new THREE.Vector2(0, depth));
+      break;
+
+    case 'fillet':
+      // Quarter-circle fillet (smooth rounded edge)
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const angle = (Math.PI / 2) * t;
+        const x = radius * (1 - Math.cos(angle));
+        const y = depth * Math.sin(angle);
+        points.push(new THREE.Vector2(x, y));
+      }
+      break;
+
+    case 'convex':
+      // Outward bulging profile
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const angle = (Math.PI / 2) * t;
+        // Bulge outward using sine curve
+        const bulge = Math.sin(Math.PI * t) * radius * 0.5;
+        const x = -bulge; // Negative = outward
+        const y = depth * t;
+        points.push(new THREE.Vector2(x, y));
+      }
+      break;
+
+    case 'concave':
+      // Inward scooped profile
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        // Scoop inward using parabolic curve
+        const scoop = Math.sin(Math.PI * t) * radius;
+        const x = scoop; // Positive = inward
+        const y = depth * t;
+        points.push(new THREE.Vector2(x, y));
+      }
+      break;
+
+    case 'steps':
+      // Stepped/terraced profile
+      const stepCount = Math.max(2, Math.floor(segments / 2));
+      const stepHeight = depth / stepCount;
+      const stepWidth = radius / stepCount;
+      for (let i = 0; i <= stepCount; i++) {
+        // Horizontal step
+        points.push(new THREE.Vector2(i * stepWidth, i * stepHeight));
+        if (i < stepCount) {
+          // Vertical riser
+          points.push(new THREE.Vector2(i * stepWidth, (i + 1) * stepHeight));
+        }
+      }
+      break;
+
+    case 'custom':
+      // Use custom profile curve if provided
+      if (customProfile && customProfile.length >= 2) {
+        for (const pt of customProfile) {
+          points.push(new THREE.Vector2(pt.x * radius, pt.y * depth));
+        }
+      } else {
+        // Fallback to fillet if no custom profile
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const angle = (Math.PI / 2) * t;
+          const x = radius * (1 - Math.cos(angle));
+          const y = depth * Math.sin(angle);
+          points.push(new THREE.Vector2(x, y));
+        }
+      }
+      break;
+  }
+
+  return points;
 }
 
 /** Layer configuration for extruded SVG */
@@ -305,6 +459,7 @@ export class SVGExtrusionService {
 
   /**
    * Create extruded geometry from an SVG path
+   * Supports Cinema 4D/Blender style fillet caps for rounded edges
    */
   createExtrudedGeometry(
     path: ParsedSVGPath,
@@ -314,7 +469,13 @@ export class SVGExtrusionService {
     const cached = this.meshCache.get(cacheKey);
     if (cached) return cached.clone();
 
-    const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+    // Determine if we're using fillet caps
+    const useFrontCap = config.frontCapEnabled && config.frontCap;
+    const useBackCap = config.backCapEnabled && config.backCap;
+    const useFilletCaps = useFrontCap || useBackCap;
+
+    // Base extrude settings
+    let extrudeSettings: THREE.ExtrudeGeometryOptions = {
       depth: config.depth ?? 10,
       bevelEnabled: config.bevelEnabled ?? false,
       bevelThickness: config.bevelThickness ?? 1,
@@ -325,12 +486,47 @@ export class SVGExtrusionService {
       steps: config.steps ?? 1,
     };
 
+    // If using fillet caps, configure bevel to create the rounded profile
+    // Three.js bevel IS essentially a fillet on the front face
+    if (useFilletCaps && !config.bevelEnabled) {
+      const frontCap = useFrontCap ? config.frontCap! : createDefaultCapProfile('flat');
+      const backCap = useBackCap
+        ? config.backCap!
+        : (config.symmetricCaps && useFrontCap ? config.frontCap! : createDefaultCapProfile('flat'));
+
+      // Use front cap settings for bevel (Three.js only supports front bevel natively)
+      if (useFrontCap && frontCap.type !== 'flat') {
+        extrudeSettings.bevelEnabled = true;
+        extrudeSettings.bevelSize = frontCap.radius;
+        extrudeSettings.bevelThickness = frontCap.depth;
+        extrudeSettings.bevelSegments = frontCap.segments;
+        extrudeSettings.bevelOffset = 0;
+      }
+
+      // For back cap, we need to create additional geometry
+      // or use extrudePath for more complex profiles
+    }
+
     // Create geometry from all shapes in the path
-    const geometries: THREE.ExtrudeGeometry[] = [];
+    const geometries: THREE.BufferGeometry[] = [];
 
     for (const shape of path.shapes) {
+      // Standard extrusion
       const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
       geometries.push(geometry);
+
+      // Add back cap geometry if needed (separate rounded cap on back face)
+      if (useBackCap && config.backCap && config.backCap.type !== 'flat') {
+        const backCapGeom = this.createFilletCapGeometry(
+          shape,
+          config.backCap,
+          config.depth ?? 10,
+          'back'
+        );
+        if (backCapGeom) {
+          geometries.push(backCapGeom);
+        }
+      }
     }
 
     // Merge geometries if multiple shapes
@@ -353,6 +549,135 @@ export class SVGExtrusionService {
     this.meshCache.set(cacheKey, finalGeometry);
 
     return finalGeometry.clone();
+  }
+
+  /**
+   * Create fillet cap geometry for front or back face
+   * Uses LatheGeometry approach for rounded profile
+   */
+  private createFilletCapGeometry(
+    shape: THREE.Shape,
+    capConfig: CapProfileConfig,
+    extrusionDepth: number,
+    face: 'front' | 'back'
+  ): THREE.BufferGeometry | null {
+    if (capConfig.type === 'flat') return null;
+
+    // Generate the profile curve
+    const profilePoints = generateCapProfileCurve(capConfig);
+    if (profilePoints.length < 2) return null;
+
+    // For a proper fillet cap, we'd need to sweep the profile around the shape outline
+    // This is a simplified approach using offset shapes at different depths
+
+    const capGeometries: THREE.BufferGeometry[] = [];
+    const segments = capConfig.segments;
+
+    // Create layered offset shapes to approximate the fillet
+    for (let i = 0; i < segments; i++) {
+      const t = i / segments;
+      const profile = profilePoints[Math.min(i, profilePoints.length - 1)];
+
+      // Calculate inset amount based on profile
+      const inset = profile.x; // Horizontal component = inset amount
+      const zOffset = profile.y; // Vertical component = depth into extrusion
+
+      // Create inset shape (simplified - in production use clipper-lib for proper offset)
+      if (inset > 0) {
+        // For positive inset, we'd shrink the shape
+        // This is a simplified approximation
+        const scaleFactor = 1 - (inset / 100); // Rough approximation
+
+        const layerShape = new THREE.ShapeGeometry(shape);
+        const layerZ = face === 'front' ? zOffset : extrusionDepth - zOffset;
+
+        // Scale the layer slightly
+        layerShape.scale(scaleFactor, scaleFactor, 1);
+
+        // Position the layer at the correct depth
+        layerShape.translate(0, 0, layerZ);
+
+        capGeometries.push(layerShape);
+      }
+    }
+
+    if (capGeometries.length === 0) return null;
+
+    // Merge all cap layers
+    return this.mergeGeometries(capGeometries);
+  }
+
+  /**
+   * Create extruded geometry with custom profile path
+   * For advanced fillet caps, uses extrudePath option
+   */
+  createProfileExtrudedGeometry(
+    path: ParsedSVGPath,
+    profileCurve: THREE.Curve<THREE.Vector3>,
+    config: Partial<ExtrusionConfig> = {}
+  ): THREE.BufferGeometry {
+    const cacheKey = `${path.id}_profile_${JSON.stringify(config)}`;
+    const cached = this.meshCache.get(cacheKey);
+    if (cached) return cached.clone();
+
+    const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+      steps: config.steps ?? 10,
+      bevelEnabled: false, // Profile handles the shape
+      curveSegments: config.curveSegments ?? 12,
+      extrudePath: profileCurve, // Use custom profile path
+    };
+
+    const geometries: THREE.ExtrudeGeometry[] = [];
+
+    for (const shape of path.shapes) {
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geometries.push(geometry);
+    }
+
+    let finalGeometry: THREE.BufferGeometry;
+    if (geometries.length === 1) {
+      finalGeometry = geometries[0];
+    } else {
+      finalGeometry = this.mergeGeometries(geometries);
+      geometries.forEach((g) => g.dispose());
+    }
+
+    finalGeometry.scale(1, -1, 1);
+    finalGeometry.computeVertexNormals();
+
+    this.meshCache.set(cacheKey, finalGeometry);
+    return finalGeometry.clone();
+  }
+
+  /**
+   * Create a 3D profile path from cap configuration
+   * Returns a THREE.Curve that can be used with extrudePath
+   */
+  createProfilePathFromCap(
+    capConfig: CapProfileConfig,
+    extrusionDepth: number
+  ): THREE.CatmullRomCurve3 {
+    const profile2D = generateCapProfileCurve(capConfig);
+
+    // Convert 2D profile to 3D path (Z = depth)
+    const points3D = profile2D.map(p =>
+      new THREE.Vector3(0, 0, p.y) // Use Y as depth (Z in 3D)
+    );
+
+    // Add the main extrusion segment
+    const mainDepthStart = capConfig.depth;
+    const mainDepthEnd = extrusionDepth - capConfig.depth;
+
+    points3D.push(new THREE.Vector3(0, 0, mainDepthStart));
+    points3D.push(new THREE.Vector3(0, 0, mainDepthEnd));
+
+    // Add mirrored back cap profile
+    const backProfile = profile2D.slice().reverse();
+    for (const p of backProfile) {
+      points3D.push(new THREE.Vector3(0, 0, extrusionDepth - capConfig.depth + p.y));
+    }
+
+    return new THREE.CatmullRomCurve3(points3D);
   }
 
   /**

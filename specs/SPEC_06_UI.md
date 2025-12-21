@@ -2,7 +2,7 @@
 
 ---
 
-# IMPLEMENTATION STATUS (Updated December 2024)
+# IMPLEMENTATION STATUS (Updated December 2025)
 
 > **Design System:** See `docs/DESIGN_SYSTEM.md` for complete CSS variable reference.
 > All components should use `--weyl-*` CSS variables, never hardcode colors.

@@ -193,24 +193,29 @@ interface CompositorState {
 }
 
 export const useCompositorStore = defineStore('compositor', {
-  state: (): CompositorState => ({
-    project: createEmptyProject(832, 480),  // Wan 2.1 480p default
-    activeCompositionId: 'main',
-    openCompositionIds: ['main'],
-    compositionBreadcrumbs: ['main'],  // Start with main comp in breadcrumb path
-    comfyuiNodeId: null,
-    sourceImage: null,
-    depthMap: null,
-    isPlaying: false,
-    segmentToolActive: false,
-    segmentMode: 'point',
-    segmentPendingMask: null,
-    segmentBoxStart: null,
-    segmentIsLoading: false,
-    curveEditorVisible: false,
-    hideMinimizedLayers: false,
-    historyStack: [],
-    historyIndex: -1,
+  state: (): CompositorState => {
+    // Create initial project and pre-populate history with it
+    // This ensures undo works for the very first action
+    const initialProject = createEmptyProject(832, 480);  // Wan 2.1 480p default
+    return {
+      project: initialProject,
+      activeCompositionId: 'main',
+      openCompositionIds: ['main'],
+      compositionBreadcrumbs: ['main'],  // Start with main comp in breadcrumb path
+      comfyuiNodeId: null,
+      sourceImage: null,
+      depthMap: null,
+      isPlaying: false,
+      segmentToolActive: false,
+      segmentMode: 'point',
+      segmentPendingMask: null,
+      segmentBoxStart: null,
+      segmentIsLoading: false,
+      curveEditorVisible: false,
+      hideMinimizedLayers: false,
+      // Initialize history with initial project state so first action can be undone
+      historyStack: [structuredClone(initialProject)],
+      historyIndex: 0,
     audioBuffer: null,
     audioAnalysis: null,
     audioFile: null,
@@ -257,7 +262,8 @@ export const useCompositorStore = defineStore('compositor', {
     // Frame cache (enabled by default)
     frameCacheEnabled: true,
     projectStateHash: ''
-  }),
+    };
+  },
 
   getters: {
     // Active composition helper
@@ -1067,6 +1073,25 @@ export const useCompositorStore = defineStore('compositor', {
             gpuAccelerated: false
           };
           break;
+
+        case 'adjustment':
+          // Adjustment/Effect layer - applies effects to layers below
+          layerData = {
+            color: '#808080',
+            effectLayer: true,
+            adjustmentLayer: true  // Backwards compatibility
+          };
+          break;
+
+        case 'group':
+          // Layer group/folder
+          layerData = {
+            collapsed: false,
+            color: null,
+            passThrough: true,
+            isolate: false
+          };
+          break;
       }
 
       // Initialize audio props for video/audio layers
@@ -1352,6 +1377,31 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Copy a path from a spline layer and paste it as position keyframes on a target layer.
+     * This creates a motion path where the layer follows the spline's shape over time.
+     *
+     * @param sourceSplineLayerId - The spline layer to copy the path from
+     * @param targetLayerId - The layer to apply position keyframes to
+     * @param options - Configuration options
+     * @returns Number of keyframes created, or null if failed
+     */
+    copyPathToPosition(
+      sourceSplineLayerId: string,
+      targetLayerId: string,
+      options?: {
+        useFullDuration?: boolean;
+        startFrame?: number;
+        endFrame?: number;
+        keyframeCount?: number;
+        interpolation?: 'linear' | 'bezier' | 'hold';
+        useSpatialTangents?: boolean;
+        reversed?: boolean;
+      }
+    ): number | null {
+      return layerActions.copyPathToPosition(this, sourceSplineLayerId, targetLayerId, options);
+    },
+
+    /**
      * Toggle 3D mode for a layer
      */
     toggleLayer3D(layerId: string): void {
@@ -1363,6 +1413,14 @@ export const useCompositorStore = defineStore('compositor', {
      */
     moveLayer(layerId: string, newIndex: number): void {
       layerActions.moveLayer(this, layerId, newIndex);
+    },
+
+    /**
+     * Replace layer source with a new asset (Alt+drag replacement)
+     * Keeps all keyframes, effects, and transforms
+     */
+    replaceLayerSource(layerId: string, newSource: { type: string; name: string; path?: string; id?: string; data?: any }): void {
+      layerActions.replaceLayerSource(this, layerId, newSource);
     },
 
     /**
@@ -1381,6 +1439,57 @@ export const useCompositorStore = defineStore('compositor', {
      */
     setLayerParent(layerId: string, parentId: string | null): void {
       layerActions.setLayerParent(this, layerId, parentId);
+    },
+
+    // ============================================================
+    // TIME MANIPULATION
+    // ============================================================
+
+    /**
+     * Apply time stretch to a video or nested comp layer
+     * @param layerId - Target layer ID
+     * @param options - Time stretch options including stretchFactor, holdInPlace, reverse
+     */
+    timeStretchLayer(layerId: string, options: layerActions.TimeStretchOptions): void {
+      layerActions.timeStretchLayer(this, layerId, options);
+    },
+
+    /**
+     * Reverse layer playback by negating speed
+     * @param layerId - Target layer ID
+     */
+    reverseLayer(layerId: string): void {
+      layerActions.reverseLayer(this, layerId);
+    },
+
+    /**
+     * Create freeze frame at current playhead
+     * Uses speedMap with hold keyframes
+     * @param layerId - Target layer ID
+     */
+    freezeFrameAtPlayhead(layerId: string): void {
+      const comp = this.getActiveComp();
+      const storeWithFrame = {
+        ...this,
+        currentFrame: comp?.currentFrame ?? 0,
+        fps: comp?.settings.fps ?? 30
+      };
+      layerActions.freezeFrameAtPlayhead(storeWithFrame, layerId);
+    },
+
+    /**
+     * Split layer at current playhead
+     * Creates two layers: one ending at playhead, one starting at playhead
+     * @param layerId - Target layer ID
+     * @returns The new layer created after the split point
+     */
+    splitLayerAtPlayhead(layerId: string): Layer | null {
+      const comp = this.getActiveComp();
+      const storeWithFrame = {
+        ...this,
+        currentFrame: comp?.currentFrame ?? 0
+      };
+      return layerActions.splitLayerAtPlayhead(storeWithFrame, layerId);
     },
 
     clearSelection(): void {
@@ -1644,6 +1753,29 @@ export const useCompositorStore = defineStore('compositor', {
      */
     async deleteServerProject(projectId: string): Promise<boolean> {
       return projectActions.deleteServerProject(projectId);
+    },
+
+    /**
+     * Remove unused assets from the project (Reduce Project)
+     * Returns info about removed assets
+     */
+    removeUnusedAssets(): { removed: number; assetNames: string[] } {
+      return projectActions.removeUnusedAssets(this);
+    },
+
+    /**
+     * Get statistics about asset usage
+     */
+    getAssetUsageStats(): { total: number; used: number; unused: number; unusedNames: string[] } {
+      return projectActions.getAssetUsageStats(this);
+    },
+
+    /**
+     * Collect Files - Package project and assets into a downloadable ZIP
+     * @param includeUnused - Whether to include assets not used by any layer
+     */
+    async collectFiles(options: { includeUnused?: boolean } = {}): Promise<void> {
+      return projectActions.downloadCollectedFiles(this, options);
     },
 
     /**

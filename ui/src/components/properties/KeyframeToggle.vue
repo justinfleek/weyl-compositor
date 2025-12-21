@@ -3,9 +3,10 @@
     class="keyframe-toggle"
     :class="{
       animated: property.animated,
-      'has-keyframe': hasKeyframeAtCurrentFrame
+      'has-keyframe': hasKeyframeAtCurrentFrame,
+      'has-expression': hasExpression
     }"
-    @click="toggleKeyframe"
+    @click="handleClick"
     :title="buttonTitle"
   >
     <i class="pi" :class="iconClass" />
@@ -15,11 +16,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+import { useExpressionEditor } from '@/composables/useExpressionEditor';
 import type { AnimatableProperty, Keyframe, BezierHandle } from '@/types/project';
 
 interface Props {
   property: AnimatableProperty<any>;
   layerId: string;
+  propertyPath?: string; // Optional path for identifying the property
 }
 
 const props = defineProps<Props>();
@@ -31,11 +34,17 @@ const emit = defineEmits<{
 }>();
 
 const store = useCompositorStore();
+const expressionEditor = useExpressionEditor();
 
 // Check if there's a keyframe at current frame
 const hasKeyframeAtCurrentFrame = computed(() => {
   if (!props.property.animated) return false;
   return props.property.keyframes.some(k => k.frame === store.currentFrame);
+});
+
+// Check if property has an expression
+const hasExpression = computed(() => {
+  return props.property.expression?.enabled ?? false;
 });
 
 // Get the keyframe at current frame (if exists)
@@ -57,14 +66,33 @@ const iconClass = computed(() => {
 
 // Button title
 const buttonTitle = computed(() => {
+  const exprHint = '\nAlt+click: Add expression';
+  if (hasExpression.value) {
+    return 'Expression active (Alt+click to edit)';
+  }
   if (hasKeyframeAtCurrentFrame.value) {
-    return 'Remove keyframe at current frame';
+    return 'Remove keyframe at current frame' + exprHint;
   }
   if (props.property.animated) {
-    return 'Add keyframe at current frame';
+    return 'Add keyframe at current frame' + exprHint;
   }
-  return 'Enable animation (add keyframe)';
+  return 'Enable animation (add keyframe)' + exprHint;
 });
+
+// Handle click - Alt+click opens expression mode
+function handleClick(event: MouseEvent): void {
+  if (event.altKey) {
+    // Alt+click: Open expression editor
+    expressionEditor.openExpressionEditor(
+      props.property,
+      props.layerId,
+      props.propertyPath || ''
+    );
+  } else {
+    // Normal click: Toggle keyframe
+    toggleKeyframe();
+  }
+}
 
 // Toggle keyframe
 function toggleKeyframe(): void {
@@ -152,6 +180,15 @@ function removeKeyframe(): void {
 
 .keyframe-toggle.has-keyframe:hover {
   color: #ffca28;
+}
+
+.keyframe-toggle.has-expression {
+  color: #EC4899; /* Pink for expression */
+  text-shadow: 0 0 4px rgba(236, 72, 153, 0.5);
+}
+
+.keyframe-toggle.has-expression:hover {
+  color: #F472B6;
 }
 
 .keyframe-toggle i {

@@ -416,6 +416,15 @@ export function createLayer(
         size: 5
       };
       break;
+
+    case 'adjustment':
+      // Adjustment/Effect layer - applies effects to layers below
+      layerData = {
+        color: '#808080',
+        effectLayer: true,
+        adjustmentLayer: true  // Backwards compatibility
+      };
+      break;
   }
 
   // Initialize audio props for video/audio layers
@@ -604,6 +613,7 @@ export function updateLayer(store: LayerStore, layerId: string, updates: Partial
   Object.assign(layer, updates);
   markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 }
 
 /**
@@ -617,6 +627,78 @@ export function updateLayerData(store: LayerStore, layerId: string, dataUpdates:
   layer.data = { ...layer.data, ...dataUpdates };
   markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
+}
+
+/**
+ * Replace layer source with a new asset (Alt+drag replacement)
+ * Keeps all keyframes, effects, and transforms
+ */
+export function replaceLayerSource(
+  store: LayerStore,
+  layerId: string,
+  newSource: { type: string; name: string; path?: string; id?: string; assetId?: string; data?: any }
+): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) return;
+
+  // Use assetId if provided, otherwise use id as assetId
+  const assetId = newSource.assetId || newSource.id || null;
+
+  // Determine source update based on layer type and new source type
+  if (layer.type === 'image' && newSource.type === 'asset' && assetId) {
+    // Replace image source - preserve existing data, update assetId
+    (layer.data as any).assetId = assetId;
+    layer.name = newSource.name || layer.name;
+  } else if (layer.type === 'video' && newSource.type === 'asset' && assetId) {
+    // Replace video source - preserve existing data, update assetId
+    (layer.data as any).assetId = assetId;
+    layer.name = newSource.name || layer.name;
+  } else if (layer.type === 'solid' && newSource.type === 'asset' && assetId) {
+    // Convert solid to image layer (source replacement changes type)
+    layer.type = 'image' as any;
+    layer.data = { assetId, fit: 'none' as const } as any;
+    layer.name = newSource.name || layer.name;
+  } else if (layer.type === 'nestedComp' && newSource.type === 'composition' && newSource.id) {
+    // Replace nested comp source - preserve existing data, update compositionId
+    (layer.data as any).compositionId = newSource.id;
+    layer.name = newSource.name || layer.name;
+  } else if (newSource.type === 'composition' && newSource.id) {
+    // Convert any layer to nested comp
+    layer.type = 'nestedComp' as any;
+    layer.data = { compositionId: newSource.id, speedMapEnabled: false, flattenTransform: false, overrideFrameRate: false } as any;
+    layer.name = newSource.name || layer.name;
+  } else if (newSource.type === 'asset' && assetId) {
+    // Generic asset replacement - determine new type from asset or file extension
+    const path = newSource.path || '';
+    const ext = path.split('.').pop()?.toLowerCase() || '';
+    const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+    const videoExts = ['mp4', 'webm', 'mov', 'avi'];
+
+    if (imageExts.includes(ext)) {
+      layer.type = 'image' as any;
+      layer.data = { assetId, fit: 'none' as const } as any;
+    } else if (videoExts.includes(ext)) {
+      layer.type = 'video' as any;
+      layer.data = {
+        assetId,
+        loop: true,
+        pingPong: false,
+        startTime: 0,
+        speed: 1,
+        speedMapEnabled: false,
+        frameBlending: 'none' as const,
+        audioEnabled: true,
+        audioLevel: 100,
+        posterFrame: 0
+      } as any;
+    }
+    layer.name = newSource.name || layer.name;
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+  console.log(`[Weyl] Replaced layer source: ${layer.name}`);
 }
 
 /**
@@ -1671,4 +1753,574 @@ export async function convertTextLayerToSplines(
     storeLogger.error('convertTextLayerToSplines: Failed to convert', error);
     return null;
   }
+}
+
+// ============================================================================
+// COPY PATH TO POSITION
+// ============================================================================
+
+/**
+ * Copy a path from a spline layer and paste it as position keyframes on a target layer.
+ * This creates a motion path where the layer follows the spline's shape over time.
+ *
+ * @param store - The layer store
+ * @param sourceSplineLayerId - The spline layer to copy the path from
+ * @param targetLayerId - The layer to apply position keyframes to
+ * @param options - Configuration options
+ * @returns Number of keyframes created, or null if failed
+ */
+export function copyPathToPosition(
+  store: LayerStore,
+  sourceSplineLayerId: string,
+  targetLayerId: string,
+  options: {
+    /** Use the full composition duration for the motion (default: true) */
+    useFullDuration?: boolean;
+    /** Start frame for keyframes (if not using full duration) */
+    startFrame?: number;
+    /** End frame for keyframes (if not using full duration) */
+    endFrame?: number;
+    /** Number of keyframes to create (default: auto based on path complexity) */
+    keyframeCount?: number;
+    /** Interpolation type for keyframes (default: 'bezier') */
+    interpolation?: 'linear' | 'bezier' | 'hold';
+    /** Apply spatial tangents from path handles (default: true) */
+    useSpatialTangents?: boolean;
+    /** Reverse the path direction (default: false) */
+    reversed?: boolean;
+  } = {}
+): number | null {
+  const comp = store.getActiveComp();
+  if (!comp) {
+    storeLogger.error('copyPathToPosition: No active composition');
+    return null;
+  }
+
+  // Get source spline layer
+  const sourceLayer = comp.layers.find(l => l.id === sourceSplineLayerId);
+  if (!sourceLayer || sourceLayer.type !== 'spline' || !sourceLayer.data) {
+    storeLogger.error('copyPathToPosition: Source layer not found or not a spline');
+    return null;
+  }
+
+  // Get target layer
+  const targetLayer = comp.layers.find(l => l.id === targetLayerId);
+  if (!targetLayer) {
+    storeLogger.error('copyPathToPosition: Target layer not found');
+    return null;
+  }
+
+  const splineData = sourceLayer.data as SplineData;
+  const controlPoints = splineData.controlPoints || [];
+
+  if (controlPoints.length < 2) {
+    storeLogger.error('copyPathToPosition: Path needs at least 2 control points');
+    return null;
+  }
+
+  // Configuration
+  const useFullDuration = options.useFullDuration ?? true;
+  const startFrame = options.startFrame ?? 0;
+  const endFrame = options.endFrame ?? (comp.settings.frameCount - 1);
+  const interpolation = options.interpolation ?? 'bezier';
+  const useSpatialTangents = options.useSpatialTangents ?? true;
+  const reversed = options.reversed ?? false;
+
+  // Calculate frame range
+  const frameStart = useFullDuration ? 0 : startFrame;
+  const frameEnd = useFullDuration ? (comp.settings.frameCount - 1) : endFrame;
+  const frameDuration = frameEnd - frameStart;
+
+  // Determine keyframe count based on path complexity or use specified value
+  const defaultKeyframeCount = Math.max(
+    controlPoints.length,
+    Math.ceil(frameDuration / 5) // At least one keyframe every 5 frames
+  );
+  const keyframeCount = options.keyframeCount ?? defaultKeyframeCount;
+
+  // Sample points along the path
+  const sampledPoints = samplePathPoints(controlPoints, keyframeCount, splineData.closed ?? false);
+  if (reversed) {
+    sampledPoints.reverse();
+  }
+
+  // Create keyframes with proper BezierHandle structure
+  const keyframes: Array<{
+    id: string;
+    frame: number;
+    value: { x: number; y: number; z: number };
+    interpolation: 'linear' | 'bezier' | 'hold';
+    inHandle: { frame: number; value: number; enabled: boolean };
+    outHandle: { frame: number; value: number; enabled: boolean };
+    controlMode: 'symmetric' | 'smooth' | 'corner';
+    spatialInTangent?: { x: number; y: number; z: number };
+    spatialOutTangent?: { x: number; y: number; z: number };
+  }> = [];
+
+  for (let i = 0; i < sampledPoints.length; i++) {
+    const t = sampledPoints.length > 1 ? i / (sampledPoints.length - 1) : 0;
+    const frame = Math.round(frameStart + t * frameDuration);
+    const point = sampledPoints[i];
+
+    // Calculate frame distance to neighboring keyframes for handle influence
+    const prevFrame = i > 0 ? keyframes[i - 1]?.frame ?? 0 : 0;
+    const nextFrame = i < sampledPoints.length - 1
+      ? Math.round(frameStart + ((i + 1) / (sampledPoints.length - 1)) * frameDuration)
+      : frameDuration;
+
+    const inInfluence = (frame - prevFrame) * 0.33;
+    const outInfluence = (nextFrame - frame) * 0.33;
+
+    const keyframe: typeof keyframes[0] = {
+      id: `kf_${Date.now()}_${i}`,
+      frame,
+      value: { x: point.x, y: point.y, z: point.depth ?? 0 },
+      interpolation,
+      inHandle: { frame: -inInfluence, value: 0, enabled: true },
+      outHandle: { frame: outInfluence, value: 0, enabled: true },
+      controlMode: 'smooth'
+    };
+
+    // Apply spatial tangents from path handles if available
+    if (useSpatialTangents && point.handleIn && point.handleOut) {
+      keyframe.spatialInTangent = {
+        x: point.handleIn.x - point.x,
+        y: point.handleIn.y - point.y,
+        z: 0
+      };
+      keyframe.spatialOutTangent = {
+        x: point.handleOut.x - point.x,
+        y: point.handleOut.y - point.y,
+        z: 0
+      };
+    }
+
+    keyframes.push(keyframe);
+  }
+
+  // Apply keyframes to target layer's position
+  store.pushHistory();
+
+  targetLayer.transform.position.animated = true;
+  // Cast to any to allow assignment - structure is correct but TS doesn't fully match
+  // due to optional spatial tangent fields
+  targetLayer.transform.position.keyframes = keyframes as any;
+
+  // Mark layer dirty for re-evaluation
+  markLayerDirty(targetLayerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.info(`copyPathToPosition: Created ${keyframes.length} position keyframes on layer "${targetLayer.name}"`);
+  return keyframes.length;
+}
+
+/**
+ * Sample points along a path at regular intervals.
+ * Uses arc-length parameterization for even spacing.
+ */
+function samplePathPoints(
+  controlPoints: ControlPoint[],
+  count: number,
+  closed: boolean
+): Array<{ x: number; y: number; depth?: number; handleIn?: { x: number; y: number }; handleOut?: { x: number; y: number } }> {
+  if (controlPoints.length === 0) return [];
+  if (controlPoints.length === 1) {
+    return [{ x: controlPoints[0].x, y: controlPoints[0].y, depth: controlPoints[0].depth }];
+  }
+
+  // Build path segments
+  const segments: Array<{
+    p0: { x: number; y: number; depth?: number };
+    p1: { x: number; y: number };
+    p2: { x: number; y: number };
+    p3: { x: number; y: number; depth?: number };
+    length: number;
+  }> = [];
+
+  let totalLength = 0;
+
+  for (let i = 0; i < controlPoints.length - 1; i++) {
+    const curr = controlPoints[i];
+    const next = controlPoints[i + 1];
+
+    // Get bezier control points
+    const p0 = { x: curr.x, y: curr.y, depth: curr.depth };
+    const p3 = { x: next.x, y: next.y, depth: next.depth };
+
+    // Control points (handle out from curr, handle in to next)
+    const p1 = curr.handleOut
+      ? { x: curr.handleOut.x, y: curr.handleOut.y }
+      : { x: curr.x, y: curr.y };
+    const p2 = next.handleIn
+      ? { x: next.handleIn.x, y: next.handleIn.y }
+      : { x: next.x, y: next.y };
+
+    // Approximate segment length
+    const length = approximateBezierLength(p0, p1, p2, p3);
+    totalLength += length;
+
+    segments.push({ p0, p1, p2, p3, length });
+  }
+
+  // Handle closed path
+  if (closed && controlPoints.length > 2) {
+    const last = controlPoints[controlPoints.length - 1];
+    const first = controlPoints[0];
+
+    const p0 = { x: last.x, y: last.y, depth: last.depth };
+    const p3 = { x: first.x, y: first.y, depth: first.depth };
+    const p1 = last.handleOut
+      ? { x: last.handleOut.x, y: last.handleOut.y }
+      : { x: last.x, y: last.y };
+    const p2 = first.handleIn
+      ? { x: first.handleIn.x, y: first.handleIn.y }
+      : { x: first.x, y: first.y };
+
+    const length = approximateBezierLength(p0, p1, p2, p3);
+    totalLength += length;
+    segments.push({ p0, p1, p2, p3, length });
+  }
+
+  // Sample along path
+  const result: Array<{ x: number; y: number; depth?: number; handleIn?: { x: number; y: number }; handleOut?: { x: number; y: number } }> = [];
+  const step = totalLength / (count - 1);
+
+  let currentDist = 0;
+  let segIndex = 0;
+  let segDist = 0;
+
+  for (let i = 0; i < count; i++) {
+    const targetDist = i * step;
+
+    // Find the segment containing this distance
+    while (segIndex < segments.length - 1 && currentDist + segments[segIndex].length < targetDist) {
+      currentDist += segments[segIndex].length;
+      segIndex++;
+    }
+
+    const seg = segments[segIndex];
+    if (!seg) {
+      // Past the end, use last point
+      const lastCp = controlPoints[controlPoints.length - 1];
+      result.push({ x: lastCp.x, y: lastCp.y, depth: lastCp.depth });
+      continue;
+    }
+
+    // Calculate t within this segment
+    segDist = targetDist - currentDist;
+    const t = seg.length > 0 ? Math.min(1, segDist / seg.length) : 0;
+
+    // Evaluate cubic bezier
+    const point = evaluateCubicBezier(seg.p0, seg.p1, seg.p2, seg.p3, t);
+
+    // Interpolate depth
+    const depth = seg.p0.depth !== undefined && seg.p3.depth !== undefined
+      ? seg.p0.depth + (seg.p3.depth - seg.p0.depth) * t
+      : undefined;
+
+    // Calculate tangent for handles
+    const tangent = evaluateCubicBezierDerivative(seg.p0, seg.p1, seg.p2, seg.p3, t);
+    const handleScale = 20; // Scale factor for handle length
+
+    result.push({
+      x: point.x,
+      y: point.y,
+      depth,
+      handleIn: { x: point.x - tangent.x * handleScale, y: point.y - tangent.y * handleScale },
+      handleOut: { x: point.x + tangent.x * handleScale, y: point.y + tangent.y * handleScale }
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Approximate the length of a cubic bezier curve using chord length approximation
+ */
+function approximateBezierLength(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number },
+  samples: number = 10
+): number {
+  let length = 0;
+  let prev = p0;
+
+  for (let i = 1; i <= samples; i++) {
+    const t = i / samples;
+    const curr = evaluateCubicBezier(p0, p1, p2, p3, t);
+    length += Math.sqrt(
+      (curr.x - prev.x) ** 2 + (curr.y - prev.y) ** 2
+    );
+    prev = curr;
+  }
+
+  return length;
+}
+
+/**
+ * Evaluate a cubic bezier curve at parameter t
+ */
+function evaluateCubicBezier(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number },
+  t: number
+): { x: number; y: number } {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const mt3 = mt2 * mt;
+
+  return {
+    x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
+    y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+  };
+}
+
+/**
+ * Evaluate the derivative (tangent) of a cubic bezier curve at parameter t
+ */
+function evaluateCubicBezierDerivative(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number },
+  t: number
+): { x: number; y: number } {
+  const t2 = t * t;
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+
+  const dx = 3 * mt2 * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t2 * (p3.x - p2.x);
+  const dy = 3 * mt2 * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t2 * (p3.y - p2.y);
+
+  // Normalize
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len === 0) return { x: 0, y: 0 };
+
+  return { x: dx / len, y: dy / len };
+}
+
+// ============================================================================
+// TIME MANIPULATION ACTIONS
+// ============================================================================
+
+export interface TimeStretchOptions {
+  stretchFactor: number;           // 100% = normal, 200% = half speed, 50% = double speed
+  holdInPlace: 'in-point' | 'current-frame' | 'out-point';
+  reverse: boolean;
+  newStartFrame: number;
+  newEndFrame: number;
+  speed: number;                   // Computed speed value (100 / stretchFactor)
+}
+
+/**
+ * Apply time stretch to a video or nested comp layer
+ * Adjusts layer timing based on stretch factor and hold-in-place pivot
+ */
+export function timeStretchLayer(
+  store: LayerStore,
+  layerId: string,
+  options: TimeStretchOptions
+): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('Layer not found for time stretch:', layerId);
+    return;
+  }
+
+  // Only works for video and nested comp layers
+  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
+    storeLogger.warn('Time stretch only works on video/nestedComp layers');
+    return;
+  }
+
+  store.pushHistory();
+
+  // Update layer timing
+  layer.startFrame = options.newStartFrame;
+  layer.endFrame = options.newEndFrame;
+
+  // Update speed in layer data
+  if (layer.data) {
+    const data = layer.data as any;
+    data.speed = options.speed;
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.debug(
+    `Time stretched layer ${layer.name}: ${options.stretchFactor}% ` +
+    `(speed: ${options.speed.toFixed(2)}, hold: ${options.holdInPlace})`
+  );
+}
+
+/**
+ * Reverse layer playback
+ * Toggles the speed sign for video/nested comp layers
+ */
+export function reverseLayer(store: LayerStore, layerId: string): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('Layer not found for reverse:', layerId);
+    return;
+  }
+
+  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
+    storeLogger.warn('Reverse only works on video/nestedComp layers');
+    return;
+  }
+
+  store.pushHistory();
+
+  if (layer.data) {
+    const data = layer.data as any;
+    // Negate speed to reverse
+    data.speed = -(data.speed ?? 1);
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.debug(`Reversed layer: ${layer.name}`);
+}
+
+/**
+ * Create a freeze frame at the current playhead position
+ * Uses speedMap with hold keyframes to freeze at a specific source time
+ */
+export function freezeFrameAtPlayhead(
+  store: LayerStore & { currentFrame: number; fps: number },
+  layerId: string
+): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('Layer not found for freeze frame:', layerId);
+    return;
+  }
+
+  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
+    storeLogger.warn('Freeze frame only works on video/nestedComp layers');
+    return;
+  }
+
+  store.pushHistory();
+
+  const currentFrame = store.currentFrame ?? 0;
+  const fps = store.fps ?? 30;
+  const sourceTime = currentFrame / fps;
+
+  if (layer.data) {
+    const data = layer.data as any;
+
+    // Enable speed map if not already
+    data.speedMapEnabled = true;
+
+    // Create or update speed map with freeze frame
+    if (!data.speedMap) {
+      data.speedMap = createAnimatableProperty('Speed Map', sourceTime, 'number');
+    }
+
+    // Clear existing keyframes and add freeze frame keyframes
+    data.speedMap.keyframes = [
+      {
+        id: `kf_freeze_start_${Date.now()}`,
+        frame: currentFrame,
+        value: sourceTime,
+        interpolation: 'hold' as const,
+        controlMode: 'linked' as const,
+        inHandle: { frame: -5, value: 0, enabled: true },
+        outHandle: { frame: 5, value: 0, enabled: true }
+      },
+      {
+        id: `kf_freeze_end_${Date.now() + 1}`,
+        frame: (layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81) - 1,
+        value: sourceTime,
+        interpolation: 'hold' as const,
+        controlMode: 'linked' as const,
+        inHandle: { frame: -5, value: 0, enabled: true },
+        outHandle: { frame: 5, value: 0, enabled: true }
+      }
+    ];
+
+    data.speedMap.value = sourceTime;
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.debug(`Created freeze frame on ${layer.name} at frame ${currentFrame}`);
+}
+
+/**
+ * Split layer at the current playhead position
+ * Creates two layers: one ending at playhead, one starting at playhead
+ */
+export function splitLayerAtPlayhead(
+  store: LayerStore & { currentFrame: number },
+  layerId: string
+): Layer | null {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('Layer not found for split:', layerId);
+    return null;
+  }
+
+  const currentFrame = store.currentFrame ?? 0;
+  const startFrame = layer.startFrame ?? 0;
+  const endFrame = layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81;
+
+  // Can't split outside layer bounds
+  if (currentFrame <= startFrame || currentFrame >= endFrame) {
+    storeLogger.warn('Split point must be within layer bounds');
+    return null;
+  }
+
+  store.pushHistory();
+
+  // Create new layer as copy of original
+  const newLayerId = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const newLayer: Layer = {
+    ...JSON.parse(JSON.stringify(layer)),
+    id: newLayerId,
+    name: `${layer.name} (split)`
+  };
+
+  // Original layer ends at playhead
+  layer.endFrame = currentFrame;
+
+  // New layer starts at playhead
+  newLayer.startFrame = currentFrame;
+  newLayer.endFrame = endFrame;
+
+  // Adjust source time for video layers
+  if ((layer.type === 'video' || layer.type === 'nestedComp') && newLayer.data) {
+    const data = newLayer.data as any;
+    const fps = 30; // Default FPS
+    const originalStartTime = data.startTime ?? 0;
+    const speed = data.speed ?? 1;
+
+    // Calculate new source start time based on split point
+    const frameOffset = currentFrame - startFrame;
+    const timeOffset = (frameOffset / fps) * speed;
+    data.startTime = originalStartTime + timeOffset;
+  }
+
+  // Add new layer after original
+  const layers = store.getActiveCompLayers();
+  const originalIndex = layers.findIndex(l => l.id === layerId);
+  layers.splice(originalIndex + 1, 0, newLayer);
+
+  markLayerDirty(layerId);
+  markLayerDirty(newLayerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.debug(`Split layer ${layer.name} at frame ${currentFrame}`);
+
+  return newLayer;
 }

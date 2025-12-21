@@ -47,7 +47,13 @@
           v-for="(effect, index) in layer.effects"
           :key="effect.id"
           class="effect-item"
-          :class="{ collapsed: !effect.expanded }"
+          :class="{ collapsed: !effect.expanded, 'drag-over': dragOverEffectId === effect.id }"
+          draggable="true"
+          @dragstart="onDragStart($event, index)"
+          @dragend="onDragEnd"
+          @dragover.prevent="onDragOver($event, effect.id)"
+          @dragleave="onDragLeave"
+          @drop="onDrop($event, index)"
         >
           <div class="effect-header" @click="toggleExpand(effect)">
             <div class="header-left">
@@ -185,6 +191,10 @@ const store = useCompositorStore();
 const showAddMenu = ref(false);
 const menuRef = ref<HTMLDivElement | null>(null);
 
+// Drag state
+const dragOverEffectId = ref<string | null>(null);
+const draggedIndex = ref<number | null>(null);
+
 const layer = computed(() => store.selectedLayer);
 const categories = EFFECT_CATEGORIES;
 
@@ -289,6 +299,41 @@ function toggleParamAnim(effectId: string, paramKey: string) {
   const param = effect?.parameters[paramKey];
   if(param) {
     store.setEffectParamAnimated(layer.value.id, effectId, paramKey, !param.animated);
+  }
+}
+
+// --- Drag & Drop ---
+
+function onDragStart(event: DragEvent, index: number) {
+  draggedIndex.value = index;
+  event.dataTransfer?.setData('application/effect-reorder', String(index));
+  event.dataTransfer!.effectAllowed = 'move';
+}
+
+function onDragEnd() {
+  draggedIndex.value = null;
+  dragOverEffectId.value = null;
+}
+
+function onDragOver(event: DragEvent, effectId: string) {
+  const data = event.dataTransfer?.types.includes('application/effect-reorder');
+  if (data) {
+    dragOverEffectId.value = effectId;
+  }
+}
+
+function onDragLeave() {
+  dragOverEffectId.value = null;
+}
+
+function onDrop(event: DragEvent, targetIndex: number) {
+  dragOverEffectId.value = null;
+  const fromIndexStr = event.dataTransfer?.getData('application/effect-reorder');
+  if (!fromIndexStr || !layer.value) return;
+
+  const fromIndex = parseInt(fromIndexStr, 10);
+  if (fromIndex !== targetIndex && !isNaN(fromIndex)) {
+    store.reorderEffects(layer.value.id, fromIndex, targetIndex);
   }
 }
 
@@ -406,6 +451,13 @@ h3 { margin: 0; font-size: 13px; font-weight: 600; color: #888; text-transform: 
 .effect-item {
   border-bottom: 1px solid #111;
   background: #222;
+  cursor: grab;
+}
+.effect-item:active { cursor: grabbing; }
+.effect-item.drag-over {
+  background: #2a4a6a;
+  border-top: 2px solid #4a90d9;
+  margin-top: -2px;
 }
 
 .effect-header {
