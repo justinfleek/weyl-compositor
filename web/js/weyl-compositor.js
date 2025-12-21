@@ -103091,9 +103091,15 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
           }
           break;
         case "r":
-          if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
+          if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
+            e.preventDefault();
+            toggleRulers();
+          } else if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
             e.preventDefault();
             reverseSelectedLayers();
+          } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
+            e.preventDefault();
+            timeReverseKeyframes();
           } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             soloProperty("rotation", e.shiftKey);
@@ -103163,18 +103169,6 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
         case "capslock":
           e.preventDefault();
           togglePreviewPause();
-          break;
-        case "r":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
-            e.preventDefault();
-            toggleRulers();
-          } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
-            e.preventDefault();
-            timeReverseKeyframes();
-          } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            soloProperty("rotation", e.shiftKey);
-          }
           break;
         case "f":
           if ((e.ctrlKey || e.metaKey) && e.altKey) {
@@ -103943,7 +103937,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const WorkspaceLayout = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-9e849ada"]]);
+const WorkspaceLayout = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-32cf3e9a"]]);
 
 const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "App",

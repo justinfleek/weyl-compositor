@@ -407,6 +407,331 @@ All accessible via Camera Properties panel:
 
 ---
 
+## 16. PEN TOOL & SPLINE EDITING (COMPREHENSIVE)
+
+The pen tool has **4 sub-modes** accessed via the spline toolbar:
+
+### Pen Tool Modes
+
+| Mode | Shortcut | Icon | Description |
+|------|----------|------|-------------|
+| **Pen (Add)** | `P` | ✒ | Add points at end of path. Right-click to finish. |
+| **Pen+ (Insert)** | `+` | ✒+ | Click on path segment to insert point |
+| **Pen- (Delete)** | `-` | ✒- | Click on point to delete it |
+| **Convert** | `^` | ↕ | Toggle point between smooth/corner |
+
+### Spline Point Operations
+
+| Operation | UI Access | Location |
+|-----------|-----------|----------|
+| Select Point | ✅ 🖱️ | Click on control point |
+| Multi-select Points | ✅ 🖱️ | Shift+click or marquee |
+| Move Point | ✅ 🖱️ | Drag selected point |
+| Move Point X-only | ✅ 🖱️ | Drag X axis handle (red) |
+| Move Point Y-only | ✅ 🖱️ | Drag Y axis handle (green) |
+| Adjust Z-depth | ✅ 🎹 🖱️ | Arrow Up/Down or Z slider |
+| Edit In-Handle | ✅ 🖱️ | Drag handleIn circle |
+| Edit Out-Handle | ✅ 🖱️ | Drag handleOut circle |
+| Delete Point | ✅ 🎹 | Delete/Backspace with point selected |
+| Deselect All | ✅ 🎹 | Escape |
+
+### Spline Path Operations
+
+| Operation | UI Access | Location |
+|-----------|-----------|----------|
+| Smooth Path | ✅ 🖱️ | SplineEditor toolbar "Smooth" button |
+| Simplify Path | ✅ 🖱️ | SplineEditor toolbar "Simplify" button |
+| Toggle Close | ✅ 🖱️ | SplineEditor toolbar "Open/Close" button |
+| Set Tolerance | ✅ 🎚️ | SplineEditor toolbar slider |
+| Finish Path | ✅ 🖱️ | Right-click in pen mode |
+
+### Spline Animation
+
+| Feature | UI Access | Status |
+|---------|-----------|--------|
+| Keyframe point position | ⚠️ Partial | Service exists, UI needs work |
+| Enable point animation | ⚠️ Partial | `layerActions.ts:910` |
+| Animate along path | ✅ | Via expressions |
+
+### Visual Indicators
+
+| Indicator | Meaning |
+|-----------|---------|
+| Keyframe ring around point | Point has keyframes |
+| Red highlight on point | Will be deleted (Pen- mode hover) |
+| Blue highlight on point | Will be converted (Convert mode hover) |
+| Axis handles (red/green arrows) | Constrained movement |
+| Z-axis line (blue) | 3D layer depth editing |
+
+---
+
+## 17. MASK EDITING
+
+| Operation | UI Access | Location |
+|-----------|-----------|----------|
+| Create Mask | ✅ 🖱️ | Use pen tool with layer selected |
+| Select Mask | ✅ 🖱️ | Click mask path |
+| Select Vertex | ✅ 🖱️ | Click vertex point |
+| Move Vertex | ✅ 🖱️ | Drag vertex |
+| Edit In-Tangent | ✅ 🖱️ | Drag in-handle |
+| Edit Out-Tangent | ✅ 🖱️ | Drag out-handle |
+| Close Path | ✅ 🖱️ | Click first point when drawing |
+| Corner vs Smooth | ✅ 🖱️ | Different shapes (square vs circle) |
+| Invert Mask | ✅ 🎚️ | Mask properties |
+| Mask Feather | ✅ 🎚️ | Mask properties |
+| Mask Expansion | ✅ 🎚️ | Mask properties |
+| Mask Opacity | ✅ 🎚️ | Mask properties |
+
+---
+
+## 18. CONTEXT MENUS
+
+### Layer Context Menu (Right-click on layer)
+
+| Item | Action |
+|------|--------|
+| Duplicate Layer | Create copy |
+| Rename | Edit layer name |
+| --- | (separator) |
+| Hide/Show Layer | Toggle visibility |
+| Lock/Unlock Layer | Toggle lock |
+| Make 2D/3D | Toggle 3D mode |
+| --- | (separator) |
+| Convert to Splines | Text layers only |
+| Nest Layers... | Create nested comp |
+| --- | (separator) |
+| **Delete Layer** | Remove layer (red) |
+
+### Keyframe Context Menu (Right-click on keyframe)
+
+| Item | Action |
+|------|--------|
+| Linear | Set linear interpolation |
+| Bezier | Set bezier interpolation |
+| Hold | Set hold/step interpolation |
+| --- | (separator) |
+| Ease In | Apply ease in |
+| Ease Out | Apply ease out |
+| Ease In/Out | Apply ease in/out |
+| --- | (separator) |
+| Go to Frame | Jump to keyframe |
+| Delete | Remove keyframe |
+
+### Composition Tab Context Menu (Right-click on tab)
+
+| Item | Action |
+|------|--------|
+| Open Settings | Composition settings dialog |
+| Rename | Edit composition name |
+| Duplicate | Create copy of composition |
+| Open in New Tab | Switch to composition |
+| Set as Main | Make this the main comp |
+| Delete | Remove composition (not main) |
+
+### Curve Editor Context Menu (Right-click in graph)
+
+| Item | Action |
+|------|--------|
+| Add Keyframe | Insert at click position |
+| Set Value... | Enter exact value |
+| Frame Selected | Zoom to selection |
+
+---
+
+## 19. LAYER SWITCHES & AV ICONS
+
+### AV Features (Left side of layer track)
+
+| Icon | Toggle | Description |
+|------|--------|-------------|
+| 👁 | Visibility | Show/hide layer |
+| 🔊 | Audio | Enable/disable audio (video/audio layers) |
+| ● | Isolate | Solo this layer only |
+| 🔒 | Lock | Prevent editing |
+
+### Layer Switches (Right side of layer track)
+
+| Icon | Toggle | Description |
+|------|--------|-------------|
+| 🙈 | Minimized | Hide when filter enabled |
+| ☀ | Flatten Transform | Bake parent transforms |
+| ◐ | Quality | Draft vs Best quality |
+| fx | Effects | Enable/disable effects |
+| ⊞ | Frame Blend | Frame blending for video |
+| ◔ | Motion Blur | Per-layer motion blur |
+| ◐ | Effect Layer | Make adjustment layer |
+| ⬡ | 3D | Enable 3D transforms |
+
+---
+
+## 20. PROPERTY CONTROL COMPONENTS
+
+### ScrubableNumber
+| Feature | Description |
+|---------|-------------|
+| Drag to scrub | Horizontal drag adjusts value |
+| Precision control | Shift for fine, Ctrl for coarse |
+| Reset button | Click label to reset |
+| Direct input | Click to type value |
+
+### AngleDial
+| Feature | Description |
+|---------|-------------|
+| Dial rotation | Drag around circle |
+| 8-mark ring | 45° interval markers |
+| Degree input | Type exact angle |
+
+### ColorPicker
+| Feature | Description |
+|---------|-------------|
+| HSV mode | Hue/Saturation/Value sliders |
+| RGB mode | Red/Green/Blue sliders |
+| HEX mode | Hex code input |
+| Alpha | Opacity slider |
+
+### PropertyLink (Pickwhip)
+| Feature | Description |
+|---------|-------------|
+| Drag to link | Drag connector to target property |
+| Visual feedback | Line follows drag |
+| Create expression | Auto-generates link expression |
+
+### CurveEditor (Graph Editor)
+| Feature | Description |
+|---------|-------------|
+| Value graph | Y-axis = value, X-axis = time |
+| Speed graph | Shows rate of change |
+| Handle editing | Drag bezier handles |
+| Multi-select | Marquee selection |
+| Zoom/Pan | Scroll + drag |
+
+---
+
+## 21. PARTICLE SYSTEM (24 Presets)
+
+### Built-in Presets
+
+| Category | Presets |
+|----------|---------|
+| **Effects** | Fireworks, Sparkles, Fire, Smoke, Aurora |
+| **Nature** | Rain, Snow, Leaves, Petals, Butterflies, Swarm |
+| **Events** | Confetti, Bubbles, Dust, Explosion |
+| **Abstract** | Stars, Magic, Nebula, Ribbons, Wave, Waterfall |
+| **Custom** | Trail, Geometric, Organic |
+
+### Emitter Shapes
+
+| Shape | Description |
+|-------|-------------|
+| Point | Single point emission |
+| Line | Emission along line |
+| Circle | Circular emission area |
+| Box | Rectangular area |
+| Sphere | 3D spherical area |
+| Ring | Ring-shaped emission |
+| Spline | Follow spline path |
+
+### Physics Options
+
+| Feature | UI Access |
+|---------|-----------|
+| Gravity | ✅ Vec3 input |
+| Wind | ✅ Vec3 input |
+| Damping | ✅ Slider |
+| Gravity Wells | ✅ Add/configure |
+| Vortices | ✅ Add/configure |
+| Turbulence | ✅ Strength/scale |
+| Collisions | ✅ Ground/mesh |
+| Flocking | ✅ Separation/alignment/cohesion |
+
+---
+
+## 22. AUDIO REACTIVE SYSTEM
+
+### Audio Analysis Features
+
+| Feature | Range | Description |
+|---------|-------|-------------|
+| Amplitude | 0-1 | Overall loudness |
+| RMS | 0-1 | Root mean square energy |
+| Bass | 0-1 | 20-250 Hz |
+| Low Mid | 0-1 | 250-500 Hz |
+| Mid | 0-1 | 500-2000 Hz |
+| High Mid | 0-1 | 2000-4000 Hz |
+| High | 0-1 | 4000-20000 Hz |
+| Spectral Centroid | 0-1 | "Brightness" |
+| Onsets | 0/1 | Note attack detection |
+| Beats | 0/1 | Beat detection |
+| BPM | number | Tempo |
+
+### Audio Mapping
+
+| Setting | Description |
+|---------|-------------|
+| Source Feature | Which audio feature to use |
+| Target Property | Property path to drive |
+| Sensitivity | Multiplier |
+| Smoothing | 0-1 temporal smoothing |
+| Min/Max | Output range mapping |
+| Response Curve | Linear/Exponential/Logarithmic |
+
+---
+
+## 23. TEXT LAYER PROPERTIES
+
+| Property | UI Access | Description |
+|----------|-----------|-------------|
+| Text Content | ✅ 🎚️ | Editable text string |
+| Font Family | ✅ 🎚️ | Font picker dialog |
+| Font Size | ✅ 🎚️ | Size in pixels |
+| Font Weight | ✅ 🎚️ | Dropdown (100-900) |
+| Font Style | ✅ 🎚️ | Normal/Italic |
+| Text Color | ✅ 🎚️ | Color picker |
+| Text Alignment | ✅ 🎚️ | Left/Center/Right |
+| Line Height | ✅ 🎚️ | Multiplier |
+| Letter Spacing | ✅ 🎚️ | Pixels |
+| Stroke Enable | ✅ 🎚️ | Toggle |
+| Stroke Color | ✅ 🎚️ | Color picker |
+| Stroke Width | ✅ 🎚️ | Pixels |
+| Text on Path | ✅ 🎚️ | Spline layer selector |
+| Path Offset | ✅ 🎚️ | Position along path |
+
+---
+
+## 24. VIDEO LAYER PROPERTIES
+
+| Property | UI Access | Description |
+|----------|-----------|-------------|
+| SpeedMap Enable | ✅ 🎚️ | Enable time remapping |
+| SpeedMap Property | ✅ 🎚️ | Animatable time value |
+| Timewarp Enable | ✅ 🎚️ | Enable speed curve |
+| Timewarp Speed | ✅ 🎚️ | Animatable speed (100 = normal) |
+| Timewarp Presets | ✅ 🖱️ | slow-fast, fast-slow, impact, rewind |
+| Frame Blending | ✅ 🎚️ | whole-frames, frame-mix, pixel-motion |
+| Reverse | ✅ 🎚️ | Play backwards |
+| Loop Mode | ✅ 🎚️ | once, loop, pingpong |
+
+---
+
+## 25. CAMERA PROPERTIES
+
+| Property | UI Access | Description |
+|----------|-----------|-------------|
+| FOV | ✅ 🎚️ | Field of view (degrees) |
+| Near Clip | ✅ 🎚️ | Near clipping plane |
+| Far Clip | ✅ 🎚️ | Far clipping plane |
+| DOF Enable | ✅ 🎚️ | Depth of field toggle |
+| Focus Distance | ✅ 🎚️ | Focus point distance |
+| Aperture | ✅ 🎚️ | Lens aperture |
+| Focal Length | ✅ 🎚️ | Lens focal length |
+| Bokeh Scale | ✅ 🎚️ | Bokeh size |
+| Trajectory | ✅ 🎚️ | 22 preset paths |
+| Trajectory Progress | ✅ 🎚️ | 0-1 along path |
+| Shake Preset | ✅ 🎚️ | handheld, earthquake, subtle |
+| Shake Intensity | ✅ 🎚️ | Shake amount |
+
+---
+
 ## RECOMMENDATIONS
 
 ### Immediate Actions (Wire up existing UI)
@@ -425,9 +750,28 @@ All accessible via Camera Properties panel:
 
 ---
 
+## TOTAL FEATURE COUNT
+
+| Category | Count |
+|----------|-------|
+| Layer Types | 17 |
+| Effects | 22 |
+| Easing Functions | 35 |
+| Camera Presets | 22 |
+| Particle Presets | 24 |
+| Keyboard Shortcuts | 85+ |
+| Context Menu Items | 25+ |
+| Property Controls | 7 |
+| Panels | 12 |
+| Dialogs | 10 |
+| **Total Features** | **400+** |
+
+---
+
 ## VERSION HISTORY
 
 | Date | Changes |
 |------|---------|
+| 2025-12-21 | Added pen tool modes, mask editing, context menus, layer switches, property controls |
 | 2025-12-21 | Complete rewrite with comprehensive audit |
 | 2025-12-20 | Original version (now outdated) |

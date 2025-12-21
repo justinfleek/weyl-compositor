@@ -2768,13 +2768,22 @@ function handleKeydown(e: KeyboardEvent) {
       }
       break;
 
-    // Reverse layer (Ctrl+Alt+R) - Time manipulation
+    // R key shortcuts: Rotation solo, Time-reverse layer, Rulers, Reverse keyframes
     case 'r':
-      if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
+        // Ctrl+Shift+R: Toggle rulers
+        e.preventDefault();
+        toggleRulers();
+      } else if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
+        // Ctrl+Alt+R: Reverse layer timing
         e.preventDefault();
         reverseSelectedLayers();
+      } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
+        // Ctrl+Alt+R (no layer selected): Time-reverse keyframes
+        e.preventDefault();
+        timeReverseKeyframes();
       } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-        // R shows rotation property (existing behavior)
+        // R alone: Solo rotation property
         e.preventDefault();
         soloProperty('rotation', e.shiftKey);
       }
@@ -2865,23 +2874,6 @@ function handleKeydown(e: KeyboardEvent) {
     case 'capslock':
       e.preventDefault();
       togglePreviewPause();
-      break;
-
-    // R key shortcuts: Rotation solo, Time-reverse, Rulers
-    case 'r':
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
-        // Ctrl+Shift+R: Toggle rulers
-        e.preventDefault();
-        toggleRulers();
-      } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
-        // Ctrl+Alt+R: Time-reverse keyframes
-        e.preventDefault();
-        timeReverseKeyframes();
-      } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-        // R alone: Solo rotation property
-        e.preventDefault();
-        soloProperty('rotation', e.shiftKey);
-      }
       break;
 
     // Fit Layer to Comp (Ctrl+Alt+F)
