@@ -1,5 +1,5 @@
 # TUTORIAL 17 COMPATIBILITY ANALYSIS
-## "Color Correction & Lumetri Color" - Adobe Premiere Pro / After Effects Standard
+## "Color Correction & Lumetri Color" - Professional NLE Standard
 
 **Analysis Date:** December 22, 2025
 **Status:** 80% Compatible (Updated after vignette + LUT implementation)
@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-Color correction is fundamental to professional video production. This analysis maps all color grading features from Adobe's Lumetri Color panel and After Effects color tools to Weyl Compositor's implementation.
+Color correction is fundamental to professional video production. This analysis maps all color grading features from professional NLE tools to Weyl Compositor's implementation.
 
 **Key Implementation:** `services/effects/colorRenderer.ts` (1252 lines)
 
@@ -24,7 +24,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Basic Correction
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Brightness | `brightness-contrast` effect | ✅ Full | -100 to 100 range |
 | Contrast | `brightness-contrast` effect | ✅ Full | -100 to 100 range |
@@ -37,7 +37,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### White Balance
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Temperature Slider | `color-balance` effect | ✅ Full | Warm/cool shift |
 | Tint Slider (Green/Magenta) | `color-balance` effect | ✅ Full | Green/magenta shift |
@@ -46,7 +46,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Tone Curve / Curves
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | RGB Master Curve | `curves` effect | ✅ Full | Spline-based |
 | Red Channel Curve | `curves` effect | ✅ Full | Independent control |
@@ -63,7 +63,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Color Wheels & Match
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Shadows Color Wheel | `color-balance` shadows | ✅ Full | RGB shifts |
 | Midtones Color Wheel | `color-balance` midtones | ✅ Full | RGB shifts |
@@ -74,7 +74,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### HSL Secondary
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Hue Range Selection | `selective-color` effect | ⚠️ Partial | Fixed color ranges |
 | Saturation Range | Not implemented | ❌ Missing | Needs qualifier |
@@ -86,7 +86,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Hue/Saturation
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Master Hue | `hue-saturation` hue | ✅ Full | -180 to 180 |
 | Master Saturation | `hue-saturation` saturation | ✅ Full | -100 to 100 |
@@ -96,7 +96,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Levels
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Input Black | `levels` inputBlack | ✅ Full | 0-255 |
 | Input White | `levels` inputWhite | ✅ Full | 0-255 |
@@ -109,7 +109,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Creative / Look
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | LUT Selection | `lut` effect | ✅ Full | .cube format parsing |
 | LUT Intensity | `lut` intensity | ✅ Full | 0-100 blend with original |
@@ -122,7 +122,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Vignette
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Vignette Amount | `vignette` amount | ✅ Full | -100 to 100 |
 | Vignette Midpoint | `vignette` midpoint | ✅ Full | 0 to 100 |
@@ -131,7 +131,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Scopes Panel
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Waveform (Luma) | Not implemented | ❌ Missing | Needs dedicated panel |
 | Waveform (RGB) | Not implemented | ❌ Missing | - |
@@ -142,7 +142,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Additional Color Effects
 
-| AE/Premiere Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Invert | `invert` effect | ✅ Full | RGB inversion |
 | Posterize | `posterize` effect | ✅ Full | Color reduction |
@@ -157,7 +157,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ---
 
-## WEYL-SPECIFIC FEATURES (Beyond AE/Premiere)
+## WEYL-SPECIFIC FEATURES (Beyond Traditional NLEs)
 
 | Feature | Description |
 |---------|-------------|
