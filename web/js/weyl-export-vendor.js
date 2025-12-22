@@ -4,6 +4,31 @@ function getDefaultExportFromCjs (x) {
 	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
 }
 
+function getAugmentedNamespace(n) {
+  if (n.__esModule) return n;
+  var f = n.default;
+	if (typeof f == "function") {
+		var a = function a () {
+			if (this instanceof a) {
+        return Reflect.construct(f, arguments, this.constructor);
+			}
+			return f.apply(this, arguments);
+		};
+		a.prototype = f.prototype;
+  } else a = {};
+  Object.defineProperty(a, '__esModule', {value: true});
+	Object.keys(n).forEach(function (k) {
+		var d = Object.getOwnPropertyDescriptor(n, k);
+		Object.defineProperty(a, k, d.get ? d : {
+			enumerable: true,
+			get: function () {
+				return n[k];
+			}
+		});
+	});
+	return a;
+}
+
 function commonjsRequire(path) {
 	throw new Error('Could not dynamically require "' + path + '". Please configure the dynamicRequireTargets or/and ignoreDynamicRequires option of @rollup/plugin-commonjs appropriately for this require call to work.');
 }
@@ -2328,11 +2353,11 @@ var jszip_min$1 = {exports: {}};
 } (jszip_min$1));
 
 var jszip_minExports = jszip_min$1.exports;
-const jszip_min_default = /*@__PURE__*/getDefaultExportFromCjs(jszip_minExports);
+const JSZip = /*@__PURE__*/getDefaultExportFromCjs(jszip_minExports);
 
 const jszip_min = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 	__proto__: null,
-	default: jszip_min_default
+	default: JSZip
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { jszip_min as j };
+export { JSZip as J, getDefaultExportFromCjs as a, commonjsRequire as b, commonjsGlobal as c, getAugmentedNamespace as g, jszip_min as j };
