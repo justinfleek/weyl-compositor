@@ -8,10 +8,13 @@ screenshots/
 # Markdown - ignore drafts, allow important docs
 *.md
 !README.md
-!HANDOFF.md
+!CHANGELOG.md
 !CLAUDE.md
+!PROJECT_STATUS.md
+!FEATURE_AUDIT.md
 !specs/*.md
 !docs/*.md
+!docs/**/*.md
 
 # Python
 __pycache__/
