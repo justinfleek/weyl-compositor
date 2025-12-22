@@ -1358,10 +1358,9 @@ function handleMouseMove(event: MouseEvent) {
 
       store.updateSplineControlPoint(props.layerId, point.id, { depth: newDepth });
     } else if (dragTarget.value.type === 'axisX') {
-      // Move only along X-axis using SCREEN pixel deltas for consistent feel
-      // This ensures 1 screen pixel = 1 canvas unit regardless of zoom
+      // Move only along X-axis, accounting for zoom level
       const screenDx = event.clientX - (dragTarget.value.screenStartX ?? event.clientX);
-      const dx = screenDx; // 1:1 screen-to-canvas movement
+      const dx = screenDx / (props.zoom || 1); // Scale by zoom level
       const newX = (dragTarget.value.originalX ?? point.x) + dx;
 
       // Move handles along with point
@@ -1377,9 +1376,9 @@ function handleMouseMove(event: MouseEvent) {
       store.updateSplineControlPoint(props.layerId, point.id, updates);
       emit('pointMoved', point.id, newX, point.y);
     } else if (dragTarget.value.type === 'axisY') {
-      // Move only along Y-axis using SCREEN pixel deltas
+      // Move only along Y-axis, accounting for zoom level
       const screenDy = event.clientY - (dragTarget.value.screenStartY ?? event.clientY);
-      const dy = screenDy; // 1:1 screen-to-canvas movement
+      const dy = screenDy / (props.zoom || 1); // Scale by zoom level
       const newY = (dragTarget.value.originalY ?? point.y) + dy;
 
       // Move handles along with point

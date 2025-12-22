@@ -88031,7 +88031,7 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
           store.updateSplineControlPoint(props.layerId, point.id, { depth: newDepth });
         } else if (dragTarget.value.type === "axisX") {
           const screenDx = event.clientX - (dragTarget.value.screenStartX ?? event.clientX);
-          const dx = screenDx;
+          const dx = screenDx / (props.zoom || 1);
           const newX = (dragTarget.value.originalX ?? point.x) + dx;
           const handleDx = newX - point.x;
           const updates = { x: newX };
@@ -88045,7 +88045,7 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
           emit("pointMoved", point.id, newX, point.y);
         } else if (dragTarget.value.type === "axisY") {
           const screenDy = event.clientY - (dragTarget.value.screenStartY ?? event.clientY);
-          const dy = screenDy;
+          const dy = screenDy / (props.zoom || 1);
           const newY = (dragTarget.value.originalY ?? point.y) + dy;
           const handleDy = newY - point.y;
           const updates = { y: newY };
@@ -88293,14 +88293,14 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
               onClick: _cache[1] || (_cache[1] = ($event) => setPenSubMode("insert")),
               title: "Add Point (+) - Click on path to insert point"
             }, [..._cache[6] || (_cache[6] = [
-              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-a26e3c4b><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-a26e3c4b></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-a26e3c4b></circle><path fill="currentColor" d="M18,15v6M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-a26e3c4b></path></svg><span class="tool-label" data-v-a26e3c4b>Pen+</span>', 2)
+              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-3869ccc6><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-3869ccc6></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-3869ccc6></circle><path fill="currentColor" d="M18,15v6M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-3869ccc6></path></svg><span class="tool-label" data-v-3869ccc6>Pen+</span>', 2)
             ])], 2),
             createBaseVNode("button", {
               class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "delete" }]),
               onClick: _cache[2] || (_cache[2] = ($event) => setPenSubMode("delete")),
               title: "Delete Point (-) - Click point to remove"
             }, [..._cache[7] || (_cache[7] = [
-              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-a26e3c4b><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-a26e3c4b></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-a26e3c4b></circle><path fill="currentColor" d="M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-a26e3c4b></path></svg><span class="tool-label" data-v-a26e3c4b>Pen-</span>', 2)
+              createStaticVNode('<svg viewBox="0 0 24 24" width="14" height="14" data-v-3869ccc6><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87L20.71,7.04Z M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" data-v-3869ccc6></path><circle cx="18" cy="18" r="5" fill="#1e1e1e" data-v-3869ccc6></circle><path fill="currentColor" d="M15,18h6" stroke="currentColor" stroke-width="1.5" data-v-3869ccc6></path></svg><span class="tool-label" data-v-3869ccc6>Pen-</span>', 2)
             ])], 2),
             createBaseVNode("button", {
               class: normalizeClass(["toolbar-btn icon-btn", { active: __props.isPenMode && penSubMode.value === "convert" }]),
@@ -88575,7 +88575,7 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
   }
 });
 
-const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-a26e3c4b"]]);
+const SplineEditor = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-3869ccc6"]]);
 
 const _hoisted_1$h = {
   key: 1,
