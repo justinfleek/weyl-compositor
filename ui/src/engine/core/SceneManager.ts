@@ -246,16 +246,50 @@ export class SceneManager {
   /**
    * Add a UI element directly to the scene (for transform controls, etc.)
    * UI elements are added to the scene root so they're always visible
+   *
+   * Note: When multiple Three.js instances are loaded (common in ComfyUI with many extensions),
+   * the instanceof check in scene.add() can fail. We handle this by directly manipulating
+   * the children array as a fallback.
    */
   addUIElement(object: THREE.Object3D): void {
+    if (!object) return;
+
+    // First try the normal add method
+    const childCountBefore = this.scene.children.length;
     this.scene.add(object);
+
+    // If add() failed due to instanceof check (multiple Three.js instances),
+    // manually add the object to the scene
+    if (this.scene.children.length === childCountBefore) {
+      // Manually add to scene's children array
+      if ((object as any).parent !== null) {
+        (object as any).parent?.remove?.(object);
+      }
+      (object as any).parent = this.scene;
+      this.scene.children.push(object as any);
+      object.dispatchEvent?.({ type: 'added' });
+    }
   }
 
   /**
    * Remove a UI element from the scene
    */
   removeUIElement(object: THREE.Object3D): void {
+    if (!object) return;
+
+    // Try normal remove first
+    const childCountBefore = this.scene.children.length;
     this.scene.remove(object);
+
+    // If remove() failed, manually remove from children array
+    if (this.scene.children.length === childCountBefore) {
+      const index = this.scene.children.indexOf(object as any);
+      if (index !== -1) {
+        this.scene.children.splice(index, 1);
+        (object as any).parent = null;
+        object.dispatchEvent?.({ type: 'removed' });
+      }
+    }
   }
 
   // ============================================================================
