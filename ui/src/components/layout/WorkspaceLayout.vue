@@ -761,7 +761,7 @@ const activeCamera = computed<Camera3D>(() => {
 });
 const viewportState = ref<ViewportState>(createDefaultViewportState());
 const viewOptions = ref({
-  showGrid: true,
+  showGrid: false,
   showRulers: false,
   showAxes: true,
   showCameraFrustum: true,

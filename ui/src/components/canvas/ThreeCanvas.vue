@@ -242,7 +242,7 @@ const zoomDisplayPercent = computed(() => Math.round(zoom.value * 100));
 const transformMode = ref<'translate' | 'rotate' | 'scale'>('translate');
 
 // Composition guide toggles
-const showGrid = ref(true);
+const showGrid = ref(false);
 const showOutsideOverlay = ref(false);  // Disabled by default until fixed
 const showSafeFrameGuides = ref(false); // Disabled by default until fixed
 

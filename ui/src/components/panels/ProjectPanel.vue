@@ -742,19 +742,22 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .header-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .header-actions button {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   background: transparent;
   color: #888;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .header-actions button:hover {
@@ -772,11 +775,12 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   right: 0;
   background: #2a2a2a;
   border: 1px solid #444;
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 1000;
-  min-width: 180px;
+  min-width: 200px;
   white-space: nowrap;
+  padding: 8px 0;
 }
 
 .dropdown-menu button {
@@ -838,15 +842,17 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 .preview-area {
   background: #1a1a1a;
   border-bottom: 1px solid #333;
-  padding: 12px;
+  padding: 16px;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   align-items: center;
 }
 
 .preview-thumbnail {
-  width: 120px;
-  height: 90px;
+  width: 100%;
+  max-width: 200px;
+  height: 150px;
   background: #0a0a0a;
   border-radius: 4px;
   overflow: hidden;
@@ -877,8 +883,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .preview-info {
-  flex: 1;
-  min-width: 0;
+  text-align: center;
+  width: 100%;
 }
 
 .preview-name {
@@ -891,9 +897,9 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .preview-details {
-  font-size: 10px;
+  font-size: 11px;
   color: #888;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .panel-content {

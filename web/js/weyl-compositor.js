@@ -33330,7 +33330,7 @@ const _sfc_main$Y = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ProjectPanel = /* @__PURE__ */ _export_sfc(_sfc_main$Y, [["__scopeId", "data-v-3b82ada3"]]);
+const ProjectPanel = /* @__PURE__ */ _export_sfc(_sfc_main$Y, [["__scopeId", "data-v-8fb63dda"]]);
 
 const _hoisted_1$W = {
   class: "effects-panel",
@@ -88632,7 +88632,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     const resolution = ref("full");
     const zoomDisplayPercent = computed(() => Math.round(zoom.value * 100));
     const transformMode = ref("translate");
-    const showGrid = ref(true);
+    const showGrid = ref(false);
     ref(false);
     const showSafeFrameGuides = ref(false);
     const isDrawingSegmentBox = ref(false);
@@ -89657,7 +89657,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
             class: "zoom-dropdown",
             onChange: onZoomSelect
           }, [..._cache[13] || (_cache[13] = [
-            createStaticVNode('<option value="fit" data-v-77d31d90>Fit</option><option value="0.25" data-v-77d31d90>25%</option><option value="0.33" data-v-77d31d90>33%</option><option value="0.5" data-v-77d31d90>50%</option><option value="0.75" data-v-77d31d90>75%</option><option value="1" data-v-77d31d90>100%</option><option value="2" data-v-77d31d90>200%</option><option value="4" data-v-77d31d90>400%</option>', 8)
+            createStaticVNode('<option value="fit" data-v-05f751c7>Fit</option><option value="0.25" data-v-05f751c7>25%</option><option value="0.33" data-v-05f751c7>33%</option><option value="0.5" data-v-05f751c7>50%</option><option value="0.75" data-v-05f751c7>75%</option><option value="1" data-v-05f751c7>100%</option><option value="2" data-v-05f751c7>200%</option><option value="4" data-v-05f751c7>400%</option>', 8)
           ])], 544), [
             [vModelSelect, zoomLevel.value]
           ]),
@@ -89668,7 +89668,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
             class: "resolution-dropdown",
             onChange: onResolutionChange
           }, [..._cache[14] || (_cache[14] = [
-            createStaticVNode('<option value="full" data-v-77d31d90>Full</option><option value="half" data-v-77d31d90>Half</option><option value="third" data-v-77d31d90>Third</option><option value="quarter" data-v-77d31d90>Quarter</option><option value="custom" data-v-77d31d90>Custom</option>', 5)
+            createStaticVNode('<option value="full" data-v-05f751c7>Full</option><option value="half" data-v-05f751c7>Half</option><option value="third" data-v-05f751c7>Third</option><option value="quarter" data-v-05f751c7>Quarter</option><option value="custom" data-v-05f751c7>Custom</option>', 5)
           ])], 544), [
             [vModelSelect, resolution.value]
           ])
@@ -89759,7 +89759,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
   }
 });
 
-const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-77d31d90"]]);
+const ThreeCanvas = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-05f751c7"]]);
 
 const useAudioStore = defineStore("audio", {
   state: () => ({
@@ -92046,9 +92046,15 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
       isDragOver.value = false;
     }
     function onDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
       isDragOver.value = false;
       const data = event.dataTransfer?.getData("application/project-item");
-      if (!data) return;
+      console.log("[TimelinePanel] onDrop called, data:", data);
+      if (!data) {
+        console.log("[TimelinePanel] No project-item data found");
+        return;
+      }
       try {
         const item = JSON.parse(data);
         console.log("[TimelinePanel] Dropped item:", item);
@@ -92610,14 +92616,14 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             style: normalizeStyle({ width: sidebarWidth.value + "px" })
           }, [
             createBaseVNode("div", _hoisted_14$9, [
-              _cache[44] || (_cache[44] = createStaticVNode('<div class="col-header col-av-features" data-v-c026d6ca><span class="header-icon" title="Video" data-v-c026d6ca>👁</span><span class="header-icon" title="Audio" data-v-c026d6ca>🔊</span><span class="header-icon" title="Isolate" data-v-c026d6ca>●</span><span class="header-icon" title="Lock" data-v-c026d6ca>🔒</span></div><div class="col-header col-number" data-v-c026d6ca>#</div><div class="col-header col-name" data-v-c026d6ca>Source Name</div>', 3)),
+              _cache[44] || (_cache[44] = createStaticVNode('<div class="col-header col-av-features" data-v-5ebd3cf4><span class="header-icon" title="Video" data-v-5ebd3cf4>👁</span><span class="header-icon" title="Audio" data-v-5ebd3cf4>🔊</span><span class="header-icon" title="Isolate" data-v-5ebd3cf4>●</span><span class="header-icon" title="Lock" data-v-5ebd3cf4>🔒</span></div><div class="col-header col-number" data-v-5ebd3cf4>#</div><div class="col-header col-name" data-v-5ebd3cf4>Source Name</div>', 3)),
               createBaseVNode("div", _hoisted_15$8, [
                 createBaseVNode("span", {
                   class: normalizeClass(["header-icon clickable", { active: unref(store).hideMinimizedLayers }]),
                   title: "Hide Minimized Layers",
                   onClick: _cache[22] || (_cache[22] = ($event) => unref(store).toggleHideMinimizedLayers())
                 }, "🙈", 2),
-                _cache[43] || (_cache[43] = createStaticVNode('<span class="header-icon" title="Flatten Transform" data-v-c026d6ca>☀</span><span class="header-icon" title="Quality" data-v-c026d6ca>◐</span><span class="header-icon" title="Effects" data-v-c026d6ca>fx</span><span class="header-icon" title="Frame Blending" data-v-c026d6ca>⊞</span><span class="header-icon" title="Motion Blur" data-v-c026d6ca>◔</span><span class="header-icon" title="Adjustment Layer" data-v-c026d6ca>◐</span><span class="header-icon" title="3D Layer" data-v-c026d6ca>⬡</span>', 7))
+                _cache[43] || (_cache[43] = createStaticVNode('<span class="header-icon" title="Flatten Transform" data-v-5ebd3cf4>☀</span><span class="header-icon" title="Quality" data-v-5ebd3cf4>◐</span><span class="header-icon" title="Effects" data-v-5ebd3cf4>fx</span><span class="header-icon" title="Frame Blending" data-v-5ebd3cf4>⊞</span><span class="header-icon" title="Motion Blur" data-v-5ebd3cf4>◔</span><span class="header-icon" title="Adjustment Layer" data-v-5ebd3cf4>◐</span><span class="header-icon" title="3D Layer" data-v-5ebd3cf4>⬡</span>', 7))
               ]),
               _cache[45] || (_cache[45] = createBaseVNode("div", { class: "col-header col-parent" }, "Parent & Link", -1))
             ]),
@@ -92706,7 +92712,9 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
             }, [
               createBaseVNode("div", {
                 class: "layer-bars-container",
-                style: normalizeStyle({ width: computedWidthStyle.value })
+                style: normalizeStyle({ width: computedWidthStyle.value }),
+                onDragover: withModifiers(onDragOver, ["prevent"]),
+                onDrop
               }, [
                 _cache[46] || (_cache[46] = createBaseVNode("div", { class: "grid-background" }, null, -1)),
                 (openBlock(true), createElementBlock(Fragment, null, renderList(filteredLayers.value, (layer) => {
@@ -92725,7 +92733,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
                   class: "playhead-line",
                   style: normalizeStyle({ left: playheadPositionPct.value + "%" })
                 }, null, 4)
-              ], 4)
+              ], 36)
             ], 34)
           ], 512)
         ])
@@ -92734,7 +92742,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
   }
 });
 
-const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-c026d6ca"]]);
+const TimelinePanel = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-5ebd3cf4"]]);
 
 const _hoisted_1$c = { class: "curve-editor" };
 const _hoisted_2$c = { class: "curve-header" };
@@ -101580,7 +101588,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     });
     const viewportState = ref(createDefaultViewportState());
     const viewOptions = ref({
-      showGrid: true,
+      showGrid: false,
       showRulers: false,
       showAxes: true,
       showCameraFrustum: true,
@@ -103935,7 +103943,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const WorkspaceLayout = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-3a777ac3"]]);
+const WorkspaceLayout = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-39bb4d6e"]]);
 
 const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "App",

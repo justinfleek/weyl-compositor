@@ -170,7 +170,9 @@
              @drop="onDrop"
              :class="{ 'drag-over': isDragOver }"
         >
-          <div class="layer-bars-container" :style="{ width: computedWidthStyle }">
+          <div class="layer-bars-container" :style="{ width: computedWidthStyle }"
+               @dragover.prevent="onDragOver"
+               @drop="onDrop">
              <div class="grid-background"></div>
 
              <EnhancedLayerTrack
@@ -346,10 +348,16 @@ function onDragLeave() {
 }
 
 function onDrop(event: DragEvent) {
+  event.preventDefault();
+  event.stopPropagation();
   isDragOver.value = false;
 
   const data = event.dataTransfer?.getData('application/project-item');
-  if (!data) return;
+  console.log('[TimelinePanel] onDrop called, data:', data);
+  if (!data) {
+    console.log('[TimelinePanel] No project-item data found');
+    return;
+  }
 
   try {
     const item = JSON.parse(data) as {
