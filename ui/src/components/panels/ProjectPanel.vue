@@ -650,12 +650,31 @@ async function handleFileImport(event: Event) {
       const imageUrl = URL.createObjectURL(file);
       const assetId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Add to assets
+      // Load image to get dimensions
+      const img = new Image();
+      img.onload = () => {
+        // Update asset with actual dimensions
+        const asset = store.project.assets[assetId];
+        if (asset) {
+          asset.width = img.naturalWidth;
+          asset.height = img.naturalHeight;
+          // Also update the project item
+          const projItem = footageItems.value.find(i => i.id === assetId);
+          if (projItem) {
+            projItem.width = img.naturalWidth;
+            projItem.height = img.naturalHeight;
+          }
+          console.log('[ProjectPanel] Image dimensions loaded:', img.naturalWidth, 'x', img.naturalHeight);
+        }
+      };
+      img.src = imageUrl;
+
+      // Add to assets (dimensions will be updated when image loads)
       store.project.assets[assetId] = {
         id: assetId,
         type: 'image',
         source: 'file',
-        width: 0, // Will be updated when image loads
+        width: 0, // Updated in onload
         height: 0,
         data: imageUrl
       };

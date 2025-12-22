@@ -221,7 +221,7 @@
     <div class="workspace-content">
       <Splitpanes class="default-theme horizontal-split">
         <!-- Left Panel: Project/Effects -->
-        <Pane :size="14" :min-size="10" :max-size="25">
+        <Pane :size="11" :min-size="8" :max-size="20">
           <div class="panel left-panel">
             <div class="panel-tabs" role="tablist" aria-label="Left panel tabs">
               <button
@@ -268,7 +268,7 @@
         </Pane>
 
         <!-- Center: Viewport + Timeline -->
-        <Pane :size="62" :min-size="35">
+        <Pane :size="65" :min-size="40">
           <Splitpanes horizontal class="default-theme">
             <!-- Viewport -->
             <Pane :size="65" :min-size="20">
@@ -3710,14 +3710,26 @@ onUnmounted(() => {
   background: var(--weyl-accent, #8B5CF6);
 }
 
+/* Vertical splitters (between columns) - add breathing room */
 :deep(.splitpanes--vertical > .splitpanes__splitter) {
-  width: 2px;
-  min-width: 2px;
+  width: 8px;
+  min-width: 8px;
+  background: var(--weyl-void, #0a0a0a);
 }
 
+:deep(.splitpanes--vertical > .splitpanes__splitter:hover) {
+  background: var(--weyl-accent, #8B5CF6);
+}
+
+/* Horizontal splitters (between rows) */
 :deep(.splitpanes--horizontal > .splitpanes__splitter) {
-  height: 2px;
-  min-height: 2px;
+  height: 6px;
+  min-height: 6px;
+  background: var(--weyl-void, #0a0a0a);
+}
+
+:deep(.splitpanes--horizontal > .splitpanes__splitter:hover) {
+  background: var(--weyl-accent, #8B5CF6);
 }
 
 /* Ensure timeline pane allows dropdown overflow */

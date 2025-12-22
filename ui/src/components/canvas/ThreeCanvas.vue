@@ -177,6 +177,19 @@
       <div class="safe-frame-overlay safe-frame-top" :style="safeFrameTopStyle"></div>
       <div class="safe-frame-overlay safe-frame-bottom" :style="safeFrameBottomStyle"></div>
     </div>
+
+    <!-- Resolution Crop Guides - Center-based dotted boxes for 480p/720p/1080p -->
+    <div v-if="showResolutionGuides" class="resolution-guides-container">
+      <template v-for="guide in resolutionCropGuides" :key="guide.name">
+        <div
+          v-if="guide.visible"
+          class="resolution-crop-box"
+          :style="guide.style"
+        >
+          <span class="resolution-label" :style="{ color: guide.color }">{{ guide.name }}</span>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -245,6 +258,7 @@ const transformMode = ref<'translate' | 'rotate' | 'scale'>('translate');
 const showGrid = ref(false);
 const showOutsideOverlay = ref(false);  // Disabled by default until fixed
 const showSafeFrameGuides = ref(false); // Disabled by default until fixed
+const showResolutionGuides = ref(true); // Resolution crop guides enabled by default
 
 // Segmentation state
 const isDrawingSegmentBox = ref(false);
@@ -399,6 +413,91 @@ const compositionBoundaryStyle = computed(() => {
     width: `${width}px`,
     height: `${height}px`
   };
+});
+
+// Resolution crop guides - center-based boxes for standard resolutions
+// These show where 480p/720p/1080p would crop from center of the composition
+const RESOLUTION_PRESETS = [
+  { name: '480p', width: 854, height: 480, color: '#F59E0B' },   // Amber
+  { name: '720p', width: 1280, height: 720, color: '#8B5CF6' },  // Purple
+  { name: '1080p', width: 1920, height: 1080, color: '#06B6D4' } // Cyan
+];
+
+const resolutionCropGuides = computed(() => {
+  // Reactive dependencies
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _ = [zoom.value, viewportTransform.value, canvasWidth.value, canvasHeight.value, cameraUpdateTrigger.value];
+
+  if (!containerRef.value || !engine.value) {
+    return [];
+  }
+
+  const viewportWidth = canvasWidth.value;
+  const viewportHeight = canvasHeight.value;
+  const compWidth = store.width || 1920;
+  const compHeight = store.height || 1080;
+
+  // Check for valid dimensions
+  if (viewportWidth <= 0 || viewportHeight <= 0 || compWidth <= 0 || compHeight <= 0) {
+    return [];
+  }
+
+  // Get the camera to project 3D points to screen
+  const camera = engine.value.getCameraController().camera;
+
+  const guides = [];
+
+  for (const preset of RESOLUTION_PRESETS) {
+    // Only show guides for resolutions smaller than or equal to the composition
+    if (preset.width > compWidth || preset.height > compHeight) {
+      continue;
+    }
+
+    // Calculate center-based crop offset in composition space
+    // Composition center is at (compWidth/2, compHeight/2) in comp coords
+    // which translates to (0, 0) in 3D space (already centered)
+    const cropOffsetX = (compWidth - preset.width) / 2;
+    const cropOffsetY = (compHeight - preset.height) / 2;
+
+    // Calculate the 3D bounds for this resolution crop (center-based)
+    const halfCropWidth = preset.width / 2;
+    const halfCropHeight = preset.height / 2;
+
+    // Project corner points to screen space
+    const topLeft3D = new THREE.Vector3(-halfCropWidth, halfCropHeight, 0);
+    const bottomRight3D = new THREE.Vector3(halfCropWidth, -halfCropHeight, 0);
+
+    topLeft3D.project(camera);
+    bottomRight3D.project(camera);
+
+    // Convert from NDC (-1 to 1) to screen pixels
+    const left = (topLeft3D.x + 1) / 2 * viewportWidth;
+    const top = (-topLeft3D.y + 1) / 2 * viewportHeight;
+    const right = (bottomRight3D.x + 1) / 2 * viewportWidth;
+    const bottom = (-bottomRight3D.y + 1) / 2 * viewportHeight;
+
+    const boxWidth = right - left;
+    const boxHeight = bottom - top;
+
+    // Only show if the box has valid dimensions and is visible
+    if (boxWidth > 0 && boxHeight > 0) {
+      guides.push({
+        name: preset.name,
+        color: preset.color,
+        resolution: `${preset.width}×${preset.height}`,
+        visible: true,
+        style: {
+          left: `${left}px`,
+          top: `${top}px`,
+          width: `${boxWidth}px`,
+          height: `${boxHeight}px`,
+          borderColor: preset.color
+        }
+      });
+    }
+  }
+
+  return guides;
 });
 
 // Computed
@@ -1430,6 +1529,14 @@ function toggleOutsideOverlay() {
 }
 
 /**
+ * Toggle resolution crop guides (480p/720p/1080p)
+ * Shows center-based crop guides for standard export resolutions
+ */
+function toggleResolutionGuides() {
+  showResolutionGuides.value = !showResolutionGuides.value;
+}
+
+/**
  * Set zoom to a specific level (0.1 to 10)
  */
 function setZoom(newZoom: number) {
@@ -1832,6 +1939,37 @@ defineExpose({
   border: 1px solid rgba(100, 100, 100, 0.3);
 }
 */
+
+/* Resolution Crop Guides - Center-based dotted boxes for 480p/720p/1080p */
+.resolution-guides-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+  overflow: hidden;
+}
+
+.resolution-crop-box {
+  position: absolute;
+  border: 2px dashed;
+  background: transparent;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.resolution-label {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 
 /* Viewer Controls (AE-style bottom bar) - positioned bottom-left */
 .viewer-controls {

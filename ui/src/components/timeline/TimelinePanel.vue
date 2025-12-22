@@ -395,23 +395,15 @@ function onDrop(event: DragEvent) {
             console.log('[TimelinePanel] Created video layer from asset:', item.name);
           }
         } else if (asset.type === 'image') {
-          // Load image to get dimensions and resize composition
-          const img = new Image();
-          img.onload = () => {
-            console.log('[TimelinePanel] Image loaded:', img.naturalWidth, 'x', img.naturalHeight);
-
-            // Resize composition to match image dimensions
+          // Helper function to resize comp and create layer
+          const resizeAndCreateLayer = (width: number, height: number) => {
             const compId = store.activeCompositionId;
-            if (compId) {
-              console.log('[TimelinePanel] Resizing comp', compId, 'to', img.naturalWidth, 'x', img.naturalHeight);
-              store.updateCompositionSettings(compId, {
-                width: img.naturalWidth,
-                height: img.naturalHeight
-              });
+            if (compId && width > 0 && height > 0) {
+              console.log('[TimelinePanel] Resizing comp', compId, 'to', width, 'x', height);
+              store.updateCompositionSettings(compId, { width, height });
               console.log('[TimelinePanel] Comp resized. New size:', store.width, 'x', store.height);
             }
 
-            // Create the layer after resizing
             const layer = store.createLayer('image', item.name);
             if (layer) {
               (layer.data as any).assetId = item.id;
@@ -420,17 +412,30 @@ function onDrop(event: DragEvent) {
               console.log('[TimelinePanel] Created image layer:', layer.id);
             }
           };
-          img.onerror = (e) => {
-            console.error('[TimelinePanel] Failed to load image:', asset.data, e);
-            // Still create the layer even if image fails to load for dimensions
-            const layer = store.createLayer('image', item.name);
-            if (layer) {
-              (layer.data as any).assetId = item.id;
-              (layer.data as any).source = asset.data;
-              store.selectLayer(layer.id);
-            }
-          };
-          img.src = asset.data;
+
+          // If asset already has dimensions, use them directly
+          if (asset.width && asset.height && asset.width > 0 && asset.height > 0) {
+            console.log('[TimelinePanel] Using cached dimensions:', asset.width, 'x', asset.height);
+            resizeAndCreateLayer(asset.width, asset.height);
+          } else {
+            // Load image to get dimensions
+            const img = new Image();
+            img.onload = () => {
+              console.log('[TimelinePanel] Image loaded:', img.naturalWidth, 'x', img.naturalHeight);
+              resizeAndCreateLayer(img.naturalWidth, img.naturalHeight);
+            };
+            img.onerror = (e) => {
+              console.error('[TimelinePanel] Failed to load image:', asset.data, e);
+              // Still create the layer even if image fails to load for dimensions
+              const layer = store.createLayer('image', item.name);
+              if (layer) {
+                (layer.data as any).assetId = item.id;
+                (layer.data as any).source = asset.data;
+                store.selectLayer(layer.id);
+              }
+            };
+            img.src = asset.data;
+          }
         }
       } else {
         // Generic footage - create image layer
