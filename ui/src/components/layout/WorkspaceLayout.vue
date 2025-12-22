@@ -275,6 +275,11 @@
                   <CollapsiblePanel title="Preview" :expanded="expandedPanels.preview" @toggle="expandedPanels.preview = $event">
                     <PreviewPanel :engine="canvasEngine" />
                   </CollapsiblePanel>
+
+                  <!-- Essential Graphics Panel -->
+                  <CollapsiblePanel title="Essential Graphics" :expanded="expandedPanels.essentialGraphics" @toggle="expandedPanels.essentialGraphics = $event">
+                    <EssentialGraphicsPanel />
+                  </CollapsiblePanel>
                 </div>
               </div>
             </Pane>
@@ -441,6 +446,7 @@ import PreviewPanel from '@/components/panels/PreviewPanel.vue';
 import AIChatPanel from '@/components/panels/AIChatPanel.vue';
 import AIGeneratePanel from '@/components/panels/AIGeneratePanel.vue';
 import AlignPanel from '@/components/panels/AlignPanel.vue';
+import EssentialGraphicsPanel from '@/components/panels/EssentialGraphicsPanel.vue';
 import CollapsiblePanel from '@/components/panels/CollapsiblePanel.vue';
 
 // Layout
@@ -527,7 +533,8 @@ const expandedPanels = ref({
   camera: false,
   audio: false,
   align: false,
-  preview: false
+  preview: false,
+  essentialGraphics: false
 });
 
 // AI section tab

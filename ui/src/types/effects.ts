@@ -983,6 +983,79 @@ export const EFFECT_DEFINITIONS: Record<string, EffectDefinition> = {
       { name: 'Convergence', type: 'number', defaultValue: 0, min: -100, max: 100, step: 1, animatable: true },
       { name: 'Balance', type: 'number', defaultValue: 0, min: -100, max: 100, step: 1, animatable: true }
     ]
+  },
+
+  // ============================================================================
+  // EXPRESSION CONTROLS
+  // These are special "effects" that provide controllable values for expressions
+  // They don't process pixels - they expose animatable parameters
+  // ============================================================================
+
+  'slider-control': {
+    name: 'Slider Control',
+    category: 'utility',
+    description: 'Provides an animatable numeric value for expressions. Use effect("Slider Control")("Slider") in expressions.',
+    parameters: [
+      { name: 'Slider', type: 'number', defaultValue: 0, min: -1000000, max: 1000000, step: 0.01, animatable: true }
+    ]
+  },
+
+  'checkbox-control': {
+    name: 'Checkbox Control',
+    category: 'utility',
+    description: 'Provides a boolean toggle for expressions. Returns 1 when checked, 0 when unchecked.',
+    parameters: [
+      { name: 'Checkbox', type: 'checkbox', defaultValue: false, animatable: true }
+    ]
+  },
+
+  'dropdown-menu-control': {
+    name: 'Dropdown Menu Control',
+    category: 'utility',
+    description: 'Provides a menu selection for expressions. Returns the index (1-based) of the selected option.',
+    parameters: [
+      { name: 'Menu', type: 'dropdown', defaultValue: 1, options: [
+        { label: 'Option 1', value: 1 },
+        { label: 'Option 2', value: 2 },
+        { label: 'Option 3', value: 3 }
+      ], animatable: false }
+    ]
+  },
+
+  'color-control': {
+    name: 'Color Control',
+    category: 'utility',
+    description: 'Provides an animatable color value for expressions.',
+    parameters: [
+      { name: 'Color', type: 'color', defaultValue: { r: 255, g: 0, b: 0 }, animatable: true }
+    ]
+  },
+
+  'point-control': {
+    name: 'Point Control',
+    category: 'utility',
+    description: 'Provides an animatable 2D point for expressions.',
+    parameters: [
+      { name: 'Point', type: 'point', defaultValue: { x: 0, y: 0 }, animatable: true }
+    ]
+  },
+
+  'angle-control': {
+    name: 'Angle Control',
+    category: 'utility',
+    description: 'Provides an animatable angle value for expressions.',
+    parameters: [
+      { name: 'Angle', type: 'angle', defaultValue: 0, animatable: true }
+    ]
+  },
+
+  'layer-control': {
+    name: 'Layer Control',
+    category: 'utility',
+    description: 'Provides a layer reference for expressions.',
+    parameters: [
+      { name: 'Layer', type: 'layer', defaultValue: null, animatable: false }
+    ]
   }
 };
 

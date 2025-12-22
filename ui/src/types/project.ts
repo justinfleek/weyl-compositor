@@ -12,10 +12,12 @@
 
 import type { EffectInstance } from './effects';
 import type { ShapeLayerData } from './shapes';
+import type { TemplateConfig } from './essentialGraphics';
 
 // Re-export EffectInstance for consumers who import from project.ts
 export type { EffectInstance } from './effects';
 export type { ShapeLayerData } from './shapes';
+export type { TemplateConfig } from './essentialGraphics';
 
 export interface WeylProject {
   version: "1.0.0";
@@ -59,6 +61,10 @@ export interface Composition {
   workflowId?: string;           // Maps to ComfyUI sub-graph ID
   workflowInputs?: WorkflowInput[];
   workflowOutputs?: WorkflowOutput[];
+
+  // Essential Graphics / Template configuration
+  // When set, this composition can be used as a Motion Graphics Template (MOGRT)
+  templateConfig?: TemplateConfig;
 }
 
 export interface CompositionSettings {

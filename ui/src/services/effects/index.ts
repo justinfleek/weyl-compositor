@@ -11,6 +11,7 @@ import { registerGenerateEffects } from './generateRenderer';
 import { registerTimeEffects } from './timeRenderer';
 import { registerStylizeEffects } from './stylizeRenderer';
 import { registerAudioVisualizerEffects } from './audioVisualizer';
+import { registerExpressionControlRenderers } from './expressionControlRenderer';
 
 /**
  * Initialize all effect renderers
@@ -24,6 +25,7 @@ export function initializeEffects(): void {
   registerTimeEffects();
   registerStylizeEffects();
   registerAudioVisualizerEffects();
+  registerExpressionControlRenderers();
 }
 
 // Re-export blur effects
@@ -134,3 +136,10 @@ export {
   type AudioSpectrumParams,
   type AudioWaveformParams
 } from './audioVisualizer';
+
+// Re-export expression control utilities
+export {
+  registerExpressionControlRenderers,
+  isExpressionControl,
+  getControlParameterName
+} from './expressionControlRenderer';

@@ -1365,3 +1365,46 @@ export {
   type MigrationFunction,
   type Migration,
 } from './projectMigration';
+
+// ============================================================================
+// ESSENTIAL GRAPHICS (Tutorial 13 - MOGRTs)
+// ============================================================================
+
+export {
+  // Template management
+  initializeTemplate,
+  clearTemplate,
+  updateTemplateMetadata,
+  // Property exposure
+  EXPOSABLE_PROPERTIES,
+  getExposableProperties,
+  addExposedProperty,
+  removeExposedProperty,
+  updateExposedProperty,
+  reorderExposedProperties,
+  // Groups
+  addPropertyGroup,
+  removePropertyGroup,
+  movePropertyToGroup,
+  reorderGroups,
+  // Comments
+  addComment,
+  removeComment,
+  updateComment,
+  // Property access
+  getPropertyValue,
+  setPropertyValue,
+  getEffectControlValue,
+  getExpressionControls,
+  // MOGRT export
+  prepareMOGRTExport,
+  exportMOGRT,
+  // Validation
+  validateTemplate,
+  // Utilities
+  getOrganizedProperties,
+  isExposedProperty,
+  isTemplateComment,
+  type TemplateValidationResult,
+  type OrganizedProperties,
+} from './essentialGraphics';
