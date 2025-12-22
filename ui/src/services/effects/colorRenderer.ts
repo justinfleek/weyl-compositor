@@ -1209,6 +1209,289 @@ export function thresholdRenderer(
 }
 
 // ============================================================================
+// VIGNETTE
+// ============================================================================
+
+/**
+ * Vignette effect renderer
+ *
+ * Creates a darkening around the edges of the image, commonly used
+ * to focus attention on the center.
+ *
+ * Parameters:
+ * - amount: -100 to 100 (negative = lighten edges, positive = darken)
+ * - midpoint: 0 to 100 (where falloff starts from center)
+ * - roundness: -100 to 100 (negative = horizontal, positive = vertical, 0 = circular)
+ * - feather: 0 to 100 (edge softness)
+ */
+export function vignetteRenderer(
+  input: EffectStackResult,
+  params: EvaluatedEffectParams
+): EffectStackResult {
+  const amount = (params.amount ?? 0) / 100;  // Normalize to -1 to 1
+  const midpoint = (params.midpoint ?? 50) / 100;  // 0 to 1
+  const roundness = (params.roundness ?? 0) / 100;  // -1 to 1
+  const feather = (params.feather ?? 50) / 100;  // 0 to 1
+
+  // No change needed
+  if (amount === 0) {
+    return input;
+  }
+
+  const output = createMatchingCanvas(input.canvas);
+  const imageData = input.ctx.getImageData(0, 0, input.canvas.width, input.canvas.height);
+  const data = imageData.data;
+  const width = input.canvas.width;
+  const height = input.canvas.height;
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  // Calculate aspect ratio adjustments based on roundness
+  const aspectX = 1 + (roundness > 0 ? roundness * 0.5 : 0);
+  const aspectY = 1 + (roundness < 0 ? -roundness * 0.5 : 0);
+
+  // Max distance from center (normalized)
+  const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+
+  // Feather affects the falloff curve
+  const featherMult = Math.max(0.01, feather);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+
+      // Calculate distance from center with aspect ratio
+      const dx = (x - centerX) * aspectX;
+      const dy = (y - centerY) * aspectY;
+      const dist = Math.sqrt(dx * dx + dy * dy) / maxDist;
+
+      // Calculate vignette factor based on distance and midpoint
+      let factor = 0;
+      if (dist > midpoint) {
+        // Smooth falloff using smoothstep
+        const t = (dist - midpoint) / (1 - midpoint + 0.001);
+        const smoothT = t * t * (3 - 2 * t);  // Smoothstep
+        factor = Math.pow(smoothT, 1 / featherMult);
+      }
+
+      // Apply vignette (darken or lighten based on amount sign)
+      const multiplier = 1 - factor * amount;
+
+      data[idx] = Math.max(0, Math.min(255, data[idx] * multiplier));
+      data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] * multiplier));
+      data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] * multiplier));
+    }
+  }
+
+  output.ctx.putImageData(imageData, 0, 0);
+  return output;
+}
+
+// ============================================================================
+// LUT (Look-Up Table)
+// ============================================================================
+
+/**
+ * LUT storage for parsed .cube files
+ */
+interface LUT3D {
+  title: string;
+  size: number;
+  domainMin: [number, number, number];
+  domainMax: [number, number, number];
+  data: Float32Array;  // RGB values in row-major order
+}
+
+// Global LUT cache
+const lutCache = new Map<string, LUT3D>();
+
+/**
+ * Parse a .cube LUT file
+ */
+export function parseCubeLUT(content: string): LUT3D {
+  const lines = content.split('\n');
+  let title = 'Untitled';
+  let size = 0;
+  let domainMin: [number, number, number] = [0, 0, 0];
+  let domainMax: [number, number, number] = [1, 1, 1];
+  const dataLines: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    if (trimmed.startsWith('TITLE')) {
+      title = trimmed.replace(/^TITLE\s*"?|"?\s*$/g, '');
+    } else if (trimmed.startsWith('LUT_3D_SIZE')) {
+      size = parseInt(trimmed.split(/\s+/)[1], 10);
+    } else if (trimmed.startsWith('DOMAIN_MIN')) {
+      const parts = trimmed.split(/\s+/).slice(1).map(Number);
+      domainMin = [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
+    } else if (trimmed.startsWith('DOMAIN_MAX')) {
+      const parts = trimmed.split(/\s+/).slice(1).map(Number);
+      domainMax = [parts[0] ?? 1, parts[1] ?? 1, parts[2] ?? 1];
+    } else if (/^[\d.\-e]+\s+[\d.\-e]+\s+[\d.\-e]+/.test(trimmed)) {
+      dataLines.push(trimmed);
+    }
+  }
+
+  if (size === 0) {
+    throw new Error('Invalid .cube file: missing LUT_3D_SIZE');
+  }
+
+  const data = new Float32Array(size * size * size * 3);
+  for (let i = 0; i < dataLines.length && i < size * size * size; i++) {
+    const parts = dataLines[i].split(/\s+/).map(Number);
+    data[i * 3] = parts[0] ?? 0;
+    data[i * 3 + 1] = parts[1] ?? 0;
+    data[i * 3 + 2] = parts[2] ?? 0;
+  }
+
+  return { title, size, domainMin, domainMax, data };
+}
+
+/**
+ * Trilinear interpolation in 3D LUT
+ */
+function sampleLUT3D(lut: LUT3D, r: number, g: number, b: number): [number, number, number] {
+  const size = lut.size;
+  const maxIdx = size - 1;
+
+  // Scale input to LUT indices
+  const rIdx = r * maxIdx;
+  const gIdx = g * maxIdx;
+  const bIdx = b * maxIdx;
+
+  // Get integer and fractional parts
+  const r0 = Math.floor(rIdx);
+  const g0 = Math.floor(gIdx);
+  const b0 = Math.floor(bIdx);
+  const r1 = Math.min(r0 + 1, maxIdx);
+  const g1 = Math.min(g0 + 1, maxIdx);
+  const b1 = Math.min(b0 + 1, maxIdx);
+
+  const rFrac = rIdx - r0;
+  const gFrac = gIdx - g0;
+  const bFrac = bIdx - b0;
+
+  // Helper to get LUT value at index
+  const getLUT = (ri: number, gi: number, bi: number, channel: number): number => {
+    const idx = ((bi * size + gi) * size + ri) * 3 + channel;
+    return lut.data[idx] ?? 0;
+  };
+
+  // Trilinear interpolation for each channel
+  const result: [number, number, number] = [0, 0, 0];
+  for (let c = 0; c < 3; c++) {
+    const c000 = getLUT(r0, g0, b0, c);
+    const c100 = getLUT(r1, g0, b0, c);
+    const c010 = getLUT(r0, g1, b0, c);
+    const c110 = getLUT(r1, g1, b0, c);
+    const c001 = getLUT(r0, g0, b1, c);
+    const c101 = getLUT(r1, g0, b1, c);
+    const c011 = getLUT(r0, g1, b1, c);
+    const c111 = getLUT(r1, g1, b1, c);
+
+    // Interpolate along R
+    const c00 = c000 + (c100 - c000) * rFrac;
+    const c10 = c010 + (c110 - c010) * rFrac;
+    const c01 = c001 + (c101 - c001) * rFrac;
+    const c11 = c011 + (c111 - c011) * rFrac;
+
+    // Interpolate along G
+    const c0 = c00 + (c10 - c00) * gFrac;
+    const c1 = c01 + (c11 - c01) * gFrac;
+
+    // Interpolate along B
+    result[c] = c0 + (c1 - c0) * bFrac;
+  }
+
+  return result;
+}
+
+/**
+ * LUT effect renderer
+ *
+ * Applies a 3D Look-Up Table for color grading.
+ *
+ * Parameters:
+ * - lutData: Base64-encoded .cube file content or LUT ID from cache
+ * - intensity: 0 to 100 (blend with original)
+ */
+export function lutRenderer(
+  input: EffectStackResult,
+  params: EvaluatedEffectParams
+): EffectStackResult {
+  const lutData = params.lutData as string;
+  const intensity = (params.intensity ?? 100) / 100;
+
+  if (!lutData || intensity === 0) {
+    return input;
+  }
+
+  // Try to get LUT from cache or parse it
+  let lut: LUT3D;
+  if (lutCache.has(lutData)) {
+    lut = lutCache.get(lutData)!;
+  } else {
+    try {
+      // Assume lutData is base64-encoded .cube content
+      const content = atob(lutData);
+      lut = parseCubeLUT(content);
+      lutCache.set(lutData, lut);
+    } catch (e) {
+      console.warn('Failed to parse LUT:', e);
+      return input;
+    }
+  }
+
+  const output = createMatchingCanvas(input.canvas);
+  const imageData = input.ctx.getImageData(0, 0, input.canvas.width, input.canvas.height);
+  const data = imageData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    // Normalize input RGB to 0-1
+    const r = data[i] / 255;
+    const g = data[i + 1] / 255;
+    const b = data[i + 2] / 255;
+
+    // Sample LUT
+    const [lr, lg, lb] = sampleLUT3D(lut, r, g, b);
+
+    // Blend with original based on intensity
+    data[i] = Math.max(0, Math.min(255, (r * (1 - intensity) + lr * intensity) * 255));
+    data[i + 1] = Math.max(0, Math.min(255, (g * (1 - intensity) + lg * intensity) * 255));
+    data[i + 2] = Math.max(0, Math.min(255, (b * (1 - intensity) + lb * intensity) * 255));
+  }
+
+  output.ctx.putImageData(imageData, 0, 0);
+  return output;
+}
+
+/**
+ * Register a LUT in the cache by name
+ */
+export function registerLUT(name: string, cubeContent: string): void {
+  const lut = parseCubeLUT(cubeContent);
+  lutCache.set(name, lut);
+}
+
+/**
+ * Get list of registered LUT names
+ */
+export function getRegisteredLUTs(): string[] {
+  return Array.from(lutCache.keys());
+}
+
+/**
+ * Clear LUT cache
+ */
+export function clearLUTCache(): void {
+  lutCache.clear();
+}
+
+// ============================================================================
 // REGISTRATION
 // ============================================================================
 
@@ -1229,6 +1512,8 @@ export function registerColorEffects(): void {
   registerEffectRenderer('invert', invertRenderer);
   registerEffectRenderer('posterize', posterizeRenderer);
   registerEffectRenderer('threshold', thresholdRenderer);
+  registerEffectRenderer('vignette', vignetteRenderer);
+  registerEffectRenderer('lut', lutRenderer);
 }
 
 export default {
@@ -1245,6 +1530,12 @@ export default {
   invertRenderer,
   posterizeRenderer,
   thresholdRenderer,
+  vignetteRenderer,
+  lutRenderer,
+  parseCubeLUT,
+  registerLUT,
+  getRegisteredLUTs,
+  clearLUTCache,
   createSCurve,
   createLiftCurve,
   registerColorEffects

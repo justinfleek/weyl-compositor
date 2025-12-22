@@ -466,6 +466,50 @@ export const EFFECT_DEFINITIONS: Record<string, EffectDefinition> = {
     ]
   },
 
+  'cinematic-bloom': {
+    name: 'Cinematic Bloom',
+    category: 'stylize',
+    description: 'Professional bloom with inverse-square falloff, tonemapping, chromatic aberration, and lens dirt',
+    parameters: [
+      // Core glow settings
+      { name: 'Intensity', type: 'number', defaultValue: 1, min: 0, max: 10, step: 0.1, animatable: true, group: 'Core' },
+      { name: 'Threshold', type: 'number', defaultValue: 0.8, min: 0, max: 1, step: 0.01, animatable: true, group: 'Core' },
+      { name: 'Radius', type: 'number', defaultValue: 50, min: 0, max: 200, animatable: true, group: 'Core' },
+      // Falloff mode
+      { name: 'Falloff Mode', type: 'dropdown', defaultValue: 'inverse_square', options: [
+        { label: 'Inverse Square (Cinematic)', value: 'inverse_square' },
+        { label: 'Gaussian (Standard)', value: 'gaussian' },
+        { label: 'Exponential', value: 'exponential' }
+      ], animatable: false, group: 'Falloff' },
+      { name: 'Falloff Exponent', type: 'number', defaultValue: 2, min: 1, max: 4, step: 0.1, animatable: true, group: 'Falloff' },
+      // Per-channel radius (color fringing)
+      { name: 'Radius R', type: 'number', defaultValue: 1, min: 0, max: 2, step: 0.01, animatable: true, group: 'Color Fringing' },
+      { name: 'Radius G', type: 'number', defaultValue: 1, min: 0, max: 2, step: 0.01, animatable: true, group: 'Color Fringing' },
+      { name: 'Radius B', type: 'number', defaultValue: 1, min: 0, max: 2, step: 0.01, animatable: true, group: 'Color Fringing' },
+      // Tonemapping
+      { name: 'Tonemap', type: 'dropdown', defaultValue: 'aces', options: [
+        { label: 'None', value: 'none' },
+        { label: 'ACES Filmic', value: 'aces' },
+        { label: 'Reinhard', value: 'reinhard' },
+        { label: 'Hable (Uncharted 2)', value: 'hable' }
+      ], animatable: false, group: 'Tonemapping' },
+      { name: 'Exposure', type: 'number', defaultValue: 0, min: -5, max: 5, step: 0.1, animatable: true, group: 'Tonemapping' },
+      // Chromatic aberration
+      { name: 'Chromatic Aberration', type: 'number', defaultValue: 0, min: 0, max: 20, step: 0.5, animatable: true, group: 'Aberration' },
+      // Lens dirt
+      { name: 'Lens Dirt Enabled', type: 'checkbox', defaultValue: false, animatable: false, group: 'Lens Dirt' },
+      { name: 'Lens Dirt Intensity', type: 'number', defaultValue: 0.5, min: 0, max: 1, step: 0.01, animatable: true, group: 'Lens Dirt' },
+      { name: 'Lens Dirt Scale', type: 'number', defaultValue: 1, min: 0.5, max: 2, step: 0.1, animatable: true, group: 'Lens Dirt' },
+      // Blend mode
+      { name: 'Blend Mode', type: 'dropdown', defaultValue: 'add', options: [
+        { label: 'Add', value: 'add' },
+        { label: 'Screen', value: 'screen' },
+        { label: 'Overlay', value: 'overlay' },
+        { label: 'Soft Light', value: 'soft_light' }
+      ], animatable: false, group: 'Blending' }
+    ]
+  },
+
   'drop-shadow': {
     name: 'Drop Shadow',
     category: 'stylize',
@@ -705,6 +749,28 @@ export const EFFECT_DEFINITIONS: Record<string, EffectDefinition> = {
       { name: 'Magentas', type: 'number', defaultValue: 80, min: -200, max: 300, animatable: true },
       { name: 'Tint', type: 'checkbox', defaultValue: false, animatable: false },
       { name: 'Tint Color', type: 'color', defaultValue: { r: 225, g: 210, b: 180, a: 1 }, animatable: true }
+    ]
+  },
+
+  'vignette': {
+    name: 'Vignette',
+    category: 'color-correction',
+    description: 'Darken or lighten edges to focus attention',
+    parameters: [
+      { name: 'Amount', type: 'number', defaultValue: 50, min: -100, max: 100, animatable: true },
+      { name: 'Midpoint', type: 'number', defaultValue: 50, min: 0, max: 100, animatable: true },
+      { name: 'Roundness', type: 'number', defaultValue: 0, min: -100, max: 100, animatable: true },
+      { name: 'Feather', type: 'number', defaultValue: 50, min: 0, max: 100, animatable: true }
+    ]
+  },
+
+  'lut': {
+    name: 'LUT (Look-Up Table)',
+    category: 'color-correction',
+    description: 'Apply .cube color grading look-up table',
+    parameters: [
+      { name: 'LUT Data', type: 'string', defaultValue: '', animatable: false },
+      { name: 'Intensity', type: 'number', defaultValue: 100, min: 0, max: 100, animatable: true }
     ]
   },
 
