@@ -60760,7 +60760,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
   }
 });
 
-const CollapsiblePanel = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-83bf0ae3"]]);
+const CollapsiblePanel = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-f95600ba"]]);
 
 const useThemeStore = defineStore("theme", {
   state: () => ({
@@ -61321,7 +61321,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
   }
 });
 
-const WorkspaceToolbar = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-de222ac4"]]);
+const WorkspaceToolbar = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-c9b38e7c"]]);
 
 const CAMERA_BODY_SIZE = 40;
 const CAMERA_LENS_LENGTH = 30;

@@ -85,8 +85,6 @@ function toggle() {
   font-size: 12px;
   font-weight: 600;
   color: var(--weyl-text-secondary, #9CA3AF);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .collapsible-panel:not(.collapsed) .panel-title {

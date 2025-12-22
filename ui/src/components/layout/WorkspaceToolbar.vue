@@ -311,47 +311,47 @@ function redo() {
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 10px;
+  padding: 8px 16px;
   background: var(--weyl-surface-1, #0f0f0f);
   border-radius: var(--weyl-radius-lg, 6px);
   border: 1px solid var(--weyl-border-subtle, #1a1a1a);
-  min-height: 40px;
+  min-height: 46px;
 }
 
 .tool-group {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .tool-group button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
+  gap: 5px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
   border: none;
   background: transparent;
   color: var(--weyl-text-secondary, #9CA3AF);
   border-radius: var(--weyl-radius-md, 4px);
   cursor: pointer;
-  font-size: var(--weyl-text-base, 13px);
+  font-size: var(--weyl-text-md, 14px);
   transition: var(--weyl-transition-fast, 100ms ease);
 }
 
 .labeled-tools button {
   flex-direction: column;
-  gap: 1px;
-  min-width: 44px;
-  height: 36px;
-  padding: 2px 6px;
+  gap: 2px;
+  min-width: 50px;
+  height: 42px;
+  padding: 4px 8px;
 }
 
 .tool-label {
-  font-size: 9px;
+  font-size: 10px;
   color: #888;
   line-height: 1;
 }
@@ -385,14 +385,14 @@ function redo() {
 }
 
 .icon {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .divider {
   width: 1px;
-  height: 20px;
+  height: 24px;
   background: var(--weyl-surface-3, #222222);
-  margin: 0 4px;
+  margin: 0 6px;
 }
 
 .spacer {
@@ -438,9 +438,9 @@ function redo() {
 }
 
 .theme-btn {
-  width: 28px;
-  height: 28px;
-  padding: 4px;
+  width: 32px;
+  height: 32px;
+  padding: 5px;
   border: none;
   background: var(--weyl-surface-2, #1a1a1a);
   border-radius: var(--weyl-radius-md, 4px);
@@ -490,8 +490,8 @@ function redo() {
 }
 
 .theme-option {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: var(--weyl-radius-sm, 2px);
   cursor: pointer;
