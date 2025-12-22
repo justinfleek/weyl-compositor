@@ -8490,7 +8490,7 @@ function getPeakFrames(peakData) {
   return peakData?.indices ?? [];
 }
 
-const useSelectionStore$1 = defineStore("selection", {
+const useSelectionStore = defineStore("selection", {
   state: () => ({
     selectedLayerIds: [],
     lastSelectedLayerId: null,
@@ -21589,7 +21589,7 @@ function deleteLayer(store, layerId) {
   const index = layers.findIndex((l) => l.id === layerId);
   if (index === -1) return;
   layers.splice(index, 1);
-  useSelectionStore$1().removeFromSelection(layerId);
+  useSelectionStore().removeFromSelection(layerId);
   clearLayerCache(layerId);
   store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
   store.pushHistory();
@@ -21610,7 +21610,7 @@ function duplicateLayer(store, layerId) {
 }
 function copySelectedLayers(store) {
   const layers = store.getActiveCompLayers();
-  const selection = useSelectionStore$1();
+  const selection = useSelectionStore();
   const selectedLayers = layers.filter((l) => selection.selectedLayerIds.includes(l.id));
   if (selectedLayers.length === 0) return;
   store.clipboard.layers = selectedLayers.map((layer) => structuredClone(layer));
@@ -21629,7 +21629,7 @@ function pasteLayers(store) {
     layers.unshift(newLayer);
     pastedLayers.push(newLayer);
   }
-  useSelectionStore$1().selectLayers(pastedLayers.map((l) => l.id));
+  useSelectionStore().selectLayers(pastedLayers.map((l) => l.id));
   store.project.meta.modified = (/* @__PURE__ */ new Date()).toISOString();
   store.pushHistory();
   storeLogger.debug(`Pasted ${pastedLayers.length} layer(s)`);
@@ -21637,7 +21637,7 @@ function pasteLayers(store) {
 }
 function cutSelectedLayers(store) {
   copySelectedLayers(store);
-  const layerIds = [...useSelectionStore$1().selectedLayerIds];
+  const layerIds = [...useSelectionStore().selectedLayerIds];
   for (const id of layerIds) {
     deleteLayer(store, id);
   }
@@ -22108,7 +22108,7 @@ function smoothSplineHandles(store, layerId, amount) {
   storeLogger.debug(`Smoothed spline handles with amount ${amount}%`);
 }
 function selectLayer(_store, layerId, addToSelection = false) {
-  const selection = useSelectionStore$1();
+  const selection = useSelectionStore();
   if (addToSelection) {
     selection.addToSelection(layerId);
   } else {
@@ -22116,7 +22116,7 @@ function selectLayer(_store, layerId, addToSelection = false) {
   }
 }
 function deselectLayer(_store, layerId) {
-  useSelectionStore$1().removeFromSelection(layerId);
+  useSelectionStore().removeFromSelection(layerId);
 }
 function regenerateKeyframeIds(layer) {
   if (layer.transform) {
@@ -22270,7 +22270,7 @@ async function convertTextLayerToSplines(store, layerId, options = {}) {
       deleteLayer(store, layerId);
     }
     if (createdLayerIds.length > 0) {
-      const selectionStore = useSelectionStore$1();
+      const selectionStore = useSelectionStore();
       selectionStore.clearLayerSelection();
       selectionStore.selectLayer(createdLayerIds[0]);
     }
@@ -25585,7 +25585,7 @@ function deleteCamera(store, cameraId) {
   if (layerIndex !== -1) {
     const layerId = layers[layerIndex].id;
     layers.splice(layerIndex, 1);
-    useSelectionStore$1().removeFromSelection(layerId);
+    useSelectionStore().removeFromSelection(layerId);
   }
   store.cameraKeyframes.delete(cameraId);
   store.cameras.delete(cameraId);
@@ -27121,25 +27121,25 @@ const useCompositorStore = defineStore("compositor", {
     },
     // Selection (delegated to selectionStore)
     selectedLayerIds() {
-      return useSelectionStore$1().selectedLayerIds;
+      return useSelectionStore().selectedLayerIds;
     },
     selectedKeyframeIds() {
-      return useSelectionStore$1().selectedKeyframeIds;
+      return useSelectionStore().selectedKeyframeIds;
     },
     selectedPropertyPath() {
-      return useSelectionStore$1().selectedPropertyPath;
+      return useSelectionStore().selectedPropertyPath;
     },
     currentTool(state) {
       if (state.segmentToolActive) return "segment";
-      return useSelectionStore$1().currentTool;
+      return useSelectionStore().currentTool;
     },
     selectedLayers(state) {
       const comp = state.project.compositions[state.activeCompositionId];
-      const selectionStore = useSelectionStore$1();
+      const selectionStore = useSelectionStore();
       return (comp?.layers || []).filter((l) => selectionStore.selectedLayerIds.includes(l.id));
     },
     selectedLayer(state) {
-      const selectionStore = useSelectionStore$1();
+      const selectionStore = useSelectionStore();
       if (selectionStore.selectedLayerIds.length !== 1) return null;
       const comp = state.project.compositions[state.activeCompositionId];
       return (comp?.layers || []).find((l) => l.id === selectionStore.selectedLayerIds[0]) || null;
@@ -27258,7 +27258,7 @@ const useCompositorStore = defineStore("compositor", {
       if (!this.openCompositionIds.includes(compId)) {
         this.openCompositionIds.push(compId);
       }
-      const selection = useSelectionStore$1();
+      const selection = useSelectionStore();
       selection.clearLayerSelection();
       selection.clearKeyframeSelection();
       this.activeCompositionId = compId;
@@ -27435,7 +27435,7 @@ const useCompositorStore = defineStore("compositor", {
         }
       };
       activeComp.layers.push(nestedCompLayer);
-      useSelectionStore$1().clearLayerSelection();
+      useSelectionStore().clearLayerSelection();
       this.activeCompositionId = activeComp.id;
       storeLogger.debug("Nested layers into:", nestedComp.name);
       return nestedComp;
@@ -27846,14 +27846,14 @@ const useCompositorStore = defineStore("compositor", {
      */
     selectAllLayers() {
       const layers = this.getActiveCompLayers();
-      const selection = useSelectionStore$1();
+      const selection = useSelectionStore();
       selection.selectLayers(layers.map((l) => l.id));
     },
     /**
      * Delete all selected layers
      */
     deleteSelectedLayers() {
-      const selection = useSelectionStore$1();
+      const selection = useSelectionStore();
       const layerIds = [...selection.selectedLayerIds];
       layerIds.forEach((id) => this.deleteLayer(id));
       selection.clearLayerSelection();
@@ -27862,7 +27862,7 @@ const useCompositorStore = defineStore("compositor", {
      * Duplicate all selected layers
      */
     duplicateSelectedLayers() {
-      const selection = useSelectionStore$1();
+      const selection = useSelectionStore();
       const newLayerIds = [];
       selection.selectedLayerIds.forEach((id) => {
         const newLayer = duplicateLayer(this, id);
@@ -28059,14 +28059,14 @@ const useCompositorStore = defineStore("compositor", {
       return splitLayerAtPlayhead(storeWithFrame, layerId);
     },
     clearSelection() {
-      const selection = useSelectionStore$1();
+      const selection = useSelectionStore();
       selection.clearAll();
     },
     /**
      * Select a property path for graph editor focus
      */
     selectProperty(propertyPath) {
-      useSelectionStore$1().setSelectedPropertyPath(propertyPath);
+      useSelectionStore().setSelectedPropertyPath(propertyPath);
     },
     // ============================================================
     // MOTION ENGINE INTEGRATION
@@ -28184,7 +28184,7 @@ const useCompositorStore = defineStore("compositor", {
         this.segmentToolActive = true;
       } else {
         this.segmentToolActive = false;
-        useSelectionStore$1().setTool(tool);
+        useSelectionStore().setTool(tool);
         this.clearSegmentPendingMask();
       }
     },
@@ -32800,7 +32800,7 @@ const _sfc_main$_ = /* @__PURE__ */ defineComponent({
   setup(__props, { emit: __emit }) {
     const emit = __emit;
     const store = useCompositorStore();
-    const selectionStore = useSelectionStore$1();
+    const selectionStore = useSelectionStore();
     const fileInputRef = ref(null);
     const showSearch = ref(false);
     const showNewMenu = ref(false);
@@ -58533,7 +58533,7 @@ const TOOL_DEFINITIONS = [
 async function executeToolCall(toolCall) {
   const store = useCompositorStore();
   const playbackStore = usePlaybackStore();
-  useSelectionStore$1();
+  useSelectionStore();
   const context = { store, playbackStore};
   const { name, arguments: args } = toolCall;
   switch (name) {
@@ -60810,7 +60810,7 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
   __name: "AIGeneratePanel",
   setup(__props) {
     const store = useCompositorStore();
-    const selectionStore = useSelectionStore$1();
+    const selectionStore = useSelectionStore();
     const sourceType = ref("layer");
     const uploadedFile = ref(null);
     const uploadedFileName = ref("");
@@ -101500,6 +101500,1209 @@ function useGuides() {
   };
 }
 
+function useKeyboardShortcuts(options) {
+  const store = useCompositorStore();
+  const playbackStore = usePlaybackStore();
+  const audioStore = useAudioStore();
+  const {
+    showExportDialog,
+    showCompositionSettingsDialog,
+    showKeyframeInterpolationDialog,
+    showPrecomposeDialog,
+    showCurveEditor,
+    showTimeStretchDialog,
+    currentTool,
+    leftTab,
+    viewOptions,
+    threeCanvasRef,
+    viewZoom,
+    compWidth,
+    compHeight,
+    assetStore
+  } = options;
+  const isPlaying = ref(false);
+  function togglePlay() {
+    isPlaying.value = !isPlaying.value;
+    if (isPlaying.value) {
+      store.play();
+    } else {
+      store.pause();
+    }
+  }
+  function goToStart() {
+    store.goToStart();
+  }
+  function goToEnd() {
+    store.goToEnd();
+  }
+  function stepForward(frames = 1) {
+    store.setFrame(Math.min(store.currentFrame + frames, store.frameCount - 1));
+  }
+  function stepBackward(frames = 1) {
+    store.setFrame(Math.max(0, store.currentFrame - frames));
+  }
+  function applySmoothEasing() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    let keyframesUpdated = 0;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes) {
+          for (const kf of prop.keyframes) {
+            store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "bezier");
+            keyframesUpdated++;
+          }
+        }
+      }
+      if (layer.opacity?.animated && layer.opacity?.keyframes) {
+        for (const kf of layer.opacity.keyframes) {
+          store.setKeyframeInterpolation(layerId, "opacity", kf.id, "bezier");
+          keyframesUpdated++;
+        }
+      }
+    }
+    if (keyframesUpdated > 0) {
+      console.log(`[Weyl] Applied smooth easing to ${keyframesUpdated} keyframes`);
+    }
+  }
+  function applySmoothEaseIn() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    let keyframesUpdated = 0;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes) {
+          for (const kf of prop.keyframes) {
+            store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "bezier");
+            store.updateKeyframeHandles?.(layerId, `transform.${propKey}`, kf.id, {
+              inHandle: { x: -0.42, y: 0 },
+              outHandle: { x: 0.1, y: 0 }
+            });
+            keyframesUpdated++;
+          }
+        }
+      }
+    }
+    if (keyframesUpdated > 0) {
+      console.log(`[Weyl] Applied Smooth In to ${keyframesUpdated} keyframes`);
+    }
+  }
+  function applySmoothEaseOut() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    let keyframesUpdated = 0;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes) {
+          for (const kf of prop.keyframes) {
+            store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "bezier");
+            store.updateKeyframeHandles?.(layerId, `transform.${propKey}`, kf.id, {
+              inHandle: { x: -0.1, y: 0 },
+              outHandle: { x: 0.42, y: 0 }
+            });
+            keyframesUpdated++;
+          }
+        }
+      }
+    }
+    if (keyframesUpdated > 0) {
+      console.log(`[Weyl] Applied Smooth Out to ${keyframesUpdated} keyframes`);
+    }
+  }
+  function goToPrevKeyframe() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    let prevFrame = -1;
+    const currentFrame = store.currentFrame;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes) {
+          for (const kf of prop.keyframes) {
+            if (kf.frame < currentFrame && kf.frame > prevFrame) {
+              prevFrame = kf.frame;
+            }
+          }
+        }
+      }
+    }
+    if (prevFrame >= 0) {
+      store.setFrame(prevFrame);
+    }
+  }
+  function goToNextKeyframe() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    let nextFrame = Infinity;
+    const currentFrame = store.currentFrame;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes) {
+          for (const kf of prop.keyframes) {
+            if (kf.frame > currentFrame && kf.frame < nextFrame) {
+              nextFrame = kf.frame;
+            }
+          }
+        }
+      }
+    }
+    if (nextFrame < Infinity) {
+      store.setFrame(nextFrame);
+    }
+  }
+  const soloedProperties = ref(/* @__PURE__ */ new Set());
+  function soloProperty(prop, additive = false) {
+    if (additive) {
+      if (soloedProperties.value.has(prop)) {
+        soloedProperties.value.delete(prop);
+      } else {
+        soloedProperties.value.add(prop);
+      }
+      soloedProperties.value = new Set(soloedProperties.value);
+    } else {
+      if (soloedProperties.value.size === 1 && soloedProperties.value.has(prop)) {
+        soloedProperties.value = /* @__PURE__ */ new Set();
+      } else {
+        soloedProperties.value = /* @__PURE__ */ new Set([prop]);
+      }
+    }
+  }
+  const soloedProperty = computed(() => {
+    const arr = Array.from(soloedProperties.value);
+    return arr.length > 0 ? arr[0] : null;
+  });
+  const lastKeyPress = ref(null);
+  const DOUBLE_TAP_THRESHOLD = 300;
+  function isDoubleTap(key) {
+    const now = Date.now();
+    const last = lastKeyPress.value;
+    lastKeyPress.value = { key, time: now };
+    if (last && last.key === key && now - last.time < DOUBLE_TAP_THRESHOLD) {
+      lastKeyPress.value = null;
+      return true;
+    }
+    return false;
+  }
+  const workAreaStart = ref(null);
+  const workAreaEnd = ref(null);
+  function setWorkAreaStart() {
+    workAreaStart.value = store.currentFrame;
+    playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
+    console.log(`[Weyl] Work area start set to frame ${store.currentFrame}`);
+  }
+  function setWorkAreaEnd() {
+    workAreaEnd.value = store.currentFrame;
+    playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
+    console.log(`[Weyl] Work area end set to frame ${store.currentFrame}`);
+  }
+  function clearWorkArea() {
+    workAreaStart.value = null;
+    workAreaEnd.value = null;
+    playbackStore.clearWorkArea();
+    console.log("[Weyl] Work area cleared");
+  }
+  const showHiddenLayers = ref(true);
+  function toggleHiddenLayersVisibility() {
+    showHiddenLayers.value = !showHiddenLayers.value;
+    console.log(`[Weyl] Hidden layers visibility: ${showHiddenLayers.value ? "shown" : "hidden"}`);
+  }
+  function toggleLayerHidden(layerId) {
+    const layer = store.getLayerById(layerId);
+    if (layer) {
+      store.updateLayer(layerId, { hidden: !layer.hidden });
+    }
+  }
+  const previewUpdatesPaused = ref(false);
+  function togglePreviewPause() {
+    previewUpdatesPaused.value = !previewUpdatesPaused.value;
+    console.log(`[Weyl] Preview updates: ${previewUpdatesPaused.value ? "PAUSED" : "active"}`);
+  }
+  const showTransparencyGrid = ref(false);
+  function toggleTransparencyGrid() {
+    showTransparencyGrid.value = !showTransparencyGrid.value;
+    console.log(`[Weyl] Transparency grid: ${showTransparencyGrid.value ? "ON" : "OFF"}`);
+  }
+  const gridColor = ref("#444444");
+  const gridMajorColor = ref("#666666");
+  function toggleGrid() {
+    viewOptions.value.showGrid = !viewOptions.value.showGrid;
+    console.log(`[Weyl] Grid: ${viewOptions.value.showGrid ? "ON" : "OFF"}`);
+  }
+  function setGridSize(size) {
+    viewOptions.value.gridSize = Math.max(10, Math.min(200, size));
+  }
+  const rulerUnits = ref("pixels");
+  function toggleRulers() {
+    viewOptions.value.showRulers = !viewOptions.value.showRulers;
+    console.log(`[Weyl] Rulers: ${viewOptions.value.showRulers ? "ON" : "OFF"}`);
+  }
+  const snapEnabled = ref(false);
+  const snapToGrid = ref(true);
+  const snapToGuides = ref(true);
+  const snapToLayers = ref(true);
+  const snapTolerance = ref(10);
+  function toggleSnap() {
+    snapEnabled.value = !snapEnabled.value;
+    console.log(`[Weyl] Snap: ${snapEnabled.value ? "ON" : "OFF"}`);
+  }
+  function undo() {
+    store.undo();
+  }
+  function redo() {
+    store.redo();
+  }
+  function goToLayerInPoint() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const layer = store.getLayerById(selectedIds[0]);
+    if (layer) {
+      store.setFrame(layer.inPoint ?? 0);
+    }
+  }
+  function goToLayerOutPoint() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const layer = store.getLayerById(selectedIds[0]);
+    if (layer) {
+      store.setFrame((layer.outPoint ?? store.frameCount) - 1);
+    }
+  }
+  function moveLayerInPointToPlayhead() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      store.updateLayer(id, { inPoint: store.currentFrame });
+    }
+  }
+  function moveLayerOutPointToPlayhead() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      store.updateLayer(id, { outPoint: store.currentFrame + 1 });
+    }
+  }
+  function trimLayerInPoint() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (layer) {
+        const currentIn = layer.inPoint ?? 0;
+        if (store.currentFrame > currentIn) {
+          store.updateLayer(id, { inPoint: store.currentFrame });
+        }
+      }
+    }
+  }
+  function trimLayerOutPoint() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (layer) {
+        const currentOut = layer.outPoint ?? store.frameCount;
+        if (store.currentFrame < currentOut) {
+          store.updateLayer(id, { outPoint: store.currentFrame + 1 });
+        }
+      }
+    }
+  }
+  function selectPreviousLayer(extend = false) {
+    const layers = store.layers;
+    if (layers.length === 0) return;
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) {
+      store.selectLayer(layers[0].id);
+      return;
+    }
+    const currentIndex = layers.findIndex((l) => l.id === selectedIds[0]);
+    if (currentIndex > 0) {
+      const targetLayer = layers[currentIndex - 1];
+      if (extend) {
+        store.selectLayer(targetLayer.id, true);
+      } else {
+        store.selectLayer(targetLayer.id);
+      }
+    }
+  }
+  function selectNextLayer(extend = false) {
+    const layers = store.layers;
+    if (layers.length === 0) return;
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) {
+      store.selectLayer(layers[0].id);
+      return;
+    }
+    const lastSelectedIndex = layers.findIndex((l) => l.id === selectedIds[selectedIds.length - 1]);
+    if (lastSelectedIndex < layers.length - 1) {
+      const targetLayer = layers[lastSelectedIndex + 1];
+      if (extend) {
+        store.selectLayer(targetLayer.id, true);
+      } else {
+        store.selectLayer(targetLayer.id);
+      }
+    }
+  }
+  function splitLayerAtPlayhead() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (!layer) continue;
+      const currentFrame = store.currentFrame;
+      const inPoint = layer.inPoint ?? 0;
+      const outPoint = layer.outPoint ?? store.frameCount;
+      if (currentFrame > inPoint && currentFrame < outPoint) {
+        store.updateLayer(id, { outPoint: currentFrame });
+        const newLayer = store.duplicateLayer(id);
+        if (newLayer) {
+          store.updateLayer(newLayer.id, {
+            inPoint: currentFrame,
+            outPoint
+          });
+          store.renameLayer(newLayer.id, `${layer.name} (split)`);
+        }
+      }
+    }
+  }
+  function reverseSelectedLayers() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      store.reverseLayer(id);
+    }
+  }
+  const timelineZoom = ref(1);
+  function zoomTimelineIn() {
+    timelineZoom.value = Math.min(timelineZoom.value * 1.5, 10);
+    store.setTimelineZoom?.(timelineZoom.value);
+  }
+  function zoomTimelineOut() {
+    timelineZoom.value = Math.max(timelineZoom.value / 1.5, 0.1);
+    store.setTimelineZoom?.(timelineZoom.value);
+  }
+  function zoomTimelineToFit() {
+    timelineZoom.value = 1;
+    store.setTimelineZoom?.(1);
+  }
+  const viewerZoom = ref(1);
+  function zoomViewerIn() {
+    viewerZoom.value = Math.min(viewerZoom.value * 1.25, 8);
+    if (threeCanvasRef.value) {
+      threeCanvasRef.value.setZoom?.(viewerZoom.value);
+    }
+    const percent = Math.round(viewerZoom.value * 100);
+    viewZoom.value = String(percent);
+  }
+  function zoomViewerOut() {
+    viewerZoom.value = Math.max(viewerZoom.value / 1.25, 0.1);
+    if (threeCanvasRef.value) {
+      threeCanvasRef.value.setZoom?.(viewerZoom.value);
+    }
+    const percent = Math.round(viewerZoom.value * 100);
+    viewZoom.value = String(percent);
+  }
+  function zoomViewerToFit() {
+    viewerZoom.value = 1;
+    viewZoom.value = "fit";
+    if (threeCanvasRef.value) {
+      threeCanvasRef.value.fitToView?.();
+    }
+  }
+  function zoomViewerTo100() {
+    viewerZoom.value = 1;
+    viewZoom.value = "100";
+    if (threeCanvasRef.value) {
+      threeCanvasRef.value.setZoom?.(1);
+    }
+  }
+  function convertToHoldKeyframes() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    let keyframesUpdated = 0;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes) {
+          for (const kf of prop.keyframes) {
+            store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "hold");
+            keyframesUpdated++;
+          }
+        }
+      }
+    }
+    if (keyframesUpdated > 0) {
+      console.log(`[Weyl] Converted ${keyframesUpdated} keyframes to hold`);
+    }
+  }
+  function timeReverseKeyframes() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer?.transform) continue;
+      const transform = layer.transform;
+      for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
+        const prop = transform[propKey];
+        if (prop?.animated && prop?.keyframes && prop.keyframes.length >= 2) {
+          const keyframes = [...prop.keyframes];
+          const values = keyframes.map((kf) => kf.value);
+          values.reverse();
+          for (let i = 0; i < keyframes.length; i++) {
+            store.updateKeyframeValue?.(layerId, `transform.${propKey}`, keyframes[i].id, values[i]);
+          }
+        }
+      }
+    }
+    console.log("[Weyl] Keyframes time-reversed");
+  }
+  function fitLayerToComp() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const compW = compWidth.value;
+    const compH = compHeight.value;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (!layer) continue;
+      const data = layer.data;
+      const layerW = data?.width || compW;
+      const layerH = data?.height || compH;
+      const scaleX = compW / layerW;
+      const scaleY = compH / layerH;
+      const scale = Math.max(scaleX, scaleY);
+      const centerX = compW / 2;
+      const centerY = compH / 2;
+      store.updateLayerTransform?.(id, {
+        position: { x: centerX, y: centerY, z: 0 },
+        scale: { x: scale * 100, y: scale * 100, z: 100 },
+        anchor: { x: layerW / 2, y: layerH / 2, z: 0 }
+      });
+    }
+    console.log("[Weyl] Fit layer(s) to composition");
+  }
+  function fitLayerToCompWidth() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const compW = compWidth.value;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (!layer) continue;
+      const data = layer.data;
+      const layerW = data?.width || compW;
+      const scale = compW / layerW;
+      store.updateLayerTransform?.(id, {
+        scale: { x: scale * 100, y: scale * 100, z: 100 }
+      });
+    }
+    console.log("[Weyl] Fit layer(s) to composition width");
+  }
+  function fitLayerToCompHeight() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const compH = compHeight.value;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (!layer) continue;
+      const data = layer.data;
+      const layerH = data?.height || compH;
+      const scale = compH / layerH;
+      store.updateLayerTransform?.(id, {
+        scale: { x: scale * 100, y: scale * 100, z: 100 }
+      });
+    }
+    console.log("[Weyl] Fit layer(s) to composition height");
+  }
+  function toggleLayerLock() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (layer) {
+        store.updateLayer(id, { locked: !layer.locked });
+      }
+    }
+  }
+  function centerAnchorPoint() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (!layer) continue;
+      const data = layer.data;
+      const layerW = data?.width || compWidth.value;
+      const layerH = data?.height || compHeight.value;
+      const centerX = layerW / 2;
+      const centerY = layerH / 2;
+      const transform = layer.transform;
+      const currentAnchor = transform?.anchor?.value || transform?.anchor?.defaultValue || { x: 0, y: 0, z: 0 };
+      const currentPos = transform?.position?.value || transform?.position?.defaultValue || { x: 0, y: 0, z: 0 };
+      const offsetX = centerX - (currentAnchor.x || 0);
+      const offsetY = centerY - (currentAnchor.y || 0);
+      store.updateLayerTransform?.(id, {
+        anchor: { x: centerX, y: centerY, z: currentAnchor.z || 0 },
+        position: {
+          x: (currentPos.x || 0) + offsetX,
+          y: (currentPos.y || 0) + offsetY,
+          z: currentPos.z || 0
+        }
+      });
+    }
+    console.log("[Weyl] Centered anchor point(s)");
+  }
+  function centerLayerInComp() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const centerX = compWidth.value / 2;
+    const centerY = compHeight.value / 2;
+    for (const id of selectedIds) {
+      const layer = store.getLayerById(id);
+      if (!layer) continue;
+      const transform = layer.transform;
+      const currentPos = transform?.position?.value || transform?.position?.defaultValue || { z: 0 };
+      store.updateLayerTransform?.(id, {
+        position: { x: centerX, y: centerY, z: currentPos.z || 0 }
+      });
+    }
+    console.log("[Weyl] Centered layer(s) in composition");
+  }
+  function createAdjustmentLayer() {
+    store.addLayer("adjustment", {
+      name: "Adjustment Layer",
+      width: compWidth.value,
+      height: compHeight.value
+    });
+    console.log("[Weyl] Created adjustment layer");
+  }
+  function createNullLayer() {
+    store.addLayer("null", {
+      name: "Null Object"
+    });
+    console.log("[Weyl] Created null layer");
+  }
+  function revealSourceInProject() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) {
+      console.log("[Weyl] No layer selected to reveal source");
+      return;
+    }
+    const layer = store.getLayerById(selectedIds[0]);
+    if (!layer) return;
+    const data = layer.data;
+    let assetId = null;
+    if (data?.assetId) {
+      assetId = data.assetId;
+    } else if (layer.type === "precomp") {
+      if (data?.compositionId) {
+        leftTab.value = "comps";
+        console.log(`[Weyl] Revealed precomp source: ${data.compositionId}`);
+        return;
+      }
+    }
+    if (assetId) {
+      leftTab.value = "assets";
+      if (typeof store.selectAsset === "function") {
+        store.selectAsset(assetId);
+      }
+      console.log(`[Weyl] Revealed source asset: ${assetId}`);
+    } else {
+      console.log(`[Weyl] Layer type '${layer.type}' has no source asset`);
+    }
+  }
+  function selectAllKeyframesOnSelectedLayers() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return false;
+    const keyframeIds = [];
+    for (const layerId of selectedIds) {
+      const layer = store.getLayerById(layerId);
+      if (!layer) continue;
+      const transform = layer.transform;
+      if (transform) {
+        const props = ["position", "rotation", "scale", "anchor", "opacity"];
+        for (const propName of props) {
+          const prop = transform[propName];
+          if (prop?.keyframes && Array.isArray(prop.keyframes)) {
+            for (const kf of prop.keyframes) {
+              if (kf.id) keyframeIds.push(kf.id);
+            }
+          }
+        }
+      }
+      const data = layer.data;
+      if (data) {
+        const checkForKeyframes = (obj) => {
+          if (!obj || typeof obj !== "object") return;
+          if (Array.isArray(obj.keyframes)) {
+            for (const kf of obj.keyframes) {
+              if (kf.id) keyframeIds.push(kf.id);
+            }
+          }
+          for (const key of Object.keys(obj)) {
+            if (typeof obj[key] === "object") checkForKeyframes(obj[key]);
+          }
+        };
+        checkForKeyframes(data);
+      }
+    }
+    if (keyframeIds.length > 0) {
+      useSelectionStore().selectKeyframes(keyframeIds);
+      console.log(`[Weyl] Selected ${keyframeIds.length} keyframes on ${selectedIds.length} layer(s)`);
+      return true;
+    }
+    return false;
+  }
+  function selectLayersByLabel() {
+    const selectedIds = store.selectedLayerIds;
+    if (selectedIds.length === 0) return;
+    const firstLayer = store.getLayerById(selectedIds[0]);
+    if (!firstLayer) return;
+    const targetColor = firstLayer.labelColor || firstLayer.color || "#808080";
+    const layers = store.layers;
+    const matchingIds = [];
+    for (const layer of layers) {
+      const layerColor = layer.labelColor || layer.color || "#808080";
+      if (layerColor === targetColor) {
+        matchingIds.push(layer.id);
+      }
+    }
+    if (matchingIds.length > 0) {
+      store.selectLayers?.(matchingIds) || matchingIds.forEach((id) => store.selectLayer(id, true));
+      console.log(`[Weyl] Selected ${matchingIds.length} layers with label color ${targetColor}`);
+    }
+  }
+  function triggerAssetImport() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".svg,.gltf,.glb,.obj,.fbx,.hdr,.exr,.png,.jpg";
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const files = e.target.files;
+      if (!files) return;
+      for (const file of files) {
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        if (ext === "svg") {
+          await assetStore.importSvgFromFile(file);
+        } else if (["hdr", "exr"].includes(ext || "")) {
+          await assetStore.loadEnvironment(file);
+        }
+      }
+      leftTab.value = "assets";
+    };
+    input.click();
+  }
+  function openTimeStretchDialog() {
+    if (store.selectedLayerIds.length === 0) return;
+    showTimeStretchDialog.value = true;
+  }
+  function handleKeydown(e) {
+    if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+      return;
+    }
+    const hasSelectedLayer = store.selectedLayerIds.length > 0;
+    switch (e.key.toLowerCase()) {
+      case " ":
+        e.preventDefault();
+        togglePlay();
+        break;
+      case "p":
+        if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          soloProperty("position", e.shiftKey);
+        } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          currentTool.value = "pen";
+        }
+        break;
+      case "s":
+        if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          soloProperty("scale", e.shiftKey);
+        }
+        break;
+      case "t":
+        if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
+          e.preventDefault();
+          openTimeStretchDialog();
+        } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          soloProperty("opacity", e.shiftKey);
+        } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          currentTool.value = "text";
+        }
+        break;
+      case "a":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          if (hasSelectedLayer) {
+            const selectedKeyframes = selectAllKeyframesOnSelectedLayers();
+            if (!selectedKeyframes) {
+              store.selectAllLayers();
+            }
+          } else {
+            store.selectAllLayers();
+          }
+        } else if (hasSelectedLayer) {
+          e.preventDefault();
+          soloProperty("anchor", e.shiftKey);
+        } else if (!e.shiftKey) {
+          leftTab.value = "assets";
+        }
+        break;
+      case "u":
+        if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (isDoubleTap("u")) {
+            soloProperty("modified", e.shiftKey);
+          } else {
+            soloProperty("animated", e.shiftKey);
+          }
+        }
+        break;
+      case "e":
+        if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
+          e.preventDefault();
+          revealSourceInProject();
+        } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (isDoubleTap("e")) {
+            soloProperty("expressions", e.shiftKey);
+          } else {
+            soloProperty("effects", e.shiftKey);
+          }
+        }
+        break;
+      case "m":
+        if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (isDoubleTap("m")) {
+            soloProperty("masks", e.shiftKey);
+            console.log("[Weyl] Showing all mask properties (MM)");
+          } else {
+            soloProperty("masks", e.shiftKey);
+          }
+        } else if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          showExportDialog.value = true;
+        }
+        break;
+      case "h":
+        if (e.ctrlKey && e.altKey) {
+          e.preventDefault();
+          convertToHoldKeyframes();
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          toggleTransparencyGrid();
+        } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+          currentTool.value = "hand";
+        }
+        break;
+      case "z":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          if (e.shiftKey) {
+            redo();
+          } else {
+            undo();
+          }
+        } else {
+          currentTool.value = "zoom";
+        }
+        break;
+      case "end":
+        e.preventDefault();
+        goToEnd();
+        break;
+      case "pageup":
+        e.preventDefault();
+        stepBackward(e.shiftKey ? 10 : 1);
+        break;
+      case "pagedown":
+        e.preventDefault();
+        stepForward(e.shiftKey ? 10 : 1);
+        break;
+      case "arrowleft":
+        e.preventDefault();
+        stepBackward(e.shiftKey ? 10 : 1);
+        break;
+      case "arrowright":
+        e.preventDefault();
+        stepForward(e.shiftKey ? 10 : 1);
+        break;
+      case "j":
+        if (!e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          goToPrevKeyframe();
+        }
+        break;
+      case "k":
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          if (store.selectedKeyframeIds.length > 0) {
+            showKeyframeInterpolationDialog.value = true;
+          } else {
+            console.log("[Weyl] No keyframes selected for interpolation dialog");
+          }
+        } else if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          showCompositionSettingsDialog.value = true;
+        } else {
+          e.preventDefault();
+          goToNextKeyframe();
+        }
+        break;
+      case "g":
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && hasSelectedLayer) {
+          e.preventDefault();
+          selectLayersByLabel();
+        } else if (e.shiftKey) {
+          e.preventDefault();
+          showCurveEditor.value = !showCurveEditor.value;
+        }
+        break;
+      case "i":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          triggerAssetImport();
+        } else if (hasSelectedLayer) {
+          e.preventDefault();
+          goToLayerInPoint();
+        }
+        break;
+      case "o":
+        if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          goToLayerOutPoint();
+        }
+        break;
+      case "c":
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          if (store.selectedLayerIds.length > 0) {
+            showPrecomposeDialog.value = true;
+          }
+        } else if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          store.copySelectedLayers();
+        }
+        break;
+      case "delete":
+      case "backspace":
+        if (store.selectedLayerIds.length > 0) {
+          e.preventDefault();
+          store.deleteSelectedLayers();
+        }
+        break;
+      case "f9":
+        e.preventDefault();
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          applySmoothEaseOut();
+        } else if (e.shiftKey) {
+          applySmoothEaseIn();
+        } else {
+          applySmoothEasing();
+        }
+        break;
+      case "v":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          store.pasteLayers();
+        } else if (!e.shiftKey) {
+          currentTool.value = "select";
+        }
+        break;
+      case "x":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          store.cutSelectedLayers();
+        }
+        break;
+      case "[":
+        if (e.altKey) {
+          e.preventDefault();
+          trimLayerInPoint();
+        } else if (hasSelectedLayer) {
+          e.preventDefault();
+          moveLayerInPointToPlayhead();
+        }
+        break;
+      case "]":
+        if (e.altKey) {
+          e.preventDefault();
+          trimLayerOutPoint();
+        } else if (hasSelectedLayer) {
+          e.preventDefault();
+          moveLayerOutPointToPlayhead();
+        }
+        break;
+      case "arrowup":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          selectPreviousLayer(e.shiftKey);
+        }
+        break;
+      case "arrowdown":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          selectNextLayer(e.shiftKey);
+        }
+        break;
+      case "d":
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          splitLayerAtPlayhead();
+        } else if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          store.duplicateSelectedLayers();
+        }
+        break;
+      case "r":
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          toggleRulers();
+        } else if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
+          e.preventDefault();
+          reverseSelectedLayers();
+        } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
+          e.preventDefault();
+          timeReverseKeyframes();
+        } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          soloProperty("rotation", e.shiftKey);
+        }
+        break;
+      case "=":
+      case "+":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          zoomViewerIn();
+        } else {
+          e.preventDefault();
+          zoomTimelineIn();
+        }
+        break;
+      case "-":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          zoomViewerOut();
+        } else {
+          e.preventDefault();
+          zoomTimelineOut();
+        }
+        break;
+      case ";":
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          toggleSnap();
+        } else if (!e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          zoomTimelineToFit();
+        }
+        break;
+      case "0":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          zoomViewerToFit();
+        } else if (e.shiftKey && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          zoomViewerTo100();
+        }
+        break;
+      case ".":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          audioStore.toggleAudioPlayback(store.currentFrame, store.fps);
+        }
+        break;
+      case "b":
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          e.preventDefault();
+          setWorkAreaStart();
+        }
+        break;
+      case "n":
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          e.preventDefault();
+          setWorkAreaEnd();
+        }
+        break;
+      case "l":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          toggleLayerLock();
+        }
+        break;
+      case "capslock":
+        e.preventDefault();
+        togglePreviewPause();
+        break;
+      case "f":
+        if ((e.ctrlKey || e.metaKey) && e.altKey) {
+          e.preventDefault();
+          if (e.shiftKey) {
+            fitLayerToCompHeight();
+          } else {
+            fitLayerToComp();
+          }
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          fitLayerToCompWidth();
+        }
+        break;
+      case "y":
+        if ((e.ctrlKey || e.metaKey) && e.altKey && e.shiftKey) {
+          e.preventDefault();
+          createNullLayer();
+        } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
+          e.preventDefault();
+          createAdjustmentLayer();
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+          e.preventDefault();
+          toggleHiddenLayersVisibility();
+        }
+        break;
+      case "home":
+        if ((e.ctrlKey || e.metaKey) && e.altKey) {
+          e.preventDefault();
+          centerAnchorPoint();
+        } else if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          centerLayerInComp();
+        } else {
+          e.preventDefault();
+          store.setFrame(0);
+        }
+        break;
+      case "'":
+      case "`":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          toggleGrid();
+        }
+        break;
+    }
+  }
+  function setupProvides() {
+    provide("soloedProperty", soloedProperty);
+    provide("soloedProperties", soloedProperties);
+    provide("workAreaStart", workAreaStart);
+    provide("workAreaEnd", workAreaEnd);
+    provide("showHiddenLayers", showHiddenLayers);
+    provide("toggleLayerHidden", toggleLayerHidden);
+    provide("previewUpdatesPaused", previewUpdatesPaused);
+    provide("showTransparencyGrid", showTransparencyGrid);
+    provide("gridColor", gridColor);
+    provide("gridMajorColor", gridMajorColor);
+    provide("rulerUnits", rulerUnits);
+    provide("snapEnabled", snapEnabled);
+    provide("snapToGrid", snapToGrid);
+    provide("snapToGuides", snapToGuides);
+    provide("snapToLayers", snapToLayers);
+    provide("snapTolerance", snapTolerance);
+    provide("toggleSnap", toggleSnap);
+  }
+  return {
+    // State
+    isPlaying,
+    soloedProperties,
+    soloedProperty,
+    workAreaStart,
+    workAreaEnd,
+    showHiddenLayers,
+    previewUpdatesPaused,
+    showTransparencyGrid,
+    gridColor,
+    gridMajorColor,
+    rulerUnits,
+    snapEnabled,
+    snapToGrid,
+    snapToGuides,
+    snapToLayers,
+    snapTolerance,
+    timelineZoom,
+    viewerZoom,
+    // Actions
+    togglePlay,
+    goToStart,
+    goToEnd,
+    stepForward,
+    stepBackward,
+    applySmoothEasing,
+    applySmoothEaseIn,
+    applySmoothEaseOut,
+    goToPrevKeyframe,
+    goToNextKeyframe,
+    soloProperty,
+    isDoubleTap,
+    setWorkAreaStart,
+    setWorkAreaEnd,
+    clearWorkArea,
+    toggleHiddenLayersVisibility,
+    toggleLayerHidden,
+    togglePreviewPause,
+    toggleTransparencyGrid,
+    toggleGrid,
+    setGridSize,
+    toggleRulers,
+    toggleSnap,
+    undo,
+    redo,
+    goToLayerInPoint,
+    goToLayerOutPoint,
+    moveLayerInPointToPlayhead,
+    moveLayerOutPointToPlayhead,
+    trimLayerInPoint,
+    trimLayerOutPoint,
+    selectPreviousLayer,
+    selectNextLayer,
+    splitLayerAtPlayhead,
+    reverseSelectedLayers,
+    zoomTimelineIn,
+    zoomTimelineOut,
+    zoomTimelineToFit,
+    zoomViewerIn,
+    zoomViewerOut,
+    zoomViewerToFit,
+    zoomViewerTo100,
+    convertToHoldKeyframes,
+    timeReverseKeyframes,
+    fitLayerToComp,
+    fitLayerToCompWidth,
+    fitLayerToCompHeight,
+    toggleLayerLock,
+    centerAnchorPoint,
+    centerLayerInComp,
+    createAdjustmentLayer,
+    createNullLayer,
+    revealSourceInProject,
+    selectAllKeyframesOnSelectedLayers,
+    selectLayersByLabel,
+    triggerAssetImport,
+    openTimeStretchDialog,
+    handleKeydown,
+    setupProvides
+  };
+}
+
 const _hoisted_1$2 = ["viewBox"];
 const _hoisted_2$2 = ["width", "height"];
 const _hoisted_3$2 = ["d"];
@@ -102176,14 +103379,13 @@ const _hoisted_27 = { class: "panel-content" };
 const _hoisted_28 = { class: "panel ai-section" };
 const _hoisted_29 = { class: "ai-section-tabs" };
 const _hoisted_30 = { class: "ai-section-content" };
-const DOUBLE_TAP_THRESHOLD = 300;
 const _sfc_main$1 = /* @__PURE__ */ defineComponent({
   __name: "WorkspaceLayout",
   setup(__props) {
     const store = useCompositorStore();
     const assetStore = useAssetStore();
-    const audioStore = useAudioStore();
-    const playbackStore = usePlaybackStore();
+    useAudioStore();
+    usePlaybackStore();
     const expressionEditor = useExpressionEditor();
     const currentTool = computed({
       get: () => store.currentTool,
@@ -102213,10 +103415,10 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     const showPrecomposeDialog = ref(false);
     const showPathSuggestionDialog = ref(false);
     const showKeyframeInterpolationDialog = ref(false);
+    const showTimeStretchDialog = ref(false);
     const showHDPreview = ref(false);
     const pathSuggestions = ref([]);
     const selectedPathIndex = ref(null);
-    const isPlaying = ref(false);
     const gpuTier = ref("cpu");
     const threeCanvasRef = ref(null);
     const canvasEngine = computed(() => threeCanvasRef.value?.engine ?? null);
@@ -102269,6 +103471,34 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     const snapIndicatorY = ref(null);
     const compWidth = computed(() => store.project?.composition?.width || 1920);
     const compHeight = computed(() => store.project?.composition?.height || 1080);
+    const keyboard = useKeyboardShortcuts({
+      showExportDialog,
+      showCompositionSettingsDialog,
+      showKeyframeInterpolationDialog,
+      showPrecomposeDialog,
+      showCurveEditor,
+      showTimeStretchDialog,
+      currentTool,
+      leftTab,
+      viewOptions,
+      threeCanvasRef,
+      viewZoom,
+      compWidth,
+      compHeight,
+      assetStore
+    });
+    const {
+      isPlaying,
+      gridColor,
+      gridMajorColor,
+      snapEnabled,
+      snapToGrid,
+      snapToGuides,
+      snapTolerance,
+      handleKeydown,
+      setupProvides: setupKeyboardProvides,
+      triggerAssetImport} = keyboard;
+    setupKeyboardProvides();
     ref(60);
     const memoryUsage = ref("0 MB");
     ref(0);
@@ -102291,186 +103521,6 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     });
     computed(() => store.canUndo);
     computed(() => store.canRedo);
-    function togglePlay() {
-      isPlaying.value = !isPlaying.value;
-      if (isPlaying.value) {
-        store.play();
-      } else {
-        store.pause();
-      }
-    }
-    function goToEnd() {
-      store.goToEnd();
-    }
-    function stepForward(frames = 1) {
-      store.setFrame(Math.min(store.currentFrame + frames, store.frameCount - 1));
-    }
-    function stepBackward(frames = 1) {
-      store.setFrame(Math.max(0, store.currentFrame - frames));
-    }
-    function applySmoothEasing() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      let keyframesUpdated = 0;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes) {
-            for (const kf of prop.keyframes) {
-              store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "bezier");
-              keyframesUpdated++;
-            }
-          }
-        }
-        if (layer.opacity?.animated && layer.opacity?.keyframes) {
-          for (const kf of layer.opacity.keyframes) {
-            store.setKeyframeInterpolation(layerId, "opacity", kf.id, "bezier");
-            keyframesUpdated++;
-          }
-        }
-      }
-      if (keyframesUpdated > 0) {
-        console.log(`[Weyl] Applied smooth easing to ${keyframesUpdated} keyframes`);
-      }
-    }
-    function goToPrevKeyframe() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      let prevFrame = -1;
-      const currentFrame = store.currentFrame;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes) {
-            for (const kf of prop.keyframes) {
-              if (kf.frame < currentFrame && kf.frame > prevFrame) {
-                prevFrame = kf.frame;
-              }
-            }
-          }
-        }
-      }
-      if (prevFrame >= 0) {
-        store.setFrame(prevFrame);
-      }
-    }
-    function goToNextKeyframe() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      let nextFrame = Infinity;
-      const currentFrame = store.currentFrame;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes) {
-            for (const kf of prop.keyframes) {
-              if (kf.frame > currentFrame && kf.frame < nextFrame) {
-                nextFrame = kf.frame;
-              }
-            }
-          }
-        }
-      }
-      if (nextFrame < Infinity) {
-        store.setFrame(nextFrame);
-      }
-    }
-    const soloedProperties = ref(/* @__PURE__ */ new Set());
-    function soloProperty(prop, additive = false) {
-      if (additive) {
-        if (soloedProperties.value.has(prop)) {
-          soloedProperties.value.delete(prop);
-        } else {
-          soloedProperties.value.add(prop);
-        }
-        soloedProperties.value = new Set(soloedProperties.value);
-      } else {
-        if (soloedProperties.value.size === 1 && soloedProperties.value.has(prop)) {
-          soloedProperties.value = /* @__PURE__ */ new Set();
-        } else {
-          soloedProperties.value = /* @__PURE__ */ new Set([prop]);
-        }
-      }
-    }
-    const soloedProperty = computed(() => {
-      const arr = Array.from(soloedProperties.value);
-      return arr.length > 0 ? arr[0] : null;
-    });
-    provide("soloedProperty", soloedProperty);
-    provide("soloedProperties", soloedProperties);
-    const lastKeyPress = ref(null);
-    function isDoubleTap(key) {
-      const now = Date.now();
-      const last = lastKeyPress.value;
-      lastKeyPress.value = { key, time: now };
-      if (last && last.key === key && now - last.time < DOUBLE_TAP_THRESHOLD) {
-        lastKeyPress.value = null;
-        return true;
-      }
-      return false;
-    }
-    const workAreaStart = ref(null);
-    const workAreaEnd = ref(null);
-    function setWorkAreaStart() {
-      workAreaStart.value = store.currentFrame;
-      playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
-      console.log(`[Weyl] Work area start set to frame ${store.currentFrame}`);
-    }
-    function setWorkAreaEnd() {
-      workAreaEnd.value = store.currentFrame;
-      playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
-      console.log(`[Weyl] Work area end set to frame ${store.currentFrame}`);
-    }
-    provide("workAreaStart", workAreaStart);
-    provide("workAreaEnd", workAreaEnd);
-    const showHiddenLayers = ref(true);
-    function toggleHiddenLayersVisibility() {
-      showHiddenLayers.value = !showHiddenLayers.value;
-      console.log(`[Weyl] Hidden layers visibility: ${showHiddenLayers.value ? "shown" : "hidden"}`);
-    }
-    function toggleLayerHidden(layerId) {
-      const layer = store.getLayerById(layerId);
-      if (layer) {
-        store.updateLayer(layerId, { hidden: !layer.hidden });
-      }
-    }
-    provide("showHiddenLayers", showHiddenLayers);
-    provide("toggleLayerHidden", toggleLayerHidden);
-    const previewUpdatesPaused = ref(false);
-    function togglePreviewPause() {
-      previewUpdatesPaused.value = !previewUpdatesPaused.value;
-      console.log(`[Weyl] Preview updates: ${previewUpdatesPaused.value ? "PAUSED" : "active"}`);
-    }
-    provide("previewUpdatesPaused", previewUpdatesPaused);
-    const showTransparencyGrid = ref(false);
-    function toggleTransparencyGrid() {
-      showTransparencyGrid.value = !showTransparencyGrid.value;
-      console.log(`[Weyl] Transparency grid: ${showTransparencyGrid.value ? "ON" : "OFF"}`);
-    }
-    provide("showTransparencyGrid", showTransparencyGrid);
-    const gridColor = ref("#444444");
-    const gridMajorColor = ref("#666666");
-    function toggleGrid() {
-      viewOptions.value.showGrid = !viewOptions.value.showGrid;
-      console.log(`[Weyl] Grid: ${viewOptions.value.showGrid ? "ON" : "OFF"}`);
-    }
-    provide("gridColor", gridColor);
-    provide("gridMajorColor", gridMajorColor);
-    const rulerUnits = ref("pixels");
-    function toggleRulers() {
-      viewOptions.value.showRulers = !viewOptions.value.showRulers;
-      console.log(`[Weyl] Rulers: ${viewOptions.value.showRulers ? "ON" : "OFF"}`);
-    }
-    provide("rulerUnits", rulerUnits);
     const {
       guides,
       guideContextMenu,
@@ -102490,15 +103540,6 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     provide("removeGuide", removeGuide);
     provide("clearGuides", clearGuides);
     provide("updateGuidePosition", updateGuidePosition);
-    const snapEnabled = ref(false);
-    const snapToGrid = ref(true);
-    const snapToGuides = ref(true);
-    const snapToLayers = ref(true);
-    const snapTolerance = ref(10);
-    function toggleSnap() {
-      snapEnabled.value = !snapEnabled.value;
-      console.log(`[Weyl] Snap: ${snapEnabled.value ? "ON" : "OFF"}`);
-    }
     function getSnapPoint(x, y) {
       if (!snapEnabled.value) {
         return { x, y, snappedX: false, snappedY: false };
@@ -102560,19 +103601,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
       }
       return { x: resultX, y: resultY, snappedX, snappedY };
     }
-    provide("snapEnabled", snapEnabled);
-    provide("snapToGrid", snapToGrid);
-    provide("snapToGuides", snapToGuides);
-    provide("snapToLayers", snapToLayers);
-    provide("snapTolerance", snapTolerance);
     provide("getSnapPoint", getSnapPoint);
-    provide("toggleSnap", toggleSnap);
-    function undo() {
-      store.undo();
-    }
-    function redo() {
-      store.redo();
-    }
     function updateCamera(camera) {
       if (store.activeCameraId) {
         store.updateCamera(camera.id, camera);
@@ -102862,895 +103891,6 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
       if (!engine) return;
       engine.setEnvironmentEnabled(false);
     }
-    function goToLayerInPoint() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const layer = store.getLayerById(selectedIds[0]);
-      if (layer) {
-        store.setFrame(layer.inPoint ?? 0);
-      }
-    }
-    function goToLayerOutPoint() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const layer = store.getLayerById(selectedIds[0]);
-      if (layer) {
-        store.setFrame((layer.outPoint ?? store.frameCount) - 1);
-      }
-    }
-    function moveLayerInPointToPlayhead() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        store.updateLayer(id, { inPoint: store.currentFrame });
-      }
-    }
-    function moveLayerOutPointToPlayhead() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        store.updateLayer(id, { outPoint: store.currentFrame + 1 });
-      }
-    }
-    function trimLayerInPoint() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (layer) {
-          const currentIn = layer.inPoint ?? 0;
-          if (store.currentFrame > currentIn) {
-            store.updateLayer(id, { inPoint: store.currentFrame });
-          }
-        }
-      }
-    }
-    function trimLayerOutPoint() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (layer) {
-          const currentOut = layer.outPoint ?? store.frameCount;
-          if (store.currentFrame < currentOut) {
-            store.updateLayer(id, { outPoint: store.currentFrame + 1 });
-          }
-        }
-      }
-    }
-    function selectPreviousLayer(extend = false) {
-      const layers = store.layers;
-      if (layers.length === 0) return;
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) {
-        store.selectLayer(layers[0].id);
-        return;
-      }
-      const currentIndex = layers.findIndex((l) => l.id === selectedIds[0]);
-      if (currentIndex > 0) {
-        const targetLayer = layers[currentIndex - 1];
-        if (extend) {
-          store.selectLayer(targetLayer.id, true);
-        } else {
-          store.selectLayer(targetLayer.id);
-        }
-      }
-    }
-    function selectNextLayer(extend = false) {
-      const layers = store.layers;
-      if (layers.length === 0) return;
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) {
-        store.selectLayer(layers[0].id);
-        return;
-      }
-      const lastSelectedIndex = layers.findIndex((l) => l.id === selectedIds[selectedIds.length - 1]);
-      if (lastSelectedIndex < layers.length - 1) {
-        const targetLayer = layers[lastSelectedIndex + 1];
-        if (extend) {
-          store.selectLayer(targetLayer.id, true);
-        } else {
-          store.selectLayer(targetLayer.id);
-        }
-      }
-    }
-    function splitLayerAtPlayhead() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (!layer) continue;
-        const currentFrame = store.currentFrame;
-        const inPoint = layer.inPoint ?? 0;
-        const outPoint = layer.outPoint ?? store.frameCount;
-        if (currentFrame > inPoint && currentFrame < outPoint) {
-          store.updateLayer(id, { outPoint: currentFrame });
-          const newLayer = store.duplicateLayer(id);
-          if (newLayer) {
-            store.updateLayer(newLayer.id, {
-              inPoint: currentFrame,
-              outPoint
-            });
-            store.renameLayer(newLayer.id, `${layer.name} (split)`);
-          }
-        }
-      }
-    }
-    function reverseSelectedLayers() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        store.reverseLayer(id);
-      }
-    }
-    const showTimeStretchDialog = ref(false);
-    function openTimeStretchDialog() {
-      if (store.selectedLayerIds.length === 0) return;
-      showTimeStretchDialog.value = true;
-    }
-    const timelineZoom = ref(1);
-    function zoomTimelineIn() {
-      timelineZoom.value = Math.min(timelineZoom.value * 1.5, 10);
-      store.setTimelineZoom?.(timelineZoom.value);
-    }
-    function zoomTimelineOut() {
-      timelineZoom.value = Math.max(timelineZoom.value / 1.5, 0.1);
-      store.setTimelineZoom?.(timelineZoom.value);
-    }
-    function zoomTimelineToFit() {
-      timelineZoom.value = 1;
-      store.setTimelineZoom?.(1);
-    }
-    const viewerZoom = ref(1);
-    function zoomViewerIn() {
-      viewerZoom.value = Math.min(viewerZoom.value * 1.25, 8);
-      if (threeCanvasRef.value) {
-        threeCanvasRef.value.setZoom?.(viewerZoom.value);
-      }
-      const percent = Math.round(viewerZoom.value * 100);
-      viewZoom.value = String(percent);
-    }
-    function zoomViewerOut() {
-      viewerZoom.value = Math.max(viewerZoom.value / 1.25, 0.1);
-      if (threeCanvasRef.value) {
-        threeCanvasRef.value.setZoom?.(viewerZoom.value);
-      }
-      const percent = Math.round(viewerZoom.value * 100);
-      viewZoom.value = String(percent);
-    }
-    function zoomViewerToFit() {
-      viewerZoom.value = 1;
-      viewZoom.value = "fit";
-      if (threeCanvasRef.value) {
-        threeCanvasRef.value.fitToView?.();
-      }
-    }
-    function zoomViewerTo100() {
-      viewerZoom.value = 1;
-      viewZoom.value = "100";
-      if (threeCanvasRef.value) {
-        threeCanvasRef.value.setZoom?.(1);
-      }
-    }
-    function applySmoothEaseIn() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      let keyframesUpdated = 0;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes) {
-            for (const kf of prop.keyframes) {
-              store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "bezier");
-              store.updateKeyframeHandles?.(layerId, `transform.${propKey}`, kf.id, {
-                inHandle: { x: -0.42, y: 0 },
-                // Pull back (slow arrival)
-                outHandle: { x: 0.1, y: 0 }
-                // Quick departure
-              });
-              keyframesUpdated++;
-            }
-          }
-        }
-      }
-      if (keyframesUpdated > 0) {
-        console.log(`[Weyl] Applied Smooth In to ${keyframesUpdated} keyframes`);
-      }
-    }
-    function applySmoothEaseOut() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      let keyframesUpdated = 0;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes) {
-            for (const kf of prop.keyframes) {
-              store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "bezier");
-              store.updateKeyframeHandles?.(layerId, `transform.${propKey}`, kf.id, {
-                inHandle: { x: -0.1, y: 0 },
-                // Quick arrival
-                outHandle: { x: 0.42, y: 0 }
-                // Pull forward (slow departure)
-              });
-              keyframesUpdated++;
-            }
-          }
-        }
-      }
-      if (keyframesUpdated > 0) {
-        console.log(`[Weyl] Applied Smooth Out to ${keyframesUpdated} keyframes`);
-      }
-    }
-    function convertToHoldKeyframes() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      let keyframesUpdated = 0;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes) {
-            for (const kf of prop.keyframes) {
-              store.setKeyframeInterpolation(layerId, `transform.${propKey}`, kf.id, "hold");
-              keyframesUpdated++;
-            }
-          }
-        }
-      }
-      if (keyframesUpdated > 0) {
-        console.log(`[Weyl] Converted ${keyframesUpdated} keyframes to hold`);
-      }
-    }
-    function timeReverseKeyframes() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer?.transform) continue;
-        const transform = layer.transform;
-        for (const propKey of ["position", "scale", "rotation", "anchor", "opacity"]) {
-          const prop = transform[propKey];
-          if (prop?.animated && prop?.keyframes && prop.keyframes.length >= 2) {
-            const keyframes = [...prop.keyframes];
-            const values = keyframes.map((kf) => kf.value);
-            values.reverse();
-            for (let i = 0; i < keyframes.length; i++) {
-              store.updateKeyframeValue?.(layerId, `transform.${propKey}`, keyframes[i].id, values[i]);
-            }
-          }
-        }
-      }
-      console.log("[Weyl] Keyframes time-reversed");
-    }
-    function fitLayerToComp() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const compW = compWidth.value;
-      const compH = compHeight.value;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (!layer) continue;
-        const data = layer.data;
-        const layerW = data?.width || compW;
-        const layerH = data?.height || compH;
-        const scaleX = compW / layerW;
-        const scaleY = compH / layerH;
-        const scale = Math.max(scaleX, scaleY);
-        const centerX = compW / 2;
-        const centerY = compH / 2;
-        store.updateLayerTransform?.(id, {
-          position: { x: centerX, y: centerY, z: 0 },
-          scale: { x: scale * 100, y: scale * 100, z: 100 },
-          anchor: { x: layerW / 2, y: layerH / 2, z: 0 }
-        });
-      }
-      console.log("[Weyl] Fit layer(s) to composition");
-    }
-    function fitLayerToCompWidth() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const compW = compWidth.value;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (!layer) continue;
-        const data = layer.data;
-        const layerW = data?.width || compW;
-        const scale = compW / layerW;
-        store.updateLayerTransform?.(id, {
-          scale: { x: scale * 100, y: scale * 100, z: 100 }
-        });
-      }
-      console.log("[Weyl] Fit layer(s) to composition width");
-    }
-    function fitLayerToCompHeight() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const compH = compHeight.value;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (!layer) continue;
-        const data = layer.data;
-        const layerH = data?.height || compH;
-        const scale = compH / layerH;
-        store.updateLayerTransform?.(id, {
-          scale: { x: scale * 100, y: scale * 100, z: 100 }
-        });
-      }
-      console.log("[Weyl] Fit layer(s) to composition height");
-    }
-    function toggleLayerLock() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (layer) {
-          store.updateLayer(id, { locked: !layer.locked });
-        }
-      }
-    }
-    function centerAnchorPoint() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (!layer) continue;
-        const data = layer.data;
-        const layerW = data?.width || compWidth.value;
-        const layerH = data?.height || compHeight.value;
-        const centerX = layerW / 2;
-        const centerY = layerH / 2;
-        const transform = layer.transform;
-        const currentAnchor = transform?.anchor?.value || transform?.anchor?.defaultValue || { x: 0, y: 0, z: 0 };
-        const currentPos = transform?.position?.value || transform?.position?.defaultValue || { x: 0, y: 0, z: 0 };
-        const offsetX = centerX - (currentAnchor.x || 0);
-        const offsetY = centerY - (currentAnchor.y || 0);
-        store.updateLayerTransform?.(id, {
-          anchor: { x: centerX, y: centerY, z: currentAnchor.z || 0 },
-          position: {
-            x: (currentPos.x || 0) + offsetX,
-            y: (currentPos.y || 0) + offsetY,
-            z: currentPos.z || 0
-          }
-        });
-      }
-      console.log("[Weyl] Centered anchor point(s)");
-    }
-    function centerLayerInComp() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const centerX = compWidth.value / 2;
-      const centerY = compHeight.value / 2;
-      for (const id of selectedIds) {
-        const layer = store.getLayerById(id);
-        if (!layer) continue;
-        const transform = layer.transform;
-        const currentPos = transform?.position?.value || transform?.position?.defaultValue || { z: 0 };
-        store.updateLayerTransform?.(id, {
-          position: { x: centerX, y: centerY, z: currentPos.z || 0 }
-        });
-      }
-      console.log("[Weyl] Centered layer(s) in composition");
-    }
-    function createAdjustmentLayer() {
-      store.addLayer("adjustment", {
-        name: "Adjustment Layer",
-        width: compWidth.value,
-        height: compHeight.value
-      });
-      console.log("[Weyl] Created adjustment layer");
-    }
-    function createNullLayer() {
-      store.addLayer("null", {
-        name: "Null Object"
-      });
-      console.log("[Weyl] Created null layer");
-    }
-    function revealSourceInProject() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) {
-        console.log("[Weyl] No layer selected to reveal source");
-        return;
-      }
-      const layer = store.getLayerById(selectedIds[0]);
-      if (!layer) return;
-      const data = layer.data;
-      let assetId = null;
-      if (data?.assetId) {
-        assetId = data.assetId;
-      } else if (layer.type === "precomp") {
-        if (data?.compositionId) {
-          leftTab.value = "comps";
-          console.log(`[Weyl] Revealed precomp source: ${data.compositionId}`);
-          return;
-        }
-      }
-      if (assetId) {
-        leftTab.value = "assets";
-        if (typeof store.selectAsset === "function") {
-          store.selectAsset(assetId);
-        }
-        console.log(`[Weyl] Revealed source asset: ${assetId}`);
-      } else {
-        console.log(`[Weyl] Layer type '${layer.type}' has no source asset`);
-      }
-    }
-    function selectAllKeyframesOnSelectedLayers() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return false;
-      const keyframeIds = [];
-      for (const layerId of selectedIds) {
-        const layer = store.getLayerById(layerId);
-        if (!layer) continue;
-        const transform = layer.transform;
-        if (transform) {
-          const props = ["position", "rotation", "scale", "anchor", "opacity"];
-          for (const propName of props) {
-            const prop = transform[propName];
-            if (prop?.keyframes && Array.isArray(prop.keyframes)) {
-              for (const kf of prop.keyframes) {
-                if (kf.id) keyframeIds.push(kf.id);
-              }
-            }
-          }
-        }
-        const data = layer.data;
-        if (data) {
-          const checkForKeyframes = (obj) => {
-            if (!obj || typeof obj !== "object") return;
-            if (Array.isArray(obj.keyframes)) {
-              for (const kf of obj.keyframes) {
-                if (kf.id) keyframeIds.push(kf.id);
-              }
-            }
-            for (const key of Object.keys(obj)) {
-              if (typeof obj[key] === "object") checkForKeyframes(obj[key]);
-            }
-          };
-          checkForKeyframes(data);
-        }
-      }
-      if (keyframeIds.length > 0) {
-        useSelectionStore().selectKeyframes(keyframeIds);
-        console.log(`[Weyl] Selected ${keyframeIds.length} keyframes on ${selectedIds.length} layer(s)`);
-        return true;
-      }
-      return false;
-    }
-    function selectLayersByLabel() {
-      const selectedIds = store.selectedLayerIds;
-      if (selectedIds.length === 0) return;
-      const firstLayer = store.getLayerById(selectedIds[0]);
-      if (!firstLayer) return;
-      const targetColor = firstLayer.labelColor || firstLayer.color || "#808080";
-      const layers = store.layers;
-      const matchingIds = [];
-      for (const layer of layers) {
-        const layerColor = layer.labelColor || layer.color || "#808080";
-        if (layerColor === targetColor) {
-          matchingIds.push(layer.id);
-        }
-      }
-      if (matchingIds.length > 0) {
-        store.selectLayers?.(matchingIds) || matchingIds.forEach((id) => store.selectLayer(id, true));
-        console.log(`[Weyl] Selected ${matchingIds.length} layers with label color ${targetColor}`);
-      }
-    }
-    function handleKeydown(e) {
-      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
-        return;
-      }
-      const hasSelectedLayer = store.selectedLayerIds.length > 0;
-      switch (e.key.toLowerCase()) {
-        case " ":
-          e.preventDefault();
-          togglePlay();
-          break;
-        case "p":
-          if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            soloProperty("position", e.shiftKey);
-          } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-            currentTool.value = "pen";
-          }
-          break;
-        case "s":
-          if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            soloProperty("scale", e.shiftKey);
-          }
-          break;
-        case "t":
-          if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
-            e.preventDefault();
-            openTimeStretchDialog();
-          } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            soloProperty("opacity", e.shiftKey);
-          } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-            currentTool.value = "text";
-          }
-          break;
-        case "a":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            if (hasSelectedLayer) {
-              const selectedKeyframes = selectAllKeyframesOnSelectedLayers();
-              if (!selectedKeyframes) {
-                store.selectAllLayers();
-              }
-            } else {
-              store.selectAllLayers();
-            }
-          } else if (hasSelectedLayer) {
-            e.preventDefault();
-            soloProperty("anchor", e.shiftKey);
-          } else if (!e.shiftKey) {
-            leftTab.value = "assets";
-          }
-          break;
-        case "u":
-          if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            if (isDoubleTap("u")) {
-              soloProperty("modified", e.shiftKey);
-            } else {
-              soloProperty("animated", e.shiftKey);
-            }
-          }
-          break;
-        case "e":
-          if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
-            e.preventDefault();
-            revealSourceInProject();
-          } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            if (isDoubleTap("e")) {
-              soloProperty("expressions", e.shiftKey);
-            } else {
-              soloProperty("effects", e.shiftKey);
-            }
-          }
-          break;
-        case "m":
-          if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            if (isDoubleTap("m")) {
-              soloProperty("masks", e.shiftKey);
-              console.log("[Weyl] Showing all mask properties (MM)");
-            } else {
-              soloProperty("masks", e.shiftKey);
-            }
-          } else if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            showExportDialog.value = true;
-          }
-          break;
-        case "h":
-          if (e.ctrlKey && e.altKey) {
-            e.preventDefault();
-            convertToHoldKeyframes();
-          } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            toggleTransparencyGrid();
-          } else if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
-            currentTool.value = "hand";
-          }
-          break;
-        case "z":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            if (e.shiftKey) {
-              redo();
-            } else {
-              undo();
-            }
-          } else {
-            currentTool.value = "zoom";
-          }
-          break;
-        case "end":
-          e.preventDefault();
-          goToEnd();
-          break;
-        case "pageup":
-          e.preventDefault();
-          stepBackward(e.shiftKey ? 10 : 1);
-          break;
-        case "pagedown":
-          e.preventDefault();
-          stepForward(e.shiftKey ? 10 : 1);
-          break;
-        case "arrowleft":
-          e.preventDefault();
-          stepBackward(e.shiftKey ? 10 : 1);
-          break;
-        case "arrowright":
-          e.preventDefault();
-          stepForward(e.shiftKey ? 10 : 1);
-          break;
-        case "j":
-          if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            goToPrevKeyframe();
-          }
-          break;
-        case "k":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            if (store.selectedKeyframeIds.length > 0) {
-              showKeyframeInterpolationDialog.value = true;
-            } else {
-              console.log("[Weyl] No keyframes selected for interpolation dialog");
-            }
-          } else if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            showCompositionSettingsDialog.value = true;
-          } else {
-            e.preventDefault();
-            goToNextKeyframe();
-          }
-          break;
-        case "g":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey && hasSelectedLayer) {
-            e.preventDefault();
-            selectLayersByLabel();
-          } else if (e.shiftKey) {
-            e.preventDefault();
-            showCurveEditor.value = !showCurveEditor.value;
-          }
-          break;
-        case "i":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            triggerAssetImport();
-          } else if (hasSelectedLayer) {
-            e.preventDefault();
-            goToLayerInPoint();
-          }
-          break;
-        case "o":
-          if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            goToLayerOutPoint();
-          }
-          break;
-        case "c":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            if (store.selectedLayerIds.length > 0) {
-              showPrecomposeDialog.value = true;
-            }
-          } else if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            store.copySelectedLayers();
-          }
-          break;
-        case "delete":
-        case "backspace":
-          if (store.selectedLayerIds.length > 0) {
-            e.preventDefault();
-            store.deleteSelectedLayers();
-          }
-          break;
-        case "f9":
-          e.preventDefault();
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            applySmoothEaseOut();
-          } else if (e.shiftKey) {
-            applySmoothEaseIn();
-          } else {
-            applySmoothEasing();
-          }
-          break;
-        case "v":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            store.pasteLayers();
-          } else if (!e.shiftKey) {
-            currentTool.value = "select";
-          }
-          break;
-        case "x":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            store.cutSelectedLayers();
-          }
-          break;
-        case "[":
-          if (e.altKey) {
-            e.preventDefault();
-            trimLayerInPoint();
-          } else if (hasSelectedLayer) {
-            e.preventDefault();
-            moveLayerInPointToPlayhead();
-          }
-          break;
-        case "]":
-          if (e.altKey) {
-            e.preventDefault();
-            trimLayerOutPoint();
-          } else if (hasSelectedLayer) {
-            e.preventDefault();
-            moveLayerOutPointToPlayhead();
-          }
-          break;
-        case "arrowup":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            selectPreviousLayer(e.shiftKey);
-          }
-          break;
-        case "arrowdown":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            selectNextLayer(e.shiftKey);
-          }
-          break;
-        case "d":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            splitLayerAtPlayhead();
-          } else if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            store.duplicateSelectedLayers();
-          }
-          break;
-        case "r":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
-            e.preventDefault();
-            toggleRulers();
-          } else if ((e.ctrlKey || e.metaKey) && e.altKey && hasSelectedLayer) {
-            e.preventDefault();
-            reverseSelectedLayers();
-          } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
-            e.preventDefault();
-            timeReverseKeyframes();
-          } else if (hasSelectedLayer && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            soloProperty("rotation", e.shiftKey);
-          }
-          break;
-        case "=":
-        case "+":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            zoomViewerIn();
-          } else {
-            e.preventDefault();
-            zoomTimelineIn();
-          }
-          break;
-        case "-":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            zoomViewerOut();
-          } else {
-            e.preventDefault();
-            zoomTimelineOut();
-          }
-          break;
-        case ";":
-          if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            toggleSnap();
-          } else if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            zoomTimelineToFit();
-          }
-          break;
-        case "0":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            zoomViewerToFit();
-          } else if (e.shiftKey && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            zoomViewerTo100();
-          }
-          break;
-        case ".":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            audioStore.toggleAudioPlayback(store.currentFrame, store.fps);
-          }
-          break;
-        case "b":
-          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-            e.preventDefault();
-            setWorkAreaStart();
-          }
-          break;
-        case "n":
-          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-            e.preventDefault();
-            setWorkAreaEnd();
-          }
-          break;
-        case "l":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            toggleLayerLock();
-          }
-          break;
-        case "capslock":
-          e.preventDefault();
-          togglePreviewPause();
-          break;
-        case "f":
-          if ((e.ctrlKey || e.metaKey) && e.altKey) {
-            e.preventDefault();
-            if (e.shiftKey) {
-              fitLayerToCompHeight();
-            } else {
-              fitLayerToComp();
-            }
-          } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            fitLayerToCompWidth();
-          }
-          break;
-        case "y":
-          if ((e.ctrlKey || e.metaKey) && e.altKey && e.shiftKey) {
-            e.preventDefault();
-            createNullLayer();
-          } else if ((e.ctrlKey || e.metaKey) && e.altKey) {
-            e.preventDefault();
-            createAdjustmentLayer();
-          } else if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-            e.preventDefault();
-            toggleHiddenLayersVisibility();
-          }
-          break;
-        case "home":
-          if ((e.ctrlKey || e.metaKey) && e.altKey) {
-            e.preventDefault();
-            centerAnchorPoint();
-          } else if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            centerLayerInComp();
-          } else {
-            e.preventDefault();
-            store.setFrame(0);
-          }
-          break;
-        case "'":
-        case "`":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            toggleGrid();
-          }
-          break;
-      }
-    }
-    ref(null);
-    function triggerAssetImport() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".svg,.gltf,.glb,.obj,.fbx,.hdr,.exr,.png,.jpg";
-      input.multiple = true;
-      input.onchange = async (e) => {
-        const files = e.target.files;
-        if (!files) return;
-        for (const file of files) {
-          const ext = file.name.split(".").pop()?.toLowerCase();
-          if (ext === "svg") {
-            await assetStore.importSvgFromFile(file);
-          } else if (["hdr", "exr"].includes(ext || "")) {
-            await assetStore.loadEnvironment(file);
-          }
-        }
-        leftTab.value = "assets";
-      };
-      input.click();
-    }
     let perfInterval;
     function updatePerformanceStats() {
       if ("memory" in performance) {
@@ -103778,13 +103918,13 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
         createVNode(WorkspaceToolbar, {
           currentTool: currentTool.value,
           "onUpdate:currentTool": _cache[0] || (_cache[0] = ($event) => currentTool.value = $event),
-          isPlaying: isPlaying.value,
+          isPlaying: unref(isPlaying),
           gpuTier: gpuTier.value,
-          onImport: triggerAssetImport,
+          onImport: unref(triggerAssetImport),
           onShowPreview: _cache[1] || (_cache[1] = ($event) => showHDPreview.value = true),
           onShowExport: _cache[2] || (_cache[2] = ($event) => showExportDialog.value = true),
           onShowComfyUI: _cache[3] || (_cache[3] = ($event) => showComfyUIExportDialog.value = true)
-        }, null, 8, ["currentTool", "isPlaying", "gpuTier"]),
+        }, null, 8, ["currentTool", "isPlaying", "gpuTier", "onImport"]),
         createBaseVNode("div", _hoisted_2, [
           createVNode(unref(Pe), { class: "default-theme horizontal-split" }, {
             default: withCtx(() => [
@@ -103987,7 +104127,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
                                   }), 64))
                                 ], 32)
                               ])) : createCommentVNode("", true),
-                              snapEnabled.value && (snapIndicatorX.value || snapIndicatorY.value) ? (openBlock(), createElementBlock("div", _hoisted_22, [
+                              unref(snapEnabled) && (snapIndicatorX.value || snapIndicatorY.value) ? (openBlock(), createElementBlock("div", _hoisted_22, [
                                 snapIndicatorX.value ? (openBlock(), createElementBlock("div", {
                                   key: 0,
                                   class: "snap-line vertical",
@@ -104277,7 +104417,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
   }
 });
 
-const WorkspaceLayout = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-3b6d3c90"]]);
+const WorkspaceLayout = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-6afedafe"]]);
 
 const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "App",
