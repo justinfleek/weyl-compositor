@@ -2,7 +2,7 @@
 ## "Color Correction & Lumetri Color" - Adobe Premiere Pro / After Effects Standard
 
 **Analysis Date:** December 22, 2025
-**Status:** 75% Compatible
+**Status:** 80% Compatible (Updated after vignette + LUT implementation)
 
 ---
 
@@ -111,8 +111,8 @@ Color correction is fundamental to professional video production. This analysis 
 
 | AE/Premiere Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
-| LUT Selection | Not implemented | ❌ Missing | .cube/.3dl import needed |
-| LUT Intensity | Not implemented | ❌ Missing | Blend with original |
+| LUT Selection | `lut` effect | ✅ Full | .cube format parsing |
+| LUT Intensity | `lut` intensity | ✅ Full | 0-100 blend with original |
 | Faded Film | `levels` outputBlack | ✅ Full | Lift blacks |
 | Sharpen | `sharpen` effect | ✅ Full | Unsharp mask |
 | Vibrance | `vibrance` effect | ✅ Full | Smart saturation |
@@ -124,10 +124,10 @@ Color correction is fundamental to professional video production. This analysis 
 
 | AE/Premiere Feature | Weyl Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
-| Vignette Amount | Not implemented | ❌ Missing | Needs vignette effect |
-| Vignette Midpoint | Not implemented | ❌ Missing | - |
-| Vignette Roundness | Not implemented | ❌ Missing | - |
-| Vignette Feather | Not implemented | ❌ Missing | - |
+| Vignette Amount | `vignette` amount | ✅ Full | -100 to 100 |
+| Vignette Midpoint | `vignette` midpoint | ✅ Full | 0 to 100 |
+| Vignette Roundness | `vignette` roundness | ✅ Full | -100 to 100 |
+| Vignette Feather | `vignette` feather | ✅ Full | 0 to 100 |
 
 ### Scopes Panel
 
@@ -303,9 +303,9 @@ interface VignetteParams {
 
 ---
 
-## SUCCESS CRITERIA: PASSED (75%)
+## SUCCESS CRITERIA: PASSED (80%)
 
-### Fully Implemented (23 features)
+### Fully Implemented (27 features)
 - [x] Brightness/Contrast
 - [x] Exposure
 - [x] Levels (input/output/gamma/per-channel)
@@ -329,18 +329,20 @@ interface VignetteParams {
 - [x] Temperature (via color balance)
 - [x] Faded Film look (via levels)
 - [x] All parameters animatable
+- [x] **Vignette** (amount, midpoint, roundness, feather)
+- [x] **LUT import** (.cube format with trilinear interpolation)
+- [x] **LUT intensity** (blend with original)
+- [x] **LUT cache** (register/list/clear)
 
-### Not Implemented (8 features)
-- [ ] LUT file import (.cube, .3dl)
+### Not Implemented (6 features)
 - [ ] Scopes panel (Waveform, Vectorscope, RGB Parade, Histogram)
 - [ ] HSL Secondary qualification
 - [ ] Hue vs Sat/Hue/Luma curves
 - [ ] Lift/Gamma/Gain color wheels
-- [ ] Vignette effect
 - [ ] White Balance eyedropper
 - [ ] Color Match auto-correction
 
-**Tutorial 17 Compatibility: 75%**
+**Tutorial 17 Compatibility: 80%**
 
 *Note: Core color correction is fully functional. Missing features are advanced secondary correction and monitoring tools (scopes). LUT support recommended as high-priority addition using ray-cast/lut library.*
 
