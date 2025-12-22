@@ -23,199 +23,15 @@
 <template>
   <div class="workspace-layout">
     <!-- Top Toolbar -->
-    <div class="toolbar" role="toolbar" aria-label="Drawing tools">
-      <div class="tool-group labeled-tools" role="group" aria-label="Selection and drawing tools">
-        <button
-          :class="{ active: currentTool === 'select' }"
-          :aria-pressed="currentTool === 'select'"
-          @click="currentTool = 'select'"
-          title="Select Tool (V) - Select and move layers"
-          aria-label="Select tool"
-        >
-          <span class="icon" aria-hidden="true">↖</span>
-          <span class="tool-label">Select</span>
-        </button>
-        <button
-          :class="{ active: currentTool === 'pen' }"
-          :aria-pressed="currentTool === 'pen'"
-          @click="currentTool = 'pen'"
-          title="Pen Tool (P) - Draw paths and shapes"
-          aria-label="Pen tool"
-        >
-          <span class="icon" aria-hidden="true">✒</span>
-          <span class="tool-label">Pen</span>
-        </button>
-        <button
-          :class="{ active: currentTool === 'text' }"
-          :aria-pressed="currentTool === 'text'"
-          @click="currentTool = 'text'"
-          title="Text Tool (T) - Add text layers"
-          aria-label="Text tool"
-        >
-          <span class="icon" aria-hidden="true">T</span>
-          <span class="tool-label">Text</span>
-        </button>
-        <button
-          :class="{ active: currentTool === 'hand' }"
-          :aria-pressed="currentTool === 'hand'"
-          @click="currentTool = 'hand'"
-          title="Hand Tool (H) - Pan the viewport"
-          aria-label="Pan tool"
-        >
-          <span class="icon" aria-hidden="true">✋</span>
-          <span class="tool-label">Pan</span>
-        </button>
-        <button
-          :class="{ active: currentTool === 'zoom' }"
-          :aria-pressed="currentTool === 'zoom'"
-          @click="currentTool = 'zoom'"
-          title="Zoom Tool (Z) - Zoom in/out the viewport"
-          aria-label="Zoom tool"
-        >
-          <span class="icon" aria-hidden="true">🔍</span>
-          <span class="tool-label">Zoom</span>
-        </button>
-        <button
-          :class="{ active: currentTool === 'segment' }"
-          :aria-pressed="currentTool === 'segment'"
-          @click="currentTool = 'segment'"
-          title="AI Segment (S) - Auto-select objects using AI"
-          aria-label="AI Segment tool"
-        >
-          <span class="icon" aria-hidden="true">✨</span>
-          <span class="tool-label">AI Seg</span>
-        </button>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Import Button -->
-      <div class="tool-group">
-        <button
-          @click="triggerAssetImport"
-          title="Import Asset (Ctrl+I)"
-          class="import-btn"
-        >
-          <span class="icon">📥</span>
-          <span class="btn-label">Import</span>
-        </button>
-      </div>
-
-      <!-- Segment Tool Options (shown when segment tool is active) -->
-      <template v-if="currentTool === 'segment'">
-        <div class="divider"></div>
-        <div class="tool-group segment-options">
-          <button
-            :class="{ active: segmentMode === 'point' }"
-            @click="setSegmentMode('point')"
-            title="Point Mode - Click to segment"
-          >
-            <span class="icon">●</span> Point
-          </button>
-          <button
-            :class="{ active: segmentMode === 'box' }"
-            @click="setSegmentMode('box')"
-            title="Box Mode - Draw rectangle to segment"
-          >
-            <span class="icon">▢</span> Box
-          </button>
-          <template v-if="segmentPendingMask">
-            <div class="divider"></div>
-            <button @click="confirmSegmentMask" class="confirm-btn" title="Create Layer from Selection">
-              <span class="icon">✓</span> Create Layer
-            </button>
-            <button @click="clearSegmentMask" class="cancel-btn" title="Cancel Selection">
-              <span class="icon">✕</span>
-            </button>
-          </template>
-          <span v-if="segmentIsLoading" class="loading-indicator">Segmenting...</span>
-        </div>
-      </template>
-
-      <div class="divider"></div>
-
-      <div class="tool-group">
-        <button @click="goToStart" title="Go to Start (Home)">
-          <span class="icon">⏮</span>
-        </button>
-        <button @click="stepBackward" title="Step Backward">
-          <span class="icon">⏪</span>
-        </button>
-        <button @click="togglePlay" :title="isPlaying ? 'Pause (Space)' : 'Play (Space)'">
-          <span class="icon">{{ isPlaying ? '⏸' : '▶' }}</span>
-        </button>
-        <button @click="stepForward" title="Step Forward">
-          <span class="icon">⏩</span>
-        </button>
-        <button @click="goToEnd" title="Go to End (End)">
-          <span class="icon">⏭</span>
-        </button>
-      </div>
-
-      <div class="timecode-display">
-        {{ formattedTimecode }}
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="tool-group">
-        <select v-model="activeWorkspace" class="workspace-selector">
-          <option value="standard">Standard</option>
-          <option value="animation">Animation</option>
-          <option value="effects">Effects</option>
-          <option value="minimal">Minimal</option>
-        </select>
-      </div>
-
-      <!-- Theme Selector -->
-      <div class="tool-group theme-selector-group">
-        <button
-          class="theme-btn"
-          :class="{ active: showThemeSelector }"
-          @click="showThemeSelector = !showThemeSelector"
-          title="Change Theme"
-        >
-          <span class="theme-indicator" :style="{ background: themeGradient }"></span>
-        </button>
-        <div v-if="showThemeSelector" class="theme-dropdown">
-          <div class="theme-dropdown-header">Theme</div>
-          <div class="theme-options">
-            <button
-              v-for="theme in themes"
-              :key="theme.name"
-              class="theme-option"
-              :class="{ active: currentTheme === theme.name }"
-              :style="{ background: theme.gradient }"
-              :title="theme.label"
-              @click="selectTheme(theme.name)"
-            ></button>
-          </div>
-        </div>
-      </div>
-
-      <div class="spacer"></div>
-
-      <div class="tool-group">
-        <span class="gpu-badge" :class="gpuTier">{{ gpuTier.toUpperCase() }}</span>
-        <MemoryIndicator />
-        <button @click="undo" :disabled="!canUndo" title="Undo (Ctrl+Z)">
-          <span class="icon">↩</span>
-        </button>
-        <button @click="redo" :disabled="!canRedo" title="Redo (Ctrl+Shift+Z)">
-          <span class="icon">↪</span>
-        </button>
-        <div class="divider"></div>
-        <button @click="showHDPreview = true" title="Full Resolution Preview (`)">
-          <span class="icon">🖥</span> Preview
-        </button>
-        <button @click="showExportDialog = true" title="Export frame sequence for AI processing">
-          <span class="icon">📤</span> Export
-        </button>
-        <button @click="showComfyUIExportDialog = true" title="Send to ComfyUI workflow">
-          <span class="icon">🔗</span> ComfyUI
-        </button>
-      </div>
-    </div>
+    <WorkspaceToolbar
+      v-model:currentTool="currentTool"
+      :isPlaying="isPlaying"
+      :gpuTier="gpuTier"
+      @import="triggerAssetImport"
+      @showPreview="showHDPreview = true"
+      @showExport="showExportDialog = true"
+      @showComfyUI="showComfyUIExportDialog = true"
+    />
 
     <!-- Main Workspace with Splitpanes -->
     <div class="workspace-content">
@@ -614,6 +430,9 @@ import AIGeneratePanel from '@/components/panels/AIGeneratePanel.vue';
 import AlignPanel from '@/components/panels/AlignPanel.vue';
 import CollapsiblePanel from '@/components/panels/CollapsiblePanel.vue';
 
+// Layout
+import WorkspaceToolbar from '@/components/layout/WorkspaceToolbar.vue';
+
 // Viewport
 import ViewportRenderer from '@/components/viewport/ViewportRenderer.vue';
 import ThreeCanvas from '@/components/canvas/ThreeCanvas.vue';
@@ -632,15 +451,13 @@ import KeyframeInterpolationDialog from '@/components/dialogs/KeyframeInterpolat
 import TimeStretchDialog from '@/components/dialogs/TimeStretchDialog.vue';
 import ExpressionInput from '@/components/properties/ExpressionInput.vue';
 import { useExpressionEditor } from '@/composables/useExpressionEditor';
+import { useGuides } from '@/composables/useGuides';
 
 // Canvas overlays
 import PathPreviewOverlay from '@/components/canvas/PathPreviewOverlay.vue';
 
 // Preview
 import HDPreviewWindow from '@/components/preview/HDPreviewWindow.vue';
-
-// Common
-import MemoryIndicator from '@/components/common/MemoryIndicator.vue';
 
 // Stores
 const store = useCompositorStore();
@@ -653,27 +470,6 @@ const playbackStore = usePlaybackStore();
 
 // Expression editor composable
 const expressionEditor = useExpressionEditor();
-import { useThemeStore, type ThemeName } from '@/stores/themeStore';
-const themeStore = useThemeStore();
-
-// Theme selector state
-const showThemeSelector = ref(false);
-const currentTheme = computed(() => themeStore.currentTheme);
-const themeGradient = computed(() => themeStore.themeGradient);
-
-const themes: Array<{ name: ThemeName; label: string; gradient: string }> = [
-  { name: 'violet', label: 'Violet', gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)' },
-  { name: 'ocean', label: 'Ocean', gradient: 'linear-gradient(135deg, #06B6D4, #3B82F6)' },
-  { name: 'sunset', label: 'Sunset', gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)' },
-  { name: 'forest', label: 'Forest', gradient: 'linear-gradient(135deg, #10B981, #06B6D4)' },
-  { name: 'ember', label: 'Ember', gradient: 'linear-gradient(135deg, #EF4444, #F97316)' },
-  { name: 'mono', label: 'Mono', gradient: 'linear-gradient(135deg, #4B5563, #6B7280)' },
-];
-
-function selectTheme(theme: ThemeName) {
-  themeStore.setTheme(theme);
-  showThemeSelector.value = false;
-}
 
 // Tool state - synced with store
 const currentTool = computed({
@@ -698,7 +494,6 @@ function clearSegmentMask() {
   store.clearSegmentPendingMask();
 }
 
-const activeWorkspace = ref('standard');
 const leftTab = ref<'project' | 'effects' | 'assets'>('project');
 const rightTab = ref<'effects' | 'properties' | 'camera' | 'audio' | 'export' | 'preview' | 'ai' | 'generate'>('properties');
 
@@ -790,91 +585,6 @@ const gridOverlayStyle = computed(() => {
     opacity: 0.5
   };
 });
-
-// Guide styling - 11px hit area with 1px visible line centered
-function getGuideStyle(guide: { id: string; orientation: 'horizontal' | 'vertical'; position: number }) {
-  if (guide.orientation === 'horizontal') {
-    return {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      top: `${guide.position - 5}px`,  // Center the 11px hit area on the guide position
-      height: '11px',
-      background: 'linear-gradient(to bottom, transparent 5px, #00BFFF 5px, #00BFFF 6px, transparent 6px)',
-      cursor: 'ns-resize',
-      zIndex: 10
-    };
-  } else {
-    return {
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      left: `${guide.position - 5}px`,  // Center the 11px hit area on the guide position
-      width: '11px',
-      background: 'linear-gradient(to right, transparent 5px, #00BFFF 5px, #00BFFF 6px, transparent 6px)',
-      cursor: 'ew-resize',
-      zIndex: 10
-    };
-  }
-}
-
-// Guide creation from rulers
-function createGuideFromRuler(orientation: 'horizontal' | 'vertical', event: MouseEvent) {
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-  let position: number;
-
-  if (orientation === 'horizontal') {
-    position = event.clientY - rect.top;
-  } else {
-    position = event.clientX - rect.left;
-  }
-
-  addGuide(orientation, position);
-}
-
-// Guide dragging state
-const draggingGuide = ref<{ id: string; orientation: 'horizontal' | 'vertical' } | null>(null);
-
-function startGuideDrag(guide: { id: string; orientation: 'horizontal' | 'vertical'; position: number }, event: MouseEvent) {
-  event.preventDefault();
-  draggingGuide.value = { id: guide.id, orientation: guide.orientation };
-
-  const handleMove = (e: MouseEvent) => {
-    if (!draggingGuide.value) return;
-
-    const viewportContent = document.querySelector('.viewport-content');
-    if (!viewportContent) return;
-
-    const rect = viewportContent.getBoundingClientRect();
-    let newPosition: number;
-
-    if (draggingGuide.value.orientation === 'horizontal') {
-      newPosition = e.clientY - rect.top;
-    } else {
-      newPosition = e.clientX - rect.left;
-    }
-
-    // Remove guide if dragged off the viewport
-    if (newPosition < 0 || newPosition > (draggingGuide.value.orientation === 'horizontal' ? rect.height : rect.width)) {
-      removeGuide(draggingGuide.value.id);
-      draggingGuide.value = null;
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-      return;
-    }
-
-    updateGuidePosition(draggingGuide.value.id, newPosition);
-  };
-
-  const handleUp = () => {
-    draggingGuide.value = null;
-    window.removeEventListener('mousemove', handleMove);
-    window.removeEventListener('mouseup', handleUp);
-  };
-
-  window.addEventListener('mousemove', handleMove);
-  window.addEventListener('mouseup', handleUp);
-}
 
 // Snap indicator state (for visual feedback)
 const snapIndicatorX = ref<number | null>(null);
@@ -1209,70 +919,22 @@ function toggleRulers() {
 provide('rulerUnits', rulerUnits);
 
 // ========================================================================
-// GUIDES SYSTEM
-// Guides are draggable lines from rulers
+// GUIDES SYSTEM (using composable)
 // ========================================================================
-const guides = ref<Array<{ id: string; orientation: 'horizontal' | 'vertical'; position: number }>>([]);
-
-function addGuide(orientation: 'horizontal' | 'vertical', position: number) {
-  const id = `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  guides.value.push({ id, orientation, position });
-  console.log(`[Weyl] Added ${orientation} guide at ${position}px`);
-}
-
-function removeGuide(id: string) {
-  guides.value = guides.value.filter(g => g.id !== id);
-}
-
-function clearGuides() {
-  guides.value = [];
-  console.log('[Weyl] Cleared all guides');
-}
-
-// Guide context menu state
-const guideContextMenu = ref<{ visible: boolean; x: number; y: number; guideId: string | null }>({
-  visible: false,
-  x: 0,
-  y: 0,
-  guideId: null
-});
-
-function showGuideContextMenu(guide: { id: string; orientation: 'horizontal' | 'vertical'; position: number }, event: MouseEvent) {
-  guideContextMenu.value = {
-    visible: true,
-    x: event.clientX,
-    y: event.clientY,
-    guideId: guide.id
-  };
-  // Close menu on next click anywhere
-  setTimeout(() => {
-    document.addEventListener('click', hideGuideContextMenu, { once: true });
-  }, 0);
-}
-
-function hideGuideContextMenu() {
-  guideContextMenu.value.visible = false;
-  guideContextMenu.value.guideId = null;
-}
-
-function deleteGuideFromMenu() {
-  if (guideContextMenu.value.guideId) {
-    removeGuide(guideContextMenu.value.guideId);
-  }
-  hideGuideContextMenu();
-}
-
-function clearAllGuides() {
-  clearGuides();
-  hideGuideContextMenu();
-}
-
-function updateGuidePosition(id: string, position: number) {
-  const guide = guides.value.find(g => g.id === id);
-  if (guide) {
-    guide.position = position;
-  }
-}
+const {
+  guides,
+  guideContextMenu,
+  addGuide,
+  removeGuide,
+  clearGuides,
+  updateGuidePosition,
+  showGuideContextMenu,
+  deleteGuideFromMenu,
+  clearAllGuides,
+  getGuideStyle,
+  createGuideFromRuler,
+  startGuideDrag
+} = useGuides();
 
 // Provide guides state
 provide('guides', guides);
@@ -3062,214 +2724,6 @@ onUnmounted(() => {
   /* Increased padding for floating panel effect */
   padding: 8px;
   gap: 8px;
-}
-
-/* Toolbar - floating panel with subtle border */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--weyl-surface-1, #0f0f0f);
-  border-radius: var(--weyl-radius-lg, 6px);
-  border: 1px solid var(--weyl-border-subtle, #1a1a1a);
-  min-height: 40px;
-}
-
-.tool-group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.tool-group button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border: none;
-  background: transparent;
-  color: var(--weyl-text-secondary, #9CA3AF);
-  border-radius: var(--weyl-radius-md, 4px);
-  cursor: pointer;
-  font-size: var(--weyl-text-base, 12px);
-  transition: var(--weyl-transition-fast, 100ms ease);
-}
-
-.labeled-tools button {
-  flex-direction: column;
-  gap: 1px;
-  min-width: 44px;
-  height: 36px;
-  padding: 2px 6px;
-}
-
-.tool-label {
-  font-size: 9px;
-  color: #888;
-  line-height: 1;
-}
-
-.labeled-tools button.active .tool-label {
-  color: #fff;
-}
-
-.labeled-tools button:hover .tool-label {
-  color: #ccc;
-}
-
-.tool-group button:hover {
-  background: var(--weyl-surface-3, #222222);
-  color: var(--weyl-text-primary, #e5e5e5);
-}
-
-.tool-group button.active {
-  background: var(--weyl-accent, #8B5CF6);
-  color: white;
-}
-
-.tool-group button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.tool-group button:focus-visible {
-  outline: 2px solid var(--weyl-accent, #8B5CF6);
-  outline-offset: 2px;
-}
-
-.icon {
-  font-size: 14px;
-}
-
-.divider {
-  width: 1px;
-  height: 20px;
-  background: var(--weyl-surface-3, #222222);
-  margin: 0 4px;
-}
-
-.spacer {
-  flex: 1;
-}
-
-.timecode-display {
-  font-family: var(--weyl-font-mono, 'SF Mono', Monaco, monospace);
-  font-size: var(--weyl-text-lg, 14px);
-  padding: 6px 16px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border-radius: 999px;
-  min-width: 100px;
-  text-align: center;
-  color: var(--weyl-text-primary, #e5e5e5);
-}
-
-.workspace-selector {
-  padding: 6px 12px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: none;
-  color: var(--weyl-text-primary, #e5e5e5);
-  border-radius: var(--weyl-radius-md, 4px);
-  font-size: var(--weyl-text-base, 12px);
-}
-
-.gpu-badge {
-  font-size: var(--weyl-text-xs, 10px);
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.gpu-badge.cpu { background: var(--weyl-surface-3, #555); }
-.gpu-badge.webgl { background: var(--weyl-success, #10B981); color: white; }
-.gpu-badge.webgpu { background: var(--weyl-info, #3B82F6); color: white; }
-.gpu-badge.blackwell { background: #76b900; color: #000; }
-
-/* Theme Selector */
-.theme-selector-group {
-  position: relative;
-}
-
-.theme-btn {
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  border: none;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border-radius: var(--weyl-radius-md, 4px);
-  cursor: pointer;
-  transition: var(--weyl-transition-fast, 100ms ease);
-}
-
-.theme-btn:hover,
-.theme-btn.active {
-  background: var(--weyl-surface-3, #222222);
-}
-
-.theme-indicator {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 2px;
-}
-
-.theme-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
-  background: var(--weyl-surface-1, #121212);
-  border-radius: var(--weyl-radius-lg, 6px);
-  box-shadow: var(--weyl-shadow-dropdown, 0 4px 16px rgba(0, 0, 0, 0.3));
-  padding: 12px;
-  z-index: var(--weyl-z-dropdown, 100);
-  min-width: 120px;
-}
-
-.theme-dropdown-header {
-  font-size: var(--weyl-text-xs, 10px);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--weyl-text-muted, #6B7280);
-  margin-bottom: 8px;
-}
-
-.theme-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.theme-option {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: var(--weyl-radius-sm, 2px);
-  cursor: pointer;
-  transition: var(--weyl-transition-fast, 100ms ease);
-}
-
-.theme-option:hover {
-  transform: scale(1.1);
-}
-
-.theme-option.active {
-  box-shadow: 0 0 0 2px var(--weyl-surface-1, #121212), 0 0 0 3px white;
-}
-
-.ai-btn {
-  background: var(--weyl-accent-gradient, linear-gradient(135deg, #8B5CF6, #EC4899)) !important;
-  color: white !important;
-}
-
-.ai-btn:hover {
-  filter: brightness(1.1);
 }
 
 /* Main Workspace */
