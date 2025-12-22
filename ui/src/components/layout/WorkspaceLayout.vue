@@ -275,11 +275,6 @@
                   <CollapsiblePanel title="Preview" :expanded="expandedPanels.preview" @toggle="expandedPanels.preview = $event">
                     <PreviewPanel :engine="canvasEngine" />
                   </CollapsiblePanel>
-
-                  <!-- Export Panel -->
-                  <CollapsiblePanel title="Export" :expanded="expandedPanels.export" @toggle="expandedPanels.export = $event">
-                    <ExportPanel />
-                  </CollapsiblePanel>
                 </div>
               </div>
             </Pane>
@@ -423,7 +418,6 @@ import PropertiesPanel from '@/components/panels/PropertiesPanel.vue';
 import CameraProperties from '@/components/panels/CameraProperties.vue';
 import AudioPanel from '@/components/panels/AudioPanel.vue';
 import AssetsPanel from '@/components/panels/AssetsPanel.vue';
-import ExportPanel from '@/components/panels/ExportPanel.vue';
 import PreviewPanel from '@/components/panels/PreviewPanel.vue';
 import AIChatPanel from '@/components/panels/AIChatPanel.vue';
 import AIGeneratePanel from '@/components/panels/AIGeneratePanel.vue';
@@ -497,7 +491,7 @@ function clearSegmentMask() {
 }
 
 const leftTab = ref<'project' | 'effects' | 'assets'>('project');
-const rightTab = ref<'effects' | 'properties' | 'camera' | 'audio' | 'export' | 'preview' | 'ai' | 'generate'>('properties');
+const rightTab = ref<'effects' | 'properties' | 'camera' | 'audio' | 'preview' | 'ai' | 'generate'>('properties');
 
 // Collapsible panel states
 const expandedPanels = ref({
@@ -506,8 +500,7 @@ const expandedPanels = ref({
   camera: false,
   audio: false,
   align: false,
-  preview: false,
-  export: false
+  preview: false
 });
 
 // AI section tab
