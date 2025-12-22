@@ -272,6 +272,62 @@ interface ExpressionContext {
 }
 ```
 
+### thisLayer / thisComp / thisProperty
+
+Full AE-compatible expression references:
+
+```typescript
+// thisLayer - current layer properties
+thisLayer.name                    // Layer name
+thisLayer.index                   // Layer index (1-based)
+thisLayer.transform.position      // [x, y, z]
+thisLayer.transform.rotation      // [x, y, z]
+thisLayer.transform.scale         // [x, y, z]
+thisLayer.transform.opacity       // 0-100
+thisLayer.effect("name")("param") // Effect parameter value
+thisLayer.toComp([x, y, z])       // Convert to comp space
+
+// thisComp - composition properties
+thisComp.width                    // Composition width
+thisComp.height                   // Composition height
+thisComp.duration                 // Duration in seconds
+thisComp.numLayers                // Number of layers
+thisComp.layer("Name")            // Get layer by name
+thisComp.layer(1)                 // Get layer by index (1-based)
+
+// thisProperty - current property
+thisProperty.value                // Current interpolated value
+thisProperty.velocity             // Current velocity
+thisProperty.numKeys              // Number of keyframes
+thisProperty.key(n)               // Get keyframe by index
+thisProperty.valueAtTime(t)       // Value at time t
+```
+
+### Effect Access in Expressions
+
+```typescript
+// Access effect on current layer
+thisLayer.effect("Blur Amount")("Slider")
+
+// Access effect on another layer
+thisComp.layer("Control").effect("Slider Control")("Slider")
+
+// Alternative syntax
+thisLayer.effect("Blur").param("radius")
+```
+
+### Expression Validation
+
+```typescript
+import { validateExpression } from '@/services/expressions';
+
+const result = validateExpression('wiggle(2, 10)');
+// { valid: true }
+
+const badResult = validateExpression('wiggle(2,');
+// { valid: false, error: "Unexpected end of input" }
+```
+
 35 easing functions available. See [PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md#easing-functions-35).
 
 ---

@@ -173,84 +173,225 @@ easingGroups = {
 
 ## 1.3 expressions.ts
 
-**Purpose**: Expression evaluation system for dynamic property values.
+**Purpose**: Expression evaluation system for dynamic property values with AE-compatible syntax.
 
 **Location**: `ui/src/services/expressions.ts`
 
-**Size**: ~15KB
+**Size**: ~90KB | **Lines**: ~3000
 
 ### Exports
 
 ```typescript
 // Types
 export interface ExpressionContext {
-  frame: number;
-  time: number;       // frame / fps
-  fps: number;
+  // Time
+  time: number;           // Current time in seconds
+  frame: number;          // Current frame number
+  fps: number;            // Frames per second
+  duration: number;       // Composition duration
+
+  // Composition info
+  compWidth?: number;
+  compHeight?: number;
+
+  // Layer info
   layerId: string;
-  composition?: {
-    width: number;
-    height: number;
-    frameCount: number;
-    duration: number;
+  layerIndex: number;
+  layerName: string;
+  inPoint: number;
+  outPoint: number;
+
+  // Property info
+  propertyName: string;
+  value: number | number[];
+  velocity: number | number[];
+  numKeys: number;
+  keyframes: Keyframe<any>[];
+
+  // Layer data (for thisLayer/thisComp)
+  layerTransform?: {
+    position: number[];
+    rotation: number[];
+    scale: number[];
+    opacity: number;
+    origin: number[];
   };
+  layerEffects?: Array<{
+    name: string;
+    effectKey: string;
+    enabled: boolean;
+    parameters: Record<string, any>;
+  }>;
+  allLayers?: Array<{ id: string; name: string; index: number }>;
+
+  // External data
+  footage?: (name: string) => FootageDataAccessor | null;
+  getLayerProperty?: (layerId: string, path: string) => any;
+  getLayerEffectParam?: (layerId: string, effect: string, param: string) => any;
 }
 
-export interface Expression {
-  code: string;
-  enabled: boolean;
-}
-
-// Main evaluation function
+// Main evaluation functions
 export function evaluateExpression(
   expression: Expression,
-  context: ExpressionContext,
-  currentValue: any
-): any;
+  context: ExpressionContext
+): number | number[] | string;
 
-// Built-in expression helpers (available in expression code)
-export const easing: {
-  linear: (t: number) => number;
-  easeIn: (t: number) => number;
-  easeOut: (t: number) => number;
-  // ... all easings
-};
+export function evaluateCustomExpression(
+  code: string,
+  context: ExpressionContext
+): number | number[] | string;
 
-export const motion: {
-  wiggle: (frequency: number, amplitude: number, time: number) => number;
-  bounce: (elasticity: number, gravity: number, time: number) => number;
-};
+// Validation
+export interface ExpressionValidationResult {
+  valid: boolean;
+  error?: string;
+  errorLine?: number;
+  errorColumn?: number;
+}
 
-export const loop: {
-  cycle: (value: number, min: number, max: number) => number;
-  pingPong: (value: number, min: number, max: number) => number;
-};
-
-export const time: {
-  seconds: (frame: number, fps: number) => number;
-  frames: (seconds: number, fps: number) => number;
-};
-
-export const math: {
-  clamp: (value: number, min: number, max: number) => number;
-  lerp: (a: number, b: number, t: number) => number;
-  map: (value: number, inMin: number, inMax: number, outMin: number, outMax: number) => number;
-  random: (seed: number) => number;  // Deterministic!
-};
+export function validateExpression(code: string): ExpressionValidationResult;
+export function getExpressionFunctions(): Array<{
+  name: string;
+  description: string;
+  syntax: string;
+}>;
 ```
 
-### Expression Example
+### thisLayer / thisComp / thisProperty
+
+Full AE-compatible expression objects available in custom expressions:
 
 ```typescript
-// In layer property expression:
-const expr: Expression = {
-  code: `
-    const t = time.seconds(frame, fps);
-    const wiggleAmount = motion.wiggle(2, 10, t);
-    return currentValue + wiggleAmount;
-  `,
-  enabled: true
-};
+// thisLayer - current layer
+thisLayer.name                    // Layer name
+thisLayer.index                   // Layer index (1-based)
+thisLayer.inPoint                 // Start time
+thisLayer.outPoint                // End time
+thisLayer.transform.position      // [x, y, z]
+thisLayer.transform.rotation      // [x, y, z]
+thisLayer.transform.scale         // [x, y, z]
+thisLayer.transform.opacity       // 0-100
+thisLayer.transform.origin        // [x, y, z] (anchor point)
+thisLayer.effect("name")("param") // Effect parameter access
+thisLayer.toComp([x, y, z])       // Convert to comp space
+thisLayer.fromComp([x, y, z])     // Convert from comp space
+
+// thisComp - composition
+thisComp.width                    // Composition width
+thisComp.height                   // Composition height
+thisComp.duration                 // Duration in seconds
+thisComp.frameDuration            // 1/fps
+thisComp.numLayers                // Number of layers
+thisComp.layer("Name")            // Get layer by name
+thisComp.layer(1)                 // Get layer by index (1-based)
+
+// thisProperty - current property being evaluated
+thisProperty.value                // Current interpolated value
+thisProperty.velocity             // Current velocity
+thisProperty.numKeys              // Number of keyframes
+thisProperty.key(n)               // Get keyframe by index (1-based)
+thisProperty.nearestKey(t)        // Get nearest keyframe to time
+thisProperty.valueAtTime(t)       // Value at time t
+thisProperty.velocityAtTime(t)    // Velocity at time t
+```
+
+### Effect Access
+
+```typescript
+// Access effect on current layer
+thisLayer.effect("Blur Amount")("Slider")
+thisLayer.effect("Blur").param("radius")
+
+// Access effect on another layer
+thisComp.layer("Control Layer").effect("Slider Control")("Slider")
+
+// Common expression control properties
+thisLayer.effect("MySlider").value
+thisLayer.effect("MySlider").slider
+thisLayer.effect("MyAngle").angle
+thisLayer.effect("MyCheckbox").checkbox
+thisLayer.effect("MyColor").color
+thisLayer.effect("MyPoint").point
+```
+
+### Built-in Functions
+
+```typescript
+// Motion
+wiggle(frequency, amplitude)          // Random oscillation
+inertia(amplitude, frequency, decay)  // Overshoot after keyframes
+bounce(elasticity, gravity)           // Bouncing ball
+elastic(amplitude, frequency, decay)  // Spring-like motion
+
+// Looping
+loopOut("cycle" | "pingpong" | "offset" | "continue")
+loopIn("cycle" | "pingpong" | "offset" | "continue")
+repeatAfter("cycle" | "pingpong" | "offset")  // Weyl alias
+repeatBefore("cycle" | "pingpong" | "offset") // Weyl alias
+
+// Interpolation
+ease(t, tMin, tMax, vMin, vMax)
+easeIn(t, tMin, tMax, vMin, vMax)
+easeOut(t, tMin, tMax, vMin, vMax)
+linear(t, tMin, tMax, vMin, vMax)
+
+// Math
+clamp(value, min, max)
+lerp(a, b, t)
+map(value, inMin, inMax, outMin, outMax)
+random()                 // Deterministic seeded random
+random(min, max)
+noise(value)             // Perlin-like noise
+noise([x, y, z])
+
+// Vector
+add([a], [b])
+sub([a], [b])
+mul([a], scalar)
+normalize([v])
+length([v])
+dot([a], [b])
+cross([a], [b])
+
+// Data access
+footage("filename.csv").dataValue([row, col])
+footage("filename.json").sourceData.path.to.value
+```
+
+### Expression Examples
+
+```typescript
+// Wiggle position
+wiggle(2, 10)
+
+// Follow another layer with offset
+thisComp.layer("Control").transform.position + [100, 0]
+
+// Scale based on effect slider
+value * thisLayer.effect("Scale Amount")("Slider") / 100
+
+// Bounce after keyframes
+bounce(0.7, 980)
+
+// Loop keyframes
+loopOut("pingpong")
+
+// Data-driven animation
+footage("animation.csv").dataValue([frame, "rotation"])
+```
+
+### Validation Example
+
+```typescript
+import { validateExpression } from '@/services/expressions';
+
+// Valid expression
+const result = validateExpression('wiggle(2, 10)');
+// { valid: true }
+
+// Invalid expression (syntax error)
+const badResult = validateExpression('wiggle(2,');
+// { valid: false, error: "Unexpected end of input" }
 ```
 
 ---
