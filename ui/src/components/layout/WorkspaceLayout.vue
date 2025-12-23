@@ -1641,26 +1641,22 @@ onUnmounted(() => {
   height: 100%;
 }
 
-/* Panels - floating islands with visible borders */
+/* Panels - floating islands */
 .panel {
   display: flex;
   flex-direction: column;
   height: 100%;
   background: var(--lattice-surface-1, #0f0f0f);
   border-radius: var(--lattice-radius-lg, 6px);
-  border: 1px solid var(--lattice-border-default, #2a2a2a);
   overflow: hidden;
 }
 
 .left-panel,
 .right-panel {
-  /* Visible borders for panel separation */
-  border: 1px solid var(--lattice-border-default, #2a2a2a);
   min-width: 180px;
 }
 
 .right-panel {
-  /* Properties panel needs more space for controls */
   min-width: 200px;
 }
 
@@ -1812,27 +1808,23 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 12px;
-  background: var(--lattice-surface-2, #161616);
-  border-bottom: 1px solid var(--lattice-border-default, #2a2a2a);
-  gap: 8px;
+  padding: 8px 12px;
+  background: var(--lattice-surface-1, #0f0f0f);
+  gap: 12px;
 }
 
 .viewport-tabs {
   display: flex;
-  gap: 4px;
-  background: var(--lattice-surface-0, #0a0a0a);
-  padding: 4px;
-  border-radius: var(--lattice-radius-md, 4px);
+  gap: 2px;
 }
 
 .viewport-tabs button {
-  padding: 8px 16px;
+  padding: 8px 18px;
   border: none;
-  background: var(--lattice-surface-2, #1a1a1a);
-  color: var(--lattice-text-secondary, #9CA3AF);
+  background: transparent;
+  color: var(--lattice-text-muted, #6B7280);
   font-size: var(--lattice-text-base, 13px);
-  font-weight: 600;
+  font-weight: 500;
   border-radius: var(--lattice-radius-sm, 2px);
   cursor: pointer;
   transition: var(--lattice-transition-fast, 100ms ease);
@@ -1840,51 +1832,49 @@ onUnmounted(() => {
 
 .viewport-tabs button:hover {
   color: var(--lattice-text-primary, #e5e5e5);
-  background: var(--lattice-surface-3, #2a2a2a);
 }
 
 .viewport-tabs button.active {
   background: var(--lattice-accent, #8B5CF6);
   color: white;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  font-weight: 600;
 }
 
 .viewport-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .zoom-select {
-  padding: 4px 8px;
-  background: var(--lattice-surface-2, #1a1a1a);
+  padding: 6px 10px;
+  background: transparent;
   border: none;
   color: var(--lattice-text-primary, #e5e5e5);
-  border-radius: var(--lattice-radius-md, 4px);
-  font-size: var(--lattice-text-sm, 11px);
+  border-radius: var(--lattice-radius-sm, 2px);
+  font-size: var(--lattice-text-sm, 12px);
 }
 
 .viewport-controls button {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: none;
-  background: var(--lattice-surface-2, #1a1a1a);
+  background: transparent;
   color: var(--lattice-text-secondary, #9CA3AF);
-  border-radius: var(--lattice-radius-md, 4px);
+  border-radius: var(--lattice-radius-sm, 2px);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 20px;
   transition: var(--lattice-transition-fast, 100ms ease);
 }
 
 .viewport-controls button:hover {
-  background: var(--lattice-surface-3, #2a2a2a);
   color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .viewport-controls button.active {
-  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.2));
-  color: var(--lattice-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
+  color: white;
 }
 
 .viewport-content {

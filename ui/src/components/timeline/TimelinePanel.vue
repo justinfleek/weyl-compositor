@@ -824,7 +824,7 @@ watch(() => [
 
 <style scoped>
 .timeline-panel { display: flex; flex-direction: column; height: 100%; background: var(--lattice-surface-1, #0f0f0f); color: var(--lattice-text-primary, #eee); font-family: var(--lattice-font-sans, 'Segoe UI', sans-serif); font-size: 13px; user-select: none; }
-.timeline-header { height: 40px; background: var(--lattice-surface-2, #161616); border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a); display: flex; justify-content: space-between; padding: 0 10px; align-items: center; z-index: 20; flex-shrink: 0; }
+.timeline-header { height: 48px; background: var(--lattice-surface-1, #0f0f0f); display: flex; justify-content: space-between; padding: 0 16px; align-items: center; z-index: 20; flex-shrink: 0; }
 .header-left, .header-center, .header-right { display: flex; gap: 12px; align-items: center; }
 .tool-group { display: flex; gap: 8px; align-items: center; }
 
