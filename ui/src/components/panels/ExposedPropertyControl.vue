@@ -349,7 +349,7 @@ function readFileAsDataURL(file: File): Promise<string> {
   flex: 1;
   background: transparent;
   border: none;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 12px;
   font-weight: 500;
   padding: 2px 0;
@@ -357,7 +357,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 
 .property-name-input:focus {
   outline: none;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-radius: 2px;
   padding: 2px 4px;
   margin: -2px -4px;
@@ -380,13 +380,13 @@ function readFileAsDataURL(file: File): Promise<string> {
   padding: 0;
   background: none;
   border: none;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   cursor: pointer;
   font-size: 14px;
 }
 
 .btn-icon-tiny:hover {
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .property-value {
@@ -397,10 +397,10 @@ function readFileAsDataURL(file: File): Promise<string> {
 .dropdown-input {
   width: 100%;
   padding: 6px 8px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 12px;
 }
 
@@ -414,7 +414,7 @@ function readFileAsDataURL(file: File): Promise<string> {
   flex: 1;
   height: 4px;
   -webkit-appearance: none;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-radius: 2px;
 }
 
@@ -422,7 +422,7 @@ function readFileAsDataURL(file: File): Promise<string> {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: var(--weyl-accent, #8b5cf6);
+  background: var(--lattice-accent, #8b5cf6);
   border-radius: 50%;
   cursor: pointer;
 }
@@ -430,10 +430,10 @@ function readFileAsDataURL(file: File): Promise<string> {
 .number-input {
   width: 60px;
   padding: 4px 6px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 11px;
   text-align: right;
 }
@@ -447,7 +447,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 
 .checkbox-label {
   font-size: 12px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .color-control {
@@ -460,7 +460,7 @@ function readFileAsDataURL(file: File): Promise<string> {
   width: 32px;
   height: 24px;
   padding: 0;
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
   cursor: pointer;
 }
@@ -468,7 +468,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 .color-hex {
   font-size: 11px;
   font-family: monospace;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .point-control {
@@ -481,16 +481,16 @@ function readFileAsDataURL(file: File): Promise<string> {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .point-input {
   width: 60px;
   padding: 4px 6px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 11px;
 }
 
@@ -503,8 +503,8 @@ function readFileAsDataURL(file: File): Promise<string> {
 .media-preview {
   width: 56px;
   height: 42px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -516,7 +516,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 }
 
 .media-preview:hover {
-  border-color: var(--weyl-accent, #8b5cf6);
+  border-color: var(--lattice-accent, #8b5cf6);
 }
 
 .media-preview img {
@@ -540,41 +540,41 @@ function readFileAsDataURL(file: File): Promise<string> {
 
 .media-filename {
   font-size: 11px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .media-filename.muted {
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-style: italic;
 }
 
 .btn-small {
   padding: 4px 8px;
-  background: var(--weyl-surface-3, #222222);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-3, #222222);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   font-size: 10px;
   cursor: pointer;
 }
 
 .btn-small:hover {
-  background: var(--weyl-surface-4, #2a2a2a);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-4, #2a2a2a);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .property-path {
   font-size: 9px;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-family: monospace;
 }
 
 .unsupported {
   font-size: 11px;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-style: italic;
 }
 
@@ -598,8 +598,8 @@ function readFileAsDataURL(file: File): Promise<string> {
 
 .layer-type {
   font-size: 10px;
-  color: var(--weyl-text-muted, #6b7280);
-  background: var(--weyl-surface-0, #0a0a0a);
+  color: var(--lattice-text-muted, #6b7280);
+  background: var(--lattice-surface-0, #0a0a0a);
   padding: 2px 6px;
   border-radius: 3px;
   text-transform: uppercase;

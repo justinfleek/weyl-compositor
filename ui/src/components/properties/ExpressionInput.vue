@@ -477,8 +477,8 @@ function remove() {
 }
 
 .mode-toggle button.active {
-  background: var(--weyl-accent, #8B5CF6);
-  border-color: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
   color: #fff;
 }
 
@@ -504,7 +504,7 @@ label {
 
 .preset-select:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .preset-select option {
@@ -538,7 +538,7 @@ label {
 
 .expression-textarea:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .hint {
@@ -581,7 +581,7 @@ label {
 
 .data-select:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .data-select option {
@@ -603,7 +603,7 @@ label {
 .path-input:focus,
 .offset-input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .offset-input {
@@ -662,12 +662,12 @@ label {
 .btn-cancel:hover { background: #444; }
 
 .btn-apply {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   border: none;
   color: #fff;
 }
 .btn-apply:hover:not(:disabled) {
-  background: var(--weyl-accent-hover, #9D70F9);
+  background: var(--lattice-accent-hover, #9D70F9);
 }
 .btn-apply:disabled {
   opacity: 0.5;

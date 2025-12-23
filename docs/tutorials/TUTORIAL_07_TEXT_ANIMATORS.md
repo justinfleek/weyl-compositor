@@ -128,7 +128,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 1-2: Create Text Layer ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 1-6 | Create point text with Type Tool | ✅ | `Ctrl+T` shortcut, TextLayer.ts |
 | 7-12 | Create paragraph text (area text) | ⚠️ | **NOT IMPLEMENTED** - Point text only |
@@ -137,7 +137,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 3-10: Character Panel ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 13-16 | Access Character Panel | ✅ | TextProperties.vue "Character" section |
 | 17-22 | Font Family & Style selection | ✅ | Font select with optgroups, B/I toggles |
@@ -148,7 +148,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 9-10: Paragraph Panel 🔄
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 44-50 | Left/Center/Right Alignment | ✅ | `textAlign` buttons in UI |
 | 51 | Justification options | ⚠️ | **NOT IMPLEMENTED** - Only L/C/R |
@@ -161,7 +161,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 11-14: Animator System ✅ FULLY IMPLEMENTED
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 52-56 | Expand Text Layer properties | ✅ | TextProperties.vue expansion |
 | 57-61 | Add First Animator (Position) | ✅ | "+" button with preset dropdown |
@@ -169,7 +169,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 14-15: Animator Values ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 68-73 | Adjust Animator Position value | ✅ | Position X/Y inputs with ScrubableNumber |
 | 74-80 | Understand Range Selector defaults | ✅ | Start: 0%, End: 100%, Offset: 0% |
@@ -182,7 +182,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 16-20: Range Selector Animation ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 81-85 | Reset for animation (Start/End 0%) | ✅ | ScrubableNumber inputs |
 | 86-94 | Keyframe Range Selector End | ✅ | KeyframeToggle.vue |
@@ -197,7 +197,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 21-27: Advanced Options ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 115-118 | Expand Advanced options | ✅ | Expanded by default in UI |
 | 119-124 | Based On parameter | ✅ | Characters / Characters Excluding Spaces / Words / Lines |
@@ -218,7 +218,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 28-31: Stacking Properties ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 157-163 | Add Opacity to existing Animator | ✅ | Checkbox toggles for properties |
 | 164-169 | Add Scale to Animator | ✅ | Scale X/Y inputs |
@@ -250,7 +250,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 32-35: Multiple Animators ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 177-181 | Add Second Animator | ✅ | "+" button creates new animator |
 | 182-187 | Configure independently | ✅ | Each animator has own selectors |
@@ -265,7 +265,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 36-42: Wiggly Selector ✅ FULLY IMPLEMENTED
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 198-201 | Add Wiggly Selector | ✅ | Toggle in TextProperties.vue:295 |
 | 202-205 | Understand Wiggly purpose | ✅ | Adds randomness per character |
@@ -288,7 +288,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 43-48: Expression Selector ✅ FULLY IMPLEMENTED
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 238-241 | Add Expression Selector | ✅ | Toggle + expression textarea |
 | 242-245 | Understand Expression purpose | ✅ | Programmatic per-character control |
@@ -316,7 +316,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 49-54: Per-Character 3D ⚠️ PARTIAL
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 263-267 | Enable Per-character 3D | ⚠️ | **NOT IMPLEMENTED** |
 | 268-271 | Understand purpose | 🔄 | Concept understood, not implemented |
@@ -334,7 +334,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 55-61: Text on Path ✅ FULLY IMPLEMENTED
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 295-299 | Create Path Shape | ✅ | SplineLayer or PathLayer |
 | 300-304 | Apply Text to Path | ✅ | Path dropdown in TextProperties.vue:105-109 |
@@ -352,7 +352,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 62-65: Source Text Animation ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 327-330 | Enable Source Text Animation | ✅ | Source Text can be keyframed |
 | 331-336 | Change Text at Different Times | ✅ | Multiple keyframes |
@@ -367,7 +367,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 66-70: Classic Animations ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 349-355 | Build Fade-Up Reveal | ✅ | `fade_in_by_character` preset |
 | 356-361 | Build Bounce-In Effect | ✅ | `bounce_in` preset |
@@ -383,7 +383,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 71-74: Animation Presets ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 377-381 | Browse Text Animation Presets | ✅ | Preset dropdown in TextProperties.vue |
 | 382-386 | Apply preset | ✅ | `applyTextAnimatorPreset()` |
@@ -414,7 +414,7 @@ Each critical feature has been verified through the COMPLETE chain:
 
 ### Tips 75-77: Export ✅
 
-| Step | Action | Status | Weyl Implementation |
+| Step | Action | Status | Lattice Implementation |
 |------|--------|--------|---------------------|
 | 397-399 | Preview Final Animation | ✅ | Spacebar preview |
 | 400-406 | Render and Export | ✅ | Export dialog, matteExporter.ts |
@@ -581,7 +581,7 @@ Cannot save custom animator configurations as presets.
 
 ## CONCLUSION
 
-**Tutorial 7 is 87.2% compatible with Weyl Compositor.**
+**Tutorial 7 is 87.2% compatible with Lattice Compositor.**
 
 ### What Works Perfectly
 

@@ -1,3 +1,0 @@
-import './weyl-vue-vendor.js';
-export { m as mountApp, s as sendToComfyUI } from './weyl-main.js';
-import './weyl-ui-vendor.js';

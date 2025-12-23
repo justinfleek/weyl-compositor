@@ -3,7 +3,7 @@
  *
  * Frontend service for AI-powered image layer decomposition using
  * the Qwen-Image-Layered model. Communicates with the backend via
- * the /weyl/decomposition/* API endpoints.
+ * the /lattice/decomposition/* API endpoints.
  *
  * Model: Qwen/Qwen-Image-Layered (28.8GB)
  * Capabilities: Decomposes single images into 3-16+ RGBA layers
@@ -94,7 +94,7 @@ export class LayerDecompositionService {
    */
   async getStatus(): Promise<DecompositionModelStatus> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/status`);
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/status`);
       const result = await response.json();
 
       if (result.status === 'success') {
@@ -117,7 +117,7 @@ export class LayerDecompositionService {
     try {
       onProgress?.('starting', 0);
 
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/download`, {
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/download`, {
         method: 'POST',
       });
 
@@ -145,7 +145,7 @@ export class LayerDecompositionService {
    */
   async getDownloadProgress(): Promise<DownloadProgress> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/progress`);
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/progress`);
       const result = await response.json();
 
       if (result.status === 'success') {
@@ -164,7 +164,7 @@ export class LayerDecompositionService {
    */
   async verifyModel(): Promise<ModelVerification> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/verify`, {
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/verify`, {
         method: 'POST',
       });
       const result = await response.json();
@@ -229,7 +229,7 @@ export class LayerDecompositionService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/load`, {
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/load`, {
         method: 'POST',
       });
 
@@ -263,7 +263,7 @@ export class LayerDecompositionService {
    */
   async unloadModel(): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/unload`, {
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/unload`, {
         method: 'POST',
       });
 
@@ -295,7 +295,7 @@ export class LayerDecompositionService {
     options: DecompositionOptions = {}
   ): Promise<DecomposedLayer[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/decomposition/decompose`, {
+      const response = await fetch(`${this.baseUrl}/lattice/decomposition/decompose`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

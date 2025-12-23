@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weyl - Timeline with Node Connections</title>
+  <title>Lattice - Timeline with Node Connections</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --weyl-void: #050505;
-      --weyl-surface-1: #121212;
-      --weyl-surface-2: #1a1a1a;
-      --weyl-surface-3: #222222;
-      --weyl-accent: #8B5CF6;
-      --weyl-accent-secondary: #EC4899;
-      --weyl-text-primary: #E5E5E5;
-      --weyl-text-secondary: #9CA3AF;
-      --weyl-text-muted: #6B7280;
+      --lattice-void: #050505;
+      --lattice-surface-1: #121212;
+      --lattice-surface-2: #1a1a1a;
+      --lattice-surface-3: #222222;
+      --lattice-accent: #8B5CF6;
+      --lattice-accent-secondary: #EC4899;
+      --lattice-text-primary: #E5E5E5;
+      --lattice-text-secondary: #9CA3AF;
+      --lattice-text-muted: #6B7280;
 
       --track-video: #7C3AED;
       --track-audio: #06B6D4;
@@ -29,14 +29,14 @@
     body {
       font-family: 'Inter', sans-serif;
       font-size: 12px;
-      background: var(--weyl-void);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-void);
+      color: var(--lattice-text-primary);
       padding: 40px;
       min-height: 100vh;
     }
 
     h2 {
-      color: var(--weyl-text-primary);
+      color: var(--lattice-text-primary);
       font-size: 16px;
       margin-bottom: 16px;
     }
@@ -46,7 +46,7 @@
     }
 
     .panel {
-      background: var(--weyl-surface-1);
+      background: var(--lattice-surface-1);
       border-radius: 16px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       overflow: hidden;
@@ -57,7 +57,7 @@
       display: flex;
       align-items: center;
       padding: 12px 16px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       gap: 12px;
     }
 
@@ -70,7 +70,7 @@
       padding: 6px 14px;
       background: transparent;
       border: none;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
@@ -78,8 +78,8 @@
     }
 
     .timeline-tab.active {
-      background: var(--weyl-surface-3);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-surface-3);
+      color: var(--lattice-text-primary);
     }
 
     .timeline-spacer { flex: 1; }
@@ -88,13 +88,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
     }
 
     .zoom-slider {
       width: 80px;
       height: 4px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       border-radius: 2px;
       position: relative;
     }
@@ -112,8 +112,8 @@
     /* Timeline Ruler */
     .timeline-ruler {
       height: 28px;
-      background: var(--weyl-surface-2);
-      border-bottom: 1px solid var(--weyl-surface-3);
+      background: var(--lattice-surface-2);
+      border-bottom: 1px solid var(--lattice-surface-3);
       display: flex;
       padding-left: 120px;
       position: relative;
@@ -124,14 +124,14 @@
       display: flex;
       align-items: flex-end;
       padding-bottom: 4px;
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
       font-size: 10px;
-      border-left: 1px solid var(--weyl-surface-3);
+      border-left: 1px solid var(--lattice-surface-3);
       padding-left: 4px;
     }
 
     .ruler-mark.major {
-      border-color: var(--weyl-text-muted);
+      border-color: var(--lattice-text-muted);
     }
 
     /* Playhead in ruler */
@@ -141,7 +141,7 @@
       bottom: 0;
       width: 14px;
       height: 10px;
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       border-radius: 2px 2px 0 0;
       transform: translateX(-50%);
     }
@@ -186,7 +186,7 @@
 
     .track-name {
       font-size: 11px;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -316,7 +316,7 @@
     }
 
     .connection-dot {
-      fill: var(--weyl-accent);
+      fill: var(--lattice-accent);
     }
 
     /* Playhead */
@@ -326,8 +326,8 @@
       bottom: 0;
       left: calc(120px + 35%);
       width: 2px;
-      background: var(--weyl-accent);
-      box-shadow: 0 0 8px var(--weyl-accent);
+      background: var(--lattice-accent);
+      box-shadow: 0 0 8px var(--lattice-accent);
       z-index: 10;
     }
 
@@ -336,8 +336,8 @@
       display: flex;
       gap: 16px;
       padding: 16px;
-      background: var(--weyl-surface-2);
-      border-top: 1px solid var(--weyl-surface-3);
+      background: var(--lattice-surface-2);
+      border-top: 1px solid var(--lattice-surface-3);
     }
 
     .legend-item {
@@ -345,7 +345,7 @@
       align-items: center;
       gap: 6px;
       font-size: 11px;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
     }
 
     .legend-dot {
@@ -369,16 +369,16 @@
       display: flex;
       justify-content: space-between;
       padding: 8px 16px;
-      border-bottom: 1px solid var(--weyl-surface-3);
+      border-bottom: 1px solid var(--lattice-surface-3);
     }
 
     .time-label {
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
     }
 
     .time-value {
       font-family: 'JetBrains Mono', monospace;
-      color: var(--weyl-text-primary);
+      color: var(--lattice-text-primary);
     }
 
     .container {

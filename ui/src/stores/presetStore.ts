@@ -28,7 +28,7 @@ import {
   BUILT_IN_PATH_EFFECT_PRESETS,
 } from '@/types/presets';
 
-const STORAGE_KEY = 'weyl-presets';
+const STORAGE_KEY = 'lattice-presets';
 const PRESET_VERSION = 1;
 
 interface PresetState {

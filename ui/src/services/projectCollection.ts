@@ -6,7 +6,7 @@
  */
 
 import JSZip from 'jszip';
-import type { WeylProject, AssetReference } from '@/types/project';
+import type { LatticeProject, AssetReference } from '@/types/project';
 
 // Extended asset type with additional collection properties
 type Asset = AssetReference & {
@@ -41,7 +41,7 @@ export interface CollectionOptions {
 export interface CollectionManifest {
   projectName: string;
   exportDate: string;
-  weylVersion: string;
+  latticeVersion: string;
   assetCount: number;
   totalSizeBytes: number;
   structure: 'flat' | 'nested';
@@ -64,7 +64,7 @@ class ProjectCollectionService {
    * Collect project and assets into a downloadable ZIP
    */
   async collectProject(
-    project: WeylProject,
+    project: LatticeProject,
     assets: Map<string, Asset>,
     options: CollectionOptions = {
       includeProject: true,
@@ -81,7 +81,7 @@ class ProjectCollectionService {
     const manifest: CollectionManifest = {
       projectName: project.meta?.name || 'Untitled Project',
       exportDate: new Date().toISOString(),
-      weylVersion: '1.0.0',
+      latticeVersion: '1.0.0',
       assetCount: 0,
       totalSizeBytes: 0,
       structure: options.flatStructure ? 'flat' : 'nested',

@@ -204,7 +204,7 @@ async function startExport() {
     startFrame: startFrame.value,
     endFrame: endFrame.value,
     outputDir: '',
-    filenamePrefix: `weyl_${selectedTarget.value}_${Date.now()}`,
+    filenamePrefix: `lattice_${selectedTarget.value}_${Date.now()}`,
     exportDepthMap: exportDepthMap.value,
     exportControlImages: exportControlImages.value,
     exportCameraData: exportCameraData.value,

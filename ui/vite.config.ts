@@ -34,18 +34,18 @@ export default defineConfig({
     emptyOutDir: false,
     lib: {
       entry: resolve(__dirname, 'src/main.ts'),
-      name: 'WeylCompositor',
-      fileName: () => 'weyl-compositor.js',
+      name: 'LatticeCompositor',
+      fileName: () => 'lattice-compositor.js',
       formats: ['es']
     },
     rollupOptions: {
       output: {
         // Allow code splitting for lazy-loaded modules
         inlineDynamicImports: false,
-        assetFileNames: 'weyl-compositor[extname]',
+        assetFileNames: 'lattice-compositor[extname]',
         // Named chunks for better caching
-        chunkFileNames: 'weyl-[name].js',
-        entryFileNames: 'weyl-compositor.js',
+        chunkFileNames: 'lattice-[name].js',
+        entryFileNames: 'lattice-compositor.js',
         // Manual chunks for heavy dependencies
         manualChunks(id) {
           // Three.js and related 3D libraries
@@ -148,7 +148,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/weyl': 'http://localhost:8188',
+      '/lattice': 'http://localhost:8188',
       '/api': 'http://localhost:8188',
     }
   },

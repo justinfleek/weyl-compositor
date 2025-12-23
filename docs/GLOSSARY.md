@@ -1,6 +1,6 @@
 # GLOSSARY
 
-**Weyl Compositor - Terminology Reference**
+**Lattice Compositor - Terminology Reference**
 
 **HYPER-CRITICAL FOR HANDOFF**: Understanding these terms is essential for working with the codebase.
 
@@ -63,7 +63,7 @@
 
 | Term | Definition |
 |------|------------|
-| **WeylEngine** | The main rendering engine class |
+| **LatticeEngine** | The main rendering engine class |
 | **MotionEngine** | The animation evaluation engine |
 | **Evaluate** | To calculate the state of all properties at a given frame |
 | **Render** | To draw the evaluated state to a canvas/WebGL |

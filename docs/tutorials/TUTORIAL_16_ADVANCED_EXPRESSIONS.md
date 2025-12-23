@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-Expressions are the scripting backbone of motion graphics - enabling procedural animation, dynamic linking, complex math, and automation impossible with keyframes alone. This analysis maps all AE expression features to Weyl Compositor's implementation.
+Expressions are the scripting backbone of motion graphics - enabling procedural animation, dynamic linking, complex math, and automation impossible with keyframes alone. This analysis maps all AE expression features to Lattice Compositor's implementation.
 
 **Key Implementation:**
 - `services/expressions.ts` (3000+ lines) - Core expression engine
@@ -21,7 +21,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Expression Engine Fundamentals
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | JavaScript Interpreter | Native JS evaluation | ✅ Full | ES6+ support |
 | Per-frame Evaluation | Frame-based evaluation | ✅ Full | Deterministic |
@@ -32,7 +32,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Variables and Data Types
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | var Declaration | Native JS `var` | ✅ Full | Also `let`, `const` |
 | Number Type | Native JS Number | ✅ Full | Integer/float |
@@ -44,7 +44,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Core Keywords
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `value` | `context.value` | ✅ Full | Current property value |
 | `time` | `context.time` | ✅ Full | Current time (seconds) |
@@ -56,24 +56,24 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### thisLayer Object
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `thisLayer.name` | ✅ Full | Layer name string |
 | `thisLayer.index` | ✅ Full | 1-based index |
-| `thisLayer.inPoint` | `startFrame` | ✅ Full | Weyl: startFrame |
-| `thisLayer.outPoint` | `endFrame` | ✅ Full | Weyl: endFrame |
+| `thisLayer.inPoint` | `startFrame` | ✅ Full | Lattice: startFrame |
+| `thisLayer.outPoint` | `endFrame` | ✅ Full | Lattice: endFrame |
 | `thisLayer.transform.position` | ✅ Full | [x, y, z] array |
 | `thisLayer.transform.rotation` | ✅ Full | [x, y, z] degrees |
 | `thisLayer.transform.scale` | ✅ Full | [x, y, z] percent |
 | `thisLayer.transform.opacity` | ✅ Full | 0-100 |
-| `thisLayer.transform.anchorPoint` | `origin` | ✅ Full | Weyl: origin |
+| `thisLayer.transform.anchorPoint` | `origin` | ✅ Full | Lattice: origin |
 | `thisLayer.effect("name")("param")` | ✅ Full | Effect parameter access |
 | `thisLayer.toComp([x,y,z])` | ✅ Full | Coordinate conversion |
 | `thisLayer.fromComp([x,y,z])` | ✅ Full | Coordinate conversion |
 
 ### thisComp Object
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `thisComp.width` | ✅ Full | Composition width |
 | `thisComp.height` | ✅ Full | Composition height |
@@ -85,7 +85,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### thisProperty Object
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `thisProperty.value` | ✅ Full | Current value |
 | `thisProperty.velocity` | ✅ Full | Current velocity |
@@ -97,7 +97,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Math Functions
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `Math.sin()` | ✅ Full | Native JS |
 | `Math.cos()` | ✅ Full | Native JS |
@@ -118,7 +118,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Conditional Statements
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `if/else` | ✅ Full | Native JS |
 | `if/else if/else` | ✅ Full | Native JS |
@@ -130,7 +130,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Loops
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `for` loop | ✅ Full | Native JS |
 | `while` loop | ✅ Full | Native JS |
@@ -140,7 +140,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Custom Functions
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `function name() {}` | ✅ Full | Function declaration |
 | Arrow functions | ✅ Full | ES6 `() => {}` |
@@ -150,17 +150,17 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Built-in Expression Functions
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `linear(t, tMin, tMax, vMin, vMax)` | ✅ Full | Linear interpolation |
 | `ease(t, tMin, tMax, vMin, vMax)` | ✅ Full | Eased interpolation |
 | `easeIn(t, tMin, tMax, vMin, vMax)` | ✅ Full | Ease in |
 | `easeOut(t, tMin, tMax, vMin, vMax)` | ✅ Full | Ease out |
 | `clamp(val, min, max)` | ✅ Full | Value clamping |
-| `wiggle(freq, amp)` | `jitter(freq, amp)` | ✅ Full | Weyl: jitter |
+| `wiggle(freq, amp)` | `jitter(freq, amp)` | ✅ Full | Lattice: jitter |
 | `wiggle(freq, amp, oct, mult)` | ✅ Full | With octaves |
-| `loopOut(type)` | `repeatAfter(type)` | ✅ Full | Weyl term |
-| `loopIn(type)` | `repeatBefore(type)` | ✅ Full | Weyl term |
+| `loopOut(type)` | `repeatAfter(type)` | ✅ Full | Lattice term |
+| `loopIn(type)` | `repeatBefore(type)` | ✅ Full | Lattice term |
 | `loopOut(type, numKf)` | ✅ Full | With keyframe count |
 | `valueAtTime(t)` | ✅ Full | Historical value |
 | `velocityAtTime(t)` | ✅ Full | Historical velocity |
@@ -184,7 +184,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Loop Types
 
-| AE Loop Type | Weyl Compositor | Status | Notes |
+| AE Loop Type | Lattice Compositor | Status | Notes |
 |--------------|-----------------|--------|-------|
 | `"cycle"` | ✅ Full | Repeat from start |
 | `"pingpong"` | ✅ Full | Bounce back/forth |
@@ -193,7 +193,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Expression Controls
 
-| AE Control | Weyl Compositor | Status | Notes |
+| AE Control | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Slider Control | `ExpressionControlType: 'slider'` | ✅ Full | Numeric range |
 | Checkbox Control | `ExpressionControlType: 'checkbox'` | ✅ Full | Boolean toggle |
@@ -205,7 +205,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Expression Control Access
 
-| AE Syntax | Weyl Syntax | Status |
+| AE Syntax | Lattice Syntax | Status |
 |-----------|-------------|--------|
 | `effect("Slider Control")("Slider")` | Same | ✅ Full |
 | `effect("Checkbox Control")("Checkbox")` | Same | ✅ Full |
@@ -216,15 +216,15 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Layer Property Access
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `transform.position` | ✅ Full | Via thisLayer |
 | `transform.scale` | ✅ Full | Via thisLayer |
 | `transform.rotation` | ✅ Full | Via thisLayer |
 | `transform.opacity` | ✅ Full | Via thisLayer |
-| `transform.anchorPoint` | `transform.origin` | ✅ Full | Weyl term |
-| `inPoint` | `startFrame` | ✅ Full | Weyl term |
-| `outPoint` | `endFrame` | ✅ Full | Weyl term |
+| `transform.anchorPoint` | `transform.origin` | ✅ Full | Lattice term |
+| `inPoint` | `startFrame` | ✅ Full | Lattice term |
+| `outPoint` | `endFrame` | ✅ Full | Lattice term |
 | `sourceRectAtTime()` | ✅ Full | Text bounds |
 | `toComp()` | ✅ Full | Coordinate transform |
 | `fromComp()` | ✅ Full | Coordinate transform |
@@ -233,7 +233,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Text-Specific Expressions
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Source Text expressions | ✅ Full | String return |
 | `timeToCurrentFormat()` | ⚠️ Partial | Basic format |
@@ -243,7 +243,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Keyframe Functions
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `numKeys` | `thisProperty.numKeys` | ✅ Full | Keyframe count |
 | `nearestKey(t)` | `thisProperty.nearestKey(t)` | ✅ Full | Find nearest |
@@ -253,7 +253,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Advanced Patterns
 
-| Pattern | Weyl Compositor | Status | Notes |
+| Pattern | Lattice Compositor | Status | Notes |
 |---------|-----------------|--------|-------|
 | Inertia/Overshoot | `inertia(amp, freq, decay)` | ✅ Full | Built-in function |
 | Bounce | `bounce(elasticity, gravity)` | ✅ Full | Built-in function |
@@ -266,7 +266,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Performance & Debugging
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | `posterizeTime()` | ✅ Full | Stepped evaluation |
 | Expression caching | Layer eval cache | ✅ Full | Performance opt |
@@ -275,7 +275,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ---
 
-## WEYL-SPECIFIC FEATURES (Beyond AE)
+## LATTICE-SPECIFIC FEATURES (Beyond AE)
 
 | Feature | Description |
 |---------|-------------|
@@ -290,11 +290,11 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ## TERMINOLOGY MAPPING
 
-| AE Term | Weyl Term | Notes |
+| AE Term | Lattice Term | Notes |
 |---------|-----------|-------|
-| wiggle() | jitter() | Weyl alias available |
-| loopOut() | repeatAfter() | Weyl alias available |
-| loopIn() | repeatBefore() | Weyl alias available |
+| wiggle() | jitter() | Lattice alias available |
+| loopOut() | repeatAfter() | Lattice alias available |
+| loopIn() | repeatBefore() | Lattice alias available |
 | anchorPoint | origin | Backwards compatible |
 | inPoint | startFrame | Backwards compatible |
 | outPoint | endFrame | Backwards compatible |
@@ -305,7 +305,7 @@ Expressions are the scripting backbone of motion graphics - enabling procedural 
 
 ### Time-Based Animation
 ```javascript
-// Weyl: Same as AE
+// Lattice: Same as AE
 var x = time * 100;  // Move 100px per second
 var y = 540;
 [x, y]
@@ -313,7 +313,7 @@ var y = 540;
 
 ### Oscillation
 ```javascript
-// Weyl: Same as AE
+// Lattice: Same as AE
 var amplitude = 100;
 var frequency = 2;
 var y = Math.sin(time * frequency * Math.PI * 2) * amplitude;
@@ -322,14 +322,14 @@ var y = Math.sin(time * frequency * Math.PI * 2) * amplitude;
 
 ### Layer Following with Delay
 ```javascript
-// Weyl: Same as AE
+// Lattice: Same as AE
 var delay = 0.2;
 thisComp.layer("Leader").transform.position.valueAtTime(time - delay)
 ```
 
 ### Stagger by Index
 ```javascript
-// Weyl: Same as AE
+// Lattice: Same as AE
 var delay = index * 0.2;
 var t = Math.max(time - delay, 0);
 linear(t, 0, 0.5, 0, 100)
@@ -337,26 +337,26 @@ linear(t, 0, 0.5, 0, 100)
 
 ### Effect Control Reference
 ```javascript
-// Weyl: Same as AE
+// Lattice: Same as AE
 var scale = thisLayer.effect("Size Control")("Slider");
 [scale, scale]
 ```
 
 ### Conditional Animation
 ```javascript
-// Weyl: Same as AE
+// Lattice: Same as AE
 time < 2 ? linear(time, 0, 2, 0, 100) : 100
 ```
 
-### Inertia (Weyl Built-in)
+### Inertia (Lattice Built-in)
 ```javascript
-// Weyl: Simplified syntax
+// Lattice: Simplified syntax
 inertia(0.5, 3, 5)  // amplitude, frequency, decay
 ```
 
-### Looping (Weyl Terminology)
+### Looping (Lattice Terminology)
 ```javascript
-// Weyl: Use repeatAfter instead of loopOut
+// Lattice: Use repeatAfter instead of loopOut
 repeatAfter("cycle")
 repeatAfter("pingpong")
 ```

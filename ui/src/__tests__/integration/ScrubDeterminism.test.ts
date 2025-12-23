@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MotionEngine, type FrameState, type EvaluatedLayer } from '@/engine/MotionEngine';
-import type { WeylProject, Layer, Keyframe, AnimatableProperty } from '@/types/project';
+import type { LatticeProject, Layer, Keyframe, AnimatableProperty } from '@/types/project';
 import { createEmptyProject, createDefaultTransform } from '@/types/project';
 
 // ============================================================================
@@ -72,7 +72,7 @@ function createAnimatedTransform() {
 /**
  * Create a minimal test project with animated layers
  */
-function createTestProject(): WeylProject {
+function createTestProject(): LatticeProject {
   const project = createEmptyProject(1920, 1080);
 
   // Add a layer with animated properties
@@ -148,7 +148,7 @@ function evaluatedLayersEqual(a: EvaluatedLayer, b: EvaluatedLayer): boolean {
 
 describe('MotionEngine Scrub Determinism', () => {
   let motionEngine: MotionEngine;
-  let project: WeylProject;
+  let project: LatticeProject;
 
   beforeEach(() => {
     motionEngine = new MotionEngine();

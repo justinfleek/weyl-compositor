@@ -1,5 +1,5 @@
 /**
- * Weyl Compositor - ComfyUI Extension
+ * Lattice Compositor - ComfyUI Extension
  */
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
@@ -14,28 +14,28 @@ function getExtensionBase() {
     const match = script.src?.match(/\/extensions\/([^/]+)\/js\/extension\.js/);
     if (match) return `/extensions/${match[1]}`;
   }
-  return '/extensions/weyl-compositor';
+  return '/extensions/lattice-compositor';
 }
 
 app.registerExtension({
-  name: "weyl.compositor",
+  name: "lattice.compositor",
 
   async setup() {
     const base = getExtensionBase();
 
     app.extensionManager.registerSidebarTab({
-      id: "weyl-compositor",
+      id: "lattice-compositor",
       icon: "pi pi-video",
       title: "Motion Compositor",
-      tooltip: "Weyl Motion Compositor",
+      tooltip: "Lattice Motion Compositor",
       type: "custom",
       render: (el) => renderCompositor(el, base)
     });
 
-    api.addEventListener("weyl.compositor.inputs_ready", (event) => {
+    api.addEventListener("lattice.compositor.inputs_ready", (event) => {
       currentNodeId = event.detail.node_id;
       if (vueAppLoaded) {
-        window.dispatchEvent(new CustomEvent('weyl:inputs-ready', { detail: event.detail }));
+        window.dispatchEvent(new CustomEvent('lattice:inputs-ready', { detail: event.detail }));
       } else {
         pendingMessages.push(event.detail);
       }
@@ -43,7 +43,7 @@ app.registerExtension({
   },
 
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name === "WeylCompositorEditor") {
+    if (nodeData.name === "LatticeCompositorEditor") {
       const orig = nodeType.prototype.onNodeCreated;
       nodeType.prototype.onNodeCreated = function() {
         orig?.apply(this, arguments);
@@ -56,14 +56,14 @@ app.registerExtension({
 
 async function renderCompositor(el, base) {
   const container = document.createElement('div');
-  container.id = 'weyl-compositor-root';
+  container.id = 'lattice-compositor-root';
   container.style.cssText = 'width:100%;height:100%;min-height:100vh;overflow:hidden;background:#050505;position:relative;';
   el.appendChild(container);
 
   // Ensure parent element has proper sizing for flex layout
   el.style.cssText = 'width:100%;height:100%;display:flex;flex-direction:column;';
 
-  const cssUrl = `${base}/js/weyl-compositor.css`;
+  const cssUrl = `${base}/js/lattice-compositor.css`;
   if (!document.querySelector(`link[href="${cssUrl}"]`)) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -73,9 +73,9 @@ async function renderCompositor(el, base) {
 
   // Preload vendor chunks for faster loading
   const vendorChunks = [
-    'weyl-vue-vendor.js',
-    'weyl-three-vendor.js',
-    'weyl-ui-vendor.js'
+    'lattice-vue-vendor.js',
+    'lattice-three-vendor.js',
+    'lattice-ui-vendor.js'
   ];
   vendorChunks.forEach(chunk => {
     const preload = document.createElement('link');
@@ -85,11 +85,11 @@ async function renderCompositor(el, base) {
   });
 
   try {
-    const module = await import(`${base}/js/weyl-compositor.js`);
+    const module = await import(`${base}/js/lattice-compositor.js`);
     if (module.mountApp) module.mountApp(container);
     vueAppLoaded = true;
     pendingMessages.forEach(data => {
-      window.dispatchEvent(new CustomEvent('weyl:inputs-ready', { detail: data }));
+      window.dispatchEvent(new CustomEvent('lattice:inputs-ready', { detail: data }));
     });
     pendingMessages = [];
   } catch (error) {
@@ -100,12 +100,12 @@ async function renderCompositor(el, base) {
   }
 }
 
-window.WeylCompositor = {
+window.LatticeCompositor = {
   getNodeId: () => currentNodeId,
   async sendOutput(matte, preview) {
     if (!currentNodeId) return false;
     try {
-      const res = await fetch('/weyl/compositor/set_output', {
+      const res = await fetch('/lattice/compositor/set_output', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ node_id: currentNodeId, matte, preview })

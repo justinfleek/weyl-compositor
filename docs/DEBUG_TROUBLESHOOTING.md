@@ -1,6 +1,6 @@
 # DEBUG & TROUBLESHOOTING GUIDE
 
-**Weyl Compositor - Common Issues and Solutions**
+**Lattice Compositor - Common Issues and Solutions**
 
 **HYPER-CRITICAL FOR HANDOFF**: This document helps diagnose and fix common issues quickly.
 
@@ -414,7 +414,7 @@ const LOG_LEVELS = {
 };
 
 // Set level
-localStorage.setItem('WEYL_LOG_LEVEL', '3'); // DEBUG
+localStorage.setItem('LATTICE_LOG_LEVEL', '3'); // DEBUG
 
 // Usage
 if (LOG_LEVEL >= LOG_LEVELS.DEBUG) {

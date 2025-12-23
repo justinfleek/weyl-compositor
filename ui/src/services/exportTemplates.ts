@@ -29,7 +29,7 @@ export interface ExportTemplateStore {
 // Storage Key
 // ============================================================================
 
-const STORAGE_KEY = 'weyl-export-templates';
+const STORAGE_KEY = 'lattice-export-templates';
 
 // ============================================================================
 // Default Templates

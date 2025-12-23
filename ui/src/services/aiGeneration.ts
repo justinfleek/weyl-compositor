@@ -160,7 +160,7 @@ class AIGenerationService {
   private modelStatus: Map<AIModelType, ModelStatus> = new Map();
   private loadErrors: Map<AIModelType, string> = new Map();
   private loadTimes: Map<AIModelType, number> = new Map();
-  private baseUrl: string = '/weyl/ai';
+  private baseUrl: string = '/lattice/ai';
 
   constructor() {
     // Initialize all models as not loaded

@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weyl - Graph Editor & Keyframe Shapes</title>
+  <title>Lattice - Graph Editor & Keyframe Shapes</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --weyl-void: #050505;
-      --weyl-surface-1: #121212;
-      --weyl-surface-2: #1a1a1a;
-      --weyl-surface-3: #222222;
-      --weyl-accent: #8B5CF6;
-      --weyl-accent-secondary: #EC4899;
-      --weyl-text-primary: #E5E5E5;
-      --weyl-text-secondary: #9CA3AF;
-      --weyl-text-muted: #6B7280;
+      --lattice-void: #050505;
+      --lattice-surface-1: #121212;
+      --lattice-surface-2: #1a1a1a;
+      --lattice-surface-3: #222222;
+      --lattice-accent: #8B5CF6;
+      --lattice-accent-secondary: #EC4899;
+      --lattice-text-primary: #E5E5E5;
+      --lattice-text-secondary: #9CA3AF;
+      --lattice-text-muted: #6B7280;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -23,8 +23,8 @@
     body {
       font-family: 'Inter', sans-serif;
       font-size: 12px;
-      background: var(--weyl-void);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-void);
+      color: var(--lattice-text-primary);
       padding: 40px;
       min-height: 100vh;
     }
@@ -36,7 +36,7 @@
     }
 
     .panel {
-      background: var(--weyl-surface-1);
+      background: var(--lattice-surface-1);
       border-radius: 16px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       overflow: hidden;
@@ -44,7 +44,7 @@
 
     .panel-header {
       padding: 12px 16px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       font-size: 13px;
       font-weight: 600;
       display: flex;
@@ -61,28 +61,28 @@
       display: flex;
       padding: 8px 12px;
       gap: 8px;
-      border-bottom: 1px solid var(--weyl-surface-3);
+      border-bottom: 1px solid var(--lattice-surface-3);
     }
 
     .graph-btn {
       padding: 6px 12px;
       background: transparent;
       border: none;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       border-radius: 6px;
       cursor: pointer;
       font-size: 11px;
     }
 
-    .graph-btn:hover { background: var(--weyl-surface-3); }
-    .graph-btn.active { background: var(--weyl-accent); color: white; }
+    .graph-btn:hover { background: var(--lattice-surface-3); }
+    .graph-btn.active { background: var(--lattice-accent); color: white; }
 
     .graph-canvas {
       height: 280px;
       position: relative;
       background:
-        linear-gradient(var(--weyl-surface-3) 1px, transparent 1px),
-        linear-gradient(90deg, var(--weyl-surface-3) 1px, transparent 1px);
+        linear-gradient(var(--lattice-surface-3) 1px, transparent 1px),
+        linear-gradient(90deg, var(--lattice-surface-3) 1px, transparent 1px);
       background-size: 40px 40px;
       padding: 20px;
     }
@@ -101,20 +101,20 @@
     }
 
     .curve-handle-line {
-      stroke: var(--weyl-text-muted);
+      stroke: var(--lattice-text-muted);
       stroke-width: 1;
       stroke-dasharray: 4 2;
     }
 
     .curve-point {
       fill: white;
-      stroke: var(--weyl-accent);
+      stroke: var(--lattice-accent);
       stroke-width: 2;
       cursor: pointer;
     }
 
     .curve-handle {
-      fill: var(--weyl-accent);
+      fill: var(--lattice-accent);
       cursor: pointer;
     }
 
@@ -134,16 +134,16 @@
       padding: 8px 12px;
       border-radius: 8px;
       cursor: pointer;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
     }
 
     .dropdown-item:hover {
-      background: var(--weyl-surface-3);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-surface-3);
+      color: var(--lattice-text-primary);
     }
 
     .dropdown-item.selected {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       color: white;
     }
 
@@ -155,7 +155,7 @@
 
     .dropdown-divider {
       height: 1px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       margin: 8px 0;
     }
 
@@ -167,16 +167,16 @@
 
     .ease-dir-btn {
       padding: 2px 8px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       border: none;
       border-radius: 4px;
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
       font-size: 10px;
       cursor: pointer;
     }
 
     .ease-dir-btn.active {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       color: white;
     }
 
@@ -199,7 +199,7 @@
       align-items: center;
       gap: 8px;
       padding: 12px 16px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       border-radius: 12px;
       min-width: 70px;
     }
@@ -210,18 +210,18 @@
     }
 
     .shape-svg path {
-      fill: var(--weyl-accent);
+      fill: var(--lattice-accent);
     }
 
     .shape-svg path.stroke-only {
       fill: none;
-      stroke: var(--weyl-accent);
+      stroke: var(--lattice-accent);
       stroke-width: 2;
     }
 
     .shape-name {
       font-size: 10px;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       text-align: center;
     }
 
@@ -232,7 +232,7 @@
 
     .option-group {
       padding: 12px 16px;
-      border-bottom: 1px solid var(--weyl-surface-3);
+      border-bottom: 1px solid var(--lattice-surface-3);
     }
 
     .option-row {
@@ -243,14 +243,14 @@
     }
 
     .option-label {
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       font-size: 12px;
     }
 
     .checkbox {
       width: 18px;
       height: 18px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       border-radius: 4px;
       display: flex;
       align-items: center;
@@ -259,7 +259,7 @@
     }
 
     .checkbox.checked {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
     }
 
     .checkbox.checked::after {
@@ -271,14 +271,14 @@
     .toggle {
       width: 36px;
       height: 20px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       border-radius: 10px;
       position: relative;
       cursor: pointer;
     }
 
     .toggle.on {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
     }
 
     .toggle::after {
@@ -310,28 +310,28 @@
       gap: 8px;
       padding: 4px 0;
       cursor: pointer;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
     }
 
     .radio-item.selected {
-      color: var(--weyl-accent);
+      color: var(--lattice-accent);
     }
 
     .radio-dot {
       width: 14px;
       height: 14px;
-      border: 2px solid var(--weyl-surface-3);
+      border: 2px solid var(--lattice-surface-3);
       border-radius: 50%;
     }
 
     .radio-item.selected .radio-dot {
-      border-color: var(--weyl-accent);
-      background: var(--weyl-accent);
-      box-shadow: inset 0 0 0 3px var(--weyl-surface-1);
+      border-color: var(--lattice-accent);
+      background: var(--lattice-accent);
+      box-shadow: inset 0 0 0 3px var(--lattice-surface-1);
     }
 
     h2 {
-      color: var(--weyl-text-primary);
+      color: var(--lattice-text-primary);
       font-size: 16px;
       margin-bottom: 16px;
     }

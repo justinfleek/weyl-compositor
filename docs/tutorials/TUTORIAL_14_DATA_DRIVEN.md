@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-Data-driven animation allows creating dynamic graphics that update automatically from external data sources (spreadsheets, APIs, databases). This analysis maps all AE data-driven features to Weyl Compositor's implementation.
+Data-driven animation allows creating dynamic graphics that update automatically from external data sources (spreadsheets, APIs, databases). This analysis maps all AE data-driven features to Lattice Compositor's implementation.
 
 **Key Implementation:**
 - `services/dataImport.ts` (654 lines) - Import & parsing
@@ -21,7 +21,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Data File Import
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Import JSON | `parseJSON()` | ✅ Full | Nested object support |
 | Import CSV | `parseCSV()` | ✅ Full | Header row detection |
@@ -32,7 +32,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### JSON Data Access
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | sourceData Property | `FootageDataAccessor.sourceData` | ✅ Full | Root object access |
 | Dot Notation | `sourceData.path.to.value` | ✅ Full | Nested access |
@@ -42,7 +42,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### CSV Data Access
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | dataValue() Function | `FootageDataAccessor.dataValue()` | ✅ Full | Row/column access |
 | Row by Index | `dataValue([rowIndex, colIndex])` | ✅ Full | Zero-based |
@@ -53,7 +53,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Expression Integration
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | footage() Function | `footage("filename.ext")` | ✅ Full | Access data files |
 | JSON in Expressions | `footage("data.json").sourceData` | ✅ Full | Direct access |
@@ -63,7 +63,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Data Types & Conversion
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | String Values | Native string | ✅ Full | Text content |
 | Number Values | Auto-conversion | ✅ Full | Numeric parsing |
@@ -74,7 +74,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Text Replacement from Data
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Text Source Expression | `sourceText` binding | ✅ Full | Dynamic text |
 | Multi-line Text | Newline handling | ✅ Full | \n support |
@@ -84,7 +84,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Image Replacement from Data
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Image Path in Data | Media slot binding | ✅ Full | File path reference |
 | URL Images | External URL support | ⚠️ Partial | CORS dependent |
@@ -92,7 +92,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Spreadsheet Workflows
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Google Sheets Export | CSV export → import | ✅ Full | Manual export |
 | Excel Export | CSV export → import | ✅ Full | Save As CSV |
@@ -101,7 +101,7 @@ Data-driven animation allows creating dynamic graphics that update automatically
 
 ### Batch/Multi-Version Output
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Row-per-Version | Loop through rows | ✅ Full | Export iteration |
 | Render Queue Batching | Export system | ✅ Full | Multi-output |
@@ -155,7 +155,7 @@ footage("list.json").sourceData.items.join("\n")
 
 ---
 
-## WEYL-SPECIFIC FEATURES (Beyond AE)
+## LATTICE-SPECIFIC FEATURES (Beyond AE)
 
 | Feature | Description |
 |---------|-------------|

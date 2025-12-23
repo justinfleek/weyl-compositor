@@ -1,7 +1,7 @@
 /**
  * Persistence Service
  *
- * Handles all persistent storage for the Weyl Compositor:
+ * Handles all persistent storage for the Lattice Compositor:
  * - Project autosave (IndexedDB)
  * - User settings (localStorage)
  * - Recent projects list (localStorage)
@@ -9,13 +9,13 @@
  * - AI conversation history (IndexedDB)
  */
 
-import type { WeylProject } from '@/types/project';
+import type { LatticeProject } from '@/types/project';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const DB_NAME = 'weyl-compositor';
+const DB_NAME = 'lattice-compositor';
 const DB_VERSION = 1;
 
 const STORES = {
@@ -26,12 +26,12 @@ const STORES = {
 } as const;
 
 const LOCAL_STORAGE_KEYS = {
-  RECENT_PROJECTS: 'weyl:recentProjects',
-  USER_SETTINGS: 'weyl:settings',
-  LAST_PROJECT_ID: 'weyl:lastProjectId',
-  AI_MODEL_PREFERENCE: 'weyl:aiModel',
-  THEME: 'weyl:theme',
-  AUTOSAVE_ENABLED: 'weyl:autosaveEnabled',
+  RECENT_PROJECTS: 'lattice:recentProjects',
+  USER_SETTINGS: 'lattice:settings',
+  LAST_PROJECT_ID: 'lattice:lastProjectId',
+  AI_MODEL_PREFERENCE: 'lattice:aiModel',
+  THEME: 'lattice:theme',
+  AUTOSAVE_ENABLED: 'lattice:autosaveEnabled',
 } as const;
 
 // ============================================================================
@@ -41,7 +41,7 @@ const LOCAL_STORAGE_KEYS = {
 export interface StoredProject {
   id: string;
   name: string;
-  data: WeylProject;
+  data: LatticeProject;
   thumbnail?: string; // Base64 PNG
   createdAt: number;
   modifiedAt: number;
@@ -185,7 +185,7 @@ async function getDB(): Promise<IDBDatabase> {
 /**
  * Generate a unique project ID based on main composition ID or random UUID
  */
-function getProjectId(project: WeylProject): string {
+function getProjectId(project: LatticeProject): string {
   // Use mainCompositionId as the project identifier, or generate one
   if (project.mainCompositionId) {
     return project.mainCompositionId;
@@ -195,7 +195,7 @@ function getProjectId(project: WeylProject): string {
 }
 
 export async function saveProject(
-  project: WeylProject,
+  project: LatticeProject,
   projectId?: string,
   thumbnail?: string
 ): Promise<string> {

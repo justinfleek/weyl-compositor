@@ -52,6 +52,6 @@ function toggleKeyframe() {
 <style scoped>
 .shape-editor { display: flex; flex-direction: column; gap: 6px; }
 .property-row { display: flex; align-items: center; gap: 8px; }
-.property-row label { width: 70px; color: var(--weyl-text-muted, #888); font-size: 11px; flex-shrink: 0; }
-.hint { display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: var(--weyl-text-muted, #666); padding-top: 4px; }
+.property-row label { width: 70px; color: var(--lattice-text-muted, #888); font-size: 11px; flex-shrink: 0; }
+.hint { display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: var(--lattice-text-muted, #666); padding-top: 4px; }
 </style>

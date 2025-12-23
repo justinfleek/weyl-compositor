@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — COMPOSITION & IMPORT
+# LATTICE COMPOSITOR — COMPOSITION & IMPORT
 
 **Document ID**: 12_COMPOSITION_IMPORT  
 **Version**: 1.0.0  
@@ -85,7 +85,7 @@ const COMPOSITION_PRESETS = {
 ## 3. PROJECT STRUCTURE
 
 ```typescript
-interface WeylProject {
+interface LatticeProject {
   readonly id: string
   readonly name: string
   readonly version: string
@@ -224,7 +224,7 @@ Add to Project
 ```typescript
 async function importAsset(
   filePath: string,
-  project: WeylProject
+  project: LatticeProject
 ): Promise<Asset> {
   // 1. Read file and compute hash
   const fileBuffer = await readFile(filePath)
@@ -380,7 +380,7 @@ interface LottieAsset extends Asset {
 ### 8.1 File Structure
 
 ```
-project.weyl (JSON)
+project.lattice (JSON)
 ├── id
 ├── name
 ├── version
@@ -400,7 +400,7 @@ assets/ (folder)
 
 ```typescript
 async function exportPortableProject(
-  project: WeylProject,
+  project: LatticeProject,
   outputPath: string
 ): Promise<void> {
   // 1. Create output directory
@@ -424,7 +424,7 @@ async function exportPortableProject(
   
   // 4. Save project file
   await writeFile(
-    path.join(outputPath, 'project.weyl'),
+    path.join(outputPath, 'project.lattice'),
     JSON.stringify(portableProject, null, 2)
   )
 }

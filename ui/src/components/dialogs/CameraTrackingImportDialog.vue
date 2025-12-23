@@ -38,7 +38,7 @@
           <div class="format-info">
             <p>Supported formats:</p>
             <ul>
-              <li><strong>Weyl JSON</strong> - Native tracking format</li>
+              <li><strong>Lattice JSON</strong> - Native tracking format</li>
               <li><strong>COLMAP</strong> - cameras.txt, images.txt, points3D.txt</li>
               <li><strong>Blender</strong> - Motion tracking JSON export</li>
             </ul>
@@ -162,7 +162,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
 import {
-  parseWeylTrackingJSON,
+  parseLatticeTrackingJSON,
   parseBlenderTrackingJSON,
   detectTrackingFormat,
   importCameraTracking,
@@ -245,8 +245,8 @@ async function processFile(file: File) {
     detectedFormat.value = detectTrackingFormat(content);
 
     switch (detectedFormat.value) {
-      case 'weyl':
-        parseResult.value = parseWeylTrackingJSON(content);
+      case 'lattice':
+        parseResult.value = parseLatticeTrackingJSON(content);
         break;
       case 'blender':
         parseResult.value = parseBlenderTrackingJSON(content);
@@ -257,7 +257,7 @@ async function processFile(file: File) {
         error.value = 'COLMAP format requires multiple files (cameras.txt, images.txt). Please use a combined JSON export.';
         break;
       default:
-        error.value = 'Unknown tracking format. Please use Weyl JSON or Blender export.';
+        error.value = 'Unknown tracking format. Please use Lattice JSON or Blender export.';
     }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to parse file';
@@ -305,9 +305,9 @@ async function importTracking() {
 }
 
 .dialog-content {
-  background: var(--weyl-surface-1, #121212);
-  border: 1px solid var(--weyl-border-default, #333);
-  border-radius: var(--weyl-radius-lg, 8px);
+  background: var(--lattice-surface-1, #121212);
+  border: 1px solid var(--lattice-border-default, #333);
+  border-radius: var(--lattice-radius-lg, 8px);
   width: 520px;
   max-height: 80vh;
   display: flex;
@@ -319,19 +319,19 @@ async function importTracking() {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .dialog-header h3 {
   margin: 0;
   font-size: 16px;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   font-size: 24px;
   cursor: pointer;
   padding: 0;
@@ -339,7 +339,7 @@ async function importTracking() {
 }
 
 .close-btn:hover {
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .dialog-body {
@@ -355,23 +355,23 @@ async function importTracking() {
 .section h4 {
   margin: 0 0 12px 0;
   font-size: 13px;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .file-drop-zone {
-  border: 2px dashed var(--weyl-border-default, #333);
-  border-radius: var(--weyl-radius-md, 4px);
+  border: 2px dashed var(--lattice-border-default, #333);
+  border-radius: var(--lattice-radius-md, 4px);
   padding: 32px;
   text-align: center;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   transition: all 0.2s;
 }
 
 .file-drop-zone.dragover {
-  border-color: var(--weyl-accent, #8B5CF6);
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.1));
+  border-color: var(--lattice-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.1));
 }
 
 .file-drop-zone .pi-cloud-upload {
@@ -381,7 +381,7 @@ async function importTracking() {
 }
 
 .file-label {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
   cursor: pointer;
 }
 
@@ -397,11 +397,11 @@ async function importTracking() {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .format-badge {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: white;
   padding: 2px 6px;
   border-radius: 4px;
@@ -412,7 +412,7 @@ async function importTracking() {
 .clear-btn {
   background: none;
   border: none;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   cursor: pointer;
   font-size: 16px;
   margin-left: auto;
@@ -421,7 +421,7 @@ async function importTracking() {
 .format-info {
   margin-top: 12px;
   font-size: 12px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .format-info ul {
@@ -437,9 +437,9 @@ async function importTracking() {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  background: var(--weyl-surface-2, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
   padding: 12px;
-  border-radius: var(--weyl-radius-md, 4px);
+  border-radius: var(--lattice-radius-md, 4px);
 }
 
 .stat {
@@ -449,13 +449,13 @@ async function importTracking() {
 
 .stat .label {
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   text-transform: uppercase;
 }
 
 .stat .value {
   font-size: 14px;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
   font-weight: 500;
 }
 
@@ -467,14 +467,14 @@ async function importTracking() {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
   font-size: 13px;
   cursor: pointer;
 }
 
 .option-row small {
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   margin-left: 24px;
 }
 
@@ -485,17 +485,17 @@ async function importTracking() {
 .option-group label {
   display: block;
   font-size: 12px;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   margin-bottom: 4px;
 }
 
 .option-group input[type="number"] {
   width: 100px;
   padding: 6px 8px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-default, #333);
-  border-radius: var(--weyl-radius-sm, 2px);
-  color: var(--weyl-text-primary, #E5E5E5);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #333);
+  border-radius: var(--lattice-radius-sm, 2px);
+  color: var(--lattice-text-primary, #E5E5E5);
   font-size: 12px;
 }
 
@@ -511,7 +511,7 @@ async function importTracking() {
 .error-message {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: var(--weyl-radius-md, 4px);
+  border-radius: var(--lattice-radius-md, 4px);
   padding: 12px;
   color: #EF4444;
   display: flex;
@@ -525,12 +525,12 @@ async function importTracking() {
   justify-content: flex-end;
   gap: 8px;
   padding: 16px;
-  border-top: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-top: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .btn {
   padding: 8px 16px;
-  border-radius: var(--weyl-radius-md, 4px);
+  border-radius: var(--lattice-radius-md, 4px);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -541,23 +541,23 @@ async function importTracking() {
 }
 
 .btn.secondary {
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-default, #333);
-  color: var(--weyl-text-primary, #E5E5E5);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #333);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .btn.secondary:hover {
-  background: var(--weyl-surface-3, #222);
+  background: var(--lattice-surface-3, #222);
 }
 
 .btn.primary {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   border: none;
   color: white;
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: var(--weyl-accent-hover, #A78BFA);
+  background: var(--lattice-accent-hover, #A78BFA);
 }
 
 .btn.primary:disabled {

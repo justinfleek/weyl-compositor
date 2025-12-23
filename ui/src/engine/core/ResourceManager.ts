@@ -37,7 +37,7 @@ export class ResourceManager {
   // Texture loader
   private readonly textureLoader: THREE.TextureLoader;
 
-  // Asset getter callback (set by WeylEngine)
+  // Asset getter callback (set by LatticeEngine)
   private assetGetter?: AssetGetter;
 
   // Statistics
@@ -64,7 +64,7 @@ export class ResourceManager {
 
   /**
    * Set the asset getter callback
-   * Called by WeylEngine to provide access to project assets
+   * Called by LatticeEngine to provide access to project assets
    */
   setAssetGetter(getter: AssetGetter): void {
     this.assetGetter = getter;

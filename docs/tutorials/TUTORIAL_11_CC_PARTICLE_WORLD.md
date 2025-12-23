@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-CC Particle World is the industry-standard particle system in After Effects. This analysis maps all features to Weyl Compositor's implementation, identifying full compatibility with CC Particle World's core features.
+CC Particle World is the industry-standard particle system in After Effects. This analysis maps all features to Lattice Compositor's implementation, identifying full compatibility with CC Particle World's core features.
 
 ---
 
@@ -16,7 +16,7 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Producer Section (Emitter Position & Shape)
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Position X | `emitter.x` | ✅ Full | Normalized 0-1 |
 | Position Y | `emitter.y` | ✅ Full | Normalized 0-1 |
@@ -27,7 +27,7 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Birth Rate & Longevity
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Birth Rate | `emitter.emissionRate` | ✅ Full | Particles/second |
 | Longevity | `emitter.particleLifetime` | ✅ Full | In frames |
@@ -35,7 +35,7 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Particle Properties
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Birth Size | `emitter.size` | ✅ Full | Pixels |
 | Death Size | Modulation system | ✅ Full | Over lifetime |
@@ -46,7 +46,7 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Physics
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Velocity | `emitter.speed` | ✅ Full | Initial velocity |
 | Velocity (Random) | `emitter.speedVariance` | ✅ Full | Randomness |
@@ -58,7 +58,7 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Particle Types
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Line | `particleShape: 'line'` | ✅ Full | Added Dec 22, 2025 |
 | Triangle | `particleShape: 'triangle'` | ✅ Full | In UI |
@@ -72,7 +72,7 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Floor Interaction
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Floor: None | `collision.floorEnabled: false` | ✅ Full | Default |
 | Floor: Bounce | `collision.floorBehavior: 'bounce'` | ✅ Full | With bounciness |
@@ -83,13 +83,13 @@ CC Particle World is the industry-standard particle system in After Effects. Thi
 
 ### Grid & Axis Visualization
 
-| CC Particle World | Weyl Compositor | Status | Notes |
+| CC Particle World | Lattice Compositor | Status | Notes |
 |------------------|-----------------|--------|-------|
 | Grid | `visualization.showGrid` | ✅ Full | Particle-specific 3D grid, added Dec 22, 2025 |
 | Horizon | `visualization.showHorizon` | ✅ Full | Dashed cyan horizon line at floor, added Dec 22, 2025 |
 | Axis | `visualization.showAxis` | ✅ Full | XYZ axis with colored lines, added Dec 22, 2025 |
 
-### Additional Weyl Features (Beyond CC Particle World)
+### Additional Lattice Features (Beyond CC Particle World)
 
 | Feature | Description |
 |---------|-------------|

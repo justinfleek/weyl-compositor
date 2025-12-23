@@ -1,7 +1,7 @@
 /**
  * MIDI Module - Index
  *
- * Web MIDI API integration for Weyl Compositor.
+ * Web MIDI API integration for Lattice Compositor.
  * Enables MIDI controller input for real-time property control.
  */
 

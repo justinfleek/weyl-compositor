@@ -127,10 +127,10 @@ export interface CameraTrajectoryPreset {
 
 ```typescript
 // ============================================================
-// WEYL PROJECT SCHEMA - Complete Type Definitions
+// LATTICE PROJECT SCHEMA - Complete Type Definitions
 // ============================================================
 
-export interface WeylProject {
+export interface LatticeProject {
   version: "1.0.0";
   meta: ProjectMeta;
   composition: CompositionSettings;

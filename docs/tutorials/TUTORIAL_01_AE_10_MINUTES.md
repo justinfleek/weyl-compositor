@@ -18,7 +18,7 @@
 
 ## 1. Project Setup
 
-1. **Launch Weyl** in ComfyUI sidebar
+1. **Launch Lattice** in ComfyUI sidebar
 2. **Import media** - `Ctrl+I` or drag files to Project Panel
 3. **Organize** - Create folders in Project Panel as needed
 
@@ -182,4 +182,4 @@ Select a layer, then press:
 
 ---
 
-*Compatibility: 100% - All features work in Weyl Compositor*
+*Compatibility: 100% - All features work in Lattice Compositor*

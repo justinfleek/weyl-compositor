@@ -213,7 +213,7 @@ async function collectProject() {
     );
 
     // Download the ZIP
-    const projectName = store.project.name || 'weyl-project';
+    const projectName = store.project.name || 'lattice-project';
     projectCollectionService.downloadZip(blob, `${projectName}-collection.zip`);
 
     console.log('[ExportDialog] Project collected successfully');

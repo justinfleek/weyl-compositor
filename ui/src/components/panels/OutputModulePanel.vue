@@ -357,7 +357,7 @@ onMounted(() => {
   gap: 16px;
   padding: 12px;
   font-size: 12px;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .panel-section {
@@ -365,7 +365,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 8px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #2A2A2A);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2A2A2A);
 }
 
 .panel-section:last-child {
@@ -379,7 +379,7 @@ onMounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .form-row {
@@ -390,7 +390,7 @@ onMounted(() => {
 
 .form-row > label:first-child {
   flex: 0 0 80px;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .form-row.sub-row {
@@ -402,17 +402,17 @@ onMounted(() => {
 .form-row input[type="number"] {
   flex: 1;
   padding: 4px 8px;
-  background: var(--weyl-surface-2, #1A1A1A);
-  border: 1px solid var(--weyl-border-default, #333333);
+  background: var(--lattice-surface-2, #1A1A1A);
+  border: 1px solid var(--lattice-border-default, #333333);
   border-radius: 4px;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
   font-size: 12px;
 }
 
 .form-row select:focus,
 .form-row input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .checkbox-label {
@@ -420,13 +420,13 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 14px;
   height: 14px;
-  accent-color: var(--weyl-accent, #8B5CF6);
+  accent-color: var(--lattice-accent, #8B5CF6);
 }
 
 .slider-row {
@@ -440,7 +440,7 @@ onMounted(() => {
   flex: 1;
   height: 4px;
   appearance: none;
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
   border-radius: 2px;
 }
 
@@ -449,14 +449,14 @@ onMounted(() => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   cursor: pointer;
 }
 
 .slider-value {
   min-width: 45px;
   text-align: right;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   font-family: monospace;
 }
 
@@ -472,21 +472,21 @@ onMounted(() => {
 
 .browse-btn {
   padding: 4px 8px;
-  background: var(--weyl-surface-3, #222222);
-  border: 1px solid var(--weyl-border-default, #333333);
+  background: var(--lattice-surface-3, #222222);
+  border: 1px solid var(--lattice-border-default, #333333);
   border-radius: 4px;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   cursor: pointer;
 }
 
 .browse-btn:hover {
-  background: var(--weyl-surface-4, #2A2A2A);
-  color: var(--weyl-text-primary, #E5E5E5);
+  background: var(--lattice-surface-4, #2A2A2A);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .preview-footer {
   padding-top: 12px;
-  border-top: 1px solid var(--weyl-border-subtle, #2A2A2A);
+  border-top: 1px solid var(--lattice-border-subtle, #2A2A2A);
 }
 
 .output-preview {
@@ -494,16 +494,16 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background: var(--weyl-surface-2, #1A1A1A);
+  background: var(--lattice-surface-2, #1A1A1A);
   border-radius: 4px;
 }
 
 .preview-label {
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .preview-value {
   font-family: monospace;
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 </style>

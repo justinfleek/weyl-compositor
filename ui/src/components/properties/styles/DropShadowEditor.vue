@@ -112,44 +112,44 @@ function hexToRgba(hex: string): RGBA {
 
 .property-row label {
   min-width: 80px;
-  font-size: var(--weyl-font-size-xs);
-  color: var(--weyl-text-secondary);
+  font-size: var(--lattice-font-size-xs);
+  color: var(--lattice-text-secondary);
 }
 
 .property-row input[type="range"] {
   flex: 1;
   height: 4px;
-  accent-color: var(--weyl-accent);
+  accent-color: var(--lattice-accent);
 }
 
 .property-row input[type="color"] {
   width: 32px;
   height: 24px;
   padding: 0;
-  border: 1px solid var(--weyl-border-default);
-  border-radius: var(--weyl-radius-sm);
+  border: 1px solid var(--lattice-border-default);
+  border-radius: var(--lattice-radius-sm);
   cursor: pointer;
 }
 
 .property-row input[type="checkbox"] {
-  accent-color: var(--weyl-accent);
+  accent-color: var(--lattice-accent);
 }
 
 .property-row select {
   flex: 1;
   padding: 4px 8px;
-  background: var(--weyl-surface-2);
-  border: 1px solid var(--weyl-border-default);
-  border-radius: var(--weyl-radius-sm);
-  color: var(--weyl-text-primary);
-  font-size: var(--weyl-font-size-xs);
+  background: var(--lattice-surface-2);
+  border: 1px solid var(--lattice-border-default);
+  border-radius: var(--lattice-radius-sm);
+  color: var(--lattice-text-primary);
+  font-size: var(--lattice-font-size-xs);
 }
 
 .value {
   min-width: 40px;
   text-align: right;
-  font-size: var(--weyl-font-size-xs);
-  color: var(--weyl-text-muted);
+  font-size: var(--lattice-font-size-xs);
+  color: var(--lattice-text-muted);
   font-family: monospace;
 }
 </style>

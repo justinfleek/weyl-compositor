@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR - SYSTEM ARCHITECTURE
+# LATTICE COMPOSITOR - SYSTEM ARCHITECTURE
 
 **Version:** 1.0.0
 **Last Updated:** December 23, 2025
@@ -56,7 +56,7 @@
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           ENGINE LAYER (Three.js)                            │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        WeylEngine.ts (2400+ lines)                   │    │
+│  │                        LatticeEngine.ts (2400+ lines)                   │    │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │    │
 │  │  │   Scene     │  │  Renderer   │  │   Camera    │  │  Composer  │  │    │
 │  │  │  (Graph)    │  │  (WebGL2)   │  │ (Controller)│  │  (Effects) │  │    │
@@ -112,7 +112,7 @@
 │  │                    ComfyUI Extension                                 │    │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────┐  │    │
 │  │  │extension.js │  │ Python Nodes│  │       HTTP Routes           │  │    │
-│  │  │ (Sidebar)   │  │compositor.py│  │  /weyl/compositor/*         │  │    │
+│  │  │ (Sidebar)   │  │compositor.py│  │  /lattice/compositor/*         │  │    │
 │  │  └─────────────┘  └─────────────┘  └─────────────────────────────┘  │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -159,7 +159,7 @@
                                                                     │
                                                                     ▼
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                              WEYL ENGINE                                      │
+│                              LATTICE ENGINE                                      │
 │                                                                               │
 │  ┌────────────────────────────────────────────────────────────────────────┐  │
 │  │  STEP 1: Property Evaluation                                           │  │
@@ -516,7 +516,7 @@ App.vue
 compositorStore (90KB) ─── MAIN STORE
 │
 ├── State
-│   ├── project: WeylProject | null
+│   ├── project: LatticeProject | null
 │   │   ├── id: string
 │   │   ├── name: string
 │   │   ├── composition: Composition
@@ -675,7 +675,7 @@ User Action                State Change                    Side Effects
                                           │ Every frame:        │
                                           │ currentFrame++      │
                                           │ ▼                   │
-                                          │ WeylEngine          │
+                                          │ LatticeEngine          │
                                           │ .renderFrame()      │
                                           └─────────────────────┘
 ```
@@ -836,15 +836,15 @@ User Action                State Change                    Side Effects
 
 ## 6. ENGINE ARCHITECTURE
 
-### 6.1 WeylEngine Class Structure
+### 6.1 LatticeEngine Class Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                        WEYL ENGINE STRUCTURE                                 │
+│                        LATTICE ENGINE STRUCTURE                                 │
 │                        (2400+ lines)                                         │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-class WeylEngine {
+class LatticeEngine {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CORE COMPONENTS
@@ -1212,7 +1212,7 @@ ui/
 │   │       └── TimelineContextMenu.vue   # Right-click menu
 │   │
 │   ├── engine/                           # Three.js engine
-│   │   ├── WeylEngine.ts                 # Main engine class (2400+ lines)
+│   │   ├── LatticeEngine.ts                 # Main engine class (2400+ lines)
 │   │   │
 │   │   ├── animation/
 │   │   │   ├── EasingFunctions.ts        # Easing implementations
@@ -1292,7 +1292,7 @@ ComfyUI
 │   └── web/js/extension.js
 │       │
 │       ├── Register sidebar tab "Compositor"
-│       ├── Load weyl-compositor.js bundle
+│       ├── Load lattice-compositor.js bundle
 │       └── Initialize Vue application
 │
 ├── Python Nodes
@@ -1313,7 +1313,7 @@ ComfyUI
 │               └── OUTPUT: audio analysis
 │
 └── HTTP Routes
-    └── /weyl/compositor/*
+    └── /lattice/compositor/*
         │
         ├── POST /set_output
         │   └── Send rendered frame to workflow
@@ -1409,7 +1409,7 @@ Export Targets:
 
 ### Performance-Critical Paths
 
-1. **Render loop** - `WeylEngine.renderFrame()`
+1. **Render loop** - `LatticeEngine.renderFrame()`
 2. **Property evaluation** - `interpolation.ts`
 3. **Particle simulation** - `particleSystem.ts`
 4. **Frame caching** - `frameCache.ts`

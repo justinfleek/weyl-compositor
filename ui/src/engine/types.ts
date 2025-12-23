@@ -1,5 +1,5 @@
 /**
- * Weyl Engine Type Definitions
+ * Lattice Engine Type Definitions
  *
  * Core types for the Three.js-based rendering engine.
  * These types bridge the gap between the project schema and the rendering layer.
@@ -12,7 +12,7 @@ import type { Layer, AnimatableProperty, LayerTransform } from '@/types/project'
 // Engine Configuration
 // ============================================================================
 
-export interface WeylEngineConfig {
+export interface LatticeEngineConfig {
   /** Target canvas element for WebGL rendering */
   canvas: HTMLCanvasElement;
 

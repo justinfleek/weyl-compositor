@@ -15,7 +15,7 @@ export function mountApp(container?: HTMLElement | string): VueApp | null {
   } else if (container instanceof HTMLElement) {
     el = container;
   } else {
-    el = document.getElementById('weyl-compositor-root') || document.getElementById('app');
+    el = document.getElementById('lattice-compositor-root') || document.getElementById('app');
   }
   
   if (!el) return null;
@@ -33,18 +33,18 @@ export function mountApp(container?: HTMLElement | string): VueApp | null {
 }
 
 function setupBridge() {
-  window.addEventListener('weyl:inputs-ready', ((e: CustomEvent) => {
-    window.dispatchEvent(new CustomEvent('weyl:load-project-inputs', { detail: e.detail }));
+  window.addEventListener('lattice:inputs-ready', ((e: CustomEvent) => {
+    window.dispatchEvent(new CustomEvent('lattice:load-project-inputs', { detail: e.detail }));
   }) as EventListener);
 }
 
 export async function sendToComfyUI(matte: string, preview: string): Promise<boolean> {
-  return window.WeylCompositor?.sendOutput?.(matte, preview) ?? false;
+  return window.LatticeCompositor?.sendOutput?.(matte, preview) ?? false;
 }
 
 declare global {
   interface Window {
-    WeylCompositor?: {
+    LatticeCompositor?: {
       getNodeId: () => string | null;
       sendOutput: (matte: string, preview: string) => Promise<boolean>;
     };

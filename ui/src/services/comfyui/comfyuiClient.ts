@@ -69,7 +69,7 @@ export class ComfyUIClient {
 
   private generateClientId(): string {
     // Use cryptographically secure UUID generation
-    return 'weyl_' + secureUUID();
+    return 'lattice_' + secureUUID();
   }
 
   // ============================================================================

@@ -1,6 +1,6 @@
 # SERVICE API - Asset & Storage Services
 
-**Weyl Compositor - Font Loading and Asset Management Services**
+**Lattice Compositor - Font Loading and Asset Management Services**
 
 ---
 

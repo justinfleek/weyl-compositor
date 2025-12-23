@@ -1,4 +1,4 @@
-# CLAUDE.md - Weyl Compositor Development Guide
+# CLAUDE.md - Lattice Compositor Development Guide
 
 **Version:** 8.5 | **Last Updated:** December 23, 2025
 
@@ -19,7 +19,7 @@
 
 ---
 
-## What is Weyl Compositor?
+## What is Lattice Compositor?
 
 A **professional motion graphics compositor** for the **ComfyUI ecosystem**:
 - Timeline, keyframes, curve editor, nested compositions
@@ -56,10 +56,10 @@ npx tsc --noEmit
 
 ```
 web/js/
-├── weyl-compositor.js     # Main bundle (2.2MB)
-├── weyl-compositor.css    # Styles (146KB)
-├── weyl-three-vendor.js   # Three.js (2.4MB)
-├── weyl-vue-vendor.js     # Vue (210KB)
+├── lattice-compositor.js     # Main bundle (2.2MB)
+├── lattice-compositor.css    # Styles (146KB)
+├── lattice-three-vendor.js   # Three.js (2.4MB)
+├── lattice-vue-vendor.js     # Vue (210KB)
 └── extension.js           # ComfyUI registration
 ```
 
@@ -67,7 +67,7 @@ web/js/
 
 ## Trade Dress Terminology
 
-Use Weyl terms (not industry-trademarked terms) in new code:
+Use Lattice terms (not industry-trademarked terms) in new code:
 
 | Avoid | Use Instead |
 |-------|-------------|
@@ -137,7 +137,7 @@ Particles save state every 30 frames. To evaluate frame 75:
                  ▼
 ┌────────────────────────────────────────┐
 │         ENGINE LAYER (Three.js)        │
-│  WeylEngine, MotionEngine, Layers      │
+│  LatticeEngine, MotionEngine, Layers      │
 └────────────────┬───────────────────────┘
                  │
                  ▼
@@ -151,7 +151,7 @@ Particles save state every 30 frames. To evaluate frame 75:
 
 | File | Purpose |
 |------|---------|
-| `engine/WeylEngine.ts` | Main engine facade |
+| `engine/LatticeEngine.ts` | Main engine facade |
 | `engine/MotionEngine.ts` | Pure frame evaluation |
 | `stores/compositorStore.ts` | Main state store |
 | `services/interpolation.ts` | Keyframe math |
@@ -189,7 +189,7 @@ MotionEngine.evaluate(50, project)  ← Pure function
 FrameState (frozen, immutable)
         │
         ▼
-WeylEngine.applyFrameState()
+LatticeEngine.applyFrameState()
         │
         ▼
 WebGL Canvas Render
@@ -546,7 +546,7 @@ await agent.processInstruction('Fade in the title over 1 second');
 Decomposes images into 3-16 semantically-separated layers.
 
 ```
-POST /weyl/decomposition/decompose
+POST /lattice/decomposition/decompose
 {
   "image": "data:image/png;base64,...",
   "num_layers": 5,
@@ -638,7 +638,7 @@ expect(layer).toHaveProperty('transform');
 ### WebGL Context Lost
 1. Close other tabs with WebGL
 2. Reduce texture sizes
-3. Context loss handlers exist in `WeylEngine.ts`
+3. Context loss handlers exist in `LatticeEngine.ts`
 
 ---
 
@@ -647,10 +647,10 @@ expect(layer).toHaveProperty('transform');
 ### Design Tokens
 
 ```css
---weyl-void: #050505;           /* Background */
---weyl-surface-1: #121212;      /* Panels */
---weyl-accent: #8B5CF6;         /* Primary purple */
---weyl-text-primary: #E5E5E5;   /* Main text */
+--lattice-void: #050505;           /* Background */
+--lattice-surface-1: #121212;      /* Panels */
+--lattice-accent: #8B5CF6;         /* Primary purple */
+--lattice-text-primary: #E5E5E5;   /* Main text */
 ```
 
 ### Themes

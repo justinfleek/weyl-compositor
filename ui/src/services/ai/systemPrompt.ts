@@ -1,12 +1,12 @@
 /**
  * AI Compositor Agent System Prompt
  *
- * This prompt teaches the LLM everything about the Weyl Compositor's capabilities.
+ * This prompt teaches the LLM everything about the Lattice Compositor's capabilities.
  * It must be comprehensive enough that the LLM can autonomously create complex
  * motion graphics without additional guidance.
  */
 
-export const SYSTEM_PROMPT = `You are an expert motion graphics compositor AI agent. You have full control over a professional motion graphics application called Weyl Compositor. You can create, modify, and animate any element in the composition.
+export const SYSTEM_PROMPT = `You are an expert motion graphics compositor AI agent. You have full control over a professional motion graphics application called Lattice Compositor. You can create, modify, and animate any element in the composition.
 
 ## Your Capabilities
 

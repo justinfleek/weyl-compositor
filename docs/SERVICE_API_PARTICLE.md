@@ -1,6 +1,6 @@
 # SERVICE API - Particle Services
 
-**Weyl Compositor - Deterministic Particle System Services**
+**Lattice Compositor - Deterministic Particle System Services**
 
 ---
 

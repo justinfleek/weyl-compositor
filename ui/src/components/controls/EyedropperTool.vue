@@ -152,23 +152,23 @@ function clearSample() {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--weyl-surface-2);
-  border: 1px solid var(--weyl-border-default);
-  border-radius: var(--weyl-radius-sm);
-  color: var(--weyl-text-primary);
-  font-size: var(--weyl-font-size-sm);
+  background: var(--lattice-surface-2);
+  border: 1px solid var(--lattice-border-default);
+  border-radius: var(--lattice-radius-sm);
+  color: var(--lattice-text-primary);
+  font-size: var(--lattice-font-size-sm);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .eyedropper-button:hover {
-  border-color: var(--weyl-accent);
+  border-color: var(--lattice-accent);
 }
 
 .eyedropper-button.active {
-  background: var(--weyl-accent-muted);
-  border-color: var(--weyl-accent);
-  color: var(--weyl-accent);
+  background: var(--lattice-accent-muted);
+  border-color: var(--lattice-accent);
+  color: var(--lattice-accent);
 }
 
 .eyedropper-button .icon {
@@ -181,60 +181,60 @@ function clearSample() {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background: var(--weyl-surface-2);
-  border-radius: var(--weyl-radius-sm);
+  background: var(--lattice-surface-2);
+  border-radius: var(--lattice-radius-sm);
 }
 
 .color-swatch {
   width: 32px;
   height: 32px;
-  border-radius: var(--weyl-radius-sm);
-  border: 1px solid var(--weyl-border-default);
+  border-radius: var(--lattice-radius-sm);
+  border: 1px solid var(--lattice-border-default);
 }
 
 .color-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: var(--weyl-font-size-xs);
+  font-size: var(--lattice-font-size-xs);
   font-family: monospace;
-  color: var(--weyl-text-secondary);
+  color: var(--lattice-text-secondary);
 }
 
 .correction-values {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: var(--weyl-font-size-xs);
+  font-size: var(--lattice-font-size-xs);
   font-family: monospace;
-  color: var(--weyl-accent);
+  color: var(--lattice-accent);
 }
 
 .apply-button {
   padding: 4px 12px;
-  background: var(--weyl-accent);
+  background: var(--lattice-accent);
   border: none;
-  border-radius: var(--weyl-radius-sm);
+  border-radius: var(--lattice-radius-sm);
   color: white;
-  font-size: var(--weyl-font-size-sm);
+  font-size: var(--lattice-font-size-sm);
   cursor: pointer;
 }
 
 .apply-button:hover {
-  background: var(--weyl-accent-hover);
+  background: var(--lattice-accent-hover);
 }
 
 .clear-button {
   padding: 4px 8px;
-  background: var(--weyl-surface-3);
-  border: 1px solid var(--weyl-border-default);
-  border-radius: var(--weyl-radius-sm);
-  color: var(--weyl-text-secondary);
-  font-size: var(--weyl-font-size-sm);
+  background: var(--lattice-surface-3);
+  border: 1px solid var(--lattice-border-default);
+  border-radius: var(--lattice-radius-sm);
+  color: var(--lattice-text-secondary);
+  font-size: var(--lattice-font-size-sm);
   cursor: pointer;
 }
 
 .clear-button:hover {
-  border-color: var(--weyl-text-secondary);
+  border-color: var(--lattice-text-secondary);
 }
 </style>

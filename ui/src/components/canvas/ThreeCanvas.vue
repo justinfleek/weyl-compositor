@@ -235,9 +235,9 @@ import { ref, onMounted, onUnmounted, watch, computed, nextTick, shallowRef } fr
 import * as THREE from 'three';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { useSelectionStore } from '@/stores/selectionStore';
-import { WeylEngine } from '@/engine';
-import type { WeylEngineConfig, PerformanceStats } from '@/engine';
-import type { LayerTransformUpdate } from '@/engine/WeylEngine';
+import { LatticeEngine } from '@/engine';
+import type { LatticeEngineConfig, PerformanceStats } from '@/engine';
+import type { LayerTransformUpdate } from '@/engine/LatticeEngine';
 import type { Layer, ControlPoint } from '@/types/project';
 import SplineEditor from './SplineEditor.vue';
 import MotionPathOverlay from './MotionPathOverlay.vue';
@@ -260,7 +260,7 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const splineEditorRef = ref<InstanceType<typeof SplineEditor> | null>(null);
 
 // Engine instance (shallowRef for performance - don't make Three.js objects reactive)
-const engine = shallowRef<WeylEngine | null>(null);
+const engine = shallowRef<LatticeEngine | null>(null);
 
 // State
 const loading = ref(false);
@@ -592,7 +592,7 @@ onMounted(async () => {
   canvasHeight.value = rect.height;
 
   // Create engine config
-  const config: WeylEngineConfig = {
+  const config: LatticeEngineConfig = {
     canvas: canvasRef.value,
     width: rect.width,
     height: rect.height,
@@ -607,7 +607,7 @@ onMounted(async () => {
 
   try {
     loading.value = true;
-    engine.value = new WeylEngine(config);
+    engine.value = new LatticeEngine(config);
 
     // Wire up callbacks for video/nested composition/camera integration
     engine.value.setAssetGetter((assetId: string) => store.assets[assetId]);
@@ -1671,7 +1671,7 @@ defineExpose({
 }
 
 .three-canvas.drag-over {
-  outline: 2px dashed var(--weyl-accent, #8B5CF6);
+  outline: 2px dashed var(--lattice-accent, #8B5CF6);
   outline-offset: -4px;
   background: rgba(139, 92, 246, 0.1);
 }
@@ -1865,7 +1865,7 @@ defineExpose({
 
 .shape-preview path {
   fill: rgba(139, 92, 246, 0.2);
-  stroke: var(--weyl-accent, #8B5CF6);
+  stroke: var(--lattice-accent, #8B5CF6);
   stroke-width: 2;
   stroke-dasharray: 5, 3;
 }
@@ -2021,7 +2021,7 @@ defineExpose({
 /* Marquee Selection Rectangle */
 .marquee-selection {
   position: absolute;
-  border: 1px dashed var(--weyl-accent, #8B5CF6);
+  border: 1px dashed var(--lattice-accent, #8B5CF6);
   background: rgba(139, 92, 246, 0.1);
   pointer-events: none;
   z-index: 20;
@@ -2032,7 +2032,7 @@ defineExpose({
   position: absolute;
   top: -20px;
   left: 0;
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: white;
   padding: 2px 6px;
   border-radius: 3px;

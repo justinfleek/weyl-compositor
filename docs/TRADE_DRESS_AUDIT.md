@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document tracks terminology used in the Weyl Compositor that may infringe on Adobe After Effects trade dress, copyrights, or patents. All identified high-risk terms have been catalogued, assessed, and mitigated.
+This document tracks terminology used in the Lattice Compositor that may infringe on Adobe After Effects trade dress, copyrights, or patents. All identified high-risk terms have been catalogued, assessed, and mitigated.
 
 **Total Terms Audited**: 15
 **Critical Risk (Mitigated)**: 4

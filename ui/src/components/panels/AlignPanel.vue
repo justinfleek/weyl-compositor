@@ -301,13 +301,13 @@ function distributeLayers(direction: DistributeDirection) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #1e1e1e);
+  background: var(--lattice-surface-1, #1e1e1e);
   color: #e0e0e0;
 }
 
 .panel-header {
   padding: 8px 12px;
-  background: var(--weyl-surface-2, #252525);
+  background: var(--lattice-surface-2, #252525);
   border-bottom: 1px solid #333;
 }
 
@@ -361,8 +361,8 @@ function distributeLayers(direction: DistributeDirection) {
 }
 
 .target-btn.active {
-  background: var(--weyl-accent, #4a90d9);
-  border-color: var(--weyl-accent, #4a90d9);
+  background: var(--lattice-accent, #4a90d9);
+  border-color: var(--lattice-accent, #4a90d9);
   color: #fff;
 }
 

@@ -340,7 +340,7 @@
         </button>
         <div class="separator"></div>
         <button @click="handleAction('showAbout')">
-          <span class="label">About Weyl Compositor</span>
+          <span class="label">About Lattice Compositor</span>
         </button>
       </div>
     </div>
@@ -468,8 +468,8 @@ if (typeof window !== 'undefined') {
   display: flex;
   align-items: center;
   height: 28px;
-  background: var(--weyl-surface-0);
-  border-bottom: 1px solid var(--weyl-surface-3);
+  background: var(--lattice-surface-0);
+  border-bottom: 1px solid var(--lattice-surface-3);
   padding: 0 8px;
   font-size: 12px;
   font-weight: 500;
@@ -483,7 +483,7 @@ if (typeof window !== 'undefined') {
 .menu-trigger {
   background: transparent;
   border: none;
-  color: var(--weyl-text-secondary);
+  color: var(--lattice-text-secondary);
   padding: 4px 10px;
   cursor: pointer;
   border-radius: 4px;
@@ -492,8 +492,8 @@ if (typeof window !== 'undefined') {
 
 .menu-trigger:hover,
 .menu-trigger.active {
-  background: var(--weyl-surface-2);
-  color: var(--weyl-text-primary);
+  background: var(--lattice-surface-2);
+  color: var(--lattice-text-primary);
 }
 
 .menu-dropdown {
@@ -501,8 +501,8 @@ if (typeof window !== 'undefined') {
   top: 100%;
   left: 0;
   min-width: 220px;
-  background: var(--weyl-surface-1);
-  border: 1px solid var(--weyl-surface-3);
+  background: var(--lattice-surface-1);
+  border: 1px solid var(--lattice-surface-3);
   border-radius: 6px;
   padding: 4px 0;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -517,19 +517,19 @@ if (typeof window !== 'undefined') {
   padding: 6px 12px;
   background: transparent;
   border: none;
-  color: var(--weyl-text-primary);
+  color: var(--lattice-text-primary);
   cursor: pointer;
   text-align: left;
   font-size: 12px;
 }
 
 .menu-dropdown button:hover:not(:disabled) {
-  background: var(--weyl-accent-muted);
-  color: var(--weyl-text-primary);
+  background: var(--lattice-accent-muted);
+  color: var(--lattice-text-primary);
 }
 
 .menu-dropdown button:disabled {
-  color: var(--weyl-text-muted);
+  color: var(--lattice-text-muted);
   cursor: not-allowed;
 }
 
@@ -538,14 +538,14 @@ if (typeof window !== 'undefined') {
 }
 
 .menu-dropdown .shortcut {
-  color: var(--weyl-text-muted);
+  color: var(--lattice-text-muted);
   font-size: 11px;
   margin-left: 24px;
 }
 
 .separator {
   height: 1px;
-  background: var(--weyl-surface-3);
+  background: var(--lattice-surface-3);
   margin: 4px 8px;
 }
 
@@ -554,7 +554,7 @@ if (typeof window !== 'undefined') {
 }
 
 .project-name {
-  color: var(--weyl-text-muted);
+  color: var(--lattice-text-muted);
   font-size: 11px;
   padding: 0 12px;
   max-width: 200px;
@@ -564,7 +564,7 @@ if (typeof window !== 'undefined') {
 }
 
 .unsaved-indicator {
-  color: var(--weyl-accent);
+  color: var(--lattice-accent);
   font-weight: bold;
   margin-right: 2px;
 }

@@ -90,7 +90,7 @@ export class SVGExportService {
     svg += 'width="' + viewBox.width + '" height="' + viewBox.height + '">' + nl;
 
     if (opts.includeMetadata) {
-      svg += ind + '<!-- Exported from Weyl Compositor -->' + nl;
+      svg += ind + '<!-- Exported from Lattice Compositor -->' + nl;
     }
 
     const trAttr = transformAttr ? ' transform="' + transformAttr + '"' : '';

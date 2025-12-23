@@ -40,7 +40,7 @@ function toggle() {
 
 <style scoped>
 .collapsible-panel {
-  border-bottom: 1px solid var(--weyl-border-default, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-default, #2a2a2a);
 }
 
 .collapsible-panel:last-child {
@@ -52,7 +52,7 @@ function toggle() {
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-left: 3px solid transparent;
   cursor: pointer;
   user-select: none;
@@ -60,42 +60,42 @@ function toggle() {
 }
 
 .panel-header:hover {
-  background: var(--weyl-surface-3, #222222);
-  border-left-color: var(--weyl-accent-muted, rgba(139, 92, 246, 0.3));
+  background: var(--lattice-surface-3, #222222);
+  border-left-color: var(--lattice-accent-muted, rgba(139, 92, 246, 0.3));
 }
 
 .collapsible-panel:not(.collapsed) .panel-header {
-  border-left-color: var(--weyl-accent, #8B5CF6);
-  background: var(--weyl-surface-2, #1a1a1a);
+  border-left-color: var(--lattice-accent, #8B5CF6);
+  background: var(--lattice-surface-2, #1a1a1a);
 }
 
 .expand-icon {
   font-size: 10px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   width: 12px;
   transition: color 0.15s ease;
 }
 
 .collapsible-panel:not(.collapsed) .expand-icon {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .panel-title {
   flex: 1;
   font-size: 13px;
   font-weight: 600;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .collapsible-panel:not(.collapsed) .panel-title {
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .panel-badge {
   font-size: 11px;
   padding: 2px 6px;
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
-  color: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
+  color: var(--lattice-accent, #8B5CF6);
   border-radius: 10px;
 }
 
@@ -105,7 +105,7 @@ function toggle() {
 }
 
 .collapsed .panel-header {
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
   border-left-color: transparent;
 }
 </style>

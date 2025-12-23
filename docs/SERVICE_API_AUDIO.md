@@ -1,6 +1,6 @@
 # SERVICE API - Audio Services
 
-**Weyl Compositor - Audio Analysis & Reactivity Services**
+**Lattice Compositor - Audio Analysis & Reactivity Services**
 
 ---
 

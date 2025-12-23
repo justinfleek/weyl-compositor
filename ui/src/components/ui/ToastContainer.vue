@@ -66,11 +66,11 @@ function getIcon(type: ToastType): string {
   gap: 10px;
   padding: 12px 16px;
   border-radius: 6px;
-  background: var(--weyl-surface-3, #222);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-3, #222);
+  border: 1px solid var(--lattice-border-default, #333);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   font-size: 13px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   pointer-events: auto;
 }
 
@@ -90,7 +90,7 @@ function getIcon(type: ToastType): string {
   height: 24px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-size: 18px;
   cursor: pointer;
   border-radius: 4px;
@@ -102,7 +102,7 @@ function getIcon(type: ToastType): string {
 
 .toast-close:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 /* Toast types */
@@ -131,11 +131,11 @@ function getIcon(type: ToastType): string {
 }
 
 .toast-info {
-  border-color: var(--weyl-accent, #8b5cf6);
+  border-color: var(--lattice-accent, #8b5cf6);
 }
 
 .toast-info .toast-icon {
-  color: var(--weyl-accent, #8b5cf6);
+  color: var(--lattice-accent, #8b5cf6);
 }
 
 /* Transitions */

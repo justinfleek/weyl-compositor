@@ -3,7 +3,7 @@
  *
  * Generates frame sequences with text and particles excluded for Wan video generation.
  */
-import type { WeylProject, Layer, TextData, SplineData, ParticleLayerData } from '@/types/project';
+import type { LatticeProject, Layer, TextData, SplineData, ParticleLayerData } from '@/types/project';
 import { interpolateProperty } from './interpolation';
 import { ArcLengthParameterizer, pathCommandsToBezier } from './arcLength';
 import { ParticleSystem } from './particleSystem';
@@ -78,7 +78,7 @@ class MatteExporter {
    * For text exclusion: Text regions are BLACK, everything else WHITE
    */
   async generateMatteSequence(
-    project: WeylProject,
+    project: LatticeProject,
     options: ExportOptions,
     onProgress?: ProgressCallback
   ): Promise<Blob[]> {
@@ -131,7 +131,7 @@ class MatteExporter {
    * Generate a single matte frame
    */
   async generateFrame(
-    project: WeylProject,
+    project: LatticeProject,
     frame: number,
     options: ExportOptions
   ): Promise<Blob> {
@@ -190,7 +190,7 @@ class MatteExporter {
    * Generate a preview frame (for UI display)
    */
   async generatePreviewFrame(
-    project: WeylProject,
+    project: LatticeProject,
     frame: number,
     options: ExportOptions
   ): Promise<string> {
@@ -212,7 +212,7 @@ class MatteExporter {
   private async renderTextLayerToMatte(
     ctx: OffscreenCanvasRenderingContext2D,
     layer: Layer,
-    project: WeylProject,
+    project: LatticeProject,
     frame: number,
     scaleX: number,
     scaleY: number
@@ -247,7 +247,7 @@ class MatteExporter {
     ctx: OffscreenCanvasRenderingContext2D,
     layer: Layer,
     textData: TextData,
-    project: WeylProject,
+    project: LatticeProject,
     frame: number,
     fontSize: number,
     scaleX: number,
@@ -443,7 +443,7 @@ class MatteExporter {
   /**
    * Initialize particle systems for all particle layers
    */
-  private initializeParticleSystems(project: WeylProject): void {
+  private initializeParticleSystems(project: LatticeProject): void {
     this.particleSystems.clear();
 
     const particleLayers = project.layers.filter(
@@ -490,7 +490,7 @@ class MatteExporter {
    * Step particle systems to the current frame
    * For sequential export, we step from frame 0 through each frame
    */
-  private stepParticleSystemsToFrame(project: WeylProject, frame: number): void {
+  private stepParticleSystemsToFrame(project: LatticeProject, frame: number): void {
     // Only step if this isn't the first frame (systems already initialized at frame 0)
     if (frame === 0) return;
 

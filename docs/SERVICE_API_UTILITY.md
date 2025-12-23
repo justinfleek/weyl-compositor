@@ -1,6 +1,6 @@
 # SERVICE API - Utility Services
 
-**Weyl Compositor - GPU Detection, Worker Pool, and Timeline Utilities**
+**Lattice Compositor - GPU Detection, Worker Pool, and Timeline Utilities**
 
 ---
 

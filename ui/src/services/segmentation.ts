@@ -1,7 +1,7 @@
 /**
  * Segmentation Service
  *
- * Communicates with the /weyl/segment backend endpoint for SAM2/MatSeg
+ * Communicates with the /lattice/segment backend endpoint for SAM2/MatSeg
  * segmentation to enable Vision → Layer pipeline for diffusion models.
  */
 
@@ -57,7 +57,7 @@ export interface SegmentationResult {
 }
 
 /**
- * Base URL for the Weyl API
+ * Base URL for the Lattice API
  * In ComfyUI context, this will be the same origin
  */
 function getApiBase(): string {
@@ -70,7 +70,7 @@ function getApiBase(): string {
  * Segment an image using SAM2 or MatSeg
  */
 export async function segmentImage(request: SegmentationRequest): Promise<SegmentationResult> {
-  const response = await fetch(`${getApiBase()}/weyl/segment`, {
+  const response = await fetch(`${getApiBase()}/lattice/segment`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

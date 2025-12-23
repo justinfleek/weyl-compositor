@@ -1,6 +1,6 @@
 # SERVICE API - Effect Services
 
-**Weyl Compositor - Effect Processing and Rendering Services**
+**Lattice Compositor - Effect Processing and Rendering Services**
 
 ---
 

@@ -350,7 +350,7 @@ export function useCanvasSelection(options: UseCanvasSelectionOptions) {
       top: `${y}px`,
       width: `${width}px`,
       height: `${height}px`,
-      border: '1px dashed var(--weyl-accent, #8B5CF6)',
+      border: '1px dashed var(--lattice-accent, #8B5CF6)',
       backgroundColor: 'rgba(139, 92, 246, 0.1)',
       pointerEvents: 'none' as const,
       zIndex: 9999,

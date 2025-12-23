@@ -54,7 +54,7 @@ export type PluginPermission =
   | 'clipboard'
   | 'notifications';
 
-export interface WeylPluginAPI {
+export interface LatticePluginAPI {
   // Read-only project access
   getProject(): any;
   getCurrentFrame(): number;
@@ -166,18 +166,18 @@ export interface ToolDefinition {
   onMouseUp?: (event: MouseEvent) => void;
 }
 
-export interface WeylPlugin {
+export interface LatticePlugin {
   /** Plugin manifest */
   manifest: PluginManifest;
   /** Lifecycle: called when plugin loads */
-  onLoad(api: WeylPluginAPI): void | Promise<void>;
+  onLoad(api: LatticePluginAPI): void | Promise<void>;
   /** Lifecycle: called when plugin unloads */
   onUnload?(): void | Promise<void>;
 }
 
 export interface LoadedPlugin {
   manifest: PluginManifest;
-  instance: WeylPlugin;
+  instance: LatticePlugin;
   state: 'loading' | 'active' | 'error' | 'disabled';
   error?: string;
   registrations: {
@@ -272,7 +272,7 @@ export class PluginManager {
   /**
    * Load a plugin from a module
    */
-  async loadPlugin(plugin: WeylPlugin): Promise<void> {
+  async loadPlugin(plugin: LatticePlugin): Promise<void> {
     const { manifest } = plugin;
 
     if (this.plugins.has(manifest.id)) {
@@ -365,7 +365,7 @@ export class PluginManager {
   /**
    * Create the API object for a plugin
    */
-  private createPluginAPI(plugin: LoadedPlugin): WeylPluginAPI {
+  private createPluginAPI(plugin: LoadedPlugin): LatticePluginAPI {
     const manager = this;
 
     return {

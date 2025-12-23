@@ -91,10 +91,10 @@ function toggleKeyframe(prop: 'amount' | 'miterLimit' | 'copies' | 'copyOffset')
 <style scoped>
 .shape-editor { display: flex; flex-direction: column; gap: 6px; }
 .property-row { display: flex; align-items: center; gap: 8px; }
-.property-row label { width: 70px; color: var(--weyl-text-muted, #888); font-size: 11px; flex-shrink: 0; }
-.icon-toggle-group { display: flex; background: var(--weyl-surface-0, #0a0a0a); border-radius: 3px; border: 1px solid var(--weyl-border-default, #333); }
-.icon-toggle-group button { background: transparent; border: none; color: var(--weyl-text-muted, #666); padding: 4px 8px; cursor: pointer; font-size: 12px; border-right: 1px solid var(--weyl-border-default, #333); }
+.property-row label { width: 70px; color: var(--lattice-text-muted, #888); font-size: 11px; flex-shrink: 0; }
+.icon-toggle-group { display: flex; background: var(--lattice-surface-0, #0a0a0a); border-radius: 3px; border: 1px solid var(--lattice-border-default, #333); }
+.icon-toggle-group button { background: transparent; border: none; color: var(--lattice-text-muted, #666); padding: 4px 8px; cursor: pointer; font-size: 12px; border-right: 1px solid var(--lattice-border-default, #333); }
 .icon-toggle-group button:last-child { border-right: none; }
-.icon-toggle-group button.active { background: var(--weyl-accent, #8B5CF6); color: #fff; }
-.icon-toggle-group button:hover:not(.active) { background: var(--weyl-surface-3, #333); }
+.icon-toggle-group button.active { background: var(--lattice-accent, #8B5CF6); color: #fff; }
+.icon-toggle-group button:hover:not(.active) { background: var(--lattice-surface-3, #333); }
 </style>

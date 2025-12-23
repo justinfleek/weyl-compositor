@@ -23,4 +23,4 @@ Any alternative solutions or features you've considered.
 ## Priority
 - [ ] Nice to have
 - [ ] Important for my workflow
-- [ ] Blocking my use of Weyl
+- [ ] Blocking my use of Lattice

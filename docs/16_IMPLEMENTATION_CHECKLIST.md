@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — IMPLEMENTATION CHECKLIST
+# LATTICE COMPOSITOR — IMPLEMENTATION CHECKLIST
 
 **Document ID**: 16_IMPLEMENTATION_CHECKLIST  
 **Version**: 1.0.0  
@@ -42,7 +42,7 @@ A system is **done** when:
 
 ### 2.1 Tasks
 
-- [ ] Clone repository: `github.com/justinfleek/weyl-compositor`
+- [ ] Clone repository: `github.com/justinfleek/lattice-compositor`
 - [ ] Run forbidden pattern audit on all files
 - [ ] Document all violations found
 - [ ] Map current architecture against specs
@@ -79,7 +79,7 @@ grep -rn "previousFrame" --include="*.ts" --include="*.tsx" | grep -v node_modul
 - [ ] Create/update `types/math.ts` (Vec2, Vec3, Vec4, Mat4, Color)
 - [ ] Create/update `types/animation.ts` (Keyframe, AnimatableProperty)
 - [ ] Create/update `types/layer.ts` (all layer interfaces)
-- [ ] Create/update `types/project.ts` (WeylProject, Composition, Asset)
+- [ ] Create/update `types/project.ts` (LatticeProject, Composition, Asset)
 - [ ] Create/update `types/evaluation.ts` (FrameState, EvaluatedLayer)
 - [ ] Ensure all types use `readonly`
 - [ ] Add type tests (type-level validation)
@@ -586,6 +586,6 @@ After completion:
 
 ---
 
-**This completes the Weyl Compositor specification suite.**
+**This completes the Lattice Compositor specification suite.**
 
 **Previous**: [15_DETERMINISM_TESTING.md](./15_DETERMINISM_TESTING.md)

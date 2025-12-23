@@ -5,7 +5,7 @@
 # IMPLEMENTATION STATUS (Updated December 2025)
 
 > **Design System:** See `docs/DESIGN_SYSTEM.md` for complete CSS variable reference.
-> All components should use `--weyl-*` CSS variables, never hardcode colors.
+> All components should use `--lattice-*` CSS variables, never hardcode colors.
 > App background is `#050505` (void), panel backgrounds are `#121212` (surface-1).
 
 ## Component Architecture Overview
@@ -255,28 +255,28 @@ app.component('Dialog', Dialog);
 app.directive('tooltip', Tooltip);
 
 // Mount
-app.mount('#weyl-compositor-root');
+app.mount('#lattice-compositor-root');
 
 // Listen for messages from ComfyUI
-window.addEventListener('weyl:inputs-ready', (event: any) => {
+window.addEventListener('lattice:inputs-ready', (event: any) => {
   const { useCompositorStore } = await import('./stores/compositorStore');
   const store = useCompositorStore();
   store.loadInputs(event.detail);
 });
 
-window.addEventListener('weyl:keydown', (event: any) => {
+window.addEventListener('lattice:keydown', (event: any) => {
   const { useKeyboardService } = await import('./services/keyboardService');
   useKeyboardService().handleKeydown(event.detail);
 });
 
-console.log('[Weyl] Vue app mounted');
+console.log('[Lattice] Vue app mounted');
 ```
 
 ## 8.2 Main Layout Component (ui/src/App.vue)
 
 ```vue
 <template>
-  <div class="weyl-compositor">
+  <div class="lattice-compositor">
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="tool-group">
@@ -383,7 +383,7 @@ const showExportDialog = ref(false);
 </script>
 
 <style scoped>
-.weyl-compositor {
+.lattice-compositor {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -469,7 +469,7 @@ const showExportDialog = ref(false);
  */
 import { defineStore } from 'pinia';
 import type {
-  WeylProject,
+  LatticeProject,
   Layer,
   AnimatableProperty,
   Keyframe,
@@ -479,7 +479,7 @@ import type {
 import { interpolateProperty } from '@/services/interpolation';
 
 interface CompositorState {
-  project: WeylProject | null;
+  project: LatticeProject | null;
   currentFrame: number;
   isPlaying: boolean;
   playbackStartTime: number | null;

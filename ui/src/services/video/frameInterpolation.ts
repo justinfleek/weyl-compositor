@@ -83,7 +83,7 @@ export type InterpolationProgressCallback = (progress: number, message: string) 
 // API Communication
 // ============================================================================
 
-const API_BASE = '/weyl/video/interpolation';
+const API_BASE = '/lattice/video/interpolation';
 
 /**
  * Get available interpolation models

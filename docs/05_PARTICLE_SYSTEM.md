@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — PARTICLE SYSTEM
+# LATTICE COMPOSITOR — PARTICLE SYSTEM
 
 **Document ID**: 05_PARTICLE_SYSTEM  
 **Version**: 2.0.0 (Research-Validated)  
@@ -19,7 +19,7 @@
 |------|----------|-------------------|------------|
 | **Trapcode Particular** | Seeded PRNG | Re-simulates forward from frame 0 on every scrub | No storage cost; slow for complex simulations |
 | **X-Particles** | Frame-by-frame disk caching | Instant scrub to any cached frame | Disk space required; cache invalidation complexity |
-| **Weyl (recommended)** | Hybrid: Seeded PRNG + checkpoint caching | Fast scrub via checkpoints, guaranteed determinism via PRNG | Balanced approach |
+| **Lattice (recommended)** | Hybrid: Seeded PRNG + checkpoint caching | Fast scrub via checkpoints, guaranteed determinism via PRNG | Balanced approach |
 
 ### 1.2 Trapcode Particular Deep Dive
 
@@ -59,9 +59,9 @@ The RyanOnTheInside particle system operates differently:
 
 ---
 
-## 2. WEYL HYBRID STRATEGY
+## 2. LATTICE HYBRID STRATEGY
 
-Weyl implements a **hybrid approach** combining the strengths of both Particular and X-Particles:
+Lattice implements a **hybrid approach** combining the strengths of both Particular and X-Particles:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

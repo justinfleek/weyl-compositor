@@ -132,9 +132,9 @@ For parallax/3D effect:
 ## Key Endpoints (For Developers)
 
 ```
-POST /weyl/decomposition/decompose   # Run decomposition
-POST /weyl/decomposition/download    # Download model
-GET  /weyl/decomposition/status      # Check model status
+POST /lattice/decomposition/decompose   # Run decomposition
+POST /lattice/decomposition/download    # Download model
+GET  /lattice/decomposition/status      # Check model status
 ```
 
 ---

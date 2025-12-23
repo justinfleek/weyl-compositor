@@ -157,7 +157,7 @@ function updateSolidData<K extends keyof SolidLayerData>(key: K, value: SolidLay
 }
 
 .property-section {
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .section-header {
@@ -167,14 +167,14 @@ function updateSolidData<K extends keyof SolidLayerData>(key: K, value: SolidLay
   padding: 8px 12px;
   cursor: pointer;
   user-select: none;
-  font-size: var(--weyl-text-sm, 12px);
+  font-size: var(--lattice-text-sm, 12px);
   font-weight: 500;
-  color: var(--weyl-text-secondary, #9CA3AF);
-  background: var(--weyl-surface-0, #0a0a0a);
+  color: var(--lattice-text-secondary, #9CA3AF);
+  background: var(--lattice-surface-0, #0a0a0a);
 }
 
 .section-header:hover {
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
 }
 
 .section-content {
@@ -190,16 +190,16 @@ function updateSolidData<K extends keyof SolidLayerData>(key: K, value: SolidLay
 
 .property-row label {
   flex: 0 0 120px;
-  font-size: var(--weyl-text-xs, 11px);
-  color: var(--weyl-text-secondary, #9CA3AF);
+  font-size: var(--lattice-text-xs, 11px);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .property-row input[type="color"] {
   width: 32px;
   height: 24px;
   padding: 0;
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
-  border-radius: var(--weyl-radius-sm, 2px);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  border-radius: var(--lattice-radius-sm, 2px);
   cursor: pointer;
 }
 
@@ -207,11 +207,11 @@ function updateSolidData<K extends keyof SolidLayerData>(key: K, value: SolidLay
   flex: 1;
   max-width: 80px;
   padding: 4px 8px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
-  border-radius: var(--weyl-radius-sm, 2px);
-  color: var(--weyl-text-primary, #E5E5E5);
-  font-size: var(--weyl-text-xs, 11px);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  border-radius: var(--lattice-radius-sm, 2px);
+  color: var(--lattice-text-primary, #E5E5E5);
+  font-size: var(--lattice-text-xs, 11px);
 }
 
 .property-row input[type="range"] {
@@ -224,8 +224,8 @@ function updateSolidData<K extends keyof SolidLayerData>(key: K, value: SolidLay
 }
 
 .value-display {
-  font-size: var(--weyl-text-xs, 11px);
-  color: var(--weyl-text-muted, #6B7280);
+  font-size: var(--lattice-text-xs, 11px);
+  color: var(--lattice-text-muted, #6B7280);
   min-width: 50px;
 }
 
@@ -234,9 +234,9 @@ function updateSolidData<K extends keyof SolidLayerData>(key: K, value: SolidLay
   margin-top: 8px;
   background: rgba(139, 92, 246, 0.1);
   border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: var(--weyl-radius-sm, 2px);
-  font-size: var(--weyl-text-xs, 11px);
-  color: var(--weyl-text-secondary, #9CA3AF);
+  border-radius: var(--lattice-radius-sm, 2px);
+  font-size: var(--lattice-text-xs, 11px);
+  color: var(--lattice-text-secondary, #9CA3AF);
   line-height: 1.4;
 }
 </style>

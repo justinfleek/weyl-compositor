@@ -73,7 +73,7 @@ export type StemProgressCallback = (progress: number, message: string) => void;
 // API Communication
 // ============================================================================
 
-const API_BASE = '/weyl/audio/stems';
+const API_BASE = '/lattice/audio/stems';
 
 /**
  * Get available stem separation models
@@ -271,7 +271,7 @@ export async function isolateStem(
 /**
  * Separate stems and create audio buffers for audio reactivity
  *
- * This integrates with the Weyl audio reactivity system, allowing
+ * This integrates with the Lattice audio reactivity system, allowing
  * different stems to drive different properties.
  *
  * @example

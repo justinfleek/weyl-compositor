@@ -887,11 +887,11 @@ async function createPathAnimator() {
       });
 
       pathAnimResult.value = `Created ${keyframes.length} keyframes on "${targetLayer.name}" following "${splineLayer.name}"`;
-      console.log(`[Weyl] Audio path animator: ${keyframes.length} keyframes created`);
+      console.log(`[Lattice] Audio path animator: ${keyframes.length} keyframes created`);
     }
   } catch (err) {
     pathAnimError.value = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[Weyl] Audio path animator error:', err);
+    console.error('[Lattice] Audio path animator error:', err);
   } finally {
     isCreatingPathAnim.value = false;
   }
@@ -899,7 +899,7 @@ async function createPathAnimator() {
 
 function useMainAudio() {
   audioStore.setActiveStem(null);
-  console.log('[Weyl] Switched to main audio for reactivity');
+  console.log('[Lattice] Switched to main audio for reactivity');
 }
 
 function loadAudioFile() { audioFileInput.value?.click(); }
@@ -936,7 +936,7 @@ async function convertAudioToKeyframes() {
         layerName: result.layerName,
         keyframeCount: result.keyframeCount
       };
-      console.log(`[Weyl] Created Audio Amplitude layer "${result.layerName}" with ${result.keyframeCount} keyframes per channel`);
+      console.log(`[Lattice] Created Audio Amplitude layer "${result.layerName}" with ${result.keyframeCount} keyframes per channel`);
     } else {
       convertError.value = 'Failed to create audio amplitude layer';
     }
@@ -1127,7 +1127,7 @@ async function useStemForReactivity(stemName: string) {
   if (!separatedStems.value?.[stemName]) return;
 
   const stemData = separatedStems.value[stemName];
-  console.log(`[Weyl] Loading ${stemName} stem for audio reactivity`);
+  console.log(`[Lattice] Loading ${stemName} stem for audio reactivity`);
 
   try {
     // Get FPS from compositor store or use default
@@ -1142,9 +1142,9 @@ async function useStemForReactivity(stemName: string) {
     // Set this stem as the active source for audio reactivity
     audioStore.setActiveStem(stemName);
 
-    console.log(`[Weyl] ${stemName} stem now active for audio reactivity`);
+    console.log(`[Lattice] ${stemName} stem now active for audio reactivity`);
   } catch (error) {
-    console.error(`[Weyl] Failed to use ${stemName} stem for reactivity:`, error);
+    console.error(`[Lattice] Failed to use ${stemName} stem for reactivity:`, error);
   }
 }
 
@@ -1174,7 +1174,7 @@ function updateBeatConfig() {
 
 async function analyzeBeats() {
   if (!store.audioAnalysis) {
-    console.warn('[Weyl] No audio analysis available for beat detection');
+    console.warn('[Lattice] No audio analysis available for beat detection');
     return;
   }
 
@@ -1190,9 +1190,9 @@ async function analyzeBeats() {
       beatConfig.value
     );
 
-    console.log(`[Weyl] Beat detection complete: ${beatGrid.value.bpm} BPM, ${beatGrid.value.beats.length} beats`);
+    console.log(`[Lattice] Beat detection complete: ${beatGrid.value.bpm} BPM, ${beatGrid.value.beats.length} beats`);
   } catch (error) {
-    console.error('[Weyl] Beat detection failed:', error);
+    console.error('[Lattice] Beat detection failed:', error);
     beatGrid.value = null;
   } finally {
     isAnalyzingBeats.value = false;
@@ -1248,9 +1248,9 @@ function snapToBeats() {
   }
 
   if (snappedCount > 0) {
-    console.log(`[Weyl] Snapped ${snappedCount} keyframes to beats`);
+    console.log(`[Lattice] Snapped ${snappedCount} keyframes to beats`);
   } else {
-    console.log('[Weyl] No keyframes were close enough to beats to snap');
+    console.log('[Lattice] No keyframes were close enough to beats to snap');
   }
 }
 
@@ -1267,7 +1267,7 @@ function markBeatsAsMarkers() {
     });
   }
 
-  console.log(`[Weyl] Added ${beatGrid.value.downbeats.length} beat markers`);
+  console.log(`[Lattice] Added ${beatGrid.value.downbeats.length} beat markers`);
 }
 
 // ============================================================================
@@ -1293,9 +1293,9 @@ async function refreshMIDIDevices() {
     const midiService = getMIDIService();
     await midiService.initialize();
     midiDevices.value = midiService.getInputDevices();
-    console.log(`[Weyl] Found ${midiDevices.value.length} MIDI devices`);
+    console.log(`[Lattice] Found ${midiDevices.value.length} MIDI devices`);
   } catch (error) {
-    console.error('[Weyl] Failed to refresh MIDI devices:', error);
+    console.error('[Lattice] Failed to refresh MIDI devices:', error);
   } finally {
     isRefreshingMIDI.value = false;
   }
@@ -1348,7 +1348,7 @@ async function handleMIDIFileSelected(e: Event) {
     const arrayBuffer = await file.arrayBuffer();
     loadedMIDIFile.value = await parseMIDIFile(arrayBuffer);
     midiFileName.value = file.name;
-    console.log(`[Weyl] Loaded MIDI file: ${file.name}, ${loadedMIDIFile.value.tracks.length} tracks, ${loadedMIDIFile.value.duration.toFixed(2)}s`);
+    console.log(`[Lattice] Loaded MIDI file: ${file.name}, ${loadedMIDIFile.value.tracks.length} tracks, ${loadedMIDIFile.value.duration.toFixed(2)}s`);
   } catch (err) {
     midiConvertError.value = err instanceof Error ? err.message : 'Failed to parse MIDI file';
     loadedMIDIFile.value = null;
@@ -1443,7 +1443,7 @@ async function convertMIDIToKeyframes() {
         keyframeCount: keyframes.length
       };
 
-      console.log(`[Weyl] Created MIDI layer "${layer.name}" with ${keyframes.length} keyframes`);
+      console.log(`[Lattice] Created MIDI layer "${layer.name}" with ${keyframes.length} keyframes`);
     } else {
       midiConvertError.value = 'Failed to create layer';
     }

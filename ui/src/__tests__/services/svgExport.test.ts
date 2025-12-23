@@ -270,7 +270,7 @@ describe('exportLayers', () => {
     const layer = createSplineLayer('Shape', createSquarePoints());
     const result = svgExportService.exportSplineLayer(layer, { includeMetadata: true });
 
-    expect(result.svg).toContain('<!-- Exported from Weyl Compositor -->');
+    expect(result.svg).toContain('<!-- Exported from Lattice Compositor -->');
   });
 
   it('should minify output when option is set', () => {

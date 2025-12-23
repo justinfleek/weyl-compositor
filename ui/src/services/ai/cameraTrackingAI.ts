@@ -45,7 +45,7 @@ export type CameraMotionPrimitive =
   | 'unknown';
 
 /**
- * Map camera motion primitives to Weyl trajectory presets
+ * Map camera motion primitives to Lattice trajectory presets
  */
 export const MOTION_TO_TRAJECTORY: Record<CameraMotionPrimitive, string | null> = {
   'static': null,
@@ -169,7 +169,7 @@ export async function analyzeWithVLM(
   // Sample frames evenly (max 8 for VLM context)
   const sampledFrames = sampleFrames(request.frames, 8);
 
-  const response = await fetch('/weyl/api/ai/camera-motion', {
+  const response = await fetch('/lattice/api/ai/camera-motion', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -286,7 +286,7 @@ export function estimateCameraPosesFromDepth(
 
   return {
     version: '1.0',
-    source: 'weyl-depth-tracker',
+    source: 'lattice-depth-tracker',
     metadata: {
       sourceWidth: request.intrinsics.width,
       sourceHeight: request.intrinsics.height,
@@ -302,7 +302,7 @@ export function estimateCameraPosesFromDepth(
 }
 
 /**
- * Convert Uni3C PCDController format to Weyl tracking format
+ * Convert Uni3C PCDController format to Lattice tracking format
  *
  * Uni3C uses a specific JSON format for camera data
  */

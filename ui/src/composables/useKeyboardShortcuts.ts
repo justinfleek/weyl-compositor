@@ -122,7 +122,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     }
 
     if (keyframesUpdated > 0) {
-      console.log(`[Weyl] Applied smooth easing to ${keyframesUpdated} keyframes`);
+      console.log(`[Lattice] Applied smooth easing to ${keyframesUpdated} keyframes`);
     }
   }
 
@@ -153,7 +153,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     }
 
     if (keyframesUpdated > 0) {
-      console.log(`[Weyl] Applied Smooth In to ${keyframesUpdated} keyframes`);
+      console.log(`[Lattice] Applied Smooth In to ${keyframesUpdated} keyframes`);
     }
   }
 
@@ -184,7 +184,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     }
 
     if (keyframesUpdated > 0) {
-      console.log(`[Weyl] Applied Smooth Out to ${keyframesUpdated} keyframes`);
+      console.log(`[Lattice] Applied Smooth Out to ${keyframesUpdated} keyframes`);
     }
   }
 
@@ -305,20 +305,20 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   function setWorkAreaStart() {
     workAreaStart.value = store.currentFrame;
     playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
-    console.log(`[Weyl] Render range start set to frame ${store.currentFrame}`);
+    console.log(`[Lattice] Render range start set to frame ${store.currentFrame}`);
   }
 
   function setWorkAreaEnd() {
     workAreaEnd.value = store.currentFrame;
     playbackStore.setWorkArea(workAreaStart.value, workAreaEnd.value);
-    console.log(`[Weyl] Render range end set to frame ${store.currentFrame}`);
+    console.log(`[Lattice] Render range end set to frame ${store.currentFrame}`);
   }
 
   function clearWorkArea() {
     workAreaStart.value = null;
     workAreaEnd.value = null;
     playbackStore.clearWorkArea();
-    console.log('[Weyl] Render range cleared');
+    console.log('[Lattice] Render range cleared');
   }
 
   // ========================================================================
@@ -328,7 +328,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
   function toggleHiddenLayersVisibility() {
     showHiddenLayers.value = !showHiddenLayers.value;
-    console.log(`[Weyl] Hidden layers visibility: ${showHiddenLayers.value ? 'shown' : 'hidden'}`);
+    console.log(`[Lattice] Hidden layers visibility: ${showHiddenLayers.value ? 'shown' : 'hidden'}`);
   }
 
   function toggleLayerHidden(layerId: string) {
@@ -346,7 +346,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
   function togglePreviewPause() {
     previewUpdatesPaused.value = !previewUpdatesPaused.value;
-    console.log(`[Weyl] Preview updates: ${previewUpdatesPaused.value ? 'PAUSED' : 'active'}`);
+    console.log(`[Lattice] Preview updates: ${previewUpdatesPaused.value ? 'PAUSED' : 'active'}`);
   }
 
   // ========================================================================
@@ -356,7 +356,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
   function toggleTransparencyGrid() {
     showTransparencyGrid.value = !showTransparencyGrid.value;
-    console.log(`[Weyl] Transparency grid: ${showTransparencyGrid.value ? 'ON' : 'OFF'}`);
+    console.log(`[Lattice] Transparency grid: ${showTransparencyGrid.value ? 'ON' : 'OFF'}`);
   }
 
   // ========================================================================
@@ -367,7 +367,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
   function toggleGrid() {
     viewOptions.value.showGrid = !viewOptions.value.showGrid;
-    console.log(`[Weyl] Grid: ${viewOptions.value.showGrid ? 'ON' : 'OFF'}`);
+    console.log(`[Lattice] Grid: ${viewOptions.value.showGrid ? 'ON' : 'OFF'}`);
   }
 
   function setGridSize(size: number) {
@@ -381,7 +381,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
   function toggleRulers() {
     viewOptions.value.showRulers = !viewOptions.value.showRulers;
-    console.log(`[Weyl] Rulers: ${viewOptions.value.showRulers ? 'ON' : 'OFF'}`);
+    console.log(`[Lattice] Rulers: ${viewOptions.value.showRulers ? 'ON' : 'OFF'}`);
   }
 
   // ========================================================================
@@ -395,7 +395,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
   function toggleSnap() {
     snapEnabled.value = !snapEnabled.value;
-    console.log(`[Weyl] Snap: ${snapEnabled.value ? 'ON' : 'OFF'}`);
+    console.log(`[Lattice] Snap: ${snapEnabled.value ? 'ON' : 'OFF'}`);
   }
 
   // ========================================================================
@@ -571,7 +571,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     for (const id of selectedIds) {
       store.freezeFrameAtPlayhead(id);
     }
-    console.log('[Weyl] Freeze frame created at playhead for selected layers');
+    console.log('[Lattice] Freeze frame created at playhead for selected layers');
   }
 
   // ========================================================================
@@ -659,7 +659,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     }
 
     if (keyframesUpdated > 0) {
-      console.log(`[Weyl] Converted ${keyframesUpdated} keyframes to hold`);
+      console.log(`[Lattice] Converted ${keyframesUpdated} keyframes to hold`);
     }
   }
 
@@ -677,7 +677,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     }
 
     if (totalReversed > 0) {
-      console.log(`[Weyl] ${totalReversed} keyframes time-reversed`);
+      console.log(`[Lattice] ${totalReversed} keyframes time-reversed`);
     }
   }
 
@@ -713,7 +713,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       });
     }
 
-    console.log('[Weyl] Fit layer(s) to composition');
+    console.log('[Lattice] Fit layer(s) to composition');
   }
 
   function fitLayerToCompWidth() {
@@ -736,7 +736,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       });
     }
 
-    console.log('[Weyl] Fit layer(s) to composition width');
+    console.log('[Lattice] Fit layer(s) to composition width');
   }
 
   function fitLayerToCompHeight() {
@@ -759,7 +759,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       });
     }
 
-    console.log('[Weyl] Fit layer(s) to composition height');
+    console.log('[Lattice] Fit layer(s) to composition height');
   }
 
   // ========================================================================
@@ -812,7 +812,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       });
     }
 
-    console.log('[Weyl] Centered anchor point(s)');
+    console.log('[Lattice] Centered anchor point(s)');
   }
 
   // ========================================================================
@@ -837,7 +837,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       });
     }
 
-    console.log('[Weyl] Centered layer(s) in composition');
+    console.log('[Lattice] Centered layer(s) in composition');
   }
 
   // ========================================================================
@@ -845,7 +845,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   // ========================================================================
   function createAdjustmentLayer() {
     store.addLayer('adjustment', 'Effect Layer');
-    console.log('[Weyl] Created effect layer');
+    console.log('[Lattice] Created effect layer');
   }
 
   // ========================================================================
@@ -853,7 +853,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   // ========================================================================
   function createNullLayer() {
     store.addLayer('null', 'Control');
-    console.log('[Weyl] Created control layer');
+    console.log('[Lattice] Created control layer');
   }
 
   // ========================================================================
@@ -862,7 +862,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   function revealSourceInProject() {
     const selectedIds = store.selectedLayerIds;
     if (selectedIds.length === 0) {
-      console.log('[Weyl] No layer selected to reveal source');
+      console.log('[Lattice] No layer selected to reveal source');
       return;
     }
 
@@ -877,7 +877,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     } else if (layer.type === 'nestedComp') {
       if (data?.compositionId) {
         leftTab.value = 'comps';
-        console.log(`[Weyl] Revealed nested comp source: ${data.compositionId}`);
+        console.log(`[Lattice] Revealed nested comp source: ${data.compositionId}`);
         return;
       }
     }
@@ -887,9 +887,9 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       if (typeof store.selectAsset === 'function') {
         store.selectAsset(assetId);
       }
-      console.log(`[Weyl] Revealed source asset: ${assetId}`);
+      console.log(`[Lattice] Revealed source asset: ${assetId}`);
     } else {
-      console.log(`[Weyl] Layer type '${layer.type}' has no source asset`);
+      console.log(`[Lattice] Layer type '${layer.type}' has no source asset`);
     }
   }
 
@@ -938,7 +938,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
     if (keyframeIds.length > 0) {
       useSelectionStore().selectKeyframes(keyframeIds);
-      console.log(`[Weyl] Selected ${keyframeIds.length} keyframes on ${selectedIds.length} layer(s)`);
+      console.log(`[Lattice] Selected ${keyframeIds.length} keyframes on ${selectedIds.length} layer(s)`);
       return true;
     }
     return false;
@@ -972,7 +972,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       } else {
         matchingIds.forEach(id => store.selectLayer(id, true));
       }
-      console.log(`[Weyl] Selected ${matchingIds.length} layers with label color ${targetColor}`);
+      console.log(`[Lattice] Selected ${matchingIds.length} layers with label color ${targetColor}`);
     }
   }
 
@@ -1110,7 +1110,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
           e.preventDefault();
           if (isDoubleTap('m')) {
             soloProperty('masks', e.shiftKey);
-            console.log('[Weyl] Showing all mask properties (MM)');
+            console.log('[Lattice] Showing all mask properties (MM)');
           } else {
             soloProperty('masks', e.shiftKey);
           }
@@ -1179,7 +1179,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
           if (store.selectedKeyframeIds.length > 0) {
             showKeyframeInterpolationDialog.value = true;
           } else {
-            console.log('[Weyl] No keyframes selected for interpolation dialog');
+            console.log('[Lattice] No keyframes selected for interpolation dialog');
           }
         } else if (e.ctrlKey || e.metaKey) {
           e.preventDefault();

@@ -84,7 +84,7 @@ function toggleKeyframe(prop: 'anchorPoint' | 'position' | 'scale' | 'rotation' 
 <style scoped>
 .shape-editor { display: flex; flex-direction: column; gap: 6px; }
 .property-row { display: flex; align-items: center; gap: 8px; }
-.property-row label { width: 70px; color: var(--weyl-text-muted, #888); font-size: 11px; flex-shrink: 0; }
+.property-row label { width: 70px; color: var(--lattice-text-muted, #888); font-size: 11px; flex-shrink: 0; }
 .xy-inputs { display: flex; gap: 4px; flex: 1; }
 .xy-inputs > * { flex: 1; }
 </style>

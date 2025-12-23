@@ -1,6 +1,6 @@
 # SERVICE API - Camera & 3D Services
 
-**Weyl Compositor - 3D Math, Camera, and Visualization Services**
+**Lattice Compositor - 3D Math, Camera, and Visualization Services**
 
 ---
 

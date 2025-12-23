@@ -557,19 +557,19 @@ function onAnimationToggled(animated: boolean) {
 
 .preset-btn {
   padding: 4px 10px;
-  background: var(--weyl-surface-3, #222);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
-  border-radius: var(--weyl-radius-pill, 999px);
-  color: var(--weyl-text-secondary, #9ca3af);
+  background: var(--lattice-surface-3, #222);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
+  border-radius: var(--lattice-radius-pill, 999px);
+  color: var(--lattice-text-secondary, #9ca3af);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .preset-btn:hover {
-  background: var(--weyl-surface-4, #2a2a2a);
-  color: var(--weyl-text-primary, #e5e5e5);
-  border-color: var(--weyl-accent, #8b5cf6);
+  background: var(--lattice-surface-4, #2a2a2a);
+  color: var(--lattice-text-primary, #e5e5e5);
+  border-color: var(--lattice-accent, #8b5cf6);
 }
 
 /* Waveform */

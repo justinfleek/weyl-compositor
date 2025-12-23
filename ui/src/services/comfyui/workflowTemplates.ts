@@ -235,7 +235,7 @@ function addVideoOutput(
     images: imagesConnection,
     frame_rate: params.fps,
     loop_count: 0,
-    filename_prefix: params.filename || 'weyl_output',
+    filename_prefix: params.filename || 'lattice_output',
     format: params.format || 'video/h264-mp4',
     pingpong: false,
     save_output: true,

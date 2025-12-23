@@ -1,7 +1,7 @@
 /**
  * GPU Particle System Module
  *
- * High-performance particle system for Weyl Compositor featuring:
+ * High-performance particle system for Lattice Compositor featuring:
  * - 100k+ particles via WebGL2 instanced rendering
  * - GPU-accelerated physics (CPU fallback available)
  * - Full 3D simulation with mass, drag, forces

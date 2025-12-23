@@ -1,12 +1,12 @@
 /**
- * Weyl Engine - Three.js Based Rendering Engine
+ * Lattice Engine - Three.js Based Rendering Engine
  *
  * Export all public APIs for the compositor rendering engine.
  */
 
 // Main engine
-export { WeylEngine } from './WeylEngine';
-export type { WeylEngineConfig } from './types';
+export { LatticeEngine } from './LatticeEngine';
+export type { LatticeEngineConfig } from './types';
 
 // Core subsystems
 export { SceneManager } from './core/SceneManager';

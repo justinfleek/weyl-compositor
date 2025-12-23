@@ -25,7 +25,7 @@
  */
 
 import type {
-  WeylProject,
+  LatticeProject,
   Composition,
   Layer,
   LayerTransform,
@@ -299,7 +299,7 @@ class FrameStateCache {
    * Compute a lightweight hash of project state that affects rendering
    * Changes to layers, keyframes, or effects invalidate the cache
    */
-  computeProjectHash(project: WeylProject): string {
+  computeProjectHash(project: LatticeProject): string {
     const comp = project.compositions[project.mainCompositionId];
     if (!comp) return '';
 
@@ -463,7 +463,7 @@ export class MotionEngine {
    */
   evaluate(
     frame: number,
-    project: WeylProject,
+    project: LatticeProject,
     audioAnalysis?: AudioAnalysis | null,
     activeCameraId?: string | null,
     useCache: boolean = true,

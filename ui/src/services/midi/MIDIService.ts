@@ -1,5 +1,5 @@
 /**
- * MIDIService.ts - Web MIDI API wrapper for Weyl Compositor
+ * MIDIService.ts - Web MIDI API wrapper for Lattice Compositor
  *
  * Provides real-time MIDI device capture, message filtering, and property mapping.
  * Inspired by Jovi_MIDI with browser-native Web MIDI API.

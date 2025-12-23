@@ -42,7 +42,7 @@ This integration wraps nodes from the following open-source projects:
                          LICENSE NOTICE
 ==============================================================================
 
-This wrapper code is part of Weyl Compositor (MIT License).
+This wrapper code is part of Lattice Compositor (MIT License).
 The underlying preprocessor implementations retain their original licenses:
 - comfyui_controlnet_aux: Apache 2.0
 - NormalCrafter: Research license (see original repo)
@@ -1036,7 +1036,7 @@ try:
 
     routes = PromptServer.instance.routes
 
-    @routes.get('/weyl/preprocessors/list')
+    @routes.get('/lattice/preprocessors/list')
     async def list_preprocessors(request):
         """Get list of all available preprocessors"""
         return web.json_response({
@@ -1045,7 +1045,7 @@ try:
             "total": len(PREPROCESSOR_REGISTRY)
         })
 
-    @routes.get('/weyl/preprocessors/categories')
+    @routes.get('/lattice/preprocessors/categories')
     async def list_preprocessors_by_category(request):
         """Get preprocessors grouped by category"""
         return web.json_response({
@@ -1053,7 +1053,7 @@ try:
             "categories": get_preprocessors_by_category()
         })
 
-    @routes.get('/weyl/preprocessors/attribution')
+    @routes.get('/lattice/preprocessors/attribution')
     async def get_attribution_route(request):
         """Get attribution information for all sources"""
         return web.json_response({
@@ -1061,7 +1061,7 @@ try:
             **get_attribution()
         })
 
-    @routes.get('/weyl/preprocessors/{preprocessor_id}/info')
+    @routes.get('/lattice/preprocessors/{preprocessor_id}/info')
     async def get_preprocessor_info(request):
         """Get detailed info for a specific preprocessor"""
         preprocessor_id = request.match_info['preprocessor_id']
@@ -1096,7 +1096,7 @@ try:
             }
         })
 
-    @routes.post('/weyl/preprocessors/{preprocessor_id}/execute')
+    @routes.post('/lattice/preprocessors/{preprocessor_id}/execute')
     async def execute_preprocessor_route(request):
         """Execute a preprocessor on an image."""
         preprocessor_id = request.match_info['preprocessor_id']

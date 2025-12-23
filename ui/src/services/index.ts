@@ -1263,7 +1263,7 @@ export {
 // ============================================================================
 
 export {
-  parseWeylTrackingJSON,
+  parseLatticeTrackingJSON,
   parseBlenderTrackingJSON,
   parseCOLMAPOutput,
   detectTrackingFormat,
@@ -1372,7 +1372,7 @@ export {
   type PluginType,
   type PluginManifest,
   type PluginPermission,
-  type WeylPluginAPI,
+  type LatticePluginAPI,
   type PluginEvent,
   type PanelDefinition,
   type MenuItemDefinition,
@@ -1381,7 +1381,7 @@ export {
   type EffectParameter,
   type ExporterDefinition,
   type ToolDefinition,
-  type WeylPlugin,
+  type LatticePlugin,
   type LoadedPlugin,
 } from './plugins';
 

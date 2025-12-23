@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — TEXT & SHAPE SYSTEM
+# LATTICE COMPOSITOR — TEXT & SHAPE SYSTEM
 
 **Document ID**: 07_TEXT_SHAPE  
 **Version**: 1.0.0  
@@ -93,7 +93,7 @@ interface FontAsset extends Asset {
 ### 4.3 Font Loading (Deterministic)
 
 ```typescript
-async function loadFontAsset(fontId: string, project: WeylProject): Promise<ParsedFont> {
+async function loadFontAsset(fontId: string, project: LatticeProject): Promise<ParsedFont> {
   const asset = project.assets.find(a => a.id === fontId) as FontAsset
   if (!asset) {
     throw new Error(`Font not found: ${fontId}`)

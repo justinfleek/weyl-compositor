@@ -25,7 +25,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 // Default configuration - can be overridden
 const config: LoggerConfig = {
   level: import.meta.env?.DEV ? 'debug' : 'warn',
-  prefix: '[Weyl]',
+  prefix: '[Lattice]',
   enableTimestamp: false,
 };
 

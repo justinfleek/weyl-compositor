@@ -55,12 +55,12 @@ npm test -- audioFeatures.test.ts
 ```
 web/js/
 ├── extension.js              # ComfyUI sidebar registration
-├── weyl-compositor.js        # Main app bundle (~2.2MB)
-├── weyl-compositor.css       # Styles (~240KB)
-├── weyl-three-vendor.js      # Three.js chunk (~2.4MB)
-├── weyl-vue-vendor.js        # Vue chunk (~210KB)
-├── weyl-ui-vendor.js         # PrimeVue chunk
-├── weyl-export-vendor.js     # Export libraries
+├── lattice-compositor.js        # Main app bundle (~2.2MB)
+├── lattice-compositor.css       # Styles (~240KB)
+├── lattice-three-vendor.js      # Three.js chunk (~2.4MB)
+├── lattice-vue-vendor.js        # Vue chunk (~210KB)
+├── lattice-ui-vendor.js         # PrimeVue chunk
+├── lattice-export-vendor.js     # Export libraries
 └── worker-*.js               # Web Workers
 ```
 

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This specification documents the complete state of Weyl's particle ecosystem including particles, point clouds, camera trajectories, and depth-based effects. The goal is production-grade software competitive with Adobe After Effects plugins.
+This specification documents the complete state of Lattice's particle ecosystem including particles, point clouds, camera trajectories, and depth-based effects. The goal is production-grade software competitive with Adobe After Effects plugins.
 
 **Overall Assessment: 70% Feature Parity, 50% UI-Wired**
 

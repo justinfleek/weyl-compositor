@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — PRECOMPOSITION SYSTEM
+# LATTICE COMPOSITOR — PRECOMPOSITION SYSTEM
 
 **Document ID**: 11_PRECOMPOSITION  
 **Version**: 1.0.0  
@@ -212,7 +212,7 @@ const MAX_PRECOMP_DEPTH = 10
 function evaluatePrecompLayer(
   layer: PrecompLayer,
   parentFrame: number,
-  project: WeylProject,
+  project: LatticeProject,
   audioAnalysis?: AudioAnalysis,
   depth: number = 0
 ): EvaluatedLayer {
@@ -279,7 +279,7 @@ function evaluatePrecompLayer(
 function hasCircularReference(
   targetId: string,
   composition: Composition,
-  project: WeylProject,
+  project: LatticeProject,
   visited: Set<string> = new Set()
 ): boolean {
   if (visited.has(composition.id)) {

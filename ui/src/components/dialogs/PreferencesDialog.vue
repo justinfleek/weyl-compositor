@@ -640,7 +640,7 @@ const preferences = reactive<Preferences>({ ...defaultPreferences });
 
 function loadPreferences() {
   try {
-    const saved = localStorage.getItem('weyl-preferences');
+    const saved = localStorage.getItem('lattice-preferences');
     if (saved) {
       const parsed = JSON.parse(saved);
       Object.assign(preferences, parsed);
@@ -652,7 +652,7 @@ function loadPreferences() {
 
 function savePreferences() {
   try {
-    localStorage.setItem('weyl-preferences', JSON.stringify(preferences));
+    localStorage.setItem('lattice-preferences', JSON.stringify(preferences));
   } catch (e) {
     console.warn('Failed to save preferences:', e);
   }
@@ -720,8 +720,8 @@ onUnmounted(() => {
 }
 
 .dialog-container {
-  background: var(--weyl-surface-1, #1a1a1a);
-  border: 1px solid var(--weyl-surface-3, #333);
+  background: var(--lattice-surface-1, #1a1a1a);
+  border: 1px solid var(--lattice-surface-3, #333);
   border-radius: 8px;
   width: 720px;
   max-width: 90vw;
@@ -736,15 +736,15 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: var(--weyl-surface-0, #121212);
-  border-bottom: 1px solid var(--weyl-surface-3, #333);
+  background: var(--lattice-surface-0, #121212);
+  border-bottom: 1px solid var(--lattice-surface-3, #333);
   border-radius: 8px 8px 0 0;
 }
 
 .dialog-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .close-btn {
@@ -752,7 +752,7 @@ onUnmounted(() => {
   height: 28px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   font-size: 20px;
   cursor: pointer;
   border-radius: 4px;
@@ -762,8 +762,8 @@ onUnmounted(() => {
 }
 
 .close-btn:hover {
-  background: var(--weyl-surface-2, #222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-2, #222);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .dialog-body {
@@ -774,8 +774,8 @@ onUnmounted(() => {
 
 .sidebar {
   width: 160px;
-  background: var(--weyl-surface-0, #121212);
-  border-right: 1px solid var(--weyl-surface-3, #333);
+  background: var(--lattice-surface-0, #121212);
+  border-right: 1px solid var(--lattice-surface-3, #333);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -789,7 +789,7 @@ onUnmounted(() => {
   padding: 8px 12px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-secondary, #999);
+  color: var(--lattice-text-secondary, #999);
   font-size: 12px;
   text-align: left;
   cursor: pointer;
@@ -798,13 +798,13 @@ onUnmounted(() => {
 }
 
 .sidebar-item:hover {
-  background: var(--weyl-surface-2, #222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-2, #222);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .sidebar-item.active {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.2));
-  color: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.2));
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .tab-icon {
@@ -821,7 +821,7 @@ onUnmounted(() => {
   margin: 0 0 16px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .setting-group {
@@ -832,7 +832,7 @@ onUnmounted(() => {
   margin: 0 0 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--weyl-text-secondary, #999);
+  color: var(--lattice-text-secondary, #999);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -847,7 +847,7 @@ onUnmounted(() => {
 .form-row > label:first-child:not(:only-child) {
   width: 140px;
   flex-shrink: 0;
-  color: var(--weyl-text-secondary, #999);
+  color: var(--lattice-text-secondary, #999);
   font-size: 12px;
 }
 
@@ -855,7 +855,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 12px;
   cursor: pointer;
 }
@@ -863,16 +863,16 @@ onUnmounted(() => {
 .form-row input[type="checkbox"] {
   width: 14px;
   height: 14px;
-  accent-color: var(--weyl-accent, #8B5CF6);
+  accent-color: var(--lattice-accent, #8B5CF6);
 }
 
 .text-input,
 .select-input,
 .number-input {
   padding: 6px 10px;
-  border: 1px solid var(--weyl-surface-3, #333);
-  background: var(--weyl-surface-0, #121212);
-  color: var(--weyl-text-primary, #e5e5e5);
+  border: 1px solid var(--lattice-surface-3, #333);
+  background: var(--lattice-surface-0, #121212);
+  color: var(--lattice-text-primary, #e5e5e5);
   border-radius: 4px;
   font-size: 12px;
 }
@@ -881,7 +881,7 @@ onUnmounted(() => {
 .select-input:focus,
 .number-input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .select-input {
@@ -899,17 +899,17 @@ onUnmounted(() => {
 .range-input {
   flex: 1;
   max-width: 150px;
-  accent-color: var(--weyl-accent, #8B5CF6);
+  accent-color: var(--lattice-accent, #8B5CF6);
 }
 
 .unit,
 .value {
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   font-size: 11px;
 }
 
 .hint {
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   font-size: 11px;
 }
 
@@ -930,15 +930,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 12px 8px;
-  border: 1px solid var(--weyl-surface-3, #333);
-  background: var(--weyl-surface-0, #121212);
+  border: 1px solid var(--lattice-surface-3, #333);
+  background: var(--lattice-surface-0, #121212);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .theme-btn:hover {
-  border-color: var(--weyl-surface-4, #444);
+  border-color: var(--lattice-surface-4, #444);
 }
 
 .theme-btn.active {
@@ -955,11 +955,11 @@ onUnmounted(() => {
 
 .theme-name {
   font-size: 11px;
-  color: var(--weyl-text-secondary, #999);
+  color: var(--lattice-text-secondary, #999);
 }
 
 .theme-btn.active .theme-name {
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 /* Shortcuts list */
@@ -973,7 +973,7 @@ onUnmounted(() => {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -983,19 +983,19 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-  border-bottom: 1px solid var(--weyl-surface-2, #222);
+  border-bottom: 1px solid var(--lattice-surface-2, #222);
 }
 
 .shortcut-row .action {
   font-size: 12px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .shortcut-row .keys {
   font-size: 11px;
   font-family: monospace;
-  color: var(--weyl-text-muted, #666);
-  background: var(--weyl-surface-2, #222);
+  color: var(--lattice-text-muted, #666);
+  background: var(--lattice-surface-2, #222);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -1005,8 +1005,8 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: var(--weyl-surface-0, #121212);
-  border-top: 1px solid var(--weyl-surface-3, #333);
+  background: var(--lattice-surface-0, #121212);
+  border-top: 1px solid var(--lattice-surface-3, #333);
   border-radius: 0 0 8px 8px;
 }
 
@@ -1027,28 +1027,28 @@ onUnmounted(() => {
 
 .btn-text {
   background: transparent;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
 }
 
 .btn-text:hover {
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .btn-secondary {
-  background: var(--weyl-surface-3, #333);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #333);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .btn-secondary:hover {
-  background: var(--weyl-surface-4, #444);
+  background: var(--lattice-surface-4, #444);
 }
 
 .btn-primary {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: white;
 }
 
 .btn-primary:hover {
-  background: var(--weyl-accent-hover, #9D6FFF);
+  background: var(--lattice-accent-hover, #9D6FFF);
 }
 </style>

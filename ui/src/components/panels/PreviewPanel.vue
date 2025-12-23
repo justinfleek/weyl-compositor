@@ -164,10 +164,10 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { storeToRefs } from 'pinia';
 import type { ParticleLayer } from '@/engine/layers/ParticleLayer';
-import type { WeylEngine } from '@/engine/WeylEngine';
+import type { LatticeEngine } from '@/engine/LatticeEngine';
 
 const props = defineProps<{
-  engine?: WeylEngine | null;
+  engine?: LatticeEngine | null;
 }>();
 
 const store = useCompositorStore();

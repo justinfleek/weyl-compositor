@@ -1,4 +1,4 @@
-# Weyl Motion Graphics Compositor for ComfyUI
+# Lattice Motion Graphics Compositor for ComfyUI
 ## Complete Technical Specification v1.0
 
 > **⚠️ NOTE (December 2025):** This spec contains historical references to Fabric.js.
@@ -99,7 +99,7 @@
 
 ## Known TypeScript Errors (2)
 
-1. `WeylEngine.ts:745` - `getAllLayers` doesn't exist on LayerManager
+1. `LatticeEngine.ts:745` - `getAllLayers` doesn't exist on LayerManager
 2. `arcLength.ts:40` - Bezier import syntax (named vs default)
 
 ## Known Test Failures (1)
@@ -143,7 +143,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    WEYL COMPOSITOR                          │
+│                    LATTICE COMPOSITOR                          │
 ├─────────────────────────────────────────────────────────────┤
 │  FRONTEND (Vue + TypeScript)                                │
 │  ├── Canvas Rendering: Fabric.js → WebGL fallback          │
@@ -194,7 +194,7 @@ Models are **not loaded until requested**. The frontend asks the backend to gene
 
 ```python
 # Backend API endpoint
-@routes.post('/weyl/generate/depth')
+@routes.post('/lattice/generate/depth')
 async def generate_depth(request):
     """Generate depth map from source image on-demand"""
     data = await request.json()
@@ -297,7 +297,7 @@ class TextureExtractor:
 For procedural textures, integrate with ComfyUI's SDXL:
 
 ```python
-@routes.post('/weyl/generate/texture')
+@routes.post('/lattice/generate/texture')
 async def generate_texture_sdxl(request):
     """Generate seamless texture using SDXL"""
     data = await request.json()
@@ -425,7 +425,7 @@ The compositor is built as a Nix flake for reproducibility, with exports for non
 ```nix
 # flake.nix
 {
-  description = "Weyl Motion Graphics Compositor for ComfyUI";
+  description = "Lattice Motion Graphics Compositor for ComfyUI";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -461,7 +461,7 @@ The compositor is built as a Nix flake for reproducibility, with exports for non
 
       in {
         packages.default = pkgs.stdenv.mkDerivation {
-          pname = "comfyui-weyl-compositor";
+          pname = "comfyui-lattice-compositor";
           version = "1.0.0";
 
           src = ./.;
@@ -479,9 +479,9 @@ The compositor is built as a Nix flake for reproducibility, with exports for non
           '';
 
           installPhase = ''
-            mkdir -p $out/custom_nodes/comfyui-weyl-compositor
-            cp -r nodes server web dist $out/custom_nodes/comfyui-weyl-compositor/
-            cp __init__.py pyproject.toml $out/custom_nodes/comfyui-weyl-compositor/
+            mkdir -p $out/custom_nodes/comfyui-lattice-compositor
+            cp -r nodes server web dist $out/custom_nodes/comfyui-lattice-compositor/
+            cp __init__.py pyproject.toml $out/custom_nodes/comfyui-lattice-compositor/
           '';
         };
 
@@ -493,7 +493,7 @@ The compositor is built as a Nix flake for reproducibility, with exports for non
           ];
 
           shellHook = ''
-            echo "Weyl Compositor development environment"
+            echo "Lattice Compositor development environment"
             echo "Run 'cd ui && npm install && npm run dev' for frontend"
           '';
         };
@@ -506,7 +506,7 @@ The compositor is built as a Nix flake for reproducibility, with exports for non
 
 For non-Nix systems, export as:
 
-1. **Python wheel** - `pip install comfyui-weyl-compositor`
+1. **Python wheel** - `pip install comfyui-lattice-compositor`
 2. **npm package** - For frontend-only development
 3. **Docker image** - Complete environment with CUDA
 
@@ -518,10 +518,10 @@ FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
 RUN apt-get update && apt-get install -y nodejs npm
 
 # Copy compositor
-COPY . /app/custom_nodes/comfyui-weyl-compositor/
+COPY . /app/custom_nodes/comfyui-lattice-compositor/
 
 # Build frontend
-WORKDIR /app/custom_nodes/comfyui-weyl-compositor/ui
+WORKDIR /app/custom_nodes/comfyui-lattice-compositor/ui
 RUN npm ci && npm run build
 
 WORKDIR /app
@@ -752,7 +752,7 @@ class ModelManager:
 # 3. FILE STRUCTURE
 
 ```
-ComfyUI/custom_nodes/comfyui-weyl-compositor/
+ComfyUI/custom_nodes/comfyui-lattice-compositor/
 │
 ├── __init__.py                    # Node registration + WEB_DIRECTORY
 ├── pyproject.toml                 # Package metadata
@@ -766,7 +766,7 @@ ComfyUI/custom_nodes/comfyui-weyl-compositor/
 │
 ├── server/
 │   ├── __init__.py
-│   ├── routes.py                  # Custom HTTP routes (/weyl/...)
+│   ├── routes.py                  # Custom HTTP routes (/lattice/...)
 │   └── project_storage.py         # Project save/load
 │
 ├── web/

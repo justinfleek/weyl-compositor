@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weyl Compositor - Workspace Layout Mockup</title>
+  <title>Lattice Compositor - Workspace Layout Mockup</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --weyl-void: #050505;
-      --weyl-surface-1: #121212;
-      --weyl-surface-2: #1a1a1a;
-      --weyl-surface-3: #222222;
-      --weyl-accent: #8B5CF6;
-      --weyl-accent-secondary: #EC4899;
-      --weyl-accent-gradient: linear-gradient(135deg, #8B5CF6, #EC4899);
-      --weyl-text-primary: #E5E5E5;
-      --weyl-text-secondary: #9CA3AF;
-      --weyl-text-muted: #6B7280;
-      --weyl-gutter: 20px;
-      --weyl-radius-sm: 2px;
-      --weyl-radius-md: 4px;
-      --weyl-radius-lg: 6px;
-      --weyl-radius-xl: 8px;
-      --weyl-radius-2xl: 12px;
-      --weyl-shadow-panel: 0 8px 32px rgba(0,0,0,0.4);
+      --lattice-void: #050505;
+      --lattice-surface-1: #121212;
+      --lattice-surface-2: #1a1a1a;
+      --lattice-surface-3: #222222;
+      --lattice-accent: #8B5CF6;
+      --lattice-accent-secondary: #EC4899;
+      --lattice-accent-gradient: linear-gradient(135deg, #8B5CF6, #EC4899);
+      --lattice-text-primary: #E5E5E5;
+      --lattice-text-secondary: #9CA3AF;
+      --lattice-text-muted: #6B7280;
+      --lattice-gutter: 20px;
+      --lattice-radius-sm: 2px;
+      --lattice-radius-md: 4px;
+      --lattice-radius-lg: 6px;
+      --lattice-radius-xl: 8px;
+      --lattice-radius-2xl: 12px;
+      --lattice-shadow-panel: 0 8px 32px rgba(0,0,0,0.4);
 
       /* Theme Gradients */
       --theme-violet: linear-gradient(135deg, #8B5CF6, #EC4899);
@@ -43,8 +43,8 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 12px;
-      background: var(--weyl-void);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-void);
+      color: var(--lattice-text-primary);
       height: 100vh;
       overflow: hidden;
     }
@@ -54,16 +54,16 @@
       display: grid;
       grid-template-columns: 260px 1fr 300px;
       grid-template-rows: auto 1fr auto;
-      gap: var(--weyl-gutter);
-      padding: var(--weyl-gutter);
+      gap: var(--lattice-gutter);
+      padding: var(--lattice-gutter);
       height: 100vh;
     }
 
     /* Floating Panel Base */
     .panel {
-      background: var(--weyl-surface-1);
-      border-radius: var(--weyl-radius-xl);
-      box-shadow: var(--weyl-shadow-panel);
+      background: var(--lattice-surface-1);
+      border-radius: var(--lattice-radius-xl);
+      box-shadow: var(--lattice-shadow-panel);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -72,9 +72,9 @@
     /* Toolbar - spans all columns */
     .toolbar {
       grid-column: 1 / -1;
-      background: var(--weyl-surface-1);
-      border-radius: var(--weyl-radius-xl);
-      box-shadow: var(--weyl-shadow-panel);
+      background: var(--lattice-surface-1);
+      border-radius: var(--lattice-radius-xl);
+      box-shadow: var(--lattice-shadow-panel);
       padding: 8px 16px;
       display: flex;
       align-items: center;
@@ -92,8 +92,8 @@
       height: 36px;
       border: none;
       background: transparent;
-      color: var(--weyl-text-secondary);
-      border-radius: var(--weyl-radius-md);
+      color: var(--lattice-text-secondary);
+      border-radius: var(--lattice-radius-md);
       cursor: pointer;
       font-size: 16px;
       display: flex;
@@ -103,28 +103,28 @@
     }
 
     .tool-btn:hover {
-      background: var(--weyl-surface-3);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-surface-3);
+      color: var(--lattice-text-primary);
     }
 
     .tool-btn.active {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       color: white;
     }
 
     .toolbar-divider {
       width: 1px;
       height: 24px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
     }
 
     .timecode {
       font-family: 'JetBrains Mono', monospace;
       font-size: 14px;
       padding: 6px 16px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       border-radius: 999px;
-      color: var(--weyl-text-primary);
+      color: var(--lattice-text-primary);
     }
 
     .spacer {
@@ -132,7 +132,7 @@
     }
 
     .export-btn {
-      background: var(--weyl-accent-gradient);
+      background: var(--lattice-accent-gradient);
       color: white;
       border: none;
       padding: 8px 20px;
@@ -146,7 +146,7 @@
     .left-sidebar {
       display: flex;
       flex-direction: column;
-      gap: var(--weyl-gutter);
+      gap: var(--lattice-gutter);
     }
 
     .panel-header {
@@ -155,8 +155,8 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: var(--weyl-text-muted);
-      background: var(--weyl-surface-2);
+      color: var(--lattice-text-muted);
+      background: var(--lattice-surface-2);
     }
 
     .panel-content {
@@ -168,16 +168,16 @@
     .search-input {
       width: 100%;
       padding: 10px 12px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       border: none;
-      border-radius: var(--weyl-radius-md);
-      color: var(--weyl-text-primary);
+      border-radius: var(--lattice-radius-md);
+      color: var(--lattice-text-primary);
       font-size: 12px;
       margin-bottom: 12px;
     }
 
     .search-input::placeholder {
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
     }
 
     .media-grid {
@@ -188,8 +188,8 @@
 
     .media-item {
       aspect-ratio: 16/9;
-      background: var(--weyl-surface-3);
-      border-radius: var(--weyl-radius-md);
+      background: var(--lattice-surface-3);
+      border-radius: var(--lattice-radius-md);
       position: relative;
       overflow: hidden;
       cursor: pointer;
@@ -220,23 +220,23 @@
     .center-area {
       display: flex;
       flex-direction: column;
-      gap: var(--weyl-gutter);
+      gap: var(--lattice-gutter);
     }
 
     .viewport {
       flex: 1;
       background: #0a0a0a;
-      border-radius: var(--weyl-radius-xl);
+      border-radius: var(--lattice-radius-xl);
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       overflow: hidden;
-      box-shadow: var(--weyl-shadow-panel);
+      box-shadow: var(--lattice-shadow-panel);
     }
 
     .viewport-placeholder {
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
       font-size: 14px;
     }
 
@@ -258,28 +258,28 @@
       height: 32px;
       border: none;
       background: transparent;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       border-radius: 50%;
       cursor: pointer;
       font-size: 14px;
     }
 
     .viewport-controls button:hover {
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       color: white;
     }
 
     .viewport-controls .play-btn {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       color: white;
     }
 
     /* Timeline */
     .timeline {
       height: 200px;
-      background: var(--weyl-surface-1);
-      border-radius: var(--weyl-radius-xl);
-      box-shadow: var(--weyl-shadow-panel);
+      background: var(--lattice-surface-1);
+      border-radius: var(--lattice-radius-xl);
+      box-shadow: var(--lattice-shadow-panel);
       display: flex;
       flex-direction: column;
     }
@@ -288,22 +288,22 @@
       display: flex;
       padding: 8px 12px;
       gap: 8px;
-      border-bottom: 1px solid var(--weyl-surface-3);
+      border-bottom: 1px solid var(--lattice-surface-3);
     }
 
     .timeline-tab {
       padding: 6px 12px;
       background: transparent;
       border: none;
-      color: var(--weyl-text-secondary);
-      border-radius: var(--weyl-radius-md);
+      color: var(--lattice-text-secondary);
+      border-radius: var(--lattice-radius-md);
       cursor: pointer;
       font-size: 11px;
     }
 
     .timeline-tab.active {
-      background: var(--weyl-surface-3);
-      color: var(--weyl-text-primary);
+      background: var(--lattice-surface-3);
+      color: var(--lattice-text-primary);
     }
 
     .timeline-tracks {
@@ -323,7 +323,7 @@
       width: 100px;
       padding: 0 8px;
       font-size: 11px;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -332,15 +332,15 @@
     .track-content {
       flex: 1;
       height: 28px;
-      background: var(--weyl-surface-2);
-      border-radius: var(--weyl-radius-lg);
+      background: var(--lattice-surface-2);
+      border-radius: var(--lattice-radius-lg);
       position: relative;
     }
 
     .clip {
       position: absolute;
       height: 100%;
-      border-radius: var(--weyl-radius-lg);
+      border-radius: var(--lattice-radius-lg);
       display: flex;
       align-items: center;
       padding: 0 12px;
@@ -373,9 +373,9 @@
       top: 0;
       bottom: 0;
       width: 2px;
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       left: 35%;
-      box-shadow: 0 0 8px var(--weyl-accent);
+      box-shadow: 0 0 8px var(--lattice-accent);
     }
 
     .playhead::before {
@@ -385,7 +385,7 @@
       left: -5px;
       width: 12px;
       height: 8px;
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       border-radius: 2px;
     }
 
@@ -393,7 +393,7 @@
     .right-sidebar {
       display: flex;
       flex-direction: column;
-      gap: var(--weyl-gutter);
+      gap: var(--lattice-gutter);
     }
 
     /* Tabs */
@@ -401,7 +401,7 @@
       display: flex;
       gap: 4px;
       padding: 8px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
     }
 
     .tab {
@@ -409,28 +409,28 @@
       padding: 8px;
       border: none;
       background: transparent;
-      color: var(--weyl-text-secondary);
-      border-radius: var(--weyl-radius-md);
+      color: var(--lattice-text-secondary);
+      border-radius: var(--lattice-radius-md);
       cursor: pointer;
       font-size: 11px;
       font-weight: 500;
     }
 
     .tab.active {
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       color: white;
     }
 
     /* Property Rows */
     .property-section {
       padding: 12px;
-      border-bottom: 1px solid var(--weyl-surface-3);
+      border-bottom: 1px solid var(--lattice-surface-3);
     }
 
     .property-section-title {
       font-size: 11px;
       font-weight: 600;
-      color: var(--weyl-text-muted);
+      color: var(--lattice-text-muted);
       text-transform: uppercase;
       margin-bottom: 12px;
     }
@@ -443,7 +443,7 @@
     }
 
     .property-label {
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       font-size: 12px;
     }
 
@@ -456,10 +456,10 @@
     .property-input {
       width: 60px;
       padding: 6px 8px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       border: none;
-      border-radius: var(--weyl-radius-md);
-      color: var(--weyl-text-primary);
+      border-radius: var(--lattice-radius-md);
+      color: var(--lattice-text-primary);
       font-size: 12px;
       text-align: right;
     }
@@ -468,15 +468,15 @@
       width: 16px;
       height: 16px;
       background: transparent;
-      border: 2px solid var(--weyl-text-muted);
+      border: 2px solid var(--lattice-text-muted);
       border-radius: 2px;
       transform: rotate(45deg);
       cursor: pointer;
     }
 
     .keyframe-btn.active {
-      background: var(--weyl-accent);
-      border-color: var(--weyl-accent);
+      background: var(--lattice-accent);
+      border-color: var(--lattice-accent);
     }
 
     /* Slider */
@@ -486,14 +486,14 @@
 
     .slider-track {
       height: 4px;
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
       border-radius: 2px;
       position: relative;
     }
 
     .slider-fill {
       height: 100%;
-      background: var(--weyl-accent-gradient);
+      background: var(--lattice-accent-gradient);
       border-radius: 2px;
       width: 75%;
     }
@@ -512,9 +512,9 @@
 
     /* AI Widget */
     .ai-widget {
-      background: var(--weyl-surface-1);
-      border-radius: var(--weyl-radius-xl);
-      box-shadow: var(--weyl-shadow-panel);
+      background: var(--lattice-surface-1);
+      border-radius: var(--lattice-radius-xl);
+      box-shadow: var(--lattice-shadow-panel);
       padding: 16px;
     }
 
@@ -525,7 +525,7 @@
     }
 
     .ai-subtitle {
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
       margin-bottom: 16px;
     }
 
@@ -540,10 +540,10 @@
       align-items: center;
       gap: 12px;
       padding: 12px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       border: none;
-      border-radius: var(--weyl-radius-lg);
-      color: var(--weyl-text-primary);
+      border-radius: var(--lattice-radius-lg);
+      color: var(--lattice-text-primary);
       cursor: pointer;
       font-size: 13px;
       text-align: left;
@@ -551,14 +551,14 @@
     }
 
     .ai-action:hover {
-      background: var(--weyl-surface-3);
+      background: var(--lattice-surface-3);
     }
 
     .ai-action-icon {
       width: 32px;
       height: 32px;
-      background: var(--weyl-accent-gradient);
-      border-radius: var(--weyl-radius-md);
+      background: var(--lattice-accent-gradient);
+      border-radius: var(--lattice-radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -574,17 +574,17 @@
     .ai-input {
       flex: 1;
       padding: 10px 14px;
-      background: var(--weyl-surface-2);
+      background: var(--lattice-surface-2);
       border: none;
       border-radius: 999px;
-      color: var(--weyl-text-primary);
+      color: var(--lattice-text-primary);
       font-size: 12px;
     }
 
     .ai-send {
       width: 36px;
       height: 36px;
-      background: var(--weyl-accent);
+      background: var(--lattice-accent);
       border: none;
       border-radius: 50%;
       color: white;
@@ -599,11 +599,11 @@
       justify-content: space-between;
       align-items: center;
       padding: 8px 20px;
-      background: var(--weyl-surface-1);
-      border-radius: var(--weyl-radius-xl);
-      box-shadow: var(--weyl-shadow-panel);
+      background: var(--lattice-surface-1);
+      border-radius: var(--lattice-radius-xl);
+      box-shadow: var(--lattice-shadow-panel);
       font-size: 11px;
-      color: var(--weyl-text-secondary);
+      color: var(--lattice-text-secondary);
     }
 
     .status-item {
@@ -793,14 +793,14 @@
       <div class="status-item">
         <span class="status-dot"></span>
         <span>Untitled Project</span>
-        <span style="color: var(--weyl-text-muted);">|</span>
+        <span style="color: var(--lattice-text-muted);">|</span>
         <span>1920×1080 @ 16fps</span>
       </div>
       <div class="status-item">
         <span>WebGPU</span>
-        <span style="color: var(--weyl-text-muted);">|</span>
+        <span style="color: var(--lattice-text-muted);">|</span>
         <span>256 MB</span>
-        <span style="color: var(--weyl-text-muted);">|</span>
+        <span style="color: var(--lattice-text-muted);">|</span>
         <span>60 fps</span>
       </div>
     </div>

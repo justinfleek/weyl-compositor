@@ -1,6 +1,6 @@
 # COMPONENT → STORE → SERVICE DEPENDENCY MAP
 
-**Weyl Compositor - Complete Dependency Graph**
+**Lattice Compositor - Complete Dependency Graph**
 
 **HYPER-CRITICAL FOR HANDOFF**: This document maps every Vue component to its store and service dependencies.
 
@@ -165,7 +165,7 @@ All 39 store-using components depend on the single `compositorStore`. This store
 // compositorStore structure
 compositorStore
 ├── State
-│   ├── project: WeylProject
+│   ├── project: LatticeProject
 │   ├── compositions: Composition[]
 │   ├── activeCompositionId: string
 │   └── ... (see full definition)

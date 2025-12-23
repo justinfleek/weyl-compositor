@@ -877,7 +877,7 @@ onUnmounted(() => {
 /* AI preset help text */
 .help-text {
   font-size: 11px;
-  color: var(--weyl-text-muted, #888);
+  color: var(--lattice-text-muted, #888);
   margin-top: 8px;
   padding: 8px 12px;
   background: rgba(139, 92, 246, 0.1);
@@ -892,12 +892,12 @@ onUnmounted(() => {
 }
 
 .info-icon {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
   font-size: 14px;
   flex-shrink: 0;
 }
 
 .help-text strong {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 </style>

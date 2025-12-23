@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-Layer Styles (also known as Layer Effects) are a cornerstone of visual design, found in professional image editors and motion graphics tools. This analysis documents Weyl Compositor's complete layer styles implementation.
+Layer Styles (also known as Layer Effects) are a cornerstone of visual design, found in professional image editors and motion graphics tools. This analysis documents Lattice Compositor's complete layer styles implementation.
 
 **Implementation Status:** ✅ **100% COMPLETE** - All 9 style types with 68 properties implemented.
 
@@ -62,7 +62,7 @@ Final Composite
 
 ### Drop Shadow
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `dropShadow.blendMode` | ✅ Full | All 24 blend modes |
 | Color | `dropShadow.color` | ✅ Full | RGBA with keyframes |
@@ -79,7 +79,7 @@ Final Composite
 
 ### Inner Shadow
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `innerShadow.blendMode` | ✅ Full | All 24 blend modes |
 | Color | `innerShadow.color` | ✅ Full | RGBA with keyframes |
@@ -94,7 +94,7 @@ Final Composite
 
 ### Outer Glow
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `outerGlow.blendMode` | ✅ Full | Screen default |
 | Opacity | `outerGlow.opacity` | ✅ Full | 0-100, animatable |
@@ -111,7 +111,7 @@ Final Composite
 
 ### Inner Glow
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `innerGlow.blendMode` | ✅ Full | Screen default |
 | Opacity | `innerGlow.opacity` | ✅ Full | 0-100, animatable |
@@ -129,7 +129,7 @@ Final Composite
 
 ### Bevel and Emboss
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Style: Outer Bevel | `bevelEmboss.style` | ✅ Full | 3D effect outside edge |
 | Style: Inner Bevel | `bevelEmboss.style` | ✅ Full | 3D effect inside edge |
@@ -157,7 +157,7 @@ Final Composite
 
 ### Satin
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `satin.blendMode` | ✅ Full | Multiply default |
 | Color | `satin.color` | ✅ Full | RGBA with keyframes |
@@ -170,7 +170,7 @@ Final Composite
 
 ### Color Overlay
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `colorOverlay.blendMode` | ✅ Full | Normal default |
 | Color | `colorOverlay.color` | ✅ Full | RGBA with keyframes |
@@ -178,7 +178,7 @@ Final Composite
 
 ### Gradient Overlay
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Blend Mode | `gradientOverlay.blendMode` | ✅ Full | Normal default |
 | Opacity | `gradientOverlay.opacity` | ✅ Full | 0-100, animatable |
@@ -196,7 +196,7 @@ Final Composite
 
 ### Stroke
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Size | `stroke.size` | ✅ Full | Pixels, animatable |
 | Position: Outside | `stroke.position` | ✅ Full | Stroke outside edge |
@@ -211,7 +211,7 @@ Final Composite
 
 ### Blending Options
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |-------------------|-----------------|--------|-------|
 | Fill Opacity | `blendingOptions.fillOpacity` | ✅ Full | 0-100, content only |
 | Blend Interior Effects | `blendingOptions.blendInteriorStylesAsGroup` | ✅ Full | Boolean |
@@ -224,9 +224,9 @@ Final Composite
 
 ## GLOBAL LIGHT SYSTEM
 
-Weyl provides a composition-wide "Global Light" angle that multiple styles can share.
+Lattice provides a composition-wide "Global Light" angle that multiple styles can share.
 
-| Feature | Weyl Implementation | Status |
+| Feature | Lattice Implementation | Status |
 |---------|---------------------|--------|
 | Global Light Angle | `globalLight.ts: setGlobalLightAngle()` | ✅ Full |
 | Per-Composition Setting | `compositions[].globalLightAngle` | ✅ Full |
@@ -368,7 +368,7 @@ Test file: `ui/src/__tests__/services/layerStyles.test.ts`
 
 ## TERMINOLOGY
 
-| Industry Term | Weyl | Notes |
+| Industry Term | Lattice | Notes |
 |---------------|------|-------|
 | Layer Effects | Layer Styles | Same meaning |
 | Effects Dialog | LayerStylesPanel | Panel-based UI |

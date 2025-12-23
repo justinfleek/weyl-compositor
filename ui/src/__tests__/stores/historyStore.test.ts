@@ -4,10 +4,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useHistoryStore } from '@/stores/historyStore';
-import type { WeylProject } from '@/types/project';
+import type { LatticeProject } from '@/types/project';
 
 // Helper to create mock project
-function createMockProject(name: string): WeylProject {
+function createMockProject(name: string): LatticeProject {
   return {
     version: '1.0.0',
     meta: {

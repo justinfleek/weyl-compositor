@@ -1,6 +1,6 @@
 <!--
   @component HDPreviewWindow
-  @description Full-resolution preview window for Weyl Compositor.
+  @description Full-resolution preview window for Lattice Compositor.
   Opens as a modal overlay for high-quality playback review:
   - Full resolution rendering (up to 4K)
   - Playback controls (play, pause, step, loop)

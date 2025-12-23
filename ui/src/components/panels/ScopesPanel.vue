@@ -265,7 +265,7 @@ function getCanvasImageData(): ImageData | null {
   flex-direction: column;
   height: 100%;
   min-height: 200px;
-  background: var(--weyl-surface-1);
+  background: var(--lattice-surface-1);
 }
 
 .scope-header {
@@ -273,22 +273,22 @@ function getCanvasImageData(): ImageData | null {
   align-items: center;
   justify-content: space-between;
   padding: 8px;
-  border-bottom: 1px solid var(--weyl-border-subtle);
-  background: var(--weyl-surface-0);
+  border-bottom: 1px solid var(--lattice-border-subtle);
+  background: var(--lattice-surface-0);
 }
 
 .scope-select {
   padding: 4px 8px;
-  background: var(--weyl-surface-2);
-  border: 1px solid var(--weyl-border-default);
-  border-radius: var(--weyl-radius-sm);
-  color: var(--weyl-text-primary);
-  font-size: var(--weyl-font-size-sm);
+  background: var(--lattice-surface-2);
+  border: 1px solid var(--lattice-border-default);
+  border-radius: var(--lattice-radius-sm);
+  color: var(--lattice-text-primary);
+  font-size: var(--lattice-font-size-sm);
   cursor: pointer;
 }
 
 .scope-select:hover {
-  border-color: var(--weyl-accent);
+  border-color: var(--lattice-accent);
 }
 
 .scope-controls {
@@ -301,8 +301,8 @@ function getCanvasImageData(): ImageData | null {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--weyl-font-size-xs);
-  color: var(--weyl-text-secondary);
+  font-size: var(--lattice-font-size-xs);
+  color: var(--lattice-text-secondary);
 }
 
 .brightness-slider {
@@ -310,7 +310,7 @@ function getCanvasImageData(): ImageData | null {
   height: 4px;
   -webkit-appearance: none;
   appearance: none;
-  background: var(--weyl-surface-3);
+  background: var(--lattice-surface-3);
   border-radius: 2px;
   cursor: pointer;
 }
@@ -319,7 +319,7 @@ function getCanvasImageData(): ImageData | null {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: var(--weyl-accent);
+  background: var(--lattice-accent);
   border-radius: 50%;
   cursor: pointer;
 }
@@ -337,7 +337,7 @@ function getCanvasImageData(): ImageData | null {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--weyl-text-muted);
-  font-size: var(--weyl-font-size-sm);
+  color: var(--lattice-text-muted);
+  font-size: var(--lattice-font-size-sm);
 }
 </style>

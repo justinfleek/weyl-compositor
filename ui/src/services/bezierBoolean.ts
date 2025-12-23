@@ -67,13 +67,13 @@ function initializePaper(): void {
 }
 
 // ============================================================================
-// Conversion: Weyl Path <-> Paper.js Path
+// Conversion: Lattice Path <-> Paper.js Path
 // ============================================================================
 
 /**
- * Convert a Weyl BezierPath to a Paper.js Path
+ * Convert a Lattice BezierPath to a Paper.js Path
  */
-function weylPathToPaperPath(path: BezierPath): paper.Path {
+function latticePathToPaperPath(path: BezierPath): paper.Path {
   initializePaper();
 
   const paperPath = new paper.Path();
@@ -133,9 +133,9 @@ function weylPathToPaperPath(path: BezierPath): paper.Path {
 }
 
 /**
- * Convert a Paper.js Path back to a Weyl BezierPath
+ * Convert a Paper.js Path back to a Lattice BezierPath
  */
-function paperPathToWeylPath(paperPath: paper.Path): BezierPath {
+function paperPathToLatticePath(paperPath: paper.Path): BezierPath {
   const vertices: BezierVertex[] = [];
 
   for (let i = 0; i < paperPath.segments.length; i++) {
@@ -160,20 +160,20 @@ function paperPathToWeylPath(paperPath: paper.Path): BezierPath {
 }
 
 /**
- * Convert Paper.js PathItem (could be Path or CompoundPath) to Weyl paths
+ * Convert Paper.js PathItem (could be Path or CompoundPath) to Lattice paths
  */
-function paperItemToWeylPaths(item: paper.PathItem | null): BezierPath[] {
+function paperItemToLatticePaths(item: paper.PathItem | null): BezierPath[] {
   if (!item) return [];
 
   if (item instanceof paper.Path) {
-    return [paperPathToWeylPath(item)];
+    return [paperPathToLatticePath(item)];
   }
 
   if (item instanceof paper.CompoundPath) {
     const paths: BezierPath[] = [];
     for (const child of item.children) {
       if (child instanceof paper.Path) {
-        paths.push(paperPathToWeylPath(child));
+        paths.push(paperPathToLatticePath(child));
       }
     }
     return paths;
@@ -199,8 +199,8 @@ export function booleanOperation(
     initializePaper();
 
     // Convert to Paper.js paths
-    const paperA = weylPathToPaperPath(pathA);
-    const paperB = weylPathToPaperPath(pathB);
+    const paperA = latticePathToPaperPath(pathA);
+    const paperB = latticePathToPaperPath(pathB);
 
     let result: paper.PathItem | null = null;
 
@@ -227,8 +227,8 @@ export function booleanOperation(
     paperA.remove();
     paperB.remove();
 
-    // Convert result back to Weyl format
-    const paths = paperItemToWeylPaths(result);
+    // Convert result back to Lattice format
+    const paths = paperItemToLatticePaths(result);
 
     if (result) {
       result.remove();
@@ -348,9 +348,9 @@ export function simplifyPath(path: BezierPath, tolerance: number = 2.5): BezierP
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     paperPath.simplify(tolerance);
-    const result = paperPathToWeylPath(paperPath);
+    const result = paperPathToLatticePath(paperPath);
     paperPath.remove();
 
     return result;
@@ -367,9 +367,9 @@ export function flattenPath(path: BezierPath, tolerance: number = 0.25): BezierP
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     paperPath.flatten(tolerance);
-    const result = paperPathToWeylPath(paperPath);
+    const result = paperPathToLatticePath(paperPath);
     paperPath.remove();
 
     return result;
@@ -386,9 +386,9 @@ export function smoothPath(path: BezierPath): BezierPath {
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     paperPath.smooth();
-    const result = paperPathToWeylPath(paperPath);
+    const result = paperPathToLatticePath(paperPath);
     paperPath.remove();
 
     return result;
@@ -405,7 +405,7 @@ export function getPathArea(path: BezierPath): number {
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     const area = paperPath.area;
     paperPath.remove();
 
@@ -423,7 +423,7 @@ export function getPathLength(path: BezierPath): number {
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     const length = paperPath.length;
     paperPath.remove();
 
@@ -441,7 +441,7 @@ export function getPointOnPath(path: BezierPath, offset: number): Point2D | null
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     const point = paperPath.getPointAt(paperPath.length * Math.max(0, Math.min(1, offset)));
     paperPath.remove();
 
@@ -459,7 +459,7 @@ export function getTangentOnPath(path: BezierPath, offset: number): Point2D | nu
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     const tangent = paperPath.getTangentAt(paperPath.length * Math.max(0, Math.min(1, offset)));
     paperPath.remove();
 
@@ -477,7 +477,7 @@ export function getNormalOnPath(path: BezierPath, offset: number): Point2D | nul
   try {
     initializePaper();
 
-    const paperPath = weylPathToPaperPath(path);
+    const paperPath = latticePathToPaperPath(path);
     const normal = paperPath.getNormalAt(paperPath.length * Math.max(0, Math.min(1, offset)));
     paperPath.remove();
 
@@ -495,8 +495,8 @@ export function pathsIntersect(pathA: BezierPath, pathB: BezierPath): boolean {
   try {
     initializePaper();
 
-    const paperA = weylPathToPaperPath(pathA);
-    const paperB = weylPathToPaperPath(pathB);
+    const paperA = latticePathToPaperPath(pathA);
+    const paperB = latticePathToPaperPath(pathB);
 
     const intersections = paperA.getIntersections(paperB);
     const hasIntersections = intersections.length > 0;
@@ -518,8 +518,8 @@ export function getPathIntersections(pathA: BezierPath, pathB: BezierPath): Poin
   try {
     initializePaper();
 
-    const paperA = weylPathToPaperPath(pathA);
-    const paperB = weylPathToPaperPath(pathB);
+    const paperA = latticePathToPaperPath(pathA);
+    const paperB = latticePathToPaperPath(pathB);
 
     const intersections = paperA.getIntersections(paperB);
     const points = intersections.map(i => ({ x: i.point.x, y: i.point.y }));

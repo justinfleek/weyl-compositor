@@ -235,7 +235,7 @@ Respond with JSON only.`;
       temperature: 0.2, // Low temperature for consistent results
     };
 
-    const response = await fetch(`${this.baseUrl}/weyl/api/ai/agent`, {
+    const response = await fetch(`${this.baseUrl}/lattice/api/ai/agent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),

@@ -138,4 +138,4 @@ View:          Ctrl+0=Fit  =/-=Zoom  Shift+G=Graph
 
 ---
 
-*Compatibility: 100% - All 50 tips work in Weyl Compositor*
+*Compatibility: 100% - All 50 tips work in Lattice Compositor*

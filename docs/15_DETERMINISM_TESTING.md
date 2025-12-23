@@ -1,11 +1,11 @@
-# WEYL COMPOSITOR — DETERMINISM & TESTING
+# LATTICE COMPOSITOR — DETERMINISM & TESTING
 
 **Document ID**: 15_DETERMINISM_TESTING  
 **Version**: 1.0.0  
 **Status**: CANONICAL  
 **Depends On**: [02_MOTION_ENGINE.md](./02_MOTION_ENGINE.md)
 
-> **If it cannot be tested for determinism, it does not belong in Weyl Compositor.**
+> **If it cannot be tested for determinism, it does not belong in Lattice Compositor.**
 > Every system must prove it produces identical output for identical input.
 
 ---

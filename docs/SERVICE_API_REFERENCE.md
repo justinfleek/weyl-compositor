@@ -1,6 +1,6 @@
 # SERVICE API REFERENCE
 
-**Weyl Compositor - Complete Service Layer Documentation Index**
+**Lattice Compositor - Complete Service Layer Documentation Index**
 
 **HYPER-CRITICAL FOR HANDOFF**: This is the index to all 42 services across 10 categories.
 

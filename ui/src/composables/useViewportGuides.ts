@@ -8,7 +8,7 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import * as THREE from 'three';
 import { useCompositorStore } from '@/stores/compositorStore';
-import type { WeylEngine } from '@/engine';
+import type { LatticeEngine } from '@/engine';
 
 export interface SafeFrameBounds {
   left: number;
@@ -40,7 +40,7 @@ const RESOLUTION_PRESETS = [
 
 export interface UseViewportGuidesOptions {
   containerRef: Ref<HTMLDivElement | null>;
-  engine: Ref<WeylEngine | null>;
+  engine: Ref<LatticeEngine | null>;
   canvasWidth: Ref<number>;
   canvasHeight: Ref<number>;
   zoom: Ref<number>;

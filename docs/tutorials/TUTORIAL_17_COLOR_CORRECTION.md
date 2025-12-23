@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-Color correction is fundamental to professional video production. This analysis maps all color grading features from professional NLE tools to Weyl Compositor's implementation.
+Color correction is fundamental to professional video production. This analysis maps all color grading features from professional NLE tools to Lattice Compositor's implementation.
 
 **Implementation Status:** ✅ **100% COMPLETE** - All 33 professional color correction features implemented.
 
@@ -32,7 +32,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Basic Correction
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Brightness | `brightness-contrast` effect | ✅ Full | -100 to 100 range |
 | Contrast | `brightness-contrast` effect | ✅ Full | -100 to 100 range |
@@ -45,7 +45,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### White Balance
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Temperature Slider | `color-balance` effect | ✅ Full | Warm/cool shift |
 | Tint Slider (Green/Magenta) | `color-balance` effect | ✅ Full | Green/magenta shift |
@@ -54,7 +54,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Tone Curve / Curves
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | RGB Master Curve | `curves` effect | ✅ Full | Spline-based |
 | Red Channel Curve | `curves` effect | ✅ Full | Independent control |
@@ -71,7 +71,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Color Wheels & Match
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Shadows Color Wheel | `color-balance` shadows | ✅ Full | RGB shifts |
 | Midtones Color Wheel | `color-balance` midtones | ✅ Full | RGB shifts |
@@ -82,7 +82,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### HSL Secondary
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Hue Range Selection | `hsl-secondary` effect | ✅ Full | Center + width + soft falloff |
 | Saturation Range | `hsl-secondary` effect | ✅ Full | Min/max with falloff |
@@ -94,7 +94,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Hue/Saturation
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Master Hue | `hue-saturation` hue | ✅ Full | -180 to 180 |
 | Master Saturation | `hue-saturation` saturation | ✅ Full | -100 to 100 |
@@ -104,7 +104,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Levels
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Input Black | `levels` inputBlack | ✅ Full | 0-255 |
 | Input White | `levels` inputWhite | ✅ Full | 0-255 |
@@ -117,7 +117,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Creative / Look
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | LUT Selection | `lut` effect | ✅ Full | .cube format parsing |
 | LUT Intensity | `lut` intensity | ✅ Full | 0-100 blend with original |
@@ -130,7 +130,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Vignette
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Vignette Amount | `vignette` amount | ✅ Full | -100 to 100 |
 | Vignette Midpoint | `vignette` midpoint | ✅ Full | 0 to 100 |
@@ -139,7 +139,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Scopes Panel
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Waveform (Luma) | `WaveformScope.vue` | ✅ Full | IRE levels, legal range indicators |
 | Waveform (RGB) | `WaveformScope.vue` | ✅ Full | RGB mode available |
@@ -150,7 +150,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ### Additional Color Effects
 
-| NLE Feature | Weyl Compositor | Status | Notes |
+| NLE Feature | Lattice Compositor | Status | Notes |
 |---------------------|-----------------|--------|-------|
 | Invert | `invert` effect | ✅ Full | RGB inversion |
 | Posterize | `posterize` effect | ✅ Full | Color reduction |
@@ -165,7 +165,7 @@ Color correction is fundamental to professional video production. This analysis 
 
 ---
 
-## WEYL-SPECIFIC FEATURES (Beyond Traditional NLEs)
+## LATTICE-SPECIFIC FEATURES (Beyond Traditional NLEs)
 
 | Feature | Description |
 |---------|-------------|

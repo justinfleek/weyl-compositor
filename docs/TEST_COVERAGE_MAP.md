@@ -1,6 +1,6 @@
 # TEST COVERAGE MAP
 
-**Weyl Compositor - Test Suite Documentation**
+**Lattice Compositor - Test Suite Documentation**
 
 **Last Updated:** December 23, 2025
 

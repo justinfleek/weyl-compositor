@@ -252,7 +252,7 @@ export interface MOGRTPackage {
   formatVersion: string;           // MOGRT format version
   templateConfig: TemplateConfig;
 
-  // Composition data (serialized WeylProject subset)
+  // Composition data (serialized LatticeProject subset)
   composition: any;                // Serialized composition
 
   // Embedded assets

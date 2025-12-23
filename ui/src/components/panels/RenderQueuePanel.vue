@@ -246,7 +246,7 @@ onMounted(async () => {
       workerPoolSize: 4,
       batchSize: 10,
       autoSaveInterval: 5000,
-      dbName: 'weyl-render-queue',
+      dbName: 'lattice-render-queue',
     });
 
     await queueManager.initialize();
@@ -423,7 +423,7 @@ function formatTime(seconds: number): string {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
 }
 
 .panel-header {
@@ -431,14 +431,14 @@ function formatTime(seconds: number): string {
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .panel-header h3 {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .header-actions {
@@ -452,22 +452,22 @@ function formatTime(seconds: number): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 4px;
-  color: var(--weyl-text-secondary, #a0a0a0);
+  color: var(--lattice-text-secondary, #a0a0a0);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .icon-btn:hover {
-  background: var(--weyl-surface-3, #222);
-  color: var(--weyl-text-primary, #e0e0e0);
+  background: var(--lattice-surface-3, #222);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .icon-btn.active {
-  background: var(--weyl-accent, #8B5CF6);
-  border-color: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
   color: white;
 }
 
@@ -475,16 +475,16 @@ function formatTime(seconds: number): string {
   display: flex;
   gap: 16px;
   padding: 8px 12px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   font-size: 11px;
 }
 
 .stat {
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
 }
 
 .stat-value {
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-weight: 600;
 }
 
@@ -499,7 +499,7 @@ function formatTime(seconds: number): string {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   border: none;
   border-radius: 6px;
   color: white;
@@ -510,7 +510,7 @@ function formatTime(seconds: number): string {
 }
 
 .add-job-btn:hover {
-  background: var(--weyl-accent-hover, #A78BFA);
+  background: var(--lattice-accent-hover, #A78BFA);
 }
 
 .job-list {
@@ -520,15 +520,15 @@ function formatTime(seconds: number): string {
 }
 
 .job-item {
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-subtle, #222);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-subtle, #222);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 8px;
 }
 
 .job-item.active {
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .job-header {
@@ -540,7 +540,7 @@ function formatTime(seconds: number): string {
 
 .job-name {
   font-weight: 500;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .job-status {
@@ -550,25 +550,25 @@ function formatTime(seconds: number): string {
   text-transform: uppercase;
 }
 
-.job-status.pending { background: var(--weyl-surface-3, #222); color: var(--weyl-text-muted, #666); }
-.job-status.rendering { background: var(--weyl-accent, #8B5CF6); color: white; }
+.job-status.pending { background: var(--lattice-surface-3, #222); color: var(--lattice-text-muted, #666); }
+.job-status.rendering { background: var(--lattice-accent, #8B5CF6); color: white; }
 .job-status.paused { background: #F59E0B; color: white; }
 .job-status.completed { background: #10B981; color: white; }
 .job-status.failed { background: #EF4444; color: white; }
-.job-status.cancelled { background: var(--weyl-surface-3, #222); color: var(--weyl-text-muted, #666); }
+.job-status.cancelled { background: var(--lattice-surface-3, #222); color: var(--lattice-text-muted, #666); }
 
 .job-details {
   display: flex;
   gap: 16px;
   font-size: 11px;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   margin-bottom: 8px;
 }
 
 .progress-container {
   position: relative;
   height: 20px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -576,7 +576,7 @@ function formatTime(seconds: number): string {
 
 .progress-bar {
   height: 100%;
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   transition: width 0.3s;
 }
 
@@ -601,23 +601,23 @@ function formatTime(seconds: number): string {
 
 .job-btn {
   padding: 6px 12px;
-  background: var(--weyl-surface-3, #222);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-3, #222);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 4px;
-  color: var(--weyl-text-secondary, #a0a0a0);
+  color: var(--lattice-text-secondary, #a0a0a0);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .job-btn:hover {
-  background: var(--weyl-surface-4, #2a2a2a);
-  color: var(--weyl-text-primary, #e0e0e0);
+  background: var(--lattice-surface-4, #2a2a2a);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .job-btn.primary {
-  background: var(--weyl-accent, #8B5CF6);
-  border-color: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
   color: white;
 }
 
@@ -630,7 +630,7 @@ function formatTime(seconds: number): string {
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
 }
 
 .empty-state i {
@@ -664,8 +664,8 @@ function formatTime(seconds: number): string {
 
 .dialog {
   width: 400px;
-  background: var(--weyl-surface-1, #121212);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-1, #121212);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -675,19 +675,19 @@ function formatTime(seconds: number): string {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .dialog-header h4 {
   margin: 0;
   font-size: 16px;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   cursor: pointer;
   padding: 4px;
 }
@@ -704,7 +704,7 @@ function formatTime(seconds: number): string {
   display: block;
   margin-bottom: 8px;
   font-size: 12px;
-  color: var(--weyl-text-secondary, #a0a0a0);
+  color: var(--lattice-text-secondary, #a0a0a0);
 }
 
 .form-row input[type="text"],
@@ -712,10 +712,10 @@ function formatTime(seconds: number): string {
 .form-row select {
   width: 100%;
   padding: 8px 12px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 6px;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-size: 13px;
 }
 
@@ -733,7 +733,7 @@ function formatTime(seconds: number): string {
 
 .range-inputs span,
 .size-inputs span {
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
 }
 
 .form-row input[type="range"] {
@@ -743,7 +743,7 @@ function formatTime(seconds: number): string {
 .value-display {
   min-width: 40px;
   text-align: right;
-  color: var(--weyl-text-secondary, #a0a0a0);
+  color: var(--lattice-text-secondary, #a0a0a0);
   font-size: 12px;
 }
 
@@ -752,7 +752,7 @@ function formatTime(seconds: number): string {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px;
-  border-top: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-top: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .btn {
@@ -765,18 +765,18 @@ function formatTime(seconds: number): string {
 }
 
 .btn.secondary {
-  background: var(--weyl-surface-3, #222);
-  border: 1px solid var(--weyl-border-default, #333);
-  color: var(--weyl-text-primary, #e0e0e0);
+  background: var(--lattice-surface-3, #222);
+  border: 1px solid var(--lattice-border-default, #333);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .btn.primary {
-  background: var(--weyl-accent, #8B5CF6);
-  border: 1px solid var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
+  border: 1px solid var(--lattice-accent, #8B5CF6);
   color: white;
 }
 
 .btn.primary:hover {
-  background: var(--weyl-accent-hover, #A78BFA);
+  background: var(--lattice-accent-hover, #A78BFA);
 }
 </style>

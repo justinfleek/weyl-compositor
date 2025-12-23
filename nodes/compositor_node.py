@@ -17,7 +17,7 @@ class CompositorEditorNode:
     Main node that opens the compositor UI and receives depth/image inputs
     """
 
-    CATEGORY = "Weyl/Compositor"
+    CATEGORY = "Lattice/Compositor"
     RETURN_TYPES = ("MASK", "IMAGE")
     RETURN_NAMES = ("text_matte", "preview")
     FUNCTION = "process"
@@ -62,7 +62,7 @@ class CompositorEditorNode:
 
             # Send to frontend
             PromptServer.instance.send_sync(
-                "weyl.compositor.inputs_ready",
+                "lattice.compositor.inputs_ready",
                 {
                     "node_id": unique_id,
                     "source_image": source_b64,
@@ -133,7 +133,7 @@ try:
 
     routes = PromptServer.instance.routes
 
-    @routes.post('/weyl/compositor/set_output')
+    @routes.post('/lattice/compositor/set_output')
     async def set_compositor_output(request):
         """Receive matte data from frontend"""
         data = await request.json()
@@ -148,7 +148,7 @@ try:
 
         return web.json_response({"status": "error", "message": "No node_id"}, status=400)
 
-    @routes.post('/weyl/compositor/save_project')
+    @routes.post('/lattice/compositor/save_project')
     async def save_project(request):
         """Save compositor project state"""
         try:
@@ -181,7 +181,7 @@ try:
                 "message": str(e)
             }, status=500)
 
-    @routes.get('/weyl/compositor/load_project/{project_id}')
+    @routes.get('/lattice/compositor/load_project/{project_id}')
     async def load_project(request):
         """Load compositor project state"""
         try:
@@ -210,7 +210,7 @@ try:
                 "message": str(e)
             }, status=500)
 
-    @routes.get('/weyl/compositor/list_projects')
+    @routes.get('/lattice/compositor/list_projects')
     async def list_projects(request):
         """List all saved compositor projects"""
         try:
@@ -251,7 +251,7 @@ try:
                 "message": str(e)
             }, status=500)
 
-    @routes.delete('/weyl/compositor/delete_project/{project_id}')
+    @routes.delete('/lattice/compositor/delete_project/{project_id}')
     async def delete_project(request):
         """Delete a compositor project"""
         try:
@@ -325,7 +325,7 @@ try:
                 raise NotImplementedError("MatSeg not yet implemented - use sam2")
 
         except Exception as e:
-            print(f"[Weyl] Failed to load {model_type} model: {e}")
+            print(f"[Lattice] Failed to load {model_type} model: {e}")
             return None
 
         return None
@@ -385,7 +385,7 @@ try:
             'stability': mask['stability_score']
         } for mask in masks]
 
-    @routes.post('/weyl/segment')
+    @routes.post('/lattice/segment')
     async def segment_image(request):
         """
         Segment image using SAM2 or MatSeg.
@@ -650,7 +650,7 @@ try:
                 _depth_model = DepthAnything3.from_pretrained(f"depth-anything/{model_name}")
                 device = "cuda" if torch.cuda.is_available() else "cpu"
                 _depth_model = _depth_model.to(device=torch.device(device))
-                print(f"[Weyl] Loaded DepthAnything V3 ({model_name}) on {device}")
+                print(f"[Lattice] Loaded DepthAnything V3 ({model_name}) on {device}")
                 return _depth_model
             except ImportError:
                 pass
@@ -665,18 +665,18 @@ try:
                     sys.path.insert(0, da3_path)
                     from depth_anything_v3 import DepthAnythingV3
                     _depth_model = DepthAnythingV3(model_name)
-                    print(f"[Weyl] Loaded DepthAnything V3 from ComfyUI custom nodes")
+                    print(f"[Lattice] Loaded DepthAnything V3 from ComfyUI custom nodes")
                     return _depth_model
             except Exception as e:
-                print(f"[Weyl] Failed to load from custom nodes: {e}")
+                print(f"[Lattice] Failed to load from custom nodes: {e}")
 
             raise ImportError("DepthAnything V3 not available")
 
         except Exception as e:
-            print(f"[Weyl] Failed to load DepthAnything V3: {e}")
+            print(f"[Lattice] Failed to load DepthAnything V3: {e}")
             return None
 
-    @routes.post('/weyl/depth')
+    @routes.post('/lattice/depth')
     async def generate_depth(request):
         """
         Generate depth map using DepthAnything V3.
@@ -730,7 +730,7 @@ try:
 
             if model is not None:
                 # Save temp image for inference
-                temp_path = '/tmp/weyl_depth_input.png'
+                temp_path = '/tmp/lattice_depth_input.png'
                 pil_image.save(temp_path)
 
                 # Run inference
@@ -835,12 +835,12 @@ try:
                 import sys
                 sys.path.insert(0, nc_path)
                 # NormalCrafter loading would go here
-                print(f"[Weyl] Found NormalCrafter at {nc_path}")
+                print(f"[Lattice] Found NormalCrafter at {nc_path}")
                 # For now, we'll use algebraic depth-to-normal
                 return None
 
         except Exception as e:
-            print(f"[Weyl] Failed to load NormalCrafter: {e}")
+            print(f"[Lattice] Failed to load NormalCrafter: {e}")
 
         return None
 
@@ -875,7 +875,7 @@ try:
 
         return normal_uint8
 
-    @routes.post('/weyl/normal')
+    @routes.post('/lattice/normal')
     async def generate_normal(request):
         """
         Generate normal map from image or depth map.
@@ -922,7 +922,7 @@ try:
                 model = _load_depth_model(data.get('depth_model', 'DA3-LARGE-1.1'))
 
                 if model is not None:
-                    temp_path = '/tmp/weyl_normal_input.png'
+                    temp_path = '/tmp/lattice_normal_input.png'
                     pil_image.save(temp_path)
                     result = model.inference([temp_path])
                     depth_np = result['depth'][0]
@@ -992,7 +992,7 @@ try:
     # Point Cloud Endpoint - Generate 3D point cloud from depth
     # =========================================================================
 
-    @routes.post('/weyl/pointcloud')
+    @routes.post('/lattice/pointcloud')
     async def generate_pointcloud(request):
         """
         Generate 3D point cloud from image + depth map.
@@ -1191,7 +1191,7 @@ end_header
                         check_path = os.path.join(folder, variant)
                         if os.path.exists(check_path):
                             model_path = check_path
-                            print(f"[Weyl VLM] Found local model at {model_path}")
+                            print(f"[Lattice VLM] Found local model at {model_path}")
                             break
                     if model_path:
                         break
@@ -1218,13 +1218,13 @@ end_header
                     model_path = "Qwen/Qwen3-VL-8B"
                 else:
                     model_path = "Qwen/Qwen2-VL-2B-Instruct"  # Smaller default
-                print(f"[Weyl VLM] Using HuggingFace model: {model_path}")
+                print(f"[Lattice VLM] Using HuggingFace model: {model_path}")
 
             # Load model and processor
             device = "cuda" if torch.cuda.is_available() else "cpu"
             dtype = torch.float16 if device == "cuda" else torch.float32
 
-            print(f"[Weyl VLM] Loading {model_path} on {device}...")
+            print(f"[Lattice VLM] Loading {model_path} on {device}...")
 
             _vlm_processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
             _vlm_model = AutoModelForVision2Seq.from_pretrained(
@@ -1238,12 +1238,12 @@ end_header
                 _vlm_model = _vlm_model.to(device)
 
             _vlm_model_name = model_name
-            print(f"[Weyl VLM] Model loaded successfully")
+            print(f"[Lattice VLM] Model loaded successfully")
 
             return _vlm_model, _vlm_processor
 
         except Exception as e:
-            print(f"[Weyl VLM] Failed to load model: {e}")
+            print(f"[Lattice VLM] Failed to load model: {e}")
             import traceback
             traceback.print_exc()
             return None, None
@@ -1294,7 +1294,7 @@ Consider:
 - Parallax opportunities based on depth layers
 """
 
-    @routes.post('/weyl/vlm')
+    @routes.post('/lattice/vlm')
     async def analyze_with_vlm(request):
         """
         Analyze image using Qwen-VL for motion intent suggestions.
@@ -1436,7 +1436,7 @@ Consider:
                 "message": str(e)
             }, status=500)
 
-    @routes.get('/weyl/vlm/status')
+    @routes.get('/lattice/vlm/status')
     async def vlm_status(request):
         """Check VLM model status and available models."""
         try:

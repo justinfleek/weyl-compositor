@@ -574,7 +574,7 @@ export function getDefaultPreprocessor(generationType: string): string {
  */
 export async function fetchPreprocessorList(): Promise<PreprocessorInfo[]> {
   try {
-    const response = await fetch('/weyl/preprocessors/list');
+    const response = await fetch('/lattice/preprocessors/list');
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -591,7 +591,7 @@ export async function fetchPreprocessorList(): Promise<PreprocessorInfo[]> {
  */
 export async function fetchPreprocessorInfo(id: string): Promise<PreprocessorInfo | null> {
   try {
-    const response = await fetch(`/weyl/preprocessors/${id}/info`);
+    const response = await fetch(`/lattice/preprocessors/${id}/info`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -621,7 +621,7 @@ export async function executePreprocessor(
     // Strip data: prefix if present
     const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
 
-    const response = await fetch(`/weyl/preprocessors/${preprocessorId}/execute`, {
+    const response = await fetch(`/lattice/preprocessors/${preprocessorId}/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -664,7 +664,7 @@ export async function renderLayerToImage(
 ): Promise<string | null> {
   try {
     // Get the canvas from the engine
-    const engine = (window as any).__weylEngine;
+    const engine = (window as any).__latticeEngine;
     if (!engine) {
       console.error('[PreprocessorService] Engine not available');
       return null;

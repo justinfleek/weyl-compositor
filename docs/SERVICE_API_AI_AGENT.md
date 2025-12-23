@@ -43,7 +43,7 @@ The AI Compositor Agent is a fully autonomous LLM-powered motion graphics engine
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Backend API Proxy                         │
-│          /weyl/api/ai/agent (nodes/weyl_api_proxy.py)       │
+│          /lattice/api/ai/agent (nodes/lattice_api_proxy.py)       │
 │  - OpenAI & Anthropic support with tool calling             │
 │  - API keys from environment variables                      │
 └─────────────────────────────────────────────────────────────┘
@@ -174,7 +174,7 @@ The system prompt teaches the LLM:
 
 ## Backend API
 
-**Endpoint:** `POST /weyl/api/ai/agent`
+**Endpoint:** `POST /lattice/api/ai/agent`
 
 **Request:**
 ```json

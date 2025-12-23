@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — TIMELINE & GRAPH EDITOR
+# LATTICE COMPOSITOR — TIMELINE & GRAPH EDITOR
 
 **Document ID**: 08_TIMELINE_GRAPH  
 **Version**: 1.0.0  
@@ -51,7 +51,7 @@ interface TimelineContract {
 
 interface MotionEngineContract {
   // MotionEngine controls THIS:
-  evaluate(frame: number, project: WeylProject): FrameState
+  evaluate(frame: number, project: LatticeProject): FrameState
   
   // MotionEngine NEVER touches:
   // - UI state

@@ -181,7 +181,7 @@ const statusText = computed(() => {
 
 async function checkApiStatus() {
   try {
-    const response = await fetch('/weyl/api/status');
+    const response = await fetch('/lattice/api/status');
     const data = await response.json();
 
     if (data.status === 'success') {

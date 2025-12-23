@@ -299,7 +299,7 @@ function moveContentItem(index: number, direction: -1 | 1) {
 }
 
 .prop-section {
-  border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .section-header {
@@ -309,28 +309,28 @@ function moveContentItem(index: number, direction: -1 | 1) {
   padding: 8px 10px;
   cursor: pointer;
   user-select: none;
-  background: var(--weyl-surface-2, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
 }
 
 .section-header:hover {
-  background: var(--weyl-surface-3, #222);
+  background: var(--lattice-surface-3, #222);
 }
 
 .expand-icon {
   width: 10px;
   font-size: 11px;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
 }
 
 .section-title {
   flex: 1;
   font-weight: 600;
   font-size: 13px;
-  color: var(--weyl-text-secondary, #ccc);
+  color: var(--lattice-text-secondary, #ccc);
 }
 
 .item-count {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: #fff;
   font-size: 10px;
   padding: 1px 6px;
@@ -339,7 +339,7 @@ function moveContentItem(index: number, direction: -1 | 1) {
 
 .section-content {
   padding: 8px 10px;
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -354,7 +354,7 @@ function moveContentItem(index: number, direction: -1 | 1) {
 
 .property-row label {
   width: 90px;
-  color: var(--weyl-text-muted, #888);
+  color: var(--lattice-text-muted, #888);
   font-size: 12px;
   flex-shrink: 0;
 }
@@ -362,10 +362,10 @@ function moveContentItem(index: number, direction: -1 | 1) {
 .property-row select {
   flex: 1;
   padding: 4px 8px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-size: 12px;
 }
 
@@ -375,7 +375,7 @@ function moveContentItem(index: number, direction: -1 | 1) {
   gap: 6px;
   cursor: pointer;
   width: auto;
-  color: var(--weyl-text-secondary, #ccc);
+  color: var(--lattice-text-secondary, #ccc);
   font-size: 12px;
 }
 
@@ -393,21 +393,21 @@ function moveContentItem(index: number, direction: -1 | 1) {
 .content-select {
   flex: 1;
   padding: 6px 8px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-size: 12px;
   cursor: pointer;
 }
 
 .content-select:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .content-select optgroup {
-  color: var(--weyl-text-muted, #888);
+  color: var(--lattice-text-muted, #888);
   font-weight: 600;
 }
 
@@ -415,8 +415,8 @@ function moveContentItem(index: number, direction: -1 | 1) {
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid var(--weyl-accent, #8B5CF6);
-  background: var(--weyl-accent, #8B5CF6);
+  border: 1px solid var(--lattice-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: #fff;
   border-radius: 3px;
   cursor: pointer;
@@ -426,7 +426,7 @@ function moveContentItem(index: number, direction: -1 | 1) {
 }
 
 .add-btn:hover:not(:disabled) {
-  background: var(--weyl-accent-hover, #9d6eff);
+  background: var(--lattice-accent-hover, #9d6eff);
 }
 
 .add-btn:disabled {
@@ -442,12 +442,12 @@ function moveContentItem(index: number, direction: -1 | 1) {
 }
 
 .no-contents {
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   font-size: 12px;
   text-align: center;
   padding: 16px;
   font-style: italic;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-radius: 4px;
 }
 </style>

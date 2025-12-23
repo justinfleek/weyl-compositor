@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — CAMERA & SPLINE SYSTEM
+# LATTICE COMPOSITOR — CAMERA & SPLINE SYSTEM
 
 **Document ID**: 06_CAMERA_SPLINE  
 **Version**: 1.0.0  
@@ -12,7 +12,7 @@
 
 ## 1. DESIGN INTENT
 
-The Weyl camera system mirrors professional DCC tools:
+The Lattice camera system mirrors professional DCC tools:
 
 - **Adobe After Effects** — 3D camera with keyframes
 - **Cinema 4D** — Spline-driven camera paths
@@ -70,7 +70,7 @@ const editorCamera = editorViewState.camera  // Completely separate
 
 ## 3. WORLD COORDINATE SYSTEM
 
-Weyl uses a **right-handed** coordinate system:
+Lattice uses a **right-handed** coordinate system:
 
 ```
        +Y (Up)
@@ -405,7 +405,7 @@ interface CameraTrajectoryFrame {
 
 ```typescript
 function exportCameraTrajectory(
-  project: WeylProject,
+  project: LatticeProject,
   frameRange: [number, number],
   audioAnalysis?: AudioAnalysis
 ): CameraTrajectoryFrame[] {

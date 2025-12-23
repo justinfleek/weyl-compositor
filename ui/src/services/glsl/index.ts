@@ -1,7 +1,7 @@
 /**
  * GLSL Shader System - Index
  *
- * GPU-accelerated shader effects for Weyl Compositor.
+ * GPU-accelerated shader effects for Lattice Compositor.
  * Inspired by Jovi_GLSL with Shadertoy-compatible uniforms.
  */
 

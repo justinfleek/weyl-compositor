@@ -137,7 +137,7 @@ function toggleKeyframe(prop: 'color' | 'opacity') {
 
 .property-row label {
   width: 70px;
-  color: var(--weyl-text-muted, #888);
+  color: var(--lattice-text-muted, #888);
   font-size: 11px;
   flex-shrink: 0;
 }
@@ -145,10 +145,10 @@ function toggleKeyframe(prop: 'color' | 'opacity') {
 .property-row select {
   flex: 1;
   padding: 3px 6px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-size: 11px;
 }
 
@@ -162,7 +162,7 @@ function toggleKeyframe(prop: 'color' | 'opacity') {
 .color-input-wrapper input[type="color"] {
   width: 32px;
   height: 24px;
-  border: 1px solid var(--weyl-border-default, #333);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 3px;
   padding: 0;
   cursor: pointer;
@@ -170,7 +170,7 @@ function toggleKeyframe(prop: 'color' | 'opacity') {
 
 .color-value {
   font-size: 11px;
-  color: var(--weyl-text-muted, #888);
+  color: var(--lattice-text-muted, #888);
   font-family: monospace;
 }
 </style>

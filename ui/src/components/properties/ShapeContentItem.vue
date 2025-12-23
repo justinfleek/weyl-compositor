@@ -232,13 +232,13 @@ function emitUpdate(updated: ShapeContent) {
 
 <style scoped>
 .shape-content-item {
-  background: var(--weyl-surface-2, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .shape-content-item.expanded {
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
 }
 
 .item-header {
@@ -251,13 +251,13 @@ function emitUpdate(updated: ShapeContent) {
 }
 
 .item-header:hover {
-  background: var(--weyl-surface-3, #222);
+  background: var(--lattice-surface-3, #222);
 }
 
 .expand-icon {
   width: 10px;
   font-size: 10px;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
 }
 
 .item-icon {
@@ -269,7 +269,7 @@ function emitUpdate(updated: ShapeContent) {
 .item-name {
   flex: 1;
   font-size: 12px;
-  color: var(--weyl-text-secondary, #ccc);
+  color: var(--lattice-text-secondary, #ccc);
 }
 
 .item-actions {
@@ -286,7 +286,7 @@ function emitUpdate(updated: ShapeContent) {
 .action-btn {
   background: transparent;
   border: none;
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   cursor: pointer;
   font-size: 10px;
   padding: 2px 4px;
@@ -294,8 +294,8 @@ function emitUpdate(updated: ShapeContent) {
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--weyl-surface-3, #333);
-  color: var(--weyl-text-secondary, #ccc);
+  background: var(--lattice-surface-3, #333);
+  color: var(--lattice-text-secondary, #ccc);
 }
 
 .action-btn:disabled {
@@ -316,11 +316,11 @@ function emitUpdate(updated: ShapeContent) {
 
 .item-content {
   padding: 8px;
-  border-top: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-top: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .unsupported {
-  color: var(--weyl-text-muted, #666);
+  color: var(--lattice-text-muted, #666);
   font-size: 11px;
   font-style: italic;
   padding: 8px;

@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR - FEATURE & UI AUDIT
+# LATTICE COMPOSITOR - FEATURE & UI AUDIT
 
 **Last Updated:** December 23, 2025
 
@@ -794,7 +794,7 @@ The pen tool has **4 sub-modes** accessed via the spline toolbar:
 
 | Format | UI Access | Description |
 |--------|-----------|-------------|
-| Weyl JSON | ✅ 🎹 📋 | Native format - `Ctrl+Shift+I` |
+| Lattice JSON | ✅ 🎹 📋 | Native format - `Ctrl+Shift+I` |
 | COLMAP | ✅ 📋 | cameras.txt, images.txt, points3D.txt |
 | Blender | ✅ 📋 | Motion tracking JSON export |
 | Uni3C | ✅ 📋 | PCDController format (K matrix + poses) |
@@ -824,7 +824,7 @@ The pen tool has **4 sub-modes** accessed via the spline toolbar:
 |---------|-----------|-------------|
 | Motion Analysis | ✅ 📋 | VLM camera motion detection |
 | Motion Types | ✅ | 20 primitives (push, pull, pan, tilt, etc.) |
-| Trajectory Mapping | ✅ | Auto-map to Weyl presets |
+| Trajectory Mapping | ✅ | Auto-map to Lattice presets |
 
 ### Sapiens Integration (Human Vision)
 

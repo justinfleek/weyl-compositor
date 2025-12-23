@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Weyl Compositor are documented in this file.
+All notable changes to Lattice Compositor are documented in this file.
 
 ---
 

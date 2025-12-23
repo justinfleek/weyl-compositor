@@ -144,7 +144,7 @@ export interface CollisionFilter {
  */
 export interface RigidBodyConfig {
   id: string;
-  layerId: string;  // Link to Weyl layer
+  layerId: string;  // Link to Lattice layer
 
   type: BodyType;
 

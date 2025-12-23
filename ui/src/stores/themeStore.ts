@@ -12,9 +12,9 @@ export const useThemeStore = defineStore('theme', {
   }),
 
   getters: {
-    themeGradient: (state) => `var(--weyl-theme-${state.currentTheme}-gradient)`,
-    themePrimary: (state) => `var(--weyl-theme-${state.currentTheme}-primary)`,
-    themeSecondary: (state) => `var(--weyl-theme-${state.currentTheme}-secondary)`
+    themeGradient: (state) => `var(--lattice-theme-${state.currentTheme}-gradient)`,
+    themePrimary: (state) => `var(--lattice-theme-${state.currentTheme}-primary)`,
+    themeSecondary: (state) => `var(--lattice-theme-${state.currentTheme}-secondary)`
   },
 
   actions: {
@@ -23,9 +23,9 @@ export const useThemeStore = defineStore('theme', {
 
       // Update CSS custom properties
       const root = document.documentElement;
-      root.style.setProperty('--weyl-accent', `var(--weyl-theme-${theme}-primary)`);
-      root.style.setProperty('--weyl-accent-secondary', `var(--weyl-theme-${theme}-secondary)`);
-      root.style.setProperty('--weyl-accent-gradient', `var(--weyl-theme-${theme}-gradient)`);
+      root.style.setProperty('--lattice-accent', `var(--lattice-theme-${theme}-primary)`);
+      root.style.setProperty('--lattice-accent-secondary', `var(--lattice-theme-${theme}-secondary)`);
+      root.style.setProperty('--lattice-accent-gradient', `var(--lattice-theme-${theme}-gradient)`);
 
       // Update glow color based on theme
       const glowColors: Record<ThemeName, string> = {
@@ -36,14 +36,14 @@ export const useThemeStore = defineStore('theme', {
         ember: 'rgba(239, 68, 68, 0.3)',
         mono: 'rgba(107, 114, 128, 0.3)'
       };
-      root.style.setProperty('--weyl-accent-glow', glowColors[theme]);
+      root.style.setProperty('--lattice-accent-glow', glowColors[theme]);
 
       // Persist to localStorage
-      localStorage.setItem('weyl-theme', theme);
+      localStorage.setItem('lattice-theme', theme);
     },
 
     loadSavedTheme() {
-      const saved = localStorage.getItem('weyl-theme') as ThemeName | null;
+      const saved = localStorage.getItem('lattice-theme') as ThemeName | null;
       if (saved && ['violet', 'ocean', 'sunset', 'forest', 'ember', 'mono'].includes(saved)) {
         this.setTheme(saved);
       }

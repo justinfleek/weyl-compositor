@@ -1,11 +1,11 @@
-# WEYL COMPOSITOR — TYPE DEFINITIONS
+# LATTICE COMPOSITOR — TYPE DEFINITIONS
 
 **Document ID**: 01_TYPE_DEFINITIONS  
 **Version**: 1.0.0  
 **Status**: CANONICAL  
 **Depends On**: [00_MASTER_GROUND_TRUTH.md](./00_MASTER_GROUND_TRUTH.md)
 
-> This document defines all core TypeScript types used throughout Weyl Compositor.
+> This document defines all core TypeScript types used throughout Lattice Compositor.
 > All types are designed to be **immutable** and **serializable**.
 
 ---
@@ -304,10 +304,10 @@ interface Asset {
 type AssetType = 'image' | 'video' | 'audio' | 'font' | 'svg' | 'lottie'
 ```
 
-### 5.3 WeylProject
+### 5.3 LatticeProject
 
 ```typescript
-interface WeylProject {
+interface LatticeProject {
   readonly id: string
   readonly name: string
   readonly version: string

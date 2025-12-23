@@ -289,17 +289,17 @@ function updateHighlightAngle(value: number) {
 <style scoped>
 .shape-editor { display: flex; flex-direction: column; gap: 6px; }
 .property-row { display: flex; align-items: center; gap: 8px; }
-.property-row label { width: 70px; color: var(--weyl-text-muted, #888); font-size: 11px; flex-shrink: 0; }
-.property-row select { flex: 1; padding: 3px 6px; background: var(--weyl-surface-0, #0a0a0a); border: 1px solid var(--weyl-border-default, #333); border-radius: 3px; color: var(--weyl-text-primary, #e0e0e0); font-size: 11px; }
+.property-row label { width: 70px; color: var(--lattice-text-muted, #888); font-size: 11px; flex-shrink: 0; }
+.property-row select { flex: 1; padding: 3px 6px; background: var(--lattice-surface-0, #0a0a0a); border: 1px solid var(--lattice-border-default, #333); border-radius: 3px; color: var(--lattice-text-primary, #e0e0e0); font-size: 11px; }
 .xy-inputs { display: flex; gap: 4px; flex: 1; }
 .xy-inputs > * { flex: 1; }
-.subsection-header { font-size: 10px; font-weight: 600; color: var(--weyl-text-muted, #666); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a); }
-.gradient-preview { height: 24px; border-radius: 4px; margin: 4px 0; border: 1px solid var(--weyl-border-default, #333); }
+.subsection-header { font-size: 10px; font-weight: 600; color: var(--lattice-text-muted, #666); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a); }
+.gradient-preview { height: 24px; border-radius: 4px; margin: 4px 0; border: 1px solid var(--lattice-border-default, #333); }
 .stops-list { display: flex; flex-direction: column; gap: 4px; }
 .stop-row { display: flex; align-items: center; gap: 6px; }
-.color-input { width: 28px; height: 28px; padding: 0; border: 1px solid var(--weyl-border-default, #333); border-radius: 3px; cursor: pointer; }
-.remove-stop { width: 20px; height: 20px; padding: 0; border: none; background: var(--weyl-surface-3, #333); color: #c44; border-radius: 2px; cursor: pointer; font-weight: bold; }
+.color-input { width: 28px; height: 28px; padding: 0; border: 1px solid var(--lattice-border-default, #333); border-radius: 3px; cursor: pointer; }
+.remove-stop { width: 20px; height: 20px; padding: 0; border: none; background: var(--lattice-surface-3, #333); color: #c44; border-radius: 2px; cursor: pointer; font-weight: bold; }
 .remove-stop:disabled { opacity: 0.3; cursor: not-allowed; }
-.add-stop { padding: 4px 8px; border: 1px dashed var(--weyl-border-default, #333); background: transparent; color: var(--weyl-text-muted, #888); border-radius: 3px; cursor: pointer; font-size: 11px; }
-.add-stop:hover { border-color: var(--weyl-accent, #8B5CF6); color: var(--weyl-accent, #8B5CF6); }
+.add-stop { padding: 4px 8px; border: 1px dashed var(--lattice-border-default, #333); background: transparent; color: var(--lattice-text-muted, #888); border-radius: 3px; cursor: pointer; font-size: 11px; }
+.add-stop:hover { border-color: var(--lattice-accent, #8B5CF6); color: var(--lattice-accent, #8B5CF6); }
 </style>

@@ -1,4 +1,4 @@
-# Weyl Compositor
+# Lattice Compositor
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 [Features](#features) | [Installation](#installation) | [Quick Start](#quick-start) | [Documentation](#documentation) | [Contributing](#contributing)
 
 <!-- TODO: Add hero screenshot or GIF here -->
-<!-- ![Weyl Compositor Interface](screenshots/hero-interface.png) -->
+<!-- ![Lattice Compositor Interface](screenshots/hero-interface.png) -->
 
 </div>
 
@@ -22,9 +22,9 @@
 
 ## Vision
 
-**Weyl bridges the gap between professional motion graphics and AI video generation.**
+**Lattice bridges the gap between professional motion graphics and AI video generation.**
 
-The AI video generation community has powerful models (Wan 2.1, AnimateDiff, MotionCtrl, VACE) but creating the *conditioning data* these models need — depth maps, motion trajectories, attention masks — requires jumping between multiple tools. Weyl solves this by bringing industry-standard animation tools directly into ComfyUI.
+The AI video generation community has powerful models (Wan 2.1, AnimateDiff, MotionCtrl, VACE) but creating the *conditioning data* these models need — depth maps, motion trajectories, attention masks — requires jumping between multiple tools. Lattice solves this by bringing industry-standard animation tools directly into ComfyUI.
 
 ### Core Philosophy
 
@@ -36,16 +36,16 @@ The AI video generation community has powerful models (Wan 2.1, AnimateDiff, Mot
 
 ---
 
-## What is Weyl?
+## What is Lattice?
 
-Weyl is a **professional-grade motion graphics compositor** built for the **ComfyUI ecosystem**. It brings industry-standard animation tools to AI video workflows, enabling you to create stunning motion graphics, animated text, particle systems, and 3D camera animations — then export directly to AI video models like Wan 2.1, AnimateDiff, and MotionCtrl.
+Lattice is a **professional-grade motion graphics compositor** built for the **ComfyUI ecosystem**. It brings industry-standard animation tools to AI video workflows, enabling you to create stunning motion graphics, animated text, particle systems, and 3D camera animations — then export directly to AI video models like Wan 2.1, AnimateDiff, and MotionCtrl.
 
 <!-- TODO: Add comparison GIF showing workflow -->
 <!-- ![Before/After Workflow](screenshots/workflow-comparison.gif) -->
 
-### Why Weyl?
+### Why Lattice?
 
-| Traditional Workflow | With Weyl |
+| Traditional Workflow | With Lattice |
 |---------------------|-----------|
 | Export video, re-import to AI model | Direct ComfyUI integration |
 | Manual keyframe animation | AI agent creates animations from prompts |
@@ -196,13 +196,13 @@ Weyl is a **professional-grade motion graphics compositor** built for the **Comf
 cd ComfyUI/custom_nodes
 
 # Clone the repository
-git clone https://github.com/justinfleek/weyl-compositor.git
+git clone https://github.com/justinfleek/lattice-compositor.git
 
 # Install Python dependencies
-pip install -r weyl-compositor/requirements.txt
+pip install -r lattice-compositor/requirements.txt
 ```
 
-**Restart ComfyUI.** The Weyl icon will appear in your sidebar. **No build step required** — pre-built JavaScript files are included.
+**Restart ComfyUI.** The Lattice icon will appear in your sidebar. **No build step required** — pre-built JavaScript files are included.
 
 ### Windows with Portable/Embedded Python
 
@@ -213,10 +213,10 @@ If you're using ComfyUI's portable distribution with embedded Python:
 cd "C:\ComfyUI_windows_portable\ComfyUI\custom_nodes"
 
 # Clone
-git clone https://github.com/justinfleek/weyl-compositor.git
+git clone https://github.com/justinfleek/lattice-compositor.git
 
 # Install with embedded Python
-& "C:\ComfyUI_windows_portable\python_embeded\python.exe" -m pip install -r weyl-compositor/requirements.txt
+& "C:\ComfyUI_windows_portable\python_embeded\python.exe" -m pip install -r lattice-compositor/requirements.txt
 ```
 
 ### Requirements
@@ -235,7 +235,7 @@ For contributors or those wanting to modify the source:
 
 ```bash
 # Navigate to the UI source
-cd weyl-compositor/ui
+cd lattice-compositor/ui
 
 # Install Node.js dependencies
 npm install
@@ -257,7 +257,7 @@ npm run build
 
 ### Basic Workflow
 
-1. **Open Compositor** — Click the Weyl icon in the ComfyUI sidebar
+1. **Open Compositor** — Click the Lattice icon in the ComfyUI sidebar
 2. **Add a Layer** — Right-click canvas → Add Layer → Text/Shape/Particles
 3. **Animate** — Click the keyframe icon (◆) next to any property
 4. **Preview** — Press Space to play, drag the playhead to scrub
@@ -307,7 +307,7 @@ AI video models require frame counts following `frames = (seconds × 16) + 1`:
 │  └── assetStore - Asset management                              │
 ├─────────────────────────────────────────────────────────────────┤
 │  ENGINE LAYER (Three.js r170)                                   │
-│  ├── WeylEngine - Main rendering facade                         │
+│  ├── LatticeEngine - Main rendering facade                         │
 │  ├── MotionEngine - Deterministic frame evaluation              │
 │  ├── LayerManager - 17 layer implementations                    │
 │  ├── ParticleSystem - Checkpoint-based simulation               │
@@ -324,13 +324,13 @@ AI video models require frame counts following `frames = (seconds × 16) + 1`:
 │  BACKEND (Python + ComfyUI)                                     │
 │  ├── AI Inference: DepthAnything, SAM, NormalCrafter            │
 │  ├── Export: Frame sequences, trajectories                      │
-│  └── API Routes: /weyl/* endpoints                              │
+│  └── API Routes: /lattice/* endpoints                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### The Determinism Rule
 
-For AI video generation, every frame must be **reproducible**. Weyl guarantees:
+For AI video generation, every frame must be **reproducible**. Lattice guarantees:
 
 > **`evaluate(frame, project)` always returns identical results for identical inputs.**
 
@@ -397,9 +397,9 @@ See [FEATURE_AUDIT.md](FEATURE_AUDIT.md) for complete feature-to-UI mapping.
 
 ## Trade Dress Compliance
 
-Weyl uses alternative terminology to respect Adobe trademarks:
+Lattice uses alternative terminology to respect Adobe trademarks:
 
-| Industry Term | Weyl Term |
+| Industry Term | Lattice Term |
 |---------------|-----------|
 | Pickwhip | PropertyLink |
 | Graph Editor | CurveEditor |
@@ -412,7 +412,7 @@ Weyl uses alternative terminology to respect Adobe trademarks:
 
 ## Acknowledgments
 
-Weyl incorporates techniques and inspiration from these outstanding projects:
+Lattice incorporates techniques and inspiration from these outstanding projects:
 
 ### Audio Reactive
 - **[ATI_AudioReactive](https://github.com/Alter-AI/ATI_AudioReactive)** — Beat detection, amplitude curves
@@ -441,8 +441,8 @@ Contributions are welcome! Please read [CLAUDE.md](CLAUDE.md) for architecture d
 
 ```bash
 # Clone
-git clone https://github.com/justinfleek/weyl-compositor.git
-cd weyl-compositor/ui
+git clone https://github.com/justinfleek/lattice-compositor.git
+cd lattice-compositor/ui
 
 # Install dependencies
 npm install
@@ -478,6 +478,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 *Professional motion graphics accessible to everyone*
 
-[Report Bug](https://github.com/justinfleek/weyl-compositor/issues) · [Request Feature](https://github.com/justinfleek/weyl-compositor/issues) · [Discussions](https://github.com/justinfleek/weyl-compositor/discussions)
+[Report Bug](https://github.com/justinfleek/lattice-compositor/issues) · [Request Feature](https://github.com/justinfleek/lattice-compositor/issues) · [Discussions](https://github.com/justinfleek/lattice-compositor/discussions)
 
 </div>

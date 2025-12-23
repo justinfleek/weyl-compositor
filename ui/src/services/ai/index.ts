@@ -1,7 +1,7 @@
 /**
  * AI Services Index
  *
- * Exports all AI-related services for the Weyl Compositor.
+ * Exports all AI-related services for the Lattice Compositor.
  */
 
 // Main agent

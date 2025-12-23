@@ -230,7 +230,7 @@ const selectedProvider = computed(() => {
 // Check API key status from backend
 async function checkApiStatus() {
   try {
-    const response = await fetch('/weyl/api/status');
+    const response = await fetch('/lattice/api/status');
     const result = await response.json();
     if (result.status === 'success') {
       apiKeyStatus.value = result.providers;

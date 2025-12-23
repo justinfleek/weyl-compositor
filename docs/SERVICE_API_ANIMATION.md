@@ -1,6 +1,6 @@
 # SERVICE API - Animation Services
 
-**Weyl Compositor - Animation & Interpolation Services**
+**Lattice Compositor - Animation & Interpolation Services**
 
 ---
 
@@ -326,8 +326,8 @@ elastic(amplitude, frequency, decay)  // Spring-like motion
 // Looping
 loopOut("cycle" | "pingpong" | "offset" | "continue")
 loopIn("cycle" | "pingpong" | "offset" | "continue")
-repeatAfter("cycle" | "pingpong" | "offset")  // Weyl alias
-repeatBefore("cycle" | "pingpong" | "offset") // Weyl alias
+repeatAfter("cycle" | "pingpong" | "offset")  // Lattice alias
+repeatBefore("cycle" | "pingpong" | "offset") // Lattice alias
 
 // Interpolation
 ease(t, tMin, tMax, vMin, vMax)

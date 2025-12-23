@@ -1,6 +1,6 @@
 <!--
   @component WorkspaceLayout
-  @description Main application layout component for Weyl Compositor.
+  @description Main application layout component for Lattice Compositor.
   Orchestrates the complete motion graphics workspace including:
   - Top toolbar with drawing/selection tools
   - Left sidebar (Project/Effects panels)
@@ -920,17 +920,17 @@ function playExportChime() {
     });
   } catch (e) {
     // Silently fail if audio not available
-    console.warn('[Weyl] Audio notification not available:', e);
+    console.warn('[Lattice] Audio notification not available:', e);
   }
 }
 
 function onExportComplete() {
-  console.log('[Weyl] Matte export completed');
+  console.log('[Lattice] Matte export completed');
   playExportChime();
 }
 
 function onComfyUIExportComplete(result: any) {
-  console.log('[Weyl] ComfyUI export completed', result);
+  console.log('[Lattice] ComfyUI export completed', result);
   showComfyUIExportDialog.value = false;
   playExportChime();
 }
@@ -944,7 +944,7 @@ function onCompositionSettingsConfirm(settings: {
   backgroundColor: string;
   autoResizeToContent: boolean;
 }) {
-  console.log('[Weyl] Composition settings updated:', settings);
+  console.log('[Lattice] Composition settings updated:', settings);
 
   // Update active composition's settings
   store.updateCompositionSettings(store.activeCompositionId, {
@@ -1026,7 +1026,7 @@ function onKeyframeInterpolationConfirm(settings: {
   }
 
   // Mark dirty and log
-  console.log(`[Weyl] Applied ${settings.interpolation} interpolation to ${selectedKeyframeIds.length} keyframes`);
+  console.log(`[Lattice] Applied ${settings.interpolation} interpolation to ${selectedKeyframeIds.length} keyframes`);
   showKeyframeInterpolationDialog.value = false;
 }
 
@@ -1130,7 +1130,7 @@ function onPathSuggestionPreview(suggestions: any[]) {
 }
 
 function onPathSuggestionAccept(result: { keyframes: any[]; splines: any[] }) {
-  console.log('[Weyl] Path suggestion accepted:', result);
+  console.log('[Lattice] Path suggestion accepted:', result);
 
   // Apply keyframes to the store
   if (result.keyframes && result.keyframes.length > 0) {
@@ -1399,10 +1399,10 @@ function handleMenuAction(action: string) {
       // Switch to shortcuts tab after dialog opens
       break;
     case 'showDocumentation':
-      window.open('https://github.com/justinfleek/weyl-compositor', '_blank');
+      window.open('https://github.com/justinfleek/lattice-compositor', '_blank');
       break;
     case 'showAbout':
-      alert('Weyl Compositor v7.6\n\nProfessional motion graphics compositor for ComfyUI.\n\nBuilt with Vue 3, Three.js, and Pinia.');
+      alert('Lattice Compositor v7.6\n\nProfessional motion graphics compositor for ComfyUI.\n\nBuilt with Vue 3, Three.js, and Pinia.');
       break;
 
     default:
@@ -1434,7 +1434,7 @@ function handleZoomOut() {
 function triggerProjectOpen() {
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = '.weyl,.json';
+  input.accept = '.lattice,.json';
   input.onchange = async (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (file) {
@@ -1496,7 +1496,7 @@ function onCreateLayersFromSvg(svgId: string) {
     });
   });
 
-  console.log(`[Weyl] Created ${storedSvg.document.paths.length} layers from SVG: ${storedSvg.name}`);
+  console.log(`[Lattice] Created ${storedSvg.document.paths.length} layers from SVG: ${storedSvg.name}`);
 }
 
 /**
@@ -1509,13 +1509,13 @@ function onUseMeshAsEmitter(meshId: string) {
   // Get the selected layer if it's a particle layer
   const selectedLayerIds = store.selectedLayerIds;
   if (selectedLayerIds.length === 0) {
-    console.warn('[Weyl] No layer selected for mesh emitter');
+    console.warn('[Lattice] No layer selected for mesh emitter');
     return;
   }
 
   const layer = store.layers.find(l => l.id === selectedLayerIds[0]);
   if (!layer || layer.type !== 'particle') {
-    console.warn('[Weyl] Selected layer is not a particle layer');
+    console.warn('[Lattice] Selected layer is not a particle layer');
     return;
   }
 
@@ -1529,7 +1529,7 @@ function onUseMeshAsEmitter(meshId: string) {
     }
   });
 
-  console.log(`[Weyl] Set mesh emitter for layer: ${layer.name}`);
+  console.log(`[Lattice] Set mesh emitter for layer: ${layer.name}`);
 }
 
 /**
@@ -1559,9 +1559,9 @@ async function onEnvironmentLoad(settings: any) {
         backgroundBlur: settings.backgroundBlur,
         useAsBackground: settings.useAsBackground,
       });
-      console.log('[Weyl] Environment map loaded');
+      console.log('[Lattice] Environment map loaded');
     } catch (error) {
-      console.error('[Weyl] Failed to load environment map:', error);
+      console.error('[Lattice] Failed to load environment map:', error);
     }
   }
 }
@@ -1630,10 +1630,10 @@ onUnmounted(() => {
   /* Use 100% height for ComfyUI sidebar compatibility, fallback to 100vh for standalone */
   height: 100%;
   min-height: 100vh;
-  background: var(--weyl-void, #0a0a0a);
-  color: var(--weyl-text-primary, #e5e5e5);
-  font-family: var(--weyl-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
-  font-size: var(--weyl-text-base, 12px);
+  background: var(--lattice-void, #0a0a0a);
+  color: var(--lattice-text-primary, #e5e5e5);
+  font-family: var(--lattice-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: var(--lattice-text-base, 12px);
   /* Increased padding for floating panel effect */
   padding: 8px;
   gap: 8px;
@@ -1655,9 +1655,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #0f0f0f);
-  border-radius: var(--weyl-radius-lg, 6px);
-  border: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-1, #0f0f0f);
+  border-radius: var(--lattice-radius-lg, 6px);
+  border: 1px solid var(--lattice-border-subtle, #1a1a1a);
   overflow: hidden;
 }
 
@@ -1676,41 +1676,41 @@ onUnmounted(() => {
 
 .panel-tabs {
   display: flex;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   padding: 10px 10px 0 10px;
   gap: 4px;
-  border-bottom: 1px solid var(--weyl-border-default, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-default, #2a2a2a);
 }
 
 .panel-tabs button {
   flex: 1;
   padding: 12px 14px;
   border: none;
-  background: var(--weyl-surface-1, #0f0f0f);
-  color: var(--weyl-text-muted, #6B7280);
-  font-size: var(--weyl-text-base, 13px);
+  background: var(--lattice-surface-1, #0f0f0f);
+  color: var(--lattice-text-muted, #6B7280);
+  font-size: var(--lattice-text-base, 13px);
   font-weight: 600;
   cursor: pointer;
-  border-radius: var(--weyl-radius-md, 4px) var(--weyl-radius-md, 4px) 0 0;
-  transition: var(--weyl-transition-fast, 100ms ease);
+  border-radius: var(--lattice-radius-md, 4px) var(--lattice-radius-md, 4px) 0 0;
+  transition: var(--lattice-transition-fast, 100ms ease);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 }
 
 .panel-tabs button:hover {
-  color: var(--weyl-text-primary, #e5e5e5);
-  background: var(--weyl-surface-2, #1a1a1a);
+  color: var(--lattice-text-primary, #e5e5e5);
+  background: var(--lattice-surface-2, #1a1a1a);
 }
 
 .panel-tabs button.active {
   color: white;
-  background: var(--weyl-surface-1, #0f0f0f);
+  background: var(--lattice-surface-1, #0f0f0f);
   font-weight: 600;
-  border-bottom: 2px solid var(--weyl-accent, #8B5CF6);
+  border-bottom: 2px solid var(--lattice-accent, #8B5CF6);
 }
 
 .panel-tabs button:focus-visible {
-  outline: 2px solid var(--weyl-accent, #8B5CF6);
+  outline: 2px solid var(--lattice-accent, #8B5CF6);
   outline-offset: 2px;
 }
 
@@ -1726,16 +1726,16 @@ onUnmounted(() => {
 }
 
 .panel-content::-webkit-scrollbar-track {
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
 }
 
 .panel-content::-webkit-scrollbar-thumb {
-  background: var(--weyl-surface-3, #333);
+  background: var(--lattice-surface-3, #333);
   border-radius: 4px;
 }
 
 .panel-content::-webkit-scrollbar-thumb:hover {
-  background: var(--weyl-surface-4, #444);
+  background: var(--lattice-surface-4, #444);
 }
 
 /* Stacked Collapsible Panels */
@@ -1758,9 +1758,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #0f0f0f);
-  border-radius: var(--weyl-radius-lg, 6px);
-  border: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-1, #0f0f0f);
+  border-radius: var(--lattice-radius-lg, 6px);
+  border: 1px solid var(--lattice-border-subtle, #1a1a1a);
   overflow: hidden;
 }
 
@@ -1769,21 +1769,21 @@ onUnmounted(() => {
   align-items: center;
   padding: 12px 14px;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15));
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .ai-section-title {
-  font-size: var(--weyl-text-md, 14px);
+  font-size: var(--lattice-text-md, 14px);
   font-weight: 600;
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .ai-section-tabs {
   display: flex;
   padding: 8px;
   gap: 4px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .ai-section-tabs button {
@@ -1791,22 +1791,22 @@ onUnmounted(() => {
   padding: 10px 14px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-secondary, #9CA3AF);
-  font-size: var(--weyl-text-base, 13px);
+  color: var(--lattice-text-secondary, #9CA3AF);
+  font-size: var(--lattice-text-base, 13px);
   font-weight: 600;
   cursor: pointer;
-  border-radius: var(--weyl-radius-md, 4px);
-  transition: var(--weyl-transition-fast, 100ms ease);
+  border-radius: var(--lattice-radius-md, 4px);
+  transition: var(--lattice-transition-fast, 100ms ease);
 }
 
 .ai-section-tabs button:hover {
-  color: var(--weyl-text-primary, #e5e5e5);
-  background: var(--weyl-surface-3, #1e1e1e);
+  color: var(--lattice-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #1e1e1e);
 }
 
 .ai-section-tabs button.active {
   color: white;
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   font-weight: 600;
 }
 
@@ -1818,7 +1818,7 @@ onUnmounted(() => {
 
 /* Viewport */
 .viewport-panel {
-  background: var(--weyl-surface-0, #080808);
+  background: var(--lattice-surface-0, #080808);
 }
 
 .viewport-header {
@@ -1826,39 +1826,39 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 6px 12px;
-  background: var(--weyl-surface-2, #161616);
-  border-bottom: 1px solid var(--weyl-border-default, #2a2a2a);
+  background: var(--lattice-surface-2, #161616);
+  border-bottom: 1px solid var(--lattice-border-default, #2a2a2a);
   gap: 8px;
 }
 
 .viewport-tabs {
   display: flex;
   gap: 4px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   padding: 4px;
-  border-radius: var(--weyl-radius-md, 4px);
+  border-radius: var(--lattice-radius-md, 4px);
 }
 
 .viewport-tabs button {
   padding: 8px 16px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6B7280);
-  font-size: var(--weyl-text-base, 13px);
+  color: var(--lattice-text-muted, #6B7280);
+  font-size: var(--lattice-text-base, 13px);
   font-weight: 600;
-  border-radius: var(--weyl-radius-sm, 2px);
+  border-radius: var(--lattice-radius-sm, 2px);
   cursor: pointer;
-  transition: var(--weyl-transition-fast, 100ms ease);
+  transition: var(--lattice-transition-fast, 100ms ease);
 }
 
 .viewport-tabs button:hover {
-  color: var(--weyl-text-primary, #e5e5e5);
-  background: var(--weyl-surface-2, #1a1a1a);
+  color: var(--lattice-text-primary, #e5e5e5);
+  background: var(--lattice-surface-2, #1a1a1a);
 }
 
 .viewport-tabs button.active {
-  background: var(--weyl-surface-3, #222222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #222222);
+  color: var(--lattice-text-primary, #e5e5e5);
   box-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
@@ -1870,11 +1870,11 @@ onUnmounted(() => {
 
 .zoom-select {
   padding: 4px 8px;
-  background: var(--weyl-surface-2, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
   border: none;
-  color: var(--weyl-text-primary, #e5e5e5);
-  border-radius: var(--weyl-radius-md, 4px);
-  font-size: var(--weyl-text-sm, 11px);
+  color: var(--lattice-text-primary, #e5e5e5);
+  border-radius: var(--lattice-radius-md, 4px);
+  font-size: var(--lattice-text-sm, 11px);
 }
 
 .viewport-controls button {
@@ -1883,20 +1883,20 @@ onUnmounted(() => {
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6B7280);
-  border-radius: var(--weyl-radius-md, 4px);
+  color: var(--lattice-text-muted, #6B7280);
+  border-radius: var(--lattice-radius-md, 4px);
   cursor: pointer;
-  font-size: var(--weyl-text-base, 12px);
-  transition: var(--weyl-transition-fast, 100ms ease);
+  font-size: var(--lattice-text-base, 12px);
+  transition: var(--lattice-transition-fast, 100ms ease);
 }
 
 .viewport-controls button:hover {
-  background: var(--weyl-surface-3, #222222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #222222);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .viewport-controls button.active {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .viewport-content {
@@ -1904,7 +1904,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   overflow: hidden;
   position: relative;
 }
@@ -2070,8 +2070,8 @@ onUnmounted(() => {
 /* Guide context menu */
 .guide-context-menu {
   position: fixed;
-  background: var(--weyl-surface-3, #222);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-3, #222);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 4px;
   padding: 4px 0;
   min-width: 140px;
@@ -2085,14 +2085,14 @@ onUnmounted(() => {
   padding: 8px 12px;
   background: none;
   border: none;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   text-align: left;
   cursor: pointer;
   font-size: 12px;
 }
 
 .guide-context-menu button:hover {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.2));
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.2));
 }
 
 /* Snap Indicator */
@@ -2148,29 +2148,29 @@ onUnmounted(() => {
 }
 
 :deep(.splitpanes.default-theme .splitpanes__splitter:hover) {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
 }
 
 /* Vertical splitters (between columns) - add breathing room */
 :deep(.splitpanes--vertical > .splitpanes__splitter) {
   width: 8px;
   min-width: 8px;
-  background: var(--weyl-void, #0a0a0a);
+  background: var(--lattice-void, #0a0a0a);
 }
 
 :deep(.splitpanes--vertical > .splitpanes__splitter:hover) {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
 }
 
 /* Horizontal splitters (between rows) */
 :deep(.splitpanes--horizontal > .splitpanes__splitter) {
   height: 6px;
   min-height: 6px;
-  background: var(--weyl-void, #0a0a0a);
+  background: var(--lattice-void, #0a0a0a);
 }
 
 :deep(.splitpanes--horizontal > .splitpanes__splitter:hover) {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
 }
 
 /* Ensure timeline pane allows dropdown overflow */
@@ -2186,7 +2186,7 @@ onUnmounted(() => {
 }
 
 .segment-options .confirm-btn {
-  background: var(--weyl-success, #10B981) !important;
+  background: var(--lattice-success, #10B981) !important;
   color: white !important;
 }
 
@@ -2195,7 +2195,7 @@ onUnmounted(() => {
 }
 
 .segment-options .cancel-btn {
-  background: var(--weyl-error, #F43F5E) !important;
+  background: var(--lattice-error, #F43F5E) !important;
   color: white !important;
 }
 
@@ -2204,8 +2204,8 @@ onUnmounted(() => {
 }
 
 .loading-indicator {
-  color: var(--weyl-success, #10B981);
-  font-size: var(--weyl-text-base, 12px);
+  color: var(--lattice-success, #10B981);
+  font-size: var(--lattice-text-base, 12px);
   padding: 0 8px;
   animation: pulse 1s ease-in-out infinite;
 }

@@ -104,14 +104,14 @@ onMounted(() => {
 
 <style scoped>
 .comment-control {
-  background: var(--weyl-surface-2, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
   border-radius: 4px;
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   overflow: hidden;
 }
 
 .comment-control.expanded {
-  border-color: var(--weyl-accent-muted, rgba(139, 92, 246, 0.2));
+  border-color: var(--lattice-accent-muted, rgba(139, 92, 246, 0.2));
 }
 
 .comment-header {
@@ -124,11 +124,11 @@ onMounted(() => {
 }
 
 .comment-header:hover {
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
 }
 
 .comment-icon {
-  color: var(--weyl-accent, #8b5cf6);
+  color: var(--lattice-accent, #8b5cf6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,7 +139,7 @@ onMounted(() => {
   flex: 1;
   font-size: 12px;
   font-weight: 500;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -150,7 +150,7 @@ onMounted(() => {
   padding: 0;
   background: none;
   border: none;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -160,8 +160,8 @@ onMounted(() => {
 }
 
 .btn-icon-tiny:hover {
-  color: var(--weyl-text-primary, #e5e5e5);
-  background: var(--weyl-surface-4, #2a2a2a);
+  color: var(--lattice-text-primary, #e5e5e5);
+  background: var(--lattice-surface-4, #2a2a2a);
 }
 
 .expand-btn svg {
@@ -179,7 +179,7 @@ onMounted(() => {
 }
 
 .remove-btn:hover {
-  color: var(--weyl-error, #ef4444);
+  color: var(--lattice-error, #ef4444);
 }
 
 .comment-body {
@@ -190,10 +190,10 @@ onMounted(() => {
   width: 100%;
   min-height: 60px;
   padding: 8px 10px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 3px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 12px;
   line-height: 1.5;
   resize: none;
@@ -202,10 +202,10 @@ onMounted(() => {
 
 .comment-textarea:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8b5cf6);
+  border-color: var(--lattice-accent, #8b5cf6);
 }
 
 .comment-textarea::placeholder {
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
 }
 </style>

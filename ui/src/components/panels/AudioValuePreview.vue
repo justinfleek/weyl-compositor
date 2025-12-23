@@ -177,8 +177,8 @@ const toggleExpanded = () => {
 
 <style scoped>
 .audio-value-preview {
-  background: var(--weyl-surface-1, #121212);
-  border-radius: var(--weyl-radius-md, 4px);
+  background: var(--lattice-surface-1, #121212);
+  border-radius: var(--lattice-radius-md, 4px);
   padding: 8px;
   font-size: 11px;
 }
@@ -189,13 +189,13 @@ const toggleExpanded = () => {
   gap: 8px;
   cursor: pointer;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
   margin-bottom: 8px;
 }
 
 .header-title {
   font-weight: 600;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   flex: 1;
 }
 
@@ -204,19 +204,19 @@ const toggleExpanded = () => {
   border-radius: 3px;
   font-size: 9px;
   font-weight: 700;
-  background: var(--weyl-surface-2, #1a1a1a);
-  color: var(--weyl-text-muted, #6b7280);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-muted, #6b7280);
   transition: all 0.1s ease;
 }
 
 .beat-indicator.active {
-  background: var(--weyl-accent, #8b5cf6);
+  background: var(--lattice-accent, #8b5cf6);
   color: white;
-  box-shadow: 0 0 8px var(--weyl-accent, #8b5cf6);
+  box-shadow: 0 0 8px var(--lattice-accent, #8b5cf6);
 }
 
 .expand-icon {
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-size: 10px;
 }
 
@@ -234,14 +234,14 @@ const toggleExpanded = () => {
 
 .value-label {
   width: 70px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   flex-shrink: 0;
 }
 
 .value-bar-container {
   flex: 1;
   height: 8px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -253,7 +253,7 @@ const toggleExpanded = () => {
 }
 
 .value-bar.amplitude {
-  background: linear-gradient(90deg, var(--weyl-accent, #8b5cf6), var(--weyl-accent-secondary, #ec4899));
+  background: linear-gradient(90deg, var(--lattice-accent, #8b5cf6), var(--lattice-accent-secondary, #ec4899));
 }
 
 .value-bar.harmonic {
@@ -271,7 +271,7 @@ const toggleExpanded = () => {
 .value-text {
   width: 40px;
   text-align: right;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-family: monospace;
 }
 
@@ -312,13 +312,13 @@ const toggleExpanded = () => {
 .band-label {
   margin-top: 4px;
   font-size: 9px;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .expanded-values {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-top: 1px solid var(--lattice-border-subtle, #2a2a2a);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -327,7 +327,7 @@ const toggleExpanded = () => {
 .section-title {
   font-size: 9px;
   font-weight: 600;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 8px;
@@ -341,18 +341,18 @@ const toggleExpanded = () => {
 .info-row {
   display: flex;
   justify-content: space-between;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .info-value {
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-family: monospace;
 }
 
 .no-audio {
   padding: 16px;
   text-align: center;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-size: 11px;
 }
 </style>

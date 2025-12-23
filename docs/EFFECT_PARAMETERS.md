@@ -1,6 +1,6 @@
 # EFFECT PARAMETERS REFERENCE
 
-**Weyl Compositor - Complete Effect System Documentation**
+**Lattice Compositor - Complete Effect System Documentation**
 
 **HYPER-CRITICAL FOR HANDOFF**: This document provides exhaustive documentation for all effects, their parameters, value ranges, and usage examples.
 

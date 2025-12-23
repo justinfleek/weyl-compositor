@@ -807,21 +807,21 @@ function hasDriver(property: PropertyPath): boolean {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #141414);
-  color: var(--weyl-text-primary, #E5E5E5);
-  font-size: var(--weyl-text-base, 12px);
+  background: var(--lattice-surface-1, #141414);
+  color: var(--lattice-text-primary, #E5E5E5);
+  font-size: var(--lattice-text-base, 12px);
 }
 
 .panel-header {
   padding: 8px 12px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .panel-title {
   font-weight: 500;
-  font-size: var(--weyl-text-sm, 11px);
-  color: var(--weyl-text-secondary, #9CA3AF);
+  font-size: var(--lattice-text-sm, 11px);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 /* Solo mode indicator */
@@ -850,7 +850,7 @@ function hasDriver(property: PropertyPath): boolean {
 }
 
 .property-section {
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .section-header {
@@ -863,47 +863,47 @@ function hasDriver(property: PropertyPath): boolean {
 }
 
 .section-header:hover {
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
 }
 
 .expand-icon {
   width: 10px;
   font-size: 10px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .section-title {
   font-weight: 500;
-  font-size: var(--weyl-text-sm, 11px);
+  font-size: var(--lattice-text-sm, 11px);
   flex: 1;
 }
 
 .reset-link {
-  font-size: var(--weyl-text-xs, 10px);
-  color: var(--weyl-accent, #8B5CF6);
+  font-size: var(--lattice-text-xs, 10px);
+  color: var(--lattice-accent, #8B5CF6);
   cursor: pointer;
   padding: 2px 8px;
 }
 
 .reset-link:hover {
-  color: var(--weyl-accent-hover, #9D7AFA);
+  color: var(--lattice-accent-hover, #9D7AFA);
   text-decoration: underline;
 }
 
 .keyframe-toggle {
   width: 16px;
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .keyframe-toggle:hover {
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .keyframe-toggle.active {
-  color: var(--weyl-timeline-video, #FFD700);
+  color: var(--lattice-timeline-video, #FFD700);
 }
 
 .value-group {
@@ -928,13 +928,13 @@ function hasDriver(property: PropertyPath): boolean {
 
 .value-group.scale-group .link-btn.active {
   opacity: 1;
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .rotation-display {
-  color: var(--weyl-accent, #8B5CF6);
-  font-family: var(--weyl-font-mono, 'JetBrains Mono', monospace);
-  font-size: var(--weyl-text-base, 12px);
+  color: var(--lattice-accent, #8B5CF6);
+  font-family: var(--lattice-font-mono, 'JetBrains Mono', monospace);
+  font-size: var(--lattice-text-base, 12px);
 }
 
 .threeD-toggle {
@@ -943,13 +943,13 @@ function hasDriver(property: PropertyPath): boolean {
   gap: 4px;
   cursor: pointer;
   padding: 2px 6px;
-  background: var(--weyl-surface-3, #222222);
-  border-radius: var(--weyl-radius-sm, 2px);
-  font-size: var(--weyl-text-sm, 11px);
+  background: var(--lattice-surface-3, #222222);
+  border-radius: var(--lattice-radius-sm, 2px);
+  font-size: var(--lattice-text-sm, 11px);
 }
 
 .threeD-toggle:hover {
-  background: var(--weyl-surface-4, #2a2a2a);
+  background: var(--lattice-surface-4, #2a2a2a);
 }
 
 .threeD-toggle input {
@@ -958,12 +958,12 @@ function hasDriver(property: PropertyPath): boolean {
 }
 
 .threeD-toggle .toggle-label {
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   font-weight: 500;
 }
 
 .threeD-toggle input:checked + .toggle-label {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .section-content {
@@ -979,18 +979,18 @@ function hasDriver(property: PropertyPath): boolean {
 }
 
 .property-row.has-driver {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
-  border-left: 2px solid var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
+  border-left: 2px solid var(--lattice-accent, #8B5CF6);
 }
 
 .property-row.has-driver label {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .property-row label {
   width: 80px;
-  color: var(--weyl-text-secondary, #9CA3AF);
-  font-size: var(--weyl-text-sm, 11px);
+  color: var(--lattice-text-secondary, #9CA3AF);
+  font-size: var(--lattice-text-sm, 11px);
   flex-shrink: 0;
 }
 
@@ -1016,18 +1016,18 @@ function hasDriver(property: PropertyPath): boolean {
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   cursor: pointer;
-  border-radius: var(--weyl-radius-sm, 2px);
+  border-radius: var(--lattice-radius-sm, 2px);
   font-size: 11px;
 }
 
 .link-btn:hover {
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
 }
 
 .link-btn.active {
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .keyframe-btn {
@@ -1036,58 +1036,58 @@ function hasDriver(property: PropertyPath): boolean {
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   cursor: pointer;
   font-size: 11px;
-  border-radius: var(--weyl-radius-sm, 2px);
+  border-radius: var(--lattice-radius-sm, 2px);
 }
 
 .keyframe-btn:hover {
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .keyframe-btn.active {
-  color: var(--weyl-timeline-video, #FFD700);
+  color: var(--lattice-timeline-video, #FFD700);
 }
 
 .layer-name-input {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
-  background: var(--weyl-surface-2, #1a1a1a);
-  color: var(--weyl-text-primary, #E5E5E5);
-  border-radius: var(--weyl-radius-sm, 2px);
-  font-size: var(--weyl-text-sm, 11px);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-primary, #E5E5E5);
+  border-radius: var(--lattice-radius-sm, 2px);
+  font-size: var(--lattice-text-sm, 11px);
   font-weight: 500;
 }
 
 .layer-name-input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .blend-select,
 .parent-select {
   flex: 1;
   padding: 4px 8px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
-  color: var(--weyl-text-primary, #E5E5E5);
-  border-radius: var(--weyl-radius-sm, 2px);
-  font-size: var(--weyl-text-sm, 11px);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  color: var(--lattice-text-primary, #E5E5E5);
+  border-radius: var(--lattice-radius-sm, 2px);
+  font-size: var(--lattice-text-sm, 11px);
 }
 
 .blend-select:focus,
 .parent-select:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .checkbox-input {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: var(--weyl-accent, #8B5CF6);
+  accent-color: var(--lattice-accent, #8B5CF6);
 }
 
 .empty-state {
@@ -1098,11 +1098,11 @@ function hasDriver(property: PropertyPath): boolean {
   height: 100%;
   padding: 24px;
   text-align: center;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .empty-state .hint {
-  font-size: var(--weyl-text-sm, 11px);
+  font-size: var(--lattice-text-sm, 11px);
   margin-top: 4px;
 }
 

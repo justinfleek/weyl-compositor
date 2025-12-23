@@ -5,7 +5,7 @@
  * for project files, MOGRTs, and external data imports.
  */
 
-import type { WeylProject, Composition, Layer } from '@/types/project';
+import type { LatticeProject, Composition, Layer } from '@/types/project';
 import type { TemplateConfig, MOGRTPackage } from '@/types/essentialGraphics';
 
 // ============================================================
@@ -112,7 +112,7 @@ export interface ValidationResult {
 }
 
 /**
- * Validate a Weyl project structure
+ * Validate a Lattice project structure
  */
 export function validateProject(data: unknown): ValidationResult {
   const errors: ValidationError[] = [];

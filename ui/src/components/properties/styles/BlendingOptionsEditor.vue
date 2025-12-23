@@ -76,25 +76,25 @@ const emit = defineEmits<{
 
 .property-row label {
   min-width: 80px;
-  font-size: var(--weyl-font-size-xs);
-  color: var(--weyl-text-secondary);
+  font-size: var(--lattice-font-size-xs);
+  color: var(--lattice-text-secondary);
 }
 
 .property-row input[type="range"] {
   flex: 1;
   height: 4px;
-  accent-color: var(--weyl-accent);
+  accent-color: var(--lattice-accent);
 }
 
 .property-row input[type="checkbox"] {
-  accent-color: var(--weyl-accent);
+  accent-color: var(--lattice-accent);
 }
 
 .value {
   min-width: 40px;
   text-align: right;
-  font-size: var(--weyl-font-size-xs);
-  color: var(--weyl-text-muted);
+  font-size: var(--lattice-font-size-xs);
+  color: var(--lattice-text-muted);
   font-family: monospace;
 }
 </style>

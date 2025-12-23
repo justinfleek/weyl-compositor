@@ -55,9 +55,9 @@ function updateTransform(transform: ShapeTransform) {
 <style scoped>
 .shape-editor { display: flex; flex-direction: column; gap: 6px; }
 .property-row { display: flex; align-items: center; gap: 8px; }
-.property-row label { width: 70px; color: var(--weyl-text-muted, #888); font-size: 11px; flex-shrink: 0; }
-.property-row select, .name-input { flex: 1; padding: 3px 6px; background: var(--weyl-surface-0, #0a0a0a); border: 1px solid var(--weyl-border-default, #333); border-radius: 3px; color: var(--weyl-text-primary, #e0e0e0); font-size: 11px; }
-.name-input:focus { outline: none; border-color: var(--weyl-accent, #8B5CF6); }
-.subsection-header { font-size: 10px; font-weight: 600; color: var(--weyl-text-muted, #666); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a); }
-.contents-info { font-size: 11px; color: var(--weyl-text-muted, #888); padding: 4px 0; }
+.property-row label { width: 70px; color: var(--lattice-text-muted, #888); font-size: 11px; flex-shrink: 0; }
+.property-row select, .name-input { flex: 1; padding: 3px 6px; background: var(--lattice-surface-0, #0a0a0a); border: 1px solid var(--lattice-border-default, #333); border-radius: 3px; color: var(--lattice-text-primary, #e0e0e0); font-size: 11px; }
+.name-input:focus { outline: none; border-color: var(--lattice-accent, #8B5CF6); }
+.subsection-header { font-size: 10px; font-weight: 600; color: var(--lattice-text-muted, #666); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a); }
+.contents-info { font-size: 11px; color: var(--lattice-text-muted, #888); padding: 4px 0; }
 </style>

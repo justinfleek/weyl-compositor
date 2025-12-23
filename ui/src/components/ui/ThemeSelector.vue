@@ -49,11 +49,11 @@ function setTheme(theme: ThemeName) {
 }
 
 .theme-label {
-  font-size: var(--weyl-text-xs, 10px);
+  font-size: var(--lattice-text-xs, 10px);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   margin-bottom: 8px;
 }
 
@@ -66,9 +66,9 @@ function setTheme(theme: ThemeName) {
 .theme-swatch {
   aspect-ratio: 1;
   border: none;
-  border-radius: var(--weyl-radius-md, 4px);
+  border-radius: var(--lattice-radius-md, 4px);
   cursor: pointer;
-  transition: var(--weyl-transition-fast, 100ms ease);
+  transition: var(--lattice-transition-fast, 100ms ease);
   position: relative;
   display: flex;
   align-items: center;
@@ -77,11 +77,11 @@ function setTheme(theme: ThemeName) {
 
 .theme-swatch:hover {
   transform: scale(1.05);
-  box-shadow: var(--weyl-shadow-md, 0 4px 8px rgba(0,0,0,0.25));
+  box-shadow: var(--lattice-shadow-md, 0 4px 8px rgba(0,0,0,0.25));
 }
 
 .theme-swatch.active {
-  box-shadow: 0 0 0 2px var(--weyl-void, #050505), 0 0 0 4px white;
+  box-shadow: 0 0 0 2px var(--lattice-void, #050505), 0 0 0 4px white;
 }
 
 .theme-check {

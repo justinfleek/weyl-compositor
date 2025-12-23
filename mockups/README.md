@@ -1,4 +1,4 @@
-# Weyl UI Mockups
+# Lattice UI Mockups
 
 Interactive HTML/CSS mockups based on the reference screenshots in `screenshots/new-ui/`.
 

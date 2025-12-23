@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — AUDIO ANALYSIS & REACTIVITY
+# LATTICE COMPOSITOR — AUDIO ANALYSIS & REACTIVITY
 
 **Document ID**: 10_AUDIO_REACTIVITY  
 **Version**: 1.0.0  
@@ -496,7 +496,7 @@ const colorByBass: AudioPropertyMapping = {
 ```typescript
 function evaluate(
   frame: number,
-  project: WeylProject,
+  project: LatticeProject,
   audioAnalysis?: AudioAnalysis
 ): FrameState {
   // Audio analysis is passed through to all evaluations

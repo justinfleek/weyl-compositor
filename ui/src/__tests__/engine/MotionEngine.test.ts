@@ -7,14 +7,14 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MotionEngine, type FrameState } from '@/engine/MotionEngine';
-import type { WeylProject, AnimatableProperty, Keyframe, Layer } from '@/types/project';
+import type { LatticeProject, AnimatableProperty, Keyframe, Layer } from '@/types/project';
 import { createEmptyProject, createAnimatableProperty, createDefaultTransform } from '@/types/project';
 
 // ============================================================================
 // TEST UTILITIES
 // ============================================================================
 
-function createTestProject(): WeylProject {
+function createTestProject(): LatticeProject {
   const project = createEmptyProject(1920, 1080);
 
   // Add a layer with animated properties
@@ -123,7 +123,7 @@ function frameStatesEqual(a: FrameState, b: FrameState): boolean {
 
 describe('MotionEngine Determinism', () => {
   let engine: MotionEngine;
-  let project: WeylProject;
+  let project: LatticeProject;
 
   beforeEach(() => {
     engine = new MotionEngine();

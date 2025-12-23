@@ -320,7 +320,7 @@ export class RenderQueueManager {
       workerPoolSize: config.workerPoolSize ?? 4,
       batchSize: config.batchSize ?? 10,
       autoSaveInterval: config.autoSaveInterval ?? 5000,
-      dbName: config.dbName ?? 'weyl-render-queue',
+      dbName: config.dbName ?? 'lattice-render-queue',
     };
 
     this.db = new RenderQueueDB(this.config.dbName);

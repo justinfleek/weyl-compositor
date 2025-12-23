@@ -513,7 +513,7 @@ export class CameraController {
     this.height = height;
 
     // Don't change aspect here - it should be set to VIEWPORT aspect, not composition
-    // The caller (WeylEngine.resize) should call setViewportAspect() separately
+    // The caller (LatticeEngine.resize) should call setViewportAspect() separately
 
     // Recenter camera on composition
     this.resetToDefault();

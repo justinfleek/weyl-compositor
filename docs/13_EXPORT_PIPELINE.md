@@ -1,21 +1,21 @@
-# WEYL COMPOSITOR — EXPORT PIPELINE
+# LATTICE COMPOSITOR — EXPORT PIPELINE
 
 **Document ID**: 13_EXPORT_PIPELINE  
 **Version**: 1.0.0  
 **Status**: CANONICAL  
 **Depends On**: [01_TYPE_DEFINITIONS.md](./01_TYPE_DEFINITIONS.md), [02_MOTION_ENGINE.md](./02_MOTION_ENGINE.md)
 
-> Weyl is a **conditioning compiler**, not a renderer.
+> Lattice is a **conditioning compiler**, not a renderer.
 > Exports are deterministic buffers for diffusion models.
 
 ---
 
 ## 1. CORE PHILOSOPHY
 
-Weyl exports **conditioning data**, not final images.
+Lattice exports **conditioning data**, not final images.
 
 ```
-Weyl Project
+Lattice Project
        ↓
 MotionEngine.evaluate() per frame
        ↓
@@ -26,7 +26,7 @@ ComfyUI / Diffusion Pipeline
 Final Rendered Output
 ```
 
-**Weyl's job ends at conditioning buffers. Rendering is done by diffusion models.**
+**Lattice's job ends at conditioning buffers. Rendering is done by diffusion models.**
 
 ---
 
@@ -140,7 +140,7 @@ interface ExportConfig {
 
 ```typescript
 async function exportProject(
-  project: WeylProject,
+  project: LatticeProject,
   config: ExportConfig,
   onProgress?: (frame: number, total: number) => void
 ): Promise<ExportResult> {
@@ -424,7 +424,7 @@ interface CameraFrame {
 }
 
 async function exportCameraTrajectory(
-  project: WeylProject,
+  project: LatticeProject,
   config: ExportConfig
 ): Promise<void> {
   const [startFrame, endFrame] = config.frameRange
@@ -513,7 +513,7 @@ interface ExportMetadata {
 ### 11.2 Recommended Workflow
 
 ```
-Weyl Export
+Lattice Export
        ↓
 ComfyUI Load Image Sequence
        ↓

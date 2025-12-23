@@ -18,9 +18,9 @@
 
 | Specified Node | Actual Implementation | Status |
 |----------------|----------------------|--------|
-| WeylCompositorEditor | CompositorNode | ✅ Complete |
-| WeylMatteExport | MatteExportNode | ✅ Complete |
-| WeylDepthInput | DepthInputNode | ✅ Complete |
+| LatticeCompositorEditor | CompositorNode | ✅ Complete |
+| LatticeMatteExport | MatteExportNode | ✅ Complete |
+| LatticeDepthInput | DepthInputNode | ✅ Complete |
 | N/A | AudioInputNode | ✅ Added |
 | N/A | ModelInputNode | ✅ Added |
 
@@ -28,11 +28,11 @@
 
 | Specified Route | Status | Notes |
 |-----------------|--------|-------|
-| `/weyl/compositor/set_output` | ✅ | Works as specified |
-| `/weyl/compositor/save_project` | ✅ | Full implementation |
-| `/weyl/compositor/load_project` | ✅ | Full implementation |
-| `/weyl/generate/depth` | ⚠️ | Backend ready, needs model bridge |
-| `/weyl/generate/texture` | ⚠️ | Backend ready, needs SDXL bridge |
+| `/lattice/compositor/set_output` | ✅ | Works as specified |
+| `/lattice/compositor/save_project` | ✅ | Full implementation |
+| `/lattice/compositor/load_project` | ✅ | Full implementation |
+| `/lattice/generate/depth` | ⚠️ | Backend ready, needs model bridge |
+| `/lattice/generate/texture` | ⚠️ | Backend ready, needs SDXL bridge |
 
 ## Key Files
 
@@ -55,22 +55,22 @@
 
 ```python
 """
-Weyl Motion Graphics Compositor for ComfyUI
+Lattice Motion Graphics Compositor for ComfyUI
 """
 from .nodes.compositor_node import CompositorEditorNode
 from .nodes.matte_export_node import MatteExportNode
 from .nodes.depth_input_node import DepthInputNode
 
 NODE_CLASS_MAPPINGS = {
-    "WeylCompositorEditor": CompositorEditorNode,
-    "WeylMatteExport": MatteExportNode,
-    "WeylDepthInput": DepthInputNode,
+    "LatticeCompositorEditor": CompositorEditorNode,
+    "LatticeMatteExport": MatteExportNode,
+    "LatticeDepthInput": DepthInputNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WeylCompositorEditor": "Weyl Motion Compositor",
-    "WeylMatteExport": "Weyl Matte Export",
-    "WeylDepthInput": "Weyl Depth Input",
+    "LatticeCompositorEditor": "Lattice Motion Compositor",
+    "LatticeMatteExport": "Lattice Matte Export",
+    "LatticeDepthInput": "Lattice Depth Input",
 }
 
 # CRITICAL: This tells ComfyUI to load JS files from ./web/js/
@@ -96,7 +96,7 @@ class CompositorEditorNode:
     Main node that opens the compositor UI and receives depth/image inputs
     """
 
-    CATEGORY = "Weyl/Compositor"
+    CATEGORY = "Lattice/Compositor"
     RETURN_TYPES = ("MASK", "IMAGE")
     RETURN_NAMES = ("text_matte", "preview")
     FUNCTION = "process"
@@ -137,7 +137,7 @@ class CompositorEditorNode:
 
         # Send to frontend
         PromptServer.instance.send_sync(
-            "weyl.compositor.inputs_ready",
+            "lattice.compositor.inputs_ready",
             {
                 "node_id": unique_id,
                 "source_image": source_b64,
@@ -201,7 +201,7 @@ class CompositorEditorNode:
 # Register custom routes for receiving compositor output
 routes = PromptServer.instance.routes
 
-@routes.post('/weyl/compositor/set_output')
+@routes.post('/lattice/compositor/set_output')
 async def set_compositor_output(request):
     """Receive matte data from frontend"""
     data = await request.json()
@@ -216,14 +216,14 @@ async def set_compositor_output(request):
 
     return web.json_response({"status": "error", "message": "No node_id"}, status=400)
 
-@routes.post('/weyl/compositor/save_project')
+@routes.post('/lattice/compositor/save_project')
 async def save_project(request):
     """Save compositor project state"""
     data = await request.json()
     # TODO: Implement project storage
     return web.json_response({"status": "success"})
 
-@routes.get('/weyl/compositor/load_project/{project_id}')
+@routes.get('/lattice/compositor/load_project/{project_id}')
 async def load_project(request):
     """Load compositor project state"""
     project_id = request.match_info['project_id']
@@ -235,7 +235,7 @@ async def load_project(request):
 
 ```javascript
 /**
- * Weyl Motion Graphics Compositor - ComfyUI Extension
+ * Lattice Motion Graphics Compositor - ComfyUI Extension
  *
  * This file is auto-loaded by ComfyUI from the WEB_DIRECTORY.
  * It registers the sidebar tab and handles communication with the Vue app.
@@ -248,22 +248,22 @@ let vueAppLoaded = false;
 let pendingMessages = [];
 
 app.registerExtension({
-  name: "weyl.compositor",
+  name: "lattice.compositor",
 
   async setup() {
-    console.log("[Weyl] Registering compositor extension");
+    console.log("[Lattice] Registering compositor extension");
 
     // Register sidebar tab
     app.extensionManager.registerSidebarTab({
-      id: "weyl-compositor",
+      id: "lattice-compositor",
       icon: "pi pi-video",
       title: "Motion Compositor",
-      tooltip: "Weyl Motion Graphics Compositor",
+      tooltip: "Lattice Motion Graphics Compositor",
       type: "custom",
       render: async (el) => {
         // Create container
         const container = document.createElement('div');
-        container.id = 'weyl-compositor-root';
+        container.id = 'lattice-compositor-root';
         container.style.cssText = 'width: 100%; height: 100%; overflow: hidden;';
         el.appendChild(container);
 
@@ -271,7 +271,7 @@ app.registerExtension({
         try {
           // The built Vue app is served from the extension's dist folder
           const scriptUrl = new URL(
-            '/extensions/comfyui-weyl-compositor/dist/weyl-compositor.js',
+            '/extensions/comfyui-lattice-compositor/dist/lattice-compositor.js',
             window.location.origin
           ).href;
 
@@ -284,9 +284,9 @@ app.registerExtension({
           });
           pendingMessages = [];
 
-          console.log("[Weyl] Vue app loaded successfully");
+          console.log("[Lattice] Vue app loaded successfully");
         } catch (error) {
-          console.error("[Weyl] Failed to load Vue app:", error);
+          console.error("[Lattice] Failed to load Vue app:", error);
           container.innerHTML = `
             <div style="padding: 20px; color: #ff6b6b; font-family: system-ui;">
               <h3>Failed to load Motion Compositor</h3>
@@ -299,8 +299,8 @@ app.registerExtension({
     });
 
     // Listen for messages from Python backend
-    api.addEventListener("weyl.compositor.inputs_ready", (event) => {
-      const msg = { type: 'weyl:inputs-ready', data: event.detail };
+    api.addEventListener("lattice.compositor.inputs_ready", (event) => {
+      const msg = { type: 'lattice:inputs-ready', data: event.detail };
 
       if (vueAppLoaded) {
         window.dispatchEvent(new CustomEvent(msg.type, { detail: msg.data }));
@@ -312,13 +312,13 @@ app.registerExtension({
     // Add keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       // Only handle if compositor is focused
-      const compositorRoot = document.getElementById('weyl-compositor-root');
+      const compositorRoot = document.getElementById('lattice-compositor-root');
       if (!compositorRoot || !compositorRoot.contains(document.activeElement)) {
         return;
       }
 
       // Forward to Vue app
-      window.dispatchEvent(new CustomEvent('weyl:keydown', {
+      window.dispatchEvent(new CustomEvent('lattice:keydown', {
         detail: {
           key: e.key,
           code: e.code,
@@ -330,7 +330,7 @@ app.registerExtension({
       }));
     });
 
-    console.log("[Weyl] Extension setup complete");
+    console.log("[Lattice] Extension setup complete");
   }
 });
 ```

@@ -1,4 +1,4 @@
-# Weyl Compositor Product Specification
+# Lattice Compositor Product Specification
 
 **Version:** 1.0 | **Date:** December 23, 2025
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-**Weyl Compositor** is a professional motion graphics compositor built for the ComfyUI ecosystem. It enables creation of animations, visual effects, and conditioning data (depth maps, mattes, motion vectors) for AI video generation models.
+**Lattice Compositor** is a professional motion graphics compositor built for the ComfyUI ecosystem. It enables creation of animations, visual effects, and conditioning data (depth maps, mattes, motion vectors) for AI video generation models.
 
 ### Target Users
 - AI video generation workflows (Wan 2.1, AnimateDiff, MotionCtrl)
@@ -226,7 +226,7 @@ Map any audio feature to any animatable property with:
 ### Camera Tracking Import
 | Format | Description |
 |--------|-------------|
-| Weyl JSON | Native format |
+| Lattice JSON | Native format |
 | COLMAP | cameras.txt, images.txt, points3D.txt |
 | Blender | Motion tracking JSON |
 | Uni3C | K matrix + 4x4 poses |
@@ -276,10 +276,10 @@ Map any audio feature to any animatable property with:
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `--weyl-void` | #050505 | App background |
-| `--weyl-surface-1` | #121212 | Panel backgrounds |
-| `--weyl-accent` | #8B5CF6 | Primary accent (purple) |
-| `--weyl-text-primary` | #E5E5E5 | Main text |
+| `--lattice-void` | #050505 | App background |
+| `--lattice-surface-1` | #121212 | Panel backgrounds |
+| `--lattice-accent` | #8B5CF6 | Primary accent (purple) |
+| `--lattice-text-primary` | #E5E5E5 | Main text |
 
 **Themes:** Violet (default), Ocean, Sunset, Forest, Ember, Mono
 
@@ -395,10 +395,10 @@ ui/src/
 
 ```
 web/js/
-├── weyl-compositor.js      Main bundle (~2.2MB)
-├── weyl-compositor.css     Styles (~146KB)
-├── weyl-three-vendor.js    Three.js (~2.4MB)
-├── weyl-vue-vendor.js      Vue (~210KB)
+├── lattice-compositor.js      Main bundle (~2.2MB)
+├── lattice-compositor.css     Styles (~146KB)
+├── lattice-three-vendor.js    Three.js (~2.4MB)
+├── lattice-vue-vendor.js      Vue (~210KB)
 └── extension.js            ComfyUI registration
 ```
 
@@ -419,9 +419,9 @@ For development guide, see [CLAUDE.md](../CLAUDE.md)
 
 ## Terminology
 
-To maintain distinct identity, Weyl uses alternative terminology:
+To maintain distinct identity, Lattice uses alternative terminology:
 
-| Standard Term | Weyl Term |
+| Standard Term | Lattice Term |
 |---------------|-----------|
 | Anchor Point | Origin |
 | Adjustment Layer | Effect Layer |

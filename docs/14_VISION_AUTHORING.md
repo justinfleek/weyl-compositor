@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — VISION-GUIDED AUTHORING
+# LATTICE COMPOSITOR — VISION-GUIDED AUTHORING
 
 **Document ID**: 14_VISION_AUTHORING  
 **Version**: 1.0.0  
@@ -406,7 +406,7 @@ async function estimateDepth(
 
 ```typescript
 // ❌ FORBIDDEN: AI in evaluation loop
-function evaluate(frame: number, project: WeylProject): FrameState {
+function evaluate(frame: number, project: LatticeProject): FrameState {
   const aiSuggestion = await aiModel.evaluateFrame(frame)  // NO!
   return applyAISuggestion(aiSuggestion)
 }

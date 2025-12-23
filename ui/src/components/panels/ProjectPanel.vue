@@ -827,8 +827,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #0f0f0f);
-  color: var(--weyl-text-primary, #e0e0e0);
+  background: var(--lattice-surface-1, #0f0f0f);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-size: 13px;
 }
 
@@ -837,8 +837,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   justify-content: space-between;
   align-items: center;
   padding: 8px 10px;
-  background: var(--weyl-surface-2, #161616);
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-2, #161616);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .panel-title {
@@ -857,7 +857,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
@@ -867,8 +867,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .header-actions button:hover {
-  background: var(--weyl-surface-3, #1e1e1e);
-  color: var(--weyl-text-primary, #e0e0e0);
+  background: var(--lattice-surface-3, #1e1e1e);
+  color: var(--lattice-text-primary, #e0e0e0);
 }
 
 .dropdown-container {
@@ -879,8 +879,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   position: absolute;
   top: 100%;
   right: 0;
-  background: var(--weyl-surface-2, #161616);
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
+  background: var(--lattice-surface-2, #161616);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   z-index: 1000;
@@ -898,7 +898,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   padding: 10px 16px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   font-size: 13px;
   text-align: left;
   cursor: pointer;
@@ -906,7 +906,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .dropdown-menu button:hover {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: white;
 }
 
@@ -921,35 +921,35 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .menu-divider {
   border: none;
-  border-top: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-top: 1px solid var(--lattice-border-subtle, #1a1a1a);
   margin: 8px 12px;
 }
 
 .search-bar {
   padding: 6px 8px;
-  background: var(--weyl-surface-2, #161616);
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-2, #161616);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .search-input {
   width: 100%;
   padding: 5px 8px;
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
-  background: var(--weyl-surface-0, #080808);
-  color: var(--weyl-text-primary, #e0e0e0);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  background: var(--lattice-surface-0, #080808);
+  color: var(--lattice-text-primary, #e0e0e0);
   border-radius: 4px;
   font-size: 13px;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 /* Asset Preview Area */
 .preview-area {
-  background: var(--weyl-surface-0, #080808);
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-0, #080808);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -961,14 +961,14 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   width: 100%;
   max-width: 200px;
   height: 150px;
-  background: var(--weyl-void, #0a0a0a);
+  background: var(--lattice-void, #0a0a0a);
   border-radius: 6px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .preview-thumbnail img,
@@ -999,7 +999,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 .preview-name {
   font-size: 12px;
   font-weight: 500;
-  color: var(--weyl-text-primary, #e0e0e0);
+  color: var(--lattice-text-primary, #e0e0e0);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1007,7 +1007,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .preview-details {
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
   margin-top: 4px;
 }
 
@@ -1021,7 +1021,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .folder-item {
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .folder-header {
@@ -1034,18 +1034,18 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .folder-header:hover {
-  background: var(--weyl-surface-2, #161616);
+  background: var(--lattice-surface-2, #161616);
 }
 
 .folder-header.selected {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
-  border-left: 3px solid var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
+  border-left: 3px solid var(--lattice-accent, #8B5CF6);
 }
 
 .expand-icon {
   width: 12px;
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .folder-icon {
@@ -1058,14 +1058,14 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .item-count {
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
-  background: var(--weyl-surface-3, #1e1e1e);
+  color: var(--lattice-text-muted, #6B7280);
+  background: var(--lattice-surface-3, #1e1e1e);
   padding: 1px 6px;
   border-radius: 8px;
 }
 
 .folder-contents {
-  background: var(--weyl-surface-0, #080808);
+  background: var(--lattice-surface-0, #080808);
 }
 
 .project-item {
@@ -1080,12 +1080,12 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 }
 
 .project-item:hover {
-  background: var(--weyl-surface-2, #161616);
+  background: var(--lattice-surface-2, #161616);
 }
 
 .project-item.selected {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
-  border-left: 3px solid var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
+  border-left: 3px solid var(--lattice-accent, #8B5CF6);
 }
 
 .item-icon {
@@ -1103,13 +1103,13 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .item-info {
   font-size: 11px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .empty-state {
   padding: 24px;
   text-align: center;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .empty-state .hint {
@@ -1119,8 +1119,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .panel-footer {
   padding: 8px 12px;
-  background: var(--weyl-surface-2, #161616);
-  border-top: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-2, #161616);
+  border-top: 1px solid var(--lattice-border-subtle, #1a1a1a);
 }
 
 .item-details {
@@ -1135,6 +1135,6 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .detail-info {
   font-size: 12px;
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 </style>

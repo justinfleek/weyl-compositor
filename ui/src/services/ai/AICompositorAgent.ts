@@ -243,7 +243,7 @@ ${instruction}
     content: string;
     toolCalls?: ToolCall[];
   }> {
-    const response = await fetch('/weyl/api/ai/agent', {
+    const response = await fetch('/lattice/api/ai/agent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

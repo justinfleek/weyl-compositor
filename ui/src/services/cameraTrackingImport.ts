@@ -5,7 +5,7 @@
  * camera layers with keyframed animation.
  *
  * Supported formats:
- * - Weyl JSON (native format)
+ * - Lattice JSON (native format)
  * - COLMAP (popular open-source SfM)
  * - Blender Motion Tracking export
  * - Generic JSON with poses
@@ -26,13 +26,13 @@ import type { AnimatableProperty } from '@/types/animation';
 import { createKeyframe, createAnimatableProperty } from '@/types/animation';
 
 /**
- * Parse Weyl native JSON format
+ * Parse Lattice native JSON format
  */
-export function parseWeylTrackingJSON(json: string): CameraTrackingSolve {
+export function parseLatticeTrackingJSON(json: string): CameraTrackingSolve {
   const data = JSON.parse(json);
 
   if (!data.version || !data.poses) {
-    throw new Error('Invalid Weyl tracking format: missing version or poses');
+    throw new Error('Invalid Lattice tracking format: missing version or poses');
   }
 
   return data as CameraTrackingSolve;
@@ -298,12 +298,12 @@ export function parseBlenderTrackingJSON(json: string): CameraTrackingSolve {
 /**
  * Detect format from file content
  */
-export function detectTrackingFormat(content: string): 'weyl' | 'blender' | 'colmap' | 'unknown' {
+export function detectTrackingFormat(content: string): 'lattice' | 'blender' | 'colmap' | 'unknown' {
   try {
     const json = JSON.parse(content);
 
     if (json.version && json.source && json.poses) {
-      return 'weyl';
+      return 'lattice';
     }
 
     if (json.fps && json.tracks && json.clip_width) {
@@ -551,7 +551,7 @@ function quaternionToEuler(
 }
 
 /**
- * Export current camera animation to Weyl tracking format
+ * Export current camera animation to Lattice tracking format
  */
 export function exportCameraToTrackingFormat(
   layerId: string

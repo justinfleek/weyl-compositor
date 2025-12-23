@@ -633,18 +633,18 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
   padding: 8px;
-  font-size: var(--weyl-font-size-sm, 12px);
-  color: var(--weyl-text-primary, #E5E5E5);
+  font-size: var(--lattice-font-size-sm, 12px);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .section-header {
-  font-size: var(--weyl-font-size-xs, 11px);
+  font-size: var(--lattice-font-size-xs, 11px);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   padding-top: 8px;
-  border-top: 1px solid var(--weyl-border-subtle, #2A2A2A);
+  border-top: 1px solid var(--lattice-border-subtle, #2A2A2A);
   margin-top: 4px;
 }
 
@@ -656,8 +656,8 @@ onMounted(() => {
 
 .form-group > label:first-child {
   flex: 0 0 100px;
-  color: var(--weyl-text-secondary, #9CA3AF);
-  font-size: var(--weyl-font-size-sm, 12px);
+  color: var(--lattice-text-secondary, #9CA3AF);
+  font-size: var(--lattice-font-size-sm, 12px);
 }
 
 .form-group select,
@@ -665,24 +665,24 @@ onMounted(() => {
 .form-group input[type="number"] {
   flex: 1;
   padding: 4px 8px;
-  background: var(--weyl-surface-2, #1A1A1A);
-  border: 1px solid var(--weyl-border-default, #333333);
+  background: var(--lattice-surface-2, #1A1A1A);
+  border: 1px solid var(--lattice-border-default, #333333);
   border-radius: 4px;
-  color: var(--weyl-text-primary, #E5E5E5);
-  font-size: var(--weyl-font-size-sm, 12px);
+  color: var(--lattice-text-primary, #E5E5E5);
+  font-size: var(--lattice-font-size-sm, 12px);
 }
 
 .form-group select:focus,
 .form-group input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8B5CF6);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .form-group input[type="range"] {
   flex: 1;
   height: 4px;
   appearance: none;
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
   border-radius: 2px;
 }
 
@@ -691,16 +691,16 @@ onMounted(() => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   cursor: pointer;
 }
 
 .value-label {
   min-width: 45px;
   text-align: right;
-  color: var(--weyl-text-secondary, #9CA3AF);
+  color: var(--lattice-text-secondary, #9CA3AF);
   font-family: monospace;
-  font-size: var(--weyl-font-size-xs, 11px);
+  font-size: var(--lattice-font-size-xs, 11px);
 }
 
 .toggle-row {
@@ -713,13 +713,13 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: var(--weyl-text-primary, #E5E5E5);
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .toggle-label input[type="checkbox"] {
   width: 14px;
   height: 14px;
-  accent-color: var(--weyl-accent, #8B5CF6);
+  accent-color: var(--lattice-accent, #8B5CF6);
 }
 
 .checkbox-group {
@@ -733,14 +733,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: var(--weyl-font-size-xs, 11px);
-  color: var(--weyl-text-secondary, #9CA3AF);
+  font-size: var(--lattice-font-size-xs, 11px);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .checkbox-group input[type="checkbox"] {
   width: 12px;
   height: 12px;
-  accent-color: var(--weyl-accent, #8B5CF6);
+  accent-color: var(--lattice-accent, #8B5CF6);
 }
 
 .range-inputs {
@@ -756,7 +756,7 @@ onMounted(() => {
 }
 
 .range-inputs span {
-  color: var(--weyl-text-muted, #6B7280);
+  color: var(--lattice-text-muted, #6B7280);
 }
 
 .button-group {
@@ -772,18 +772,18 @@ onMounted(() => {
   justify-content: center;
   gap: 6px;
   padding: 8px 12px;
-  background: var(--weyl-surface-3, #222222);
-  border: 1px solid var(--weyl-border-default, #333333);
+  background: var(--lattice-surface-3, #222222);
+  border: 1px solid var(--lattice-border-default, #333333);
   border-radius: 4px;
-  color: var(--weyl-text-primary, #E5E5E5);
-  font-size: var(--weyl-font-size-sm, 12px);
+  color: var(--lattice-text-primary, #E5E5E5);
+  font-size: var(--lattice-font-size-sm, 12px);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .action-btn:hover {
-  background: var(--weyl-surface-4, #2A2A2A);
-  border-color: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-surface-4, #2A2A2A);
+  border-color: var(--lattice-accent, #8B5CF6);
 }
 
 .action-btn i {

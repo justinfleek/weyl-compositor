@@ -11,7 +11,7 @@
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │                                                                │
-│   [WEYL LOGO]                                                  │
+│   [LATTICE LOGO]                                                  │
 │                                                                │
 │   AI Motion Graphics                                           │
 │   Compositor                                                   │
@@ -30,7 +30,7 @@
 
 ### Color Palette
 - **Background**: #1a1a2e (dark blue-black)
-- **Primary accent**: #4a90d9 (Weyl blue)
+- **Primary accent**: #4a90d9 (Lattice blue)
 - **Secondary**: #3a5070 (muted blue)
 - **Text**: #e0e0e0 (light gray)
 - **Highlight**: #7c3aed (purple, for AI emphasis)
@@ -41,26 +41,26 @@
 - **Features**: Regular, 24px
 
 ### Visual Elements
-1. **Logo**: Weyl "W" mark or wordmark (top-left)
+1. **Logo**: Lattice "W" mark or wordmark (top-left)
 2. **Screenshot**: Timeline panel with keyframes visible
 3. **Icons**: Small icons for features (optional)
 4. **Gradient overlay**: Subtle radial gradient from center
 
 ### Key Text
-- "Weyl Compositor" (main title)
+- "Lattice Compositor" (main title)
 - "AI Motion Graphics" (subtitle)
 - "ComfyUI Extension" (badge/tag)
 
 ## Alternative Designs
 
 ### Option A: Screenshot Focus
-Full-width screenshot of Weyl UI with text overlay
+Full-width screenshot of Lattice UI with text overlay
 
 ### Option B: Abstract
 Geometric shapes suggesting motion paths with particle trails
 
 ### Option C: Comparison
-Split view showing "Before AI" vs "After Weyl"
+Split view showing "Before AI" vs "After Lattice"
 
 ## Tools for Creation
 - Figma (recommended)
@@ -71,6 +71,6 @@ Split view showing "Before AI" vs "After Weyl"
 ## Quick Canva Template
 Search for "GitHub Social Preview" templates and customize with:
 1. Dark background
-2. "Weyl Compositor" title
+2. "Lattice Compositor" title
 3. "AI Motion Graphics for ComfyUI" tagline
 4. Screenshot or abstract motion graphic

@@ -1,8 +1,8 @@
-# Weyl Compositor Design System
+# Lattice Compositor Design System
 
 **Version:** 1.0 | **Date:** December 23, 2025
 
-This document defines the complete design system for the Weyl Compositor UI. All components MUST use these CSS variables - never hardcode colors or spacing values.
+This document defines the complete design system for the Lattice Compositor UI. All components MUST use these CSS variables - never hardcode colors or spacing values.
 
 ---
 
@@ -24,48 +24,48 @@ The UI follows a **floating island architecture**:
 ### Surface Hierarchy (5 Levels)
 
 ```css
---weyl-void: #050505;        /* App background - THE DARKEST */
---weyl-surface-0: #0A0A0A;   /* Canvas background */
---weyl-surface-1: #121212;   /* Panel backgrounds */
---weyl-surface-2: #1A1A1A;   /* Cards, raised sections */
---weyl-surface-3: #222222;   /* Dropdowns, tooltips */
---weyl-surface-4: #2A2A2A;   /* Highest elevation */
+--lattice-void: #050505;        /* App background - THE DARKEST */
+--lattice-surface-0: #0A0A0A;   /* Canvas background */
+--lattice-surface-1: #121212;   /* Panel backgrounds */
+--lattice-surface-2: #1A1A1A;   /* Cards, raised sections */
+--lattice-surface-3: #222222;   /* Dropdowns, tooltips */
+--lattice-surface-4: #2A2A2A;   /* Highest elevation */
 ```
 
 ### Accent Colors (Purple/Pink Gradient)
 
 ```css
---weyl-accent: #8B5CF6;           /* Primary purple */
---weyl-accent-secondary: #EC4899; /* Secondary pink */
---weyl-accent-gradient: linear-gradient(135deg, #8B5CF6, #EC4899);
---weyl-accent-hover: #A78BFA;     /* Lighter purple for hover */
---weyl-accent-muted: rgba(139, 92, 246, 0.2);  /* For backgrounds */
+--lattice-accent: #8B5CF6;           /* Primary purple */
+--lattice-accent-secondary: #EC4899; /* Secondary pink */
+--lattice-accent-gradient: linear-gradient(135deg, #8B5CF6, #EC4899);
+--lattice-accent-hover: #A78BFA;     /* Lighter purple for hover */
+--lattice-accent-muted: rgba(139, 92, 246, 0.2);  /* For backgrounds */
 ```
 
 ### Text Colors
 
 ```css
---weyl-text-primary: #E5E5E5;     /* Main text */
---weyl-text-secondary: #9CA3AF;   /* Labels, descriptions */
---weyl-text-muted: #6B7280;       /* Disabled, hints */
---weyl-text-inverse: #050505;     /* Text on light backgrounds */
+--lattice-text-primary: #E5E5E5;     /* Main text */
+--lattice-text-secondary: #9CA3AF;   /* Labels, descriptions */
+--lattice-text-muted: #6B7280;       /* Disabled, hints */
+--lattice-text-inverse: #050505;     /* Text on light backgrounds */
 ```
 
 ### Border Colors
 
 ```css
---weyl-border-subtle: #2A2A2A;    /* Subtle dividers */
---weyl-border-default: #333333;   /* Normal borders */
---weyl-border-hover: #444444;     /* Hover state */
+--lattice-border-subtle: #2A2A2A;    /* Subtle dividers */
+--lattice-border-default: #333333;   /* Normal borders */
+--lattice-border-hover: #444444;     /* Hover state */
 ```
 
 ### Status Colors
 
 ```css
---weyl-success: #10B981;          /* Success green */
---weyl-warning: #F59E0B;          /* Warning amber */
---weyl-error: #EF4444;            /* Error red */
---weyl-info: #3B82F6;             /* Info blue */
+--lattice-success: #10B981;          /* Success green */
+--lattice-warning: #F59E0B;          /* Warning amber */
+--lattice-error: #EF4444;            /* Error red */
+--lattice-info: #3B82F6;             /* Info blue */
 ```
 
 ---
@@ -73,12 +73,12 @@ The UI follows a **floating island architecture**:
 ## Spacing Tokens
 
 ```css
---weyl-gutter: 20px;              /* Panel separation */
---weyl-gap-xl: 24px;              /* Extra large gaps */
---weyl-gap-lg: 16px;              /* Large gaps */
---weyl-gap-md: 8px;               /* Medium gaps */
---weyl-gap-sm: 4px;               /* Small gaps */
---weyl-gap-xs: 2px;               /* Extra small gaps */
+--lattice-gutter: 20px;              /* Panel separation */
+--lattice-gap-xl: 24px;              /* Extra large gaps */
+--lattice-gap-lg: 16px;              /* Large gaps */
+--lattice-gap-md: 8px;               /* Medium gaps */
+--lattice-gap-sm: 4px;               /* Small gaps */
+--lattice-gap-xs: 2px;               /* Extra small gaps */
 ```
 
 ---
@@ -86,12 +86,12 @@ The UI follows a **floating island architecture**:
 ## Border Radius Tokens
 
 ```css
---weyl-radius-xs: 2px;            /* Inputs, small elements */
---weyl-radius-sm: 4px;            /* Buttons, chips */
---weyl-radius-md: 6px;            /* Cards, dropdowns */
---weyl-radius-lg: 8px;            /* Panels */
---weyl-radius-xl: 12px;           /* Large cards */
---weyl-radius-pill: 999px;        /* Pills, fully rounded */
+--lattice-radius-xs: 2px;            /* Inputs, small elements */
+--lattice-radius-sm: 4px;            /* Buttons, chips */
+--lattice-radius-md: 6px;            /* Cards, dropdowns */
+--lattice-radius-lg: 8px;            /* Panels */
+--lattice-radius-xl: 12px;           /* Large cards */
+--lattice-radius-pill: 999px;        /* Pills, fully rounded */
 ```
 
 ---
@@ -99,12 +99,12 @@ The UI follows a **floating island architecture**:
 ## Shadow Tokens
 
 ```css
---weyl-shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
---weyl-shadow-md: 0 4px 8px rgba(0,0,0,0.3);
---weyl-shadow-lg: 0 8px 16px rgba(0,0,0,0.4);
---weyl-shadow-panel: 0 8px 32px rgba(0,0,0,0.4);
---weyl-shadow-dropdown: 0 4px 12px rgba(0,0,0,0.3);
---weyl-shadow-button: 0 2px 4px rgba(0,0,0,0.2);
+--lattice-shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+--lattice-shadow-md: 0 4px 8px rgba(0,0,0,0.3);
+--lattice-shadow-lg: 0 8px 16px rgba(0,0,0,0.4);
+--lattice-shadow-panel: 0 8px 32px rgba(0,0,0,0.4);
+--lattice-shadow-dropdown: 0 4px 12px rgba(0,0,0,0.3);
+--lattice-shadow-button: 0 2px 4px rgba(0,0,0,0.2);
 ```
 
 ---
@@ -114,28 +114,28 @@ The UI follows a **floating island architecture**:
 ### Font Stack
 
 ```css
---weyl-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
---weyl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+--lattice-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+--lattice-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 ### Font Sizes
 
 ```css
---weyl-text-xs: 10px;
---weyl-text-sm: 12px;
---weyl-text-base: 14px;
---weyl-text-lg: 16px;
---weyl-text-xl: 18px;
---weyl-text-2xl: 24px;
+--lattice-text-xs: 10px;
+--lattice-text-sm: 12px;
+--lattice-text-base: 14px;
+--lattice-text-lg: 16px;
+--lattice-text-xl: 18px;
+--lattice-text-2xl: 24px;
 ```
 
 ### Font Weights
 
 ```css
---weyl-font-normal: 400;
---weyl-font-medium: 500;
---weyl-font-semibold: 600;
---weyl-font-bold: 700;
+--lattice-font-normal: 400;
+--lattice-font-medium: 500;
+--lattice-font-semibold: 600;
+--lattice-font-bold: 700;
 ```
 
 ---
@@ -170,30 +170,30 @@ themeStore.setTheme('ocean'); // Switch to ocean theme
 
 ```vue
 <template>
-  <div class="weyl-panel">
-    <div class="weyl-panel-header">
+  <div class="lattice-panel">
+    <div class="lattice-panel-header">
       <h3>Panel Title</h3>
     </div>
-    <div class="weyl-panel-content">
+    <div class="lattice-panel-content">
       <!-- Content -->
     </div>
   </div>
 </template>
 
 <style scoped>
-.weyl-panel {
-  background: var(--weyl-surface-1);
-  border-radius: var(--weyl-radius-lg);
-  box-shadow: var(--weyl-shadow-panel);
+.lattice-panel {
+  background: var(--lattice-surface-1);
+  border-radius: var(--lattice-radius-lg);
+  box-shadow: var(--lattice-shadow-panel);
 }
 
-.weyl-panel-header {
-  padding: var(--weyl-gap-md) var(--weyl-gap-lg);
-  border-bottom: 1px solid var(--weyl-border-subtle);
+.lattice-panel-header {
+  padding: var(--lattice-gap-md) var(--lattice-gap-lg);
+  border-bottom: 1px solid var(--lattice-border-subtle);
 }
 
-.weyl-panel-content {
-  padding: var(--weyl-gap-lg);
+.lattice-panel-content {
+  padding: var(--lattice-gap-lg);
 }
 </style>
 ```
@@ -202,25 +202,25 @@ themeStore.setTheme('ocean'); // Switch to ocean theme
 
 ```css
 /* Primary Button */
-.weyl-btn-primary {
-  background: var(--weyl-accent-gradient);
+.lattice-btn-primary {
+  background: var(--lattice-accent-gradient);
   color: white;
   border: none;
-  border-radius: var(--weyl-radius-sm);
-  padding: var(--weyl-gap-sm) var(--weyl-gap-md);
+  border-radius: var(--lattice-radius-sm);
+  padding: var(--lattice-gap-sm) var(--lattice-gap-md);
 }
 
 /* Secondary Button */
-.weyl-btn-secondary {
-  background: var(--weyl-surface-2);
-  color: var(--weyl-text-primary);
-  border: 1px solid var(--weyl-border-default);
+.lattice-btn-secondary {
+  background: var(--lattice-surface-2);
+  color: var(--lattice-text-primary);
+  border: 1px solid var(--lattice-border-default);
 }
 
 /* Ghost Button */
-.weyl-btn-ghost {
+.lattice-btn-ghost {
   background: transparent;
-  color: var(--weyl-text-secondary);
+  color: var(--lattice-text-secondary);
   border: none;
 }
 ```
@@ -228,18 +228,18 @@ themeStore.setTheme('ocean'); // Switch to ocean theme
 ### Input Styling
 
 ```css
-.weyl-input {
-  background: var(--weyl-surface-2);
-  border: 1px solid var(--weyl-border-default);
-  border-radius: var(--weyl-radius-xs);
-  color: var(--weyl-text-primary);
-  padding: var(--weyl-gap-sm) var(--weyl-gap-md);
+.lattice-input {
+  background: var(--lattice-surface-2);
+  border: 1px solid var(--lattice-border-default);
+  border-radius: var(--lattice-radius-xs);
+  color: var(--lattice-text-primary);
+  padding: var(--lattice-gap-sm) var(--lattice-gap-md);
 }
 
-.weyl-input:focus {
-  border-color: var(--weyl-accent);
+.lattice-input:focus {
+  border-color: var(--lattice-accent);
   outline: none;
-  box-shadow: 0 0 0 2px var(--weyl-accent-muted);
+  box-shadow: 0 0 0 2px var(--lattice-accent-muted);
 }
 ```
 
@@ -276,16 +276,16 @@ Defined in `styles/keyframe-shapes.ts`.
 
 | Purpose | Variable | Hex |
 |---------|----------|-----|
-| App background | `--weyl-void` | `#050505` |
-| Canvas background | `--weyl-surface-0` | `#0A0A0A` |
-| Panel backgrounds | `--weyl-surface-1` | `#121212` |
-| Raised elements | `--weyl-surface-2` | `#1A1A1A` |
-| Dropdowns | `--weyl-surface-3` | `#222222` |
-| Primary accent | `--weyl-accent` | `#8B5CF6` |
-| Secondary accent | `--weyl-accent-secondary` | `#EC4899` |
-| Main text | `--weyl-text-primary` | `#E5E5E5` |
-| Secondary text | `--weyl-text-secondary` | `#9CA3AF` |
-| Muted text | `--weyl-text-muted` | `#6B7280` |
+| App background | `--lattice-void` | `#050505` |
+| Canvas background | `--lattice-surface-0` | `#0A0A0A` |
+| Panel backgrounds | `--lattice-surface-1` | `#121212` |
+| Raised elements | `--lattice-surface-2` | `#1A1A1A` |
+| Dropdowns | `--lattice-surface-3` | `#222222` |
+| Primary accent | `--lattice-accent` | `#8B5CF6` |
+| Secondary accent | `--lattice-accent-secondary` | `#EC4899` |
+| Main text | `--lattice-text-primary` | `#E5E5E5` |
+| Secondary text | `--lattice-text-secondary` | `#9CA3AF` |
+| Muted text | `--lattice-text-muted` | `#6B7280` |
 
 ---
 
@@ -306,9 +306,9 @@ Defined in `styles/keyframe-shapes.ts`.
 
 | Old Value | Replacement |
 |-----------|-------------|
-| `#1a1a2e` | `var(--weyl-void)` or `#050505` |
-| `#16213e` | `var(--weyl-surface-0)` or `#0A0A0A` |
-| `#1a1a38` | `var(--weyl-surface-1)` or `#121212` |
+| `#1a1a2e` | `var(--lattice-void)` or `#050505` |
+| `#16213e` | `var(--lattice-surface-0)` or `#0A0A0A` |
+| `#1a1a38` | `var(--lattice-surface-1)` or `#121212` |
 
 ### December 2025 Migration
 
@@ -318,7 +318,7 @@ All hardcoded `#1a1a2e` colors were replaced with `#050505` in:
 - `ThreeCanvas.vue`
 - `ExportPanel.vue`
 - `extension.js`
-- `WeylEngine.ts`
+- `LatticeEngine.ts`
 
 ---
 

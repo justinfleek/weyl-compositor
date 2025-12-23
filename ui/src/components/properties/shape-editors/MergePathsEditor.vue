@@ -53,9 +53,9 @@ function updateMode(e: Event) {
 <style scoped>
 .shape-editor { display: flex; flex-direction: column; gap: 6px; }
 .property-row { display: flex; align-items: center; gap: 8px; }
-.property-row label { width: 70px; color: var(--weyl-text-muted, #888); font-size: 11px; flex-shrink: 0; }
-.property-row select { flex: 1; padding: 3px 6px; background: var(--weyl-surface-0, #0a0a0a); border: 1px solid var(--weyl-border-default, #333); border-radius: 3px; color: var(--weyl-text-primary, #e0e0e0); font-size: 11px; }
-.mode-preview { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--weyl-surface-0, #0a0a0a); border-radius: 4px; }
-.mode-icon { font-size: 20px; width: 28px; text-align: center; color: var(--weyl-accent, #8B5CF6); }
-.mode-desc { font-size: 11px; color: var(--weyl-text-muted, #888); }
+.property-row label { width: 70px; color: var(--lattice-text-muted, #888); font-size: 11px; flex-shrink: 0; }
+.property-row select { flex: 1; padding: 3px 6px; background: var(--lattice-surface-0, #0a0a0a); border: 1px solid var(--lattice-border-default, #333); border-radius: 3px; color: var(--lattice-text-primary, #e0e0e0); font-size: 11px; }
+.mode-preview { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--lattice-surface-0, #0a0a0a); border-radius: 4px; }
+.mode-icon { font-size: 20px; width: 28px; text-align: center; color: var(--lattice-accent, #8B5CF6); }
+.mode-desc { font-size: 11px; color: var(--lattice-text-muted, #888); }
 </style>

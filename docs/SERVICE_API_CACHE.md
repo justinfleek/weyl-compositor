@@ -1,6 +1,6 @@
 # SERVICE API - Cache Services
 
-**Weyl Compositor - Frame Caching and Evaluation Cache Services**
+**Lattice Compositor - Frame Caching and Evaluation Cache Services**
 
 ---
 
@@ -193,7 +193,7 @@ const result = getCachedEvaluation(layerId, frame); // Returns null after change
 │                      │                                     │
 │           ┌──────────▼──────────┐                         │
 │           │    Render Pipeline   │                         │
-│           │    (WeylEngine.ts)   │                         │
+│           │    (LatticeEngine.ts)   │                         │
 │           └─────────────────────┘                         │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘

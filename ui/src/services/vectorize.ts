@@ -129,7 +129,7 @@ export class VectorizeService {
    */
   async getStatus(): Promise<VectorizeStatus> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/vectorize/status`);
+      const response = await fetch(`${this.baseUrl}/lattice/vectorize/status`);
       const result = await response.json();
 
       if (result.status === 'success') {
@@ -157,7 +157,7 @@ export class VectorizeService {
     const opts = { ...DEFAULT_VTRACE_OPTIONS, ...options };
 
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/vectorize/trace`, {
+      const response = await fetch(`${this.baseUrl}/lattice/vectorize/trace`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -210,7 +210,7 @@ export class VectorizeService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/vectorize/ai`, {
+      const response = await fetch(`${this.baseUrl}/lattice/vectorize/ai`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -248,7 +248,7 @@ export class VectorizeService {
     try {
       onProgress?.('downloading', 'Downloading StarVector model (~2.5GB)...');
 
-      const response = await fetch(`${this.baseUrl}/weyl/vectorize/download-starvector`, {
+      const response = await fetch(`${this.baseUrl}/lattice/vectorize/download-starvector`, {
         method: 'POST',
       });
 
@@ -283,7 +283,7 @@ export class VectorizeService {
    */
   async unloadStarVectorModel(): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/weyl/vectorize/unload-starvector`, {
+      const response = await fetch(`${this.baseUrl}/lattice/vectorize/unload-starvector`, {
         method: 'POST',
       });
 

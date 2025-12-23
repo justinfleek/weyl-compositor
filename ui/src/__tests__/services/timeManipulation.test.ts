@@ -8,7 +8,7 @@
  * - Speed calculations (derivative)
  * - Time effects (Posterize Time, Echo, Time Displacement)
  *
- * These tests verify that Weyl can complete Tutorial 6: Time Remapping & Speed Ramps
+ * These tests verify that Lattice can complete Tutorial 6: Time Remapping & Speed Ramps
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -725,7 +725,7 @@ describe('Frame Blending Modes', () => {
 });
 
 // ============================================================================
-// DETERMINISM TESTS (Critical for Weyl)
+// DETERMINISM TESTS (Critical for Lattice)
 // ============================================================================
 
 describe('Time Manipulation Determinism', () => {

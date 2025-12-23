@@ -383,19 +383,19 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-size: var(--weyl-font-sm, 12px);
-  color: var(--weyl-text-primary, #e5e5e5);
+  font-size: var(--lattice-font-sm, 12px);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .panel-header h3 {
   margin: 0;
-  font-size: var(--weyl-font-md, 14px);
+  font-size: var(--lattice-font-md, 14px);
   font-weight: 600;
 }
 
 .subtitle {
-  font-size: var(--weyl-font-xs, 11px);
-  color: var(--weyl-text-muted, #6b7280);
+  font-size: var(--lattice-font-xs, 11px);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .section {
@@ -405,8 +405,8 @@ onMounted(() => {
 }
 
 .section-label {
-  font-size: var(--weyl-font-xs, 11px);
-  color: var(--weyl-text-secondary, #9ca3af);
+  font-size: var(--lattice-font-xs, 11px);
+  color: var(--lattice-text-secondary, #9ca3af);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -415,12 +415,12 @@ onMounted(() => {
 .preset-select,
 .pattern-select,
 .data-select {
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 4px;
   padding: 6px 8px;
-  color: var(--weyl-text-primary, #e5e5e5);
-  font-size: var(--weyl-font-sm, 12px);
+  color: var(--lattice-text-primary, #e5e5e5);
+  font-size: var(--lattice-font-sm, 12px);
 }
 
 .input-row {
@@ -431,12 +431,12 @@ onMounted(() => {
 
 .num-input,
 .res-input {
-  background: var(--weyl-surface-2, #1a1a1a);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 4px;
   padding: 6px 8px;
-  color: var(--weyl-text-primary, #e5e5e5);
-  font-size: var(--weyl-font-sm, 12px);
+  color: var(--lattice-text-primary, #e5e5e5);
+  font-size: var(--lattice-font-sm, 12px);
   width: 80px;
 }
 
@@ -445,8 +445,8 @@ onMounted(() => {
 }
 
 .input-hint {
-  font-size: var(--weyl-font-xs, 11px);
-  color: var(--weyl-text-muted, #6b7280);
+  font-size: var(--lattice-font-xs, 11px);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .resolution-row {
@@ -456,24 +456,24 @@ onMounted(() => {
 }
 
 .res-x {
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .preset-btn,
 .randomize-btn {
-  background: var(--weyl-surface-3, #222222);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-3, #222222);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 4px;
   padding: 4px 8px;
-  color: var(--weyl-text-secondary, #9ca3af);
-  font-size: var(--weyl-font-xs, 11px);
+  color: var(--lattice-text-secondary, #9ca3af);
+  font-size: var(--lattice-font-xs, 11px);
   cursor: pointer;
 }
 
 .preset-btn:hover,
 .randomize-btn:hover {
-  background: var(--weyl-surface-4, #2a2a2a);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-4, #2a2a2a);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .data-options {
@@ -492,24 +492,24 @@ onMounted(() => {
 
 .preview-canvas {
   background: #0a0a0a;
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 4px;
   width: 100%;
   aspect-ratio: 832 / 480;
 }
 
 .preview-btn {
-  background: var(--weyl-surface-3, #222222);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-3, #222222);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
   border-radius: 4px;
   padding: 8px;
-  color: var(--weyl-text-primary, #e5e5e5);
-  font-size: var(--weyl-font-sm, 12px);
+  color: var(--lattice-text-primary, #e5e5e5);
+  font-size: var(--lattice-font-sm, 12px);
   cursor: pointer;
 }
 
 .preview-btn:hover:not(:disabled) {
-  background: var(--weyl-accent, #8b5cf6);
+  background: var(--lattice-accent, #8b5cf6);
 }
 
 .preview-btn:disabled {
@@ -526,19 +526,19 @@ onMounted(() => {
   flex: 1;
   padding: 8px 12px;
   border-radius: 4px;
-  font-size: var(--weyl-font-sm, 12px);
+  font-size: var(--lattice-font-sm, 12px);
   cursor: pointer;
   border: none;
 }
 
 .action-btn.secondary {
-  background: var(--weyl-surface-3, #222222);
-  color: var(--weyl-text-primary, #e5e5e5);
-  border: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-3, #222222);
+  color: var(--lattice-text-primary, #e5e5e5);
+  border: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .action-btn.primary {
-  background: var(--weyl-accent, #8b5cf6);
+  background: var(--lattice-accent, #8b5cf6);
   color: white;
 }
 
@@ -554,7 +554,7 @@ onMounted(() => {
 .status {
   padding: 8px;
   border-radius: 4px;
-  font-size: var(--weyl-font-xs, 11px);
+  font-size: var(--lattice-font-xs, 11px);
 }
 
 .status.success {

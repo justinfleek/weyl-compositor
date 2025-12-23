@@ -1,6 +1,6 @@
 # SERVICE API - Export Services
 
-**Weyl Compositor - Matte Export and Model Integration Services**
+**Lattice Compositor - Matte Export and Model Integration Services**
 
 ---
 
@@ -110,7 +110,7 @@ export interface CameraMatrix4x4 {
 }
 
 export interface CameraTrajectoryExport {
-  format: 'weyl' | 'uni3c' | 'nvs';
+  format: 'lattice' | 'uni3c' | 'nvs';
   fps: number;
   frameCount: number;
   matrices: CameraMatrix4x4[];
@@ -191,7 +191,7 @@ export function camera3DToMatrix4x4(
 
 export function exportCameraTrajectory(
   camera: CameraLayer,
-  format: 'weyl' | 'uni3c' | 'nvs'
+  format: 'lattice' | 'uni3c' | 'nvs'
 ): CameraTrajectoryExport;
 
 // Layer trajectory extraction
@@ -286,7 +286,7 @@ export interface SaveResult {
 
 export interface LoadResult {
   success: boolean;
-  project?: WeylProject;
+  project?: LatticeProject;
   error?: string;
 }
 
@@ -298,7 +298,7 @@ export interface ListResult {
 
 // API-based storage
 export async function saveProject(
-  project: WeylProject,
+  project: LatticeProject,
   name?: string
 ): Promise<SaveResult>;
 
@@ -316,7 +316,7 @@ export function isApiAvailable(): Promise<boolean>;
 
 // File-based storage
 export function exportProjectAsFile(
-  project: WeylProject,
+  project: LatticeProject,
   filename?: string
 ): void;
 

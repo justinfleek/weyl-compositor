@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — MASTER GROUND TRUTH
+# LATTICE COMPOSITOR — MASTER GROUND TRUTH
 
 **Document ID**: 00_MASTER_GROUND_TRUTH
 **Version**: 1.1.0
@@ -12,7 +12,7 @@
 
 ## PURPOSE OF THIS DOCUMENT
 
-This is the **single source of truth** for Weyl Compositor. Claude Code must use this document to:
+This is the **single source of truth** for Lattice Compositor. Claude Code must use this document to:
 
 1. **Audit** the existing codebase for violations
 2. **Identify** systems that contradict these specifications
@@ -25,11 +25,11 @@ This is the **single source of truth** for Weyl Compositor. Claude Code must use
 
 ## 1. PROJECT IDENTITY
 
-### 1.1 What Weyl Compositor Is
+### 1.1 What Lattice Compositor Is
 
-Weyl Compositor is a **deterministic, frame-addressable motion graphics and conditioning engine** built specifically for the **ComfyUI ecosystem**.
+Lattice Compositor is a **deterministic, frame-addressable motion graphics and conditioning engine** built specifically for the **ComfyUI ecosystem**.
 
-**Weyl is a compiler for motion and conditioning data.**
+**Lattice is a compiler for motion and conditioning data.**
 
 Conceptually, it combines:
 
@@ -37,9 +37,9 @@ Conceptually, it combines:
 - **Trapcode Particular / X-Particles** — procedural particle systems
 - **TouchDesigner / Nuke** — deterministic graph evaluation and reproducibility
 
-### 1.2 What Weyl Is NOT
+### 1.2 What Lattice Is NOT
 
-Weyl is **NOT**:
+Lattice is **NOT**:
 
 - ❌ A real-time game engine
 - ❌ A continuously advancing simulation
@@ -47,7 +47,7 @@ Weyl is **NOT**:
 - ❌ A UI demo
 - ❌ A reactive animation system
 
-**Claude Code must audit the codebase for any patterns that treat Weyl as a real-time system. These are violations.**
+**Claude Code must audit the codebase for any patterns that treat Lattice as a real-time system. These are violations.**
 
 ### 1.3 Core Product Goals
 
@@ -249,7 +249,7 @@ This document and its companion specifications override:
 
 ## 9. CODEBASE LOCATION
 
-Repository: `https://github.com/justinfleek/weyl-compositor`
+Repository: `https://github.com/justinfleek/lattice-compositor`
 
 Claude Code should:
 1. Clone the repository

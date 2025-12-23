@@ -203,7 +203,7 @@ export class ParticleSystem {
   private rng: InstanceType<typeof SeededRandom>;
 
   // Spline path provider for emitters with shape='spline'
-  // Set by the engine integration (e.g., WeylEngine) to resolve spline paths
+  // Set by the engine integration (e.g., LatticeEngine) to resolve spline paths
   private splineProvider: SplinePathProvider | null = null;
 
   // Current frame for spline queries

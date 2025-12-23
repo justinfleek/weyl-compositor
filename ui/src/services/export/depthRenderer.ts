@@ -623,6 +623,6 @@ export function generateDepthMetadata(
       max: maxDepth,
     },
     generatedAt: new Date().toISOString(),
-    generator: 'Weyl Compositor',
+    generator: 'Lattice Compositor',
   };
 }

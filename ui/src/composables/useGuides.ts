@@ -27,7 +27,7 @@ export function useGuides() {
   function addGuide(orientation: 'horizontal' | 'vertical', position: number) {
     const id = `guide-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     guides.value.push({ id, orientation, position });
-    console.log(`[Weyl] Added ${orientation} guide at ${position}px`);
+    console.log(`[Lattice] Added ${orientation} guide at ${position}px`);
   }
 
   function removeGuide(id: string) {
@@ -36,7 +36,7 @@ export function useGuides() {
 
   function clearGuides() {
     guides.value = [];
-    console.log('[Weyl] Cleared all guides');
+    console.log('[Lattice] Cleared all guides');
   }
 
   function updateGuidePosition(id: string, position: number) {

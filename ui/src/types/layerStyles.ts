@@ -2,7 +2,7 @@
 // LAYER STYLES TYPE DEFINITIONS
 // ============================================================
 //
-// Photoshop/After Effects-style layer styles for Weyl Compositor
+// Photoshop/After Effects-style layer styles for Lattice Compositor
 // Each style renders in a fixed order (shadow → glow → bevel → overlay → stroke)
 // Separate from effects[] - styles apply BEFORE effects
 //

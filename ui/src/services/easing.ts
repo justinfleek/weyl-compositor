@@ -1,5 +1,5 @@
 /**
- * Easing Functions for Weyl Compositor
+ * Easing Functions for Lattice Compositor
  *
  * Ported from mojs easing library (https://github.com/mojs/mojs)
  * All functions take a normalized time value t (0-1) and return an eased value (0-1)

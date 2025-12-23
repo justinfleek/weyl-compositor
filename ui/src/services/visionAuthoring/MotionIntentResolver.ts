@@ -8,9 +8,9 @@
  * It is NEVER called during frame evaluation.
  *
  * SECURITY: API calls are routed through the backend proxy at:
- * - /weyl/api/vision/openai - OpenAI GPT-4V/GPT-4o
- * - /weyl/api/vision/anthropic - Claude Vision
- * - /weyl/api/status - Check which API keys are configured
+ * - /lattice/api/vision/openai - OpenAI GPT-4V/GPT-4o
+ * - /lattice/api/vision/anthropic - Claude Vision
+ * - /lattice/api/status - Check which API keys are configured
  *
  * API keys are stored server-side in environment variables
  * (OPENAI_API_KEY, ANTHROPIC_API_KEY) and never exposed to the browser.
@@ -352,7 +352,7 @@ export class MotionIntentResolver {
 
     try {
       // Use backend proxy (API key handled server-side)
-      const response = await fetch('/weyl/api/vision/openai', {
+      const response = await fetch('/lattice/api/vision/openai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -401,7 +401,7 @@ export class MotionIntentResolver {
 
     try {
       // Use backend proxy (API key handled server-side)
-      const response = await fetch('/weyl/api/vision/anthropic', {
+      const response = await fetch('/lattice/api/vision/anthropic', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -439,8 +439,8 @@ export class MotionIntentResolver {
     context: SceneContext,
     model: VisionModelId
   ): Promise<MotionIntentResult> {
-    // Use ComfyUI's weyl endpoint (relative path works when running in ComfyUI)
-    const endpoint = this.config.apiEndpoint ?? '/weyl/vlm';
+    // Use ComfyUI's lattice endpoint (relative path works when running in ComfyUI)
+    const endpoint = this.config.apiEndpoint ?? '/lattice/vlm';
 
     const imageBase64 = context.frameImage
       ? this.imageDataToBase64(context.frameImage)

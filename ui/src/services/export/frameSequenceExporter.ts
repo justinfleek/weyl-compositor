@@ -190,7 +190,7 @@ export async function createZipFromFrames(
 export async function exportViaBackend(
   frames: Array<{ canvas: HTMLCanvasElement; frameNumber: number }>,
   options: FrameExportOptions,
-  backendUrl: string = '/weyl/export'
+  backendUrl: string = '/lattice/export'
 ): Promise<FrameSequenceResult> {
   const result: FrameSequenceResult = {
     success: false,

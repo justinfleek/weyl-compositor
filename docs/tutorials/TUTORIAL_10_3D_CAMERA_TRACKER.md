@@ -11,9 +11,9 @@
 
 The 3D Camera Tracker is one of After Effects' most powerful VFX features. It analyzes footage to reconstruct the original camera's 3D movement, enabling seamless integration of text, graphics, and 3D elements into real-world footage.
 
-**UPDATE (December 22, 2025):** Significant progress has been made! Weyl now supports:
+**UPDATE (December 22, 2025):** Significant progress has been made! Lattice now supports:
 - ✅ **Shadow Catcher Material** - THREE.ShadowMaterial with opacity/color controls
-- ✅ **Camera Tracking Import** - Weyl JSON, COLMAP, and Blender format support
+- ✅ **Camera Tracking Import** - Lattice JSON, COLMAP, and Blender format support
 - ✅ **Track Point System** - Manual track point management with visualization
 - ✅ **Ground Plane Definition** - 3-point plane fitting from track points
 - ✅ **Track Point Visualization** - SVG overlay with selection and motion trails
@@ -26,7 +26,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### 3D Camera Tracker Effect (Analysis Engine)
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Effect Application (Animation > Track Camera) | - | ❌ Missing | Requires CV/SfM backend |
 | Background Analysis Engine | - | ❌ Missing | Use COLMAP/Blender + import |
@@ -37,7 +37,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Track Points
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Track Point Display in Viewer | TrackPointOverlay.vue | ✅ Full | SVG overlay with crosshairs |
 | Track Point Selection (click/shift/marquee) | trackPointService.ts | ✅ Full | Click, shift-click, clearSelection |
@@ -50,7 +50,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Ground Plane / Origin Definition
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Set Ground Plane and Origin | defineGroundPlaneFromPoints() | ✅ Full | 3-point plane definition |
 | Set Ground Plane Only | setGroundPlane() | ✅ Full | Manual plane setting |
@@ -59,7 +59,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Object Creation from Tracking
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Create Camera from Solve | importCameraTracking() | ✅ Full | From imported solve |
 | Create Null and Camera | importCameraTracking({createNulls}) | ✅ Full | Auto-create from import |
@@ -70,7 +70,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Effect Controls / Solve Settings
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Shot Type Section | - | ❌ Missing | N/A without tracker |
 | Fixed Angle of View | CameraIntrinsics.focalLength | ⚠️ Import | From imported data |
@@ -83,9 +83,9 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Camera Tracking Import (NEW!)
 
-| Feature | Weyl Compositor | Status | Notes |
+| Feature | Lattice Compositor | Status | Notes |
 |---------|-----------------|--------|-------|
-| Weyl JSON Format | parseWeylTrackingJSON() | ✅ Full | Native format |
+| Lattice JSON Format | parseLatticeTrackingJSON() | ✅ Full | Native format |
 | COLMAP Import | parseCOLMAPOutput() | ✅ Full | cameras.txt, images.txt, points3D.txt |
 | Blender Import | parseBlenderTrackingJSON() | ✅ Full | Motion tracking export |
 | Auto-format Detection | detectTrackingFormat() | ✅ Full | Automatic |
@@ -96,7 +96,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### 3D Camera (Manual - NOT from tracking)
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Camera Layer Creation | `type: 'camera'` | ✅ Full | Manual creation |
 | Camera Position Keyframes | CameraLayer + Camera3D | ✅ Full | Manual keyframes |
@@ -111,7 +111,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### 3D Layers
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | 3D Layer Toggle | `layer.threeD` | ✅ Full | Per-layer flag |
 | 3D Position (X, Y, Z) | transform.position.z | ✅ Full | Full 3D |
@@ -123,7 +123,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Control/Null Layer
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Null Object Creation | `type: 'control'` | ✅ Full | ControlLayer |
 | 3D Null | ControlLayer + threeD | ✅ Full | 3D crosshair |
@@ -132,7 +132,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Lighting / Shadows
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Light Layer Creation | `type: 'light'` | ✅ Full | LightLayer |
 | Point Light | lightType: 'point' | ✅ Full | Full support |
@@ -151,7 +151,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
 
 ### Export
 
-| After Effects Feature | Weyl Compositor | Status | Notes |
+| After Effects Feature | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Export Tracking Data (Maya, C4D) | exportCameraToTrackingFormat() | ✅ Full | JSON format |
 | Camera Animation Export | cameraExport.ts | ✅ Full | Uni3C, JSON formats |
@@ -172,7 +172,7 @@ The 3D Camera Tracker is one of After Effects' most powerful VFX features. It an
   - CameraIntrinsics, GroundPlane, ImportOptions
   - COLMAPFormat, BlenderFormat namespaces
 - **Service:** `services/cameraTrackingImport.ts`
-  - parseWeylTrackingJSON(), parseBlenderTrackingJSON(), parseCOLMAPOutput()
+  - parseLatticeTrackingJSON(), parseBlenderTrackingJSON(), parseCOLMAPOutput()
   - importCameraTracking() - creates layers with keyframes
   - exportCameraToTrackingFormat() - export camera to JSON
 - **UI:** `components/dialogs/CameraTrackingImportDialog.vue`
@@ -245,15 +245,15 @@ Since automatic 3D Camera Tracking requires Structure from Motion algorithms (CP
 1. Import footage into Blender
 2. Use Blender's motion tracking (Track > Solve Camera Motion)
 3. Export tracking data as JSON
-4. Import into Weyl (Ctrl+Shift+I)
+4. Import into Lattice (Ctrl+Shift+I)
 
 ### Option 2: COLMAP (Open Source SfM)
 1. Run COLMAP on footage
 2. Export cameras.txt, images.txt, points3D.txt
 3. Combine into JSON or use directly
-4. Import into Weyl
+4. Import into Lattice
 
-### Option 3: Manual Tracking in Weyl
+### Option 3: Manual Tracking in Lattice
 1. Create manual track points (trackPointService)
 2. Define ground plane from 3 points
 3. Create camera layer with trajectory presets
@@ -264,7 +264,7 @@ Since automatic 3D Camera Tracking requires Structure from Motion algorithms (CP
 ## SUCCESS CRITERIA (Updated)
 
 - [x] Shadow catcher material (THREE.ShadowMaterial)
-- [x] Camera tracking import (Weyl JSON, COLMAP, Blender)
+- [x] Camera tracking import (Lattice JSON, COLMAP, Blender)
 - [x] Track point visualization and selection
 - [x] Ground plane/origin definition
 - [x] Create Camera/Null from imported track points
@@ -283,7 +283,7 @@ To reach full parity with AE's 3D Camera Tracker, we would need:
    - OpenSfM or COLMAP integration
    - Feature detection and matching
    - Bundle adjustment
-   - API endpoint: `/weyl/video/track`
+   - API endpoint: `/lattice/video/track`
 
 2. **Frontend Integration**
    - Progress indicator UI
@@ -307,12 +307,12 @@ We've implemented a hybrid approach combining:
 1. **Semantic Analysis (VLM-based)**
    - Uses CameraBench taxonomy of camera motion primitives
    - VLM classifies video clips into: static, zoom, push/pull, truck, pedestal, arc, pan, tilt, roll, crane, tracking, random
-   - Maps detected motion to Weyl trajectory presets
+   - Maps detected motion to Lattice trajectory presets
 
 2. **Geometric Analysis (Depth-based)**
    - Uses monocular depth estimation (Depth Anything)
    - Derives camera motion from depth + optical flow
-   - Exports to Weyl/COLMAP/Uni3C formats
+   - Exports to Lattice/COLMAP/Uni3C formats
 
 3. **Uni3C Integration**
    - `parseUni3CFormat()` - Import Uni3C PCDController camera data
@@ -359,7 +359,7 @@ const uni3cData = exportToUni3CFormat(solve);
 
 ### Future Improvements
 
-1. Fine-tune VLM specifically on Weyl's trajectory presets
+1. Fine-tune VLM specifically on Lattice's trajectory presets
 2. Integrate Depth Anything v3 for geometric enhancement
 3. Add ViPE (NVIDIA) for real-time pose estimation
 4. Train custom model on cinematography datasets

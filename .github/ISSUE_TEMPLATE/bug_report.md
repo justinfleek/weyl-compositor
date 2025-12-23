@@ -24,7 +24,7 @@ What actually happened.
 - **OS**: [e.g., Windows 11, macOS 14, Ubuntu 22.04]
 - **Browser**: [e.g., Chrome 120, Firefox 121]
 - **ComfyUI Version**: [e.g., latest, specific commit]
-- **Weyl Version**: [e.g., latest, specific commit]
+- **Lattice Version**: [e.g., latest, specific commit]
 - **GPU**: [e.g., RTX 4090, M2 Max]
 
 ## Screenshots / Screen Recording

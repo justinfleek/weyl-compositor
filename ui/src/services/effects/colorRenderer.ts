@@ -620,7 +620,7 @@ export function glowRenderer(
   // Calculate color looping blend factor
   let colorBlend = 0; // 0 = Color A, 1 = Color B
   if (colorLooping !== 'none' && frame !== undefined) {
-    const fps = 16; // Default Weyl fps
+    const fps = 16; // Default Lattice fps
     const time = frame / fps;
     const cycle = (time * colorLoopingSpeed) % 1;
 

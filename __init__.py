@@ -1,13 +1,13 @@
-"""Weyl Compositor for ComfyUI"""
+"""Lattice Compositor for ComfyUI"""
 
 from .nodes.compositor_node import CompositorEditorNode
 
 NODE_CLASS_MAPPINGS = {
-    "WeylCompositorEditor": CompositorEditorNode,
+    "LatticeCompositorEditor": CompositorEditorNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WeylCompositorEditor": "Weyl Motion Compositor",
+    "LatticeCompositorEditor": "Lattice Motion Compositor",
 }
 
 WEB_DIRECTORY = "./web"

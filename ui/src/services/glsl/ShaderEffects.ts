@@ -2,7 +2,7 @@
  * ShaderEffects.ts - Pre-built GLSL shader effects library
  *
  * Provides ready-to-use shader effects that leverage the GLSLEngine.
- * Based on Jovi_GLSL patterns with Weyl-specific enhancements.
+ * Based on Jovi_GLSL patterns with Lattice-specific enhancements.
  */
 
 import { getGLSLEngine, type ShaderUniforms } from './GLSLEngine';

@@ -425,8 +425,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1, #121212);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-1, #121212);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 13px;
 }
 
@@ -435,8 +435,8 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: var(--weyl-surface-2, #1a1a1a);
-  border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  background: var(--lattice-surface-2, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .panel-title {
@@ -450,14 +450,14 @@ onMounted(() => {
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   cursor: pointer;
   border-radius: 4px;
 }
 
 .refresh-btn:hover {
-  background: var(--weyl-surface-3, #222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #222);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .panel-content {
@@ -473,7 +473,7 @@ onMounted(() => {
 .section-header {
   font-size: 11px;
   font-weight: 600;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   text-transform: uppercase;
   margin-bottom: 8px;
 }
@@ -488,9 +488,9 @@ onMounted(() => {
 .generation-types button {
   flex: 1;
   padding: 6px 8px;
-  border: 1px solid var(--weyl-border-default, #333);
-  background: var(--weyl-surface-2, #1a1a1a);
-  color: var(--weyl-text-secondary, #9ca3af);
+  border: 1px solid var(--lattice-border-default, #333);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-secondary, #9ca3af);
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
@@ -499,15 +499,15 @@ onMounted(() => {
 
 .source-options button:hover,
 .generation-types button:hover {
-  background: var(--weyl-surface-3, #222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #222);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .source-options button.active,
 .generation-types button.active {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.2));
-  border-color: var(--weyl-accent, #8b5cf6);
-  color: var(--weyl-accent, #8b5cf6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.2));
+  border-color: var(--lattice-accent, #8b5cf6);
+  color: var(--lattice-accent, #8b5cf6);
 }
 
 .generation-types button {
@@ -529,42 +529,42 @@ onMounted(() => {
 .file-upload {
   margin-top: 8px;
   padding: 8px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
   border-radius: 4px;
 }
 
 .no-selection {
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-style: italic;
 }
 
 .upload-btn {
   padding: 6px 12px;
-  border: 1px dashed var(--weyl-border-default, #333);
+  border: 1px dashed var(--lattice-border-default, #333);
   background: transparent;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .upload-btn:hover {
-  border-color: var(--weyl-accent, #8b5cf6);
-  color: var(--weyl-accent, #8b5cf6);
+  border-color: var(--lattice-accent, #8b5cf6);
+  color: var(--lattice-accent, #8b5cf6);
 }
 
 .file-name {
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .model-select {
   width: 100%;
   padding: 8px;
-  border: 1px solid var(--weyl-border-default, #333);
-  background: var(--weyl-surface-2, #1a1a1a);
-  color: var(--weyl-text-primary, #e5e5e5);
+  border: 1px solid var(--lattice-border-default, #333);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-primary, #e5e5e5);
   border-radius: 4px;
   font-size: 13px;
 }
@@ -583,8 +583,8 @@ onMounted(() => {
 }
 
 .memory-badge {
-  background: var(--weyl-surface-3, #222);
-  color: var(--weyl-text-secondary, #9ca3af);
+  background: var(--lattice-surface-3, #222);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .status-badge.ready {
@@ -593,8 +593,8 @@ onMounted(() => {
 }
 
 .status-badge.not-loaded {
-  background: var(--weyl-surface-3, #222);
-  color: var(--weyl-text-muted, #6b7280);
+  background: var(--lattice-surface-3, #222);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .status-badge.loading {
@@ -626,16 +626,16 @@ onMounted(() => {
 .option-row .value {
   min-width: 40px;
   text-align: right;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
   font-size: 12px;
 }
 
 .option-row select {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid var(--weyl-border-default, #333);
-  background: var(--weyl-surface-2, #1a1a1a);
-  color: var(--weyl-text-primary, #e5e5e5);
+  border: 1px solid var(--lattice-border-default, #333);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-primary, #e5e5e5);
   border-radius: 4px;
 }
 
@@ -649,7 +649,7 @@ onMounted(() => {
   width: 100%;
   padding: 12px;
   border: none;
-  background: var(--weyl-accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899));
+  background: var(--lattice-accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899));
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -713,6 +713,6 @@ onMounted(() => {
 .preview-image {
   width: 100%;
   border-radius: 4px;
-  background: var(--weyl-surface-0, #0a0a0a);
+  background: var(--lattice-surface-0, #0a0a0a);
 }
 </style>

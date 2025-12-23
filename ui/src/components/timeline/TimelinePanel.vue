@@ -1,6 +1,6 @@
 <!--
   @component TimelinePanel
-  @description Timeline and layer management panel for Weyl Compositor.
+  @description Timeline and layer management panel for Lattice Compositor.
   Provides professional timeline with keyframe editing:
   - Composition tabs for multi-comp workflows
   - Playback controls (play, pause, loop, frame stepping)
@@ -823,20 +823,20 @@ watch(() => [
 </script>
 
 <style scoped>
-.timeline-panel { display: flex; flex-direction: column; height: 100%; background: var(--weyl-surface-1, #0f0f0f); color: var(--weyl-text-primary, #eee); font-family: var(--weyl-font-sans, 'Segoe UI', sans-serif); font-size: 13px; user-select: none; }
-.timeline-header { height: 40px; background: var(--weyl-surface-2, #161616); border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a); display: flex; justify-content: space-between; padding: 0 10px; align-items: center; z-index: 20; flex-shrink: 0; }
+.timeline-panel { display: flex; flex-direction: column; height: 100%; background: var(--lattice-surface-1, #0f0f0f); color: var(--lattice-text-primary, #eee); font-family: var(--lattice-font-sans, 'Segoe UI', sans-serif); font-size: 13px; user-select: none; }
+.timeline-header { height: 40px; background: var(--lattice-surface-2, #161616); border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a); display: flex; justify-content: space-between; padding: 0 10px; align-items: center; z-index: 20; flex-shrink: 0; }
 .header-left, .header-center, .header-right { display: flex; gap: 12px; align-items: center; }
 .tool-group { display: flex; gap: 8px; align-items: center; }
 
 /* SMPTE Timecode display */
-.timecode { font-family: var(--weyl-font-mono, 'Consolas', 'Courier New', monospace); font-size: 16px; color: var(--weyl-accent, #8B5CF6); font-weight: bold; letter-spacing: 1px; }
+.timecode { font-family: var(--lattice-font-mono, 'Consolas', 'Courier New', monospace); font-size: 16px; color: var(--lattice-accent, #8B5CF6); font-weight: bold; letter-spacing: 1px; }
 
 /* Menus */
 .add-layer-wrapper { position: relative; }
 .add-layer-menu {
   /* Position set dynamically via style binding */
-  background: var(--weyl-surface-2, #161616);
-  border: 1px solid var(--weyl-border-default, #2a2a2a);
+  background: var(--lattice-surface-2, #161616);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -851,34 +851,34 @@ watch(() => [
   padding: 10px 14px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-primary, #ddd);
+  color: var(--lattice-text-primary, #ddd);
   cursor: pointer;
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
   font-size: 13px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .add-layer-menu button:last-child { border-bottom: none; }
-.add-layer-menu button:hover { background: var(--weyl-accent, #8B5CF6); color: white; }
+.add-layer-menu button:hover { background: var(--lattice-accent, #8B5CF6); color: white; }
 .add-layer-menu button:first-child { border-radius: 5px 5px 0 0; }
 .add-layer-menu button:last-child { border-radius: 0 0 5px 5px; }
-.add-layer-btn { padding: 6px 12px; background: var(--weyl-surface-3, #1e1e1e); border: 1px solid var(--weyl-border-default, #2a2a2a); color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
-.add-layer-btn:hover, .add-layer-btn.active { background: var(--weyl-surface-4, #262626); }
+.add-layer-btn { padding: 6px 12px; background: var(--lattice-surface-3, #1e1e1e); border: 1px solid var(--lattice-border-default, #2a2a2a); color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
+.add-layer-btn:hover, .add-layer-btn.active { background: var(--lattice-surface-4, #262626); }
 
-.comp-settings-btn { padding: 6px 14px; background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15)); border: 1px solid var(--weyl-accent, #8B5CF6); color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
-.comp-settings-btn:hover { background: var(--weyl-accent, #8B5CF6); }
-.ai-btn { padding: 6px 12px; background: var(--weyl-accent-gradient, linear-gradient(135deg, #8B5CF6, #A78BFA)); border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.comp-settings-btn { padding: 6px 14px; background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15)); border: 1px solid var(--lattice-accent, #8B5CF6); color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.comp-settings-btn:hover { background: var(--lattice-accent, #8B5CF6); }
+.ai-btn { padding: 6px 12px; background: var(--lattice-accent-gradient, linear-gradient(135deg, #8B5CF6, #A78BFA)); border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .ai-btn:hover { filter: brightness(1.1); }
 
 .timeline-content { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; }
-.timeline-sidebar { background: var(--weyl-surface-1, #0f0f0f); border-right: 1px solid var(--weyl-border-subtle, #1a1a1a); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
-.sidebar-header-row { height: 30px; background: var(--weyl-surface-2, #161616); display: flex; align-items: center; border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a); }
-.col-header { font-size: 12px; color: var(--weyl-text-muted, #6B7280); display: flex; align-items: center; }
+.timeline-sidebar { background: var(--lattice-surface-1, #0f0f0f); border-right: 1px solid var(--lattice-border-subtle, #1a1a1a); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
+.sidebar-header-row { height: 30px; background: var(--lattice-surface-2, #161616); display: flex; align-items: center; border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a); }
+.col-header { font-size: 12px; color: var(--lattice-text-muted, #6B7280); display: flex; align-items: center; }
 .col-header.col-av-features {
   display: flex;
   gap: 0;
-  border-right: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-right: 1px solid var(--lattice-border-subtle, #1a1a1a);
   padding: 0 2px;
 }
 .col-header.col-number { width: 20px; justify-content: center; }
@@ -886,23 +886,23 @@ watch(() => [
 .col-header.col-switches {
   display: flex;
   gap: 0;
-  border-left: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  border-left: 1px solid var(--lattice-border-subtle, #1a1a1a);
   padding: 0 2px;
 }
-.col-header.col-parent { min-width: 80px; border-left: 1px solid var(--weyl-border-subtle, #1a1a1a); padding: 0 8px; }
-.header-icon { display: inline-flex; justify-content: center; align-items: center; width: 22px; height: 28px; font-size: 12px; color: var(--weyl-text-muted, #6B7280); cursor: default; }
+.col-header.col-parent { min-width: 80px; border-left: 1px solid var(--lattice-border-subtle, #1a1a1a); padding: 0 8px; }
+.header-icon { display: inline-flex; justify-content: center; align-items: center; width: 22px; height: 28px; font-size: 12px; color: var(--lattice-text-muted, #6B7280); cursor: default; }
 .header-icon.clickable { cursor: pointer; transition: color 0.15s; }
-.header-icon.clickable:hover { color: var(--weyl-text-secondary, #9CA3AF); }
-.header-icon.clickable.active { color: var(--weyl-accent, #8B5CF6); }
+.header-icon.clickable:hover { color: var(--lattice-text-secondary, #9CA3AF); }
+.header-icon.clickable.active { color: var(--lattice-accent, #8B5CF6); }
 .sidebar-scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; }
 .sidebar-scroll-area.drag-over {
-  background-color: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
-  outline: 2px dashed var(--weyl-accent, #8B5CF6);
+  background-color: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
+  outline: 2px dashed var(--lattice-accent, #8B5CF6);
   outline-offset: -2px;
 }
 
-.sidebar-resizer { width: 4px; background: var(--weyl-surface-0, #080808); cursor: col-resize; flex-shrink: 0; z-index: 15; }
-.sidebar-resizer:hover { background: var(--weyl-accent, #8B5CF6); }
+.sidebar-resizer { width: 4px; background: var(--lattice-surface-0, #080808); cursor: col-resize; flex-shrink: 0; z-index: 15; }
+.sidebar-resizer:hover { background: var(--lattice-accent, #8B5CF6); }
 
 .track-viewport {
   flex: 1;
@@ -910,7 +910,7 @@ watch(() => [
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  background: var(--weyl-surface-0, #080808);
+  background: var(--lattice-surface-0, #080808);
 }
 
 /* Ruler wrapper - scrolls horizontally only */
@@ -928,8 +928,8 @@ watch(() => [
 .time-ruler {
   height: 30px;
   position: relative;
-  background: var(--weyl-surface-2, #161616);
-  border-bottom: 1px solid var(--weyl-border-subtle, #1a1a1a);
+  background: var(--lattice-surface-2, #161616);
+  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
   cursor: pointer;
   z-index: 10;
 }
@@ -939,9 +939,9 @@ watch(() => [
   position: absolute;
   top: 0;
   height: 100%;
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.25));
-  border-left: 2px solid var(--weyl-accent, #8B5CF6);
-  border-right: 2px solid var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.25));
+  border-left: 2px solid var(--lattice-accent, #8B5CF6);
+  border-right: 2px solid var(--lattice-accent, #8B5CF6);
   z-index: 5;
   cursor: move;
   box-sizing: border-box;
@@ -976,8 +976,8 @@ watch(() => [
 }
 
 .track-scroll-area.drag-over {
-  background-color: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
-  outline: 2px dashed var(--weyl-accent, #8B5CF6);
+  background-color: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
+  outline: 2px dashed var(--lattice-accent, #8B5CF6);
   outline-offset: -2px;
 }
 
@@ -989,8 +989,8 @@ watch(() => [
 /* Playhead Visuals - Purple accent */
 .playhead-head {
   position: absolute; top: 0; width: 2px; height: 30px;
-  background: var(--weyl-accent, #8B5CF6); z-index: 20; pointer-events: none;
-  box-shadow: 0 0 8px var(--weyl-accent-glow, rgba(139, 92, 246, 0.3));
+  background: var(--lattice-accent, #8B5CF6); z-index: 20; pointer-events: none;
+  box-shadow: 0 0 8px var(--lattice-accent-glow, rgba(139, 92, 246, 0.3));
 }
 /* Playhead triangle at top */
 .playhead-head::before {
@@ -1003,7 +1003,7 @@ watch(() => [
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 10px solid var(--weyl-accent, #8B5CF6);
+  border-top: 10px solid var(--lattice-accent, #8B5CF6);
 }
 /* Playhead Hit Area - Invisible but wider for easier grabbing */
 .playhead-hit-area {
@@ -1013,9 +1013,9 @@ watch(() => [
   z-index: 30; cursor: ew-resize;
 }
 .playhead-hit-area:hover {
-  background: var(--weyl-accent-muted, rgba(139, 92, 246, 0.15));
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.15));
 }
 
-.playhead-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--weyl-accent, #8B5CF6); pointer-events: none; z-index: 10; box-shadow: 0 0 8px var(--weyl-accent-glow, rgba(139, 92, 246, 0.3)); }
-.grid-background { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, var(--weyl-border-subtle, #1a1a1a) 1px, transparent 1px); background-size: 100px 100%; opacity: 0.3; }
+.playhead-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--lattice-accent, #8B5CF6); pointer-events: none; z-index: 10; box-shadow: 0 0 8px var(--lattice-accent-glow, rgba(139, 92, 246, 0.3)); }
+.grid-background { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, var(--lattice-border-subtle, #1a1a1a) 1px, transparent 1px); background-size: 100px 100%; opacity: 0.3; }
 </style>

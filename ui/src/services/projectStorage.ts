@@ -5,14 +5,14 @@
  * Projects are stored as JSON files in the ComfyUI projects directory.
  */
 
-import type { WeylProject } from '@/types/project';
+import type { LatticeProject } from '@/types/project';
 import { createLogger } from '@/utils/logger';
 import { validateProjectStructure, ValidationError } from '@/utils/security';
 
 const logger = createLogger('ProjectStorage');
 
 // Base URL for compositor API endpoints
-const API_BASE = '/weyl/compositor';
+const API_BASE = '/lattice/compositor';
 
 /**
  * Validate project ID format for security
@@ -54,7 +54,7 @@ export interface SaveResult {
  */
 export interface LoadResult {
   status: 'success' | 'error';
-  project?: WeylProject;
+  project?: LatticeProject;
   project_id?: string;
   message?: string;
 }
@@ -76,7 +76,7 @@ export interface ListResult {
  * @returns Save result with the project ID
  */
 export async function saveProject(
-  project: WeylProject,
+  project: LatticeProject,
   projectId?: string
 ): Promise<SaveResult> {
   try {
@@ -230,8 +230,8 @@ export async function isApiAvailable(): Promise<boolean> {
  * @param project - The project to export
  * @param filename - Optional filename (without extension)
  */
-export function exportProjectAsFile(project: WeylProject, filename?: string): void {
-  const name = filename || project.meta?.name || 'weyl-project';
+export function exportProjectAsFile(project: LatticeProject, filename?: string): void {
+  const name = filename || project.meta?.name || 'lattice-project';
   const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '_');
 
   const blob = new Blob([JSON.stringify(project, null, 2)], {
@@ -241,7 +241,7 @@ export function exportProjectAsFile(project: WeylProject, filename?: string): vo
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${safeName}.weyl.json`;
+  a.download = `${safeName}.lattice.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -256,7 +256,7 @@ export function exportProjectAsFile(project: WeylProject, filename?: string): vo
  * @param file - The file to import
  * @returns The imported project
  */
-export async function importProjectFromFile(file: File): Promise<WeylProject> {
+export async function importProjectFromFile(file: File): Promise<LatticeProject> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -267,7 +267,7 @@ export async function importProjectFromFile(file: File): Promise<WeylProject> {
         // Validate project structure before accepting
         validateProjectStructure(data, `Project file '${file.name}'`);
 
-        const project = data as WeylProject;
+        const project = data as LatticeProject;
         logger.info(`Imported project: ${project.meta?.name || file.name}`);
         resolve(project);
       } catch (error) {

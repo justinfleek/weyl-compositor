@@ -1,5 +1,5 @@
 /**
- * Weyl Compositor Design Tokens
+ * Lattice Compositor Design Tokens
  *
  * Based on ref-2.png and component-details.webp reference UI
  * Design Philosophy: "Dense Islands, Empty Ocean"
@@ -11,208 +11,208 @@
      ======================================== */
 
   /* Surface Colors (Dark to Light) - Very dark grey base (not pure black) */
-  --weyl-void: #0a0a0a;           /* Very dark grey app background */
-  --weyl-surface-0: #0e0e0e;      /* Canvas background */
-  --weyl-surface-1: #141414;      /* Panel backgrounds */
-  --weyl-surface-2: #1a1a1a;      /* Headers, elevated surfaces */
-  --weyl-surface-3: #222222;      /* Hover states */
-  --weyl-surface-4: #2a2a2a;      /* Active/pressed states */
+  --lattice-void: #0a0a0a;           /* Very dark grey app background */
+  --lattice-surface-0: #0e0e0e;      /* Canvas background */
+  --lattice-surface-1: #141414;      /* Panel backgrounds */
+  --lattice-surface-2: #1a1a1a;      /* Headers, elevated surfaces */
+  --lattice-surface-3: #222222;      /* Hover states */
+  --lattice-surface-4: #2a2a2a;      /* Active/pressed states */
 
   /* Accent Colors (Default: Dark Purple / Violet theme) */
-  --weyl-accent: #8B5CF6;
-  --weyl-accent-hover: #9D7AFA;
-  --weyl-accent-secondary: #A78BFA;
-  --weyl-accent-gradient: linear-gradient(135deg, #8B5CF6, #A78BFA);
-  --weyl-accent-glow: rgba(139, 92, 246, 0.3);
-  --weyl-accent-muted: rgba(139, 92, 246, 0.15);
+  --lattice-accent: #8B5CF6;
+  --lattice-accent-hover: #9D7AFA;
+  --lattice-accent-secondary: #A78BFA;
+  --lattice-accent-gradient: linear-gradient(135deg, #8B5CF6, #A78BFA);
+  --lattice-accent-glow: rgba(139, 92, 246, 0.3);
+  --lattice-accent-muted: rgba(139, 92, 246, 0.15);
 
   /* ========================================
      THEME GRADIENTS
-     Select theme by setting --weyl-theme-* vars
+     Select theme by setting --lattice-theme-* vars
      ======================================== */
 
   /* Violet (Default) */
-  --weyl-theme-violet-primary: #8B5CF6;
-  --weyl-theme-violet-secondary: #EC4899;
-  --weyl-theme-violet-gradient: linear-gradient(135deg, #8B5CF6, #EC4899);
+  --lattice-theme-violet-primary: #8B5CF6;
+  --lattice-theme-violet-secondary: #EC4899;
+  --lattice-theme-violet-gradient: linear-gradient(135deg, #8B5CF6, #EC4899);
 
   /* Ocean */
-  --weyl-theme-ocean-primary: #06B6D4;
-  --weyl-theme-ocean-secondary: #3B82F6;
-  --weyl-theme-ocean-gradient: linear-gradient(135deg, #06B6D4, #3B82F6);
+  --lattice-theme-ocean-primary: #06B6D4;
+  --lattice-theme-ocean-secondary: #3B82F6;
+  --lattice-theme-ocean-gradient: linear-gradient(135deg, #06B6D4, #3B82F6);
 
   /* Sunset */
-  --weyl-theme-sunset-primary: #F59E0B;
-  --weyl-theme-sunset-secondary: #EF4444;
-  --weyl-theme-sunset-gradient: linear-gradient(135deg, #F59E0B, #EF4444);
+  --lattice-theme-sunset-primary: #F59E0B;
+  --lattice-theme-sunset-secondary: #EF4444;
+  --lattice-theme-sunset-gradient: linear-gradient(135deg, #F59E0B, #EF4444);
 
   /* Forest */
-  --weyl-theme-forest-primary: #10B981;
-  --weyl-theme-forest-secondary: #06B6D4;
-  --weyl-theme-forest-gradient: linear-gradient(135deg, #10B981, #06B6D4);
+  --lattice-theme-forest-primary: #10B981;
+  --lattice-theme-forest-secondary: #06B6D4;
+  --lattice-theme-forest-gradient: linear-gradient(135deg, #10B981, #06B6D4);
 
   /* Ember */
-  --weyl-theme-ember-primary: #EF4444;
-  --weyl-theme-ember-secondary: #F97316;
-  --weyl-theme-ember-gradient: linear-gradient(135deg, #EF4444, #F97316);
+  --lattice-theme-ember-primary: #EF4444;
+  --lattice-theme-ember-secondary: #F97316;
+  --lattice-theme-ember-gradient: linear-gradient(135deg, #EF4444, #F97316);
 
   /* Mono (grayscale) */
-  --weyl-theme-mono-primary: #6B7280;
-  --weyl-theme-mono-secondary: #9CA3AF;
-  --weyl-theme-mono-gradient: linear-gradient(135deg, #4B5563, #6B7280);
+  --lattice-theme-mono-primary: #6B7280;
+  --lattice-theme-mono-secondary: #9CA3AF;
+  --lattice-theme-mono-gradient: linear-gradient(135deg, #4B5563, #6B7280);
 
   /* Text Colors */
-  --weyl-text-primary: #E5E5E5;   /* Main text (not pure white) */
-  --weyl-text-secondary: #9CA3AF; /* Labels, hints */
-  --weyl-text-muted: #6B7280;     /* Placeholders, disabled */
-  --weyl-text-inverse: #050505;   /* Text on light backgrounds */
+  --lattice-text-primary: #E5E5E5;   /* Main text (not pure white) */
+  --lattice-text-secondary: #9CA3AF; /* Labels, hints */
+  --lattice-text-muted: #6B7280;     /* Placeholders, disabled */
+  --lattice-text-inverse: #050505;   /* Text on light backgrounds */
 
   /* Semantic Colors */
-  --weyl-success: #10B981;        /* Emerald */
-  --weyl-success-bg: rgba(16, 185, 129, 0.15);
-  --weyl-warning: #F59E0B;        /* Amber */
-  --weyl-warning-bg: rgba(245, 158, 11, 0.15);
-  --weyl-error: #F43F5E;          /* Rose */
-  --weyl-error-bg: rgba(244, 63, 94, 0.15);
-  --weyl-info: #3B82F6;           /* Blue */
-  --weyl-info-bg: rgba(59, 130, 246, 0.15);
+  --lattice-success: #10B981;        /* Emerald */
+  --lattice-success-bg: rgba(16, 185, 129, 0.15);
+  --lattice-warning: #F59E0B;        /* Amber */
+  --lattice-warning-bg: rgba(245, 158, 11, 0.15);
+  --lattice-error: #F43F5E;          /* Rose */
+  --lattice-error-bg: rgba(244, 63, 94, 0.15);
+  --lattice-info: #3B82F6;           /* Blue */
+  --lattice-info-bg: rgba(59, 130, 246, 0.15);
 
   /* Timeline Colors (Layer type colors) */
-  --weyl-timeline-video: #FFD700;    /* Gold for video/image clips */
-  --weyl-timeline-audio: #9B59B6;    /* Purple for audio tracks */
-  --weyl-timeline-text: #8B5CF6;     /* Purple for text layers */
-  --weyl-timeline-effect: #FF6B9D;   /* Pink for effects */
-  --weyl-timeline-shape: #2ECC71;    /* Green for shapes */
-  --weyl-timeline-camera: #06B6D4;   /* Cyan for camera */
-  --weyl-timeline-null: #6B7280;     /* Gray for null/control */
-  --weyl-timeline-particle: #F59E0B; /* Amber for particles */
+  --lattice-timeline-video: #FFD700;    /* Gold for video/image clips */
+  --lattice-timeline-audio: #9B59B6;    /* Purple for audio tracks */
+  --lattice-timeline-text: #8B5CF6;     /* Purple for text layers */
+  --lattice-timeline-effect: #FF6B9D;   /* Pink for effects */
+  --lattice-timeline-shape: #2ECC71;    /* Green for shapes */
+  --lattice-timeline-camera: #06B6D4;   /* Cyan for camera */
+  --lattice-timeline-null: #6B7280;     /* Gray for null/control */
+  --lattice-timeline-particle: #F59E0B; /* Amber for particles */
 
   /* Border Colors */
-  --weyl-border-subtle: #1a1a1a;     /* Nearly invisible */
-  --weyl-border-default: #2a2a2a;    /* Subtle separation */
-  --weyl-border-hover: #3a3a3a;      /* Visible on hover */
-  --weyl-border-accent: var(--weyl-accent);
+  --lattice-border-subtle: #1a1a1a;     /* Nearly invisible */
+  --lattice-border-default: #2a2a2a;    /* Subtle separation */
+  --lattice-border-hover: #3a3a3a;      /* Visible on hover */
+  --lattice-border-accent: var(--lattice-accent);
 
   /* ========================================
      TYPOGRAPHY
      ======================================== */
 
-  --weyl-font-sans: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --weyl-font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+  --lattice-font-sans: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --lattice-font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
 
   /* Font Sizes (increased for readability) */
-  --weyl-text-xs: 11px;
-  --weyl-text-sm: 12px;
-  --weyl-text-base: 13px;
-  --weyl-text-md: 14px;
-  --weyl-text-lg: 15px;
-  --weyl-text-xl: 17px;
-  --weyl-text-2xl: 20px;
-  --weyl-text-3xl: 26px;
+  --lattice-text-xs: 11px;
+  --lattice-text-sm: 12px;
+  --lattice-text-base: 13px;
+  --lattice-text-md: 14px;
+  --lattice-text-lg: 15px;
+  --lattice-text-xl: 17px;
+  --lattice-text-2xl: 20px;
+  --lattice-text-3xl: 26px;
 
   /* Font Weights */
-  --weyl-font-normal: 400;
-  --weyl-font-medium: 500;
-  --weyl-font-semibold: 600;
-  --weyl-font-bold: 700;
+  --lattice-font-normal: 400;
+  --lattice-font-medium: 500;
+  --lattice-font-semibold: 600;
+  --lattice-font-bold: 700;
 
   /* Line Heights */
-  --weyl-leading-tight: 1.25;
-  --weyl-leading-normal: 1.5;
-  --weyl-leading-relaxed: 1.75;
+  --lattice-leading-tight: 1.25;
+  --lattice-leading-normal: 1.5;
+  --lattice-leading-relaxed: 1.75;
 
   /* ========================================
      SPACING
      ======================================== */
 
-  --weyl-space-0: 0;
-  --weyl-space-1: 4px;
-  --weyl-space-2: 8px;
-  --weyl-space-3: 12px;
-  --weyl-space-4: 16px;
-  --weyl-space-5: 20px;
-  --weyl-space-6: 24px;
-  --weyl-space-8: 32px;
-  --weyl-space-10: 40px;
-  --weyl-space-12: 48px;
+  --lattice-space-0: 0;
+  --lattice-space-1: 4px;
+  --lattice-space-2: 8px;
+  --lattice-space-3: 12px;
+  --lattice-space-4: 16px;
+  --lattice-space-5: 20px;
+  --lattice-space-6: 24px;
+  --lattice-space-8: 32px;
+  --lattice-space-10: 40px;
+  --lattice-space-12: 48px;
 
   /* Panel Gutter (space between floating panels) */
-  --weyl-gutter: 20px;
+  --lattice-gutter: 20px;
 
   /* ========================================
      BORDER RADIUS (Toned down from original)
      ======================================== */
 
-  --weyl-radius-none: 0;
-  --weyl-radius-sm: 2px;
-  --weyl-radius-md: 4px;
-  --weyl-radius-lg: 6px;
-  --weyl-radius-xl: 8px;      /* Panels - was 16px */
-  --weyl-radius-2xl: 12px;    /* Large cards - was 20px */
-  --weyl-radius-full: 999px;  /* Pills only */
+  --lattice-radius-none: 0;
+  --lattice-radius-sm: 2px;
+  --lattice-radius-md: 4px;
+  --lattice-radius-lg: 6px;
+  --lattice-radius-xl: 8px;      /* Panels - was 16px */
+  --lattice-radius-2xl: 12px;    /* Large cards - was 20px */
+  --lattice-radius-full: 999px;  /* Pills only */
 
   /* ========================================
      SHADOWS
      ======================================== */
 
-  --weyl-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --weyl-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.25);
-  --weyl-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.3);
-  --weyl-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.35);
-  --weyl-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --weyl-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --weyl-shadow-glow: 0 0 20px var(--weyl-accent-glow);
+  --lattice-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --lattice-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.25);
+  --lattice-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.3);
+  --lattice-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.35);
+  --lattice-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --lattice-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --lattice-shadow-glow: 0 0 20px var(--lattice-accent-glow);
 
   /* ========================================
      TRANSITIONS
      ======================================== */
 
-  --weyl-transition-fast: 100ms ease;
-  --weyl-transition-normal: 200ms ease;
-  --weyl-transition-slow: 300ms ease;
-  --weyl-transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --lattice-transition-fast: 100ms ease;
+  --lattice-transition-normal: 200ms ease;
+  --lattice-transition-slow: 300ms ease;
+  --lattice-transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ========================================
      Z-INDEX LAYERS
      ======================================== */
 
-  --weyl-z-base: 0;
-  --weyl-z-dropdown: 100;
-  --weyl-z-sticky: 200;
-  --weyl-z-overlay: 300;
-  --weyl-z-modal: 400;
-  --weyl-z-popover: 500;
-  --weyl-z-tooltip: 600;
-  --weyl-z-notification: 700;
+  --lattice-z-base: 0;
+  --lattice-z-dropdown: 100;
+  --lattice-z-sticky: 200;
+  --lattice-z-overlay: 300;
+  --lattice-z-modal: 400;
+  --lattice-z-popover: 500;
+  --lattice-z-tooltip: 600;
+  --lattice-z-notification: 700;
 
   /* ========================================
      COMPONENT SIZES
      ======================================== */
 
   /* Buttons */
-  --weyl-btn-height-sm: 24px;
-  --weyl-btn-height-md: 32px;
-  --weyl-btn-height-lg: 40px;
+  --lattice-btn-height-sm: 24px;
+  --lattice-btn-height-md: 32px;
+  --lattice-btn-height-lg: 40px;
 
   /* Inputs */
-  --weyl-input-height-sm: 24px;
-  --weyl-input-height-md: 32px;
-  --weyl-input-height-lg: 40px;
+  --lattice-input-height-sm: 24px;
+  --lattice-input-height-md: 32px;
+  --lattice-input-height-lg: 40px;
 
   /* Icons */
-  --weyl-icon-sm: 14px;
-  --weyl-icon-md: 18px;
-  --weyl-icon-lg: 24px;
+  --lattice-icon-sm: 14px;
+  --lattice-icon-md: 18px;
+  --lattice-icon-lg: 24px;
 
   /* Timeline */
-  --weyl-track-height: 32px;
-  --weyl-keyframe-size: 12px;
-  --weyl-playhead-width: 2px;
+  --lattice-track-height: 32px;
+  --lattice-keyframe-size: 12px;
+  --lattice-playhead-width: 2px;
 
   /* Panels */
-  --weyl-panel-min-width: 200px;
-  --weyl-panel-max-width: 400px;
-  --weyl-sidebar-width: 280px;
+  --lattice-panel-min-width: 200px;
+  --lattice-panel-max-width: 400px;
+  --lattice-sidebar-width: 280px;
 }
 
 /* ========================================
@@ -221,34 +221,34 @@
 
 /* Floating Panel */
 .floating-panel {
-  background: var(--weyl-surface-1);
-  border-radius: var(--weyl-radius-xl);
-  border: 1px solid var(--weyl-border-subtle);
+  background: var(--lattice-surface-1);
+  border-radius: var(--lattice-radius-xl);
+  border: 1px solid var(--lattice-border-subtle);
   overflow: hidden;
   /* No box-shadow - cleaner floating look */
 }
 
 /* Surface Levels */
-.surface-0 { background: var(--weyl-surface-0); }
-.surface-1 { background: var(--weyl-surface-1); }
-.surface-2 { background: var(--weyl-surface-2); }
-.surface-3 { background: var(--weyl-surface-3); }
-.surface-4 { background: var(--weyl-surface-4); }
+.surface-0 { background: var(--lattice-surface-0); }
+.surface-1 { background: var(--lattice-surface-1); }
+.surface-2 { background: var(--lattice-surface-2); }
+.surface-3 { background: var(--lattice-surface-3); }
+.surface-4 { background: var(--lattice-surface-4); }
 
 /* Text Colors */
-.text-primary { color: var(--weyl-text-primary); }
-.text-secondary { color: var(--weyl-text-secondary); }
-.text-muted { color: var(--weyl-text-muted); }
-.text-accent { color: var(--weyl-accent); }
+.text-primary { color: var(--lattice-text-primary); }
+.text-secondary { color: var(--lattice-text-secondary); }
+.text-muted { color: var(--lattice-text-muted); }
+.text-accent { color: var(--lattice-accent); }
 
 /* Accent Background */
 .bg-accent {
-  background: var(--weyl-accent);
+  background: var(--lattice-accent);
   color: white;
 }
 
 .bg-accent-gradient {
-  background: var(--weyl-accent-gradient);
+  background: var(--lattice-accent-gradient);
   color: white;
 }
 
@@ -256,24 +256,24 @@
 .focus-ring:focus,
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--weyl-void), 0 0 0 4px var(--weyl-accent);
+  box-shadow: 0 0 0 2px var(--lattice-void), 0 0 0 4px var(--lattice-accent);
 }
 
 /* Pill Shape */
 .pill {
-  border-radius: var(--weyl-radius-full);
+  border-radius: var(--lattice-radius-full);
 }
 
 /* Glow Effect */
 .glow {
-  box-shadow: var(--weyl-shadow-glow);
+  box-shadow: var(--lattice-shadow-glow);
 }
 
 /* ========================================
    GRADIENT DEFINITIONS (for SVG)
    ======================================== */
 
-/* Use in SVG: stroke="url(#weyl-gradient-purple-pink)" */
+/* Use in SVG: stroke="url(#lattice-gradient-purple-pink)" */
 .gradient-defs {
   --gradient-purple-pink: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
 }

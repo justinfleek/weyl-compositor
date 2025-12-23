@@ -283,12 +283,12 @@ Andrew Kramer's Earth Zoom tutorial teaches how to create a dramatic camera move
 
 ### Exponential Scale Keyframe Assistant
 - **AE Feature:** Automatically creates exponential scale curves for zoom effects
-- **Weyl Status:** Manual workaround using Curve Editor
+- **Lattice Status:** Manual workaround using Curve Editor
 - **Impact:** Low - same result achievable manually
 
 ### Continuously Rasterize
 - **AE Feature:** Vector layers re-rasterize at any scale
-- **Weyl Status:** Property exists, behavior partially implemented
+- **Lattice Status:** Property exists, behavior partially implemented
 - **Impact:** Low - affects edge quality on scaled vectors
 
 ---
@@ -332,7 +332,7 @@ TOTAL                                - 41 tests (ALL PASSING)
 
 ## CONCLUSION
 
-Tutorial 05 (Earth Zoom) is **95% compatible** with Weyl Compositor. All critical features for completing the tutorial are fully implemented:
+Tutorial 05 (Earth Zoom) is **95% compatible** with Lattice Compositor. All critical features for completing the tutorial are fully implemented:
 
 - 3D layer system with full transforms
 - Both One-Node and Two-Node cameras

@@ -408,9 +408,9 @@ function updateBlendingOptions(updates: any) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--weyl-surface-1);
-  color: var(--weyl-text-primary);
-  font-size: var(--weyl-font-size-sm);
+  background: var(--lattice-surface-1);
+  color: var(--lattice-text-primary);
+  font-size: var(--lattice-font-size-sm);
 }
 
 .panel-header {
@@ -418,8 +418,8 @@ function updateBlendingOptions(updates: any) {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: var(--weyl-surface-0);
-  border-bottom: 1px solid var(--weyl-border-subtle);
+  background: var(--lattice-surface-0);
+  border-bottom: 1px solid var(--lattice-border-subtle);
 }
 
 .header-left {
@@ -437,12 +437,12 @@ function updateBlendingOptions(updates: any) {
 .master-toggle input {
   width: 14px;
   height: 14px;
-  accent-color: var(--weyl-accent);
+  accent-color: var(--lattice-accent);
 }
 
 .toggle-label {
   font-weight: 600;
-  font-size: var(--weyl-font-size-base);
+  font-size: var(--lattice-font-size-base);
 }
 
 .header-actions {
@@ -457,18 +457,18 @@ function updateBlendingOptions(updates: any) {
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: var(--weyl-surface-2);
-  border: 1px solid var(--weyl-border-subtle);
-  border-radius: var(--weyl-radius-sm);
-  color: var(--weyl-text-secondary);
+  background: var(--lattice-surface-2);
+  border: 1px solid var(--lattice-border-subtle);
+  border-radius: var(--lattice-radius-sm);
+  color: var(--lattice-text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--weyl-surface-3);
-  border-color: var(--weyl-accent);
-  color: var(--weyl-text-primary);
+  background: var(--lattice-surface-3);
+  border-color: var(--lattice-accent);
+  color: var(--lattice-text-primary);
 }
 
 .action-btn:disabled {
@@ -482,16 +482,16 @@ function updateBlendingOptions(updates: any) {
 
 .preset-select {
   padding: 4px 8px;
-  background: var(--weyl-surface-2);
-  border: 1px solid var(--weyl-border-subtle);
-  border-radius: var(--weyl-radius-sm);
-  color: var(--weyl-text-secondary);
-  font-size: var(--weyl-font-size-xs);
+  background: var(--lattice-surface-2);
+  border: 1px solid var(--lattice-border-subtle);
+  border-radius: var(--lattice-radius-sm);
+  color: var(--lattice-text-secondary);
+  font-size: var(--lattice-font-size-xs);
   cursor: pointer;
 }
 
 .preset-select:hover {
-  border-color: var(--weyl-accent);
+  border-color: var(--lattice-accent);
 }
 
 .styles-list {
@@ -505,7 +505,7 @@ function updateBlendingOptions(updates: any) {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--weyl-text-muted);
-  font-size: var(--weyl-font-size-sm);
+  color: var(--lattice-text-muted);
+  font-size: var(--lattice-font-size-sm);
 }
 </style>

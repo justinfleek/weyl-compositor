@@ -144,7 +144,7 @@ export interface SapiensSegmentationResult {
  */
 export const DEFAULT_SAPIENS_CONFIG: SapiensConfig = {
   modelSize: '1B',
-  backendUrl: '/weyl/api/sapiens',
+  backendUrl: '/lattice/api/sapiens',
   useBfloat16: true,
   batchSize: 4,
 };

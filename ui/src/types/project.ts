@@ -1,5 +1,5 @@
 // ============================================================
-// WEYL PROJECT SCHEMA - Complete Type Definitions
+// LATTICE PROJECT SCHEMA - Complete Type Definitions
 // ============================================================
 //
 // Architecture Overview:
@@ -97,7 +97,7 @@ export type {
 } from './text';
 export { createDefaultTextData } from './text';
 
-export interface WeylProject {
+export interface LatticeProject {
   version: "1.0.0";
   schemaVersion?: number;  // Schema version for migrations (default: 1)
   meta: ProjectMeta;
@@ -2275,7 +2275,7 @@ export function normalizeLayerTiming(layer: Layer): Layer {
 /**
  * Create a new empty project
  */
-export function createEmptyProject(width: number, height: number): WeylProject {
+export function createEmptyProject(width: number, height: number): LatticeProject {
   const mainCompId = 'main';
   const compositionSettings: CompositionSettings = {
     width,

@@ -7,10 +7,10 @@
 import { defineStore } from 'pinia';
 import { toRaw } from 'vue';
 import { storeLogger } from '@/utils/logger';
-import type { WeylProject } from '@/types/project';
+import type { LatticeProject } from '@/types/project';
 
 interface HistoryState {
-  stack: WeylProject[];
+  stack: LatticeProject[];
   index: number;
   maxSize: number;
 }
@@ -34,7 +34,7 @@ export const useHistoryStore = defineStore('history', {
      * Push a new state to history
      * This should be called after significant changes to the project
      */
-    push(project: WeylProject): void {
+    push(project: LatticeProject): void {
       // Remove any future states if we're not at the end
       if (this.index < this.stack.length - 1) {
         this.stack = this.stack.slice(0, this.index + 1);
@@ -42,7 +42,7 @@ export const useHistoryStore = defineStore('history', {
 
       // Deep clone the project to avoid reference issues
       // Use toRaw() to deproxy Vue reactive objects before cloning
-      const snapshot = structuredClone(toRaw(project)) as WeylProject;
+      const snapshot = structuredClone(toRaw(project)) as LatticeProject;
       this.stack.push(snapshot);
 
       // Trim history if it exceeds max size
@@ -59,7 +59,7 @@ export const useHistoryStore = defineStore('history', {
      * Get the previous state (for undo)
      * Returns null if we can't undo
      */
-    undo(): WeylProject | null {
+    undo(): LatticeProject | null {
       if (!this.canUndo) {
         storeLogger.debug('Cannot undo: at beginning of history');
         return null;
@@ -69,14 +69,14 @@ export const useHistoryStore = defineStore('history', {
       const state = this.stack[this.index];
       storeLogger.debug('Undo to index:', this.index);
       // Use toRaw to deproxy Pinia's reactive wrapper before cloning
-      return structuredClone(toRaw(state)) as WeylProject;
+      return structuredClone(toRaw(state)) as LatticeProject;
     },
 
     /**
      * Get the next state (for redo)
      * Returns null if we can't redo
      */
-    redo(): WeylProject | null {
+    redo(): LatticeProject | null {
       if (!this.canRedo) {
         storeLogger.debug('Cannot redo: at end of history');
         return null;
@@ -86,7 +86,7 @@ export const useHistoryStore = defineStore('history', {
       const state = this.stack[this.index];
       storeLogger.debug('Redo to index:', this.index);
       // Use toRaw to deproxy Pinia's reactive wrapper before cloning
-      return structuredClone(toRaw(state)) as WeylProject;
+      return structuredClone(toRaw(state)) as LatticeProject;
     },
 
     /**
@@ -101,7 +101,7 @@ export const useHistoryStore = defineStore('history', {
     /**
      * Initialize history with a starting state
      */
-    initialize(project: WeylProject): void {
+    initialize(project: LatticeProject): void {
       this.clear();
       this.push(project);
     },

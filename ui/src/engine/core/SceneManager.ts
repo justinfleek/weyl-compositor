@@ -78,7 +78,7 @@ export class SceneManager {
   constructor(backgroundColor: string | null = null) {
     // Create main scene
     this.scene = new THREE.Scene();
-    this.scene.name = 'WeylScene';
+    this.scene.name = 'LatticeScene';
 
     // Set background
     if (backgroundColor) {

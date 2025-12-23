@@ -1,7 +1,7 @@
 /**
  * Composables Index
  *
- * Exports all Vue composables for the Weyl Compositor.
+ * Exports all Vue composables for the Lattice Compositor.
  */
 
 export { useCanvasSelection } from './useCanvasSelection';

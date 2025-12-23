@@ -1,4 +1,4 @@
-# WEYL COMPOSITOR — MOTION ENGINE
+# LATTICE COMPOSITOR — MOTION ENGINE
 
 **Document ID**: 02_MOTION_ENGINE  
 **Version**: 1.0.0  
@@ -20,7 +20,7 @@ MotionEngine is the single system that answers:
 interface MotionEngine {
   evaluate(
     frame: number,
-    project: WeylProject,
+    project: LatticeProject,
     audioAnalysis?: AudioAnalysis
   ): FrameState
 }
@@ -291,7 +291,7 @@ function evaluate(frame) {
 }
 
 // ✅ REQUIRED: Pure evaluation
-function evaluate(frame: number, project: WeylProject): FrameState {
+function evaluate(frame: number, project: LatticeProject): FrameState {
   const properties = evaluateAllProperties(project.composition, frame)
   const layers = evaluateAllLayers(project.composition, frame, properties)
   const camera = evaluateCamera(project.composition, frame, properties)

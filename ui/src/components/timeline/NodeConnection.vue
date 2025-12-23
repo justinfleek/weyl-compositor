@@ -81,10 +81,10 @@ const themeStore = useThemeStore();
 const viewBox = computed(() => `0 0 ${props.width} ${props.height}`);
 
 // Theme-aware colors
-const gradientStart = computed(() => 'var(--weyl-accent, #8B5CF6)');
-const gradientEnd = computed(() => 'var(--weyl-accent-secondary, #EC4899)');
-const parameterColor = computed(() => 'var(--weyl-info, #3B82F6)');
-const modifierColor = computed(() => 'var(--weyl-warning, #F59E0B)');
+const gradientStart = computed(() => 'var(--lattice-accent, #8B5CF6)');
+const gradientEnd = computed(() => 'var(--lattice-accent-secondary, #EC4899)');
+const parameterColor = computed(() => 'var(--lattice-info, #3B82F6)');
+const modifierColor = computed(() => 'var(--lattice-warning, #F59E0B)');
 
 // Categorize connections by type
 const visualConnections = computed(() =>

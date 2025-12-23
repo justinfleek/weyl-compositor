@@ -1,6 +1,6 @@
 # SERVICE API - Shape & Geometry Services
 
-**Weyl Compositor - Path, Spline, and Shape Operation Services**
+**Lattice Compositor - Path, Spline, and Shape Operation Services**
 
 ---
 

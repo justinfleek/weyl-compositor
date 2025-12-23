@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-The Essential Graphics Panel allows creating reusable Motion Graphics Templates (MOGRTs) with exposed parameters for easy customization. This analysis maps all AE Essential Graphics features to Weyl Compositor's implementation.
+The Essential Graphics Panel allows creating reusable Motion Graphics Templates (MOGRTs) with exposed parameters for easy customization. This analysis maps all AE Essential Graphics features to Lattice Compositor's implementation.
 
 **Key Implementation:** `services/essentialGraphics.ts` (447 lines)
 
@@ -18,7 +18,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Expression Controls
 
-| AE Expression Control | Weyl Compositor | Status | Notes |
+| AE Expression Control | Lattice Compositor | Status | Notes |
 |----------------------|-----------------|--------|-------|
 | Slider Control | `ExpressionControlType: 'slider'` | ✅ Full | Range min/max/default |
 | Checkbox Control | `ExpressionControlType: 'checkbox'` | ✅ Full | Boolean toggle |
@@ -30,7 +30,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Exposing Properties to Essential Graphics
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Add Property | `ExposedProperty` interface | ✅ Full | Drag or right-click |
 | Rename Property | `exposedName` field | ✅ Full | Display name |
@@ -41,7 +41,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Exposed Property Types
 
-| AE Property Type | Weyl Compositor | Status | Notes |
+| AE Property Type | Lattice Compositor | Status | Notes |
 |-----------------|-----------------|--------|-------|
 | Source Text | `ExposedPropertyType: 'sourceText'` | ✅ Full | Editable text |
 | Font | `ExposedPropertyType: 'font'` | ✅ Full | Font picker |
@@ -55,7 +55,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### MOGRT Export & Template System
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Export as MOGRT | `MOGRTPackage` interface | ✅ Full | JSON-based format |
 | Template Name | `TemplateConfig.name` | ✅ Full | Required field |
@@ -68,7 +68,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Essential Graphics Panel UI
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Panel View | Properties Panel integration | ✅ Full | Unified interface |
 | Edit Mode | Template editing mode | ✅ Full | Design vs use mode |
@@ -78,7 +78,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Text Properties in Templates
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Expose Text Content | `sourceText` binding | ✅ Full | Editable in template |
 | Expose Font | Font property exposure | ✅ Full | Font picker |
@@ -90,7 +90,7 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Expression Linking
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
 | Link to Slider | `thisLayer.effect("Slider Control")("Slider")` | ✅ Full | Expression reference |
 | Link to Checkbox | `thisLayer.effect("Checkbox Control")("Checkbox")` | ✅ Full | Boolean in expressions |
@@ -102,16 +102,16 @@ The Essential Graphics Panel allows creating reusable Motion Graphics Templates 
 
 ### Premiere Pro Integration
 
-| AE Feature | Weyl Compositor | Status | Notes |
+| AE Feature | Lattice Compositor | Status | Notes |
 |------------|-----------------|--------|-------|
-| MOGRT Format | Weyl JSON format | 🔄 Different | Not .mogrt binary |
+| MOGRT Format | Lattice JSON format | 🔄 Different | Not .mogrt binary |
 | Premiere Import | N/A | ❌ N/A | ComfyUI focus |
 | Responsive Design | Responsive settings | ⚠️ Partial | Manual resize |
 | Media Replacement | Media slot system | ✅ Full | Drag-drop media |
 
 ---
 
-## WEYL-SPECIFIC FEATURES (Beyond AE)
+## LATTICE-SPECIFIC FEATURES (Beyond AE)
 
 | Feature | Description |
 |---------|-------------|
@@ -162,7 +162,7 @@ interface TemplateConfig {
 // MOGRT Package
 interface MOGRTPackage {
   template: TemplateConfig;
-  project: WeylProject;
+  project: LatticeProject;
   exposedProperties: ExposedProperty[];
   propertyGroups: PropertyGroup[];
   expressionControls: ExpressionControl[];

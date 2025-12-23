@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Weyl Layer Decomposition GPU Test Script
+Lattice Layer Decomposition GPU Test Script
 
 This script tests the full layer decomposition workflow on GPU:
 1. Loads the Qwen-Image-Layered model (~28GB, auto-downloads from HuggingFace)
@@ -215,7 +215,7 @@ def run_decomposition():
 
 def main():
     print("="*60)
-    print("Weyl Layer Decomposition GPU Test")
+    print("Lattice Layer Decomposition GPU Test")
     print("="*60)
     print()
 
@@ -223,7 +223,7 @@ def main():
     if not check_gpu():
         print("\nThis script requires a CUDA GPU.")
         print("For CPU inference (very slow), use:")
-        print("  python nodes/weyl_layer_decomposition.py screenshots/ -o screenshots/decomp")
+        print("  python nodes/lattice_layer_decomposition.py screenshots/ -o screenshots/decomp")
         sys.exit(1)
 
     print()

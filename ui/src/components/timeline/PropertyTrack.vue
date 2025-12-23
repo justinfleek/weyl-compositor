@@ -560,7 +560,7 @@ function insertKeyframeOnPath() {
   const frame = trackContextMenu.value.frame;
   const newKfId = store.insertKeyframeOnPath(props.layerId, frame);
   if (newKfId) {
-    console.log(`[Weyl] Inserted keyframe on path at frame ${frame}`);
+    console.log(`[Lattice] Inserted keyframe on path at frame ${frame}`);
   }
   hideTrackContextMenu();
 }
@@ -764,8 +764,8 @@ onUnmounted(() => {
 
 .prop-track {
   height: 32px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border-bottom: 1px solid var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border-bottom: 1px solid var(--lattice-surface-3, #222222);
   position: relative;
   cursor: pointer;
 }
@@ -778,7 +778,7 @@ onUnmounted(() => {
   transform: translateX(-7px);
   cursor: ew-resize;
   transition: transform 0.1s, filter 0.1s;
-  color: var(--weyl-accent, #8B5CF6);
+  color: var(--lattice-accent, #8B5CF6);
 }
 
 .keyframe-shape {
@@ -793,7 +793,7 @@ onUnmounted(() => {
 
 .keyframe.selected {
   color: white;
-  filter: drop-shadow(0 0 4px var(--weyl-accent, #8B5CF6));
+  filter: drop-shadow(0 0 4px var(--lattice-accent, #8B5CF6));
 }
 
 /* Selection box for marquee select */
@@ -810,23 +810,23 @@ onUnmounted(() => {
 /* Context Menu */
 .keyframe-context-menu {
   position: absolute;
-  background: var(--weyl-surface-1, #121212);
+  background: var(--lattice-surface-1, #121212);
   border: none;
-  border-radius: var(--weyl-radius-lg, 6px);
-  box-shadow: var(--weyl-shadow-dropdown, 0 4px 16px rgba(0, 0, 0, 0.3));
+  border-radius: var(--lattice-radius-lg, 6px);
+  box-shadow: var(--lattice-shadow-dropdown, 0 4px 16px rgba(0, 0, 0, 0.3));
   min-width: 150px;
   z-index: 100;
   padding: 6px 0;
-  font-size: var(--weyl-text-sm, 11px);
+  font-size: var(--lattice-text-sm, 11px);
 }
 
 .menu-header {
   padding: 6px 12px;
-  color: var(--weyl-text-muted, #6B7280);
-  font-size: var(--weyl-text-xs, 10px);
+  color: var(--lattice-text-muted, #6B7280);
+  font-size: var(--lattice-text-xs, 10px);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--weyl-surface-3, #222222);
+  border-bottom: 1px solid var(--lattice-surface-3, #222222);
   margin-bottom: 4px;
 }
 
@@ -836,49 +836,49 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--weyl-text-primary, #e5e5e5);
-  transition: var(--weyl-transition-fast, 100ms ease);
+  color: var(--lattice-text-primary, #e5e5e5);
+  transition: var(--lattice-transition-fast, 100ms ease);
 }
 
 .menu-item:hover {
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
 }
 
 .menu-item.active {
-  background: var(--weyl-accent, #8B5CF6);
+  background: var(--lattice-accent, #8B5CF6);
   color: white;
 }
 
 .menu-item.delete {
-  color: var(--weyl-error, #F43F5E);
+  color: var(--lattice-error, #F43F5E);
 }
 
 .menu-item.delete:hover {
-  background: var(--weyl-error-bg, rgba(244, 63, 94, 0.15));
+  background: var(--lattice-error-bg, rgba(244, 63, 94, 0.15));
 }
 
 .menu-item .icon {
-  font-size: var(--weyl-text-lg, 14px);
+  font-size: var(--lattice-text-lg, 14px);
 }
 
 .menu-divider {
   height: 1px;
-  background: var(--weyl-surface-3, #222222);
+  background: var(--lattice-surface-3, #222222);
   margin: 4px 0;
 }
 
 /* Keyframe interpolation color variants */
 .keyframe.hold {
-  color: var(--weyl-error, #F43F5E);
+  color: var(--lattice-error, #F43F5E);
 }
 
 .keyframe.bezier {
-  color: var(--weyl-warning, #F59E0B);
+  color: var(--lattice-warning, #F59E0B);
 }
 
 .keyframe.spring,
 .keyframe.elastic,
 .keyframe.bounce {
-  color: var(--weyl-success, #10B981);
+  color: var(--lattice-success, #10B981);
 }
 </style>

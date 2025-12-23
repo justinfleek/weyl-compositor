@@ -26,7 +26,7 @@ import { particleSimulationRegistry } from '@/engine/ParticleSimulationControlle
 import type { ParticleSnapshot } from '@/engine/ParticleSimulationController';
 import { storeLogger } from '@/utils/logger';
 import type {
-  WeylProject,
+  LatticeProject,
   Layer,
   Composition,
   CompositionSettings,
@@ -106,7 +106,7 @@ import { useSelectionStore } from './selectionStore';
 
 interface CompositorState {
   // Project data
-  project: WeylProject;
+  project: LatticeProject;
 
   // Active composition (for multi-composition support)
   activeCompositionId: string;
@@ -152,7 +152,7 @@ interface CompositorState {
   hideMinimizedLayers: boolean;  // Toggle to hide layers marked as minimized
 
   // History for undo/redo
-  historyStack: WeylProject[];
+  historyStack: LatticeProject[];
   historyIndex: number;
 
   // Audio state

@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { matteExporter, type ExportOptions, type DimensionValidation } from '@/services/matteExporter';
-import type { WeylProject, Layer, TextData, SplineData, ControlPoint } from '@/types/project';
+import type { LatticeProject, Layer, TextData, SplineData, ControlPoint } from '@/types/project';
 import { createDefaultTransform, createAnimatableProperty } from '@/types/project';
 
 // ============================================================================
@@ -24,7 +24,7 @@ const OFFSCREEN_CANVAS_SUPPORTED = isOffscreenCanvasSupported();
 // TEST HELPERS
 // ============================================================================
 
-function createMockProject(overrides: Partial<WeylProject> = {}): WeylProject {
+function createMockProject(overrides: Partial<LatticeProject> = {}): LatticeProject {
   return {
     version: '1.0.0',
     mainCompositionId: 'main',

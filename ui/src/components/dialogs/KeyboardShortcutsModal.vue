@@ -264,8 +264,8 @@ const filteredCategories = computed(() => {
 }
 
 .modal-container {
-  background: var(--weyl-surface-1, #121212);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-1, #121212);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 8px;
   width: 700px;
   max-width: 90vw;
@@ -280,14 +280,14 @@ const filteredCategories = computed(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .close-btn {
@@ -295,7 +295,7 @@ const filteredCategories = computed(() => {
   height: 28px;
   border: none;
   background: transparent;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-size: 20px;
   cursor: pointer;
   border-radius: 4px;
@@ -305,32 +305,32 @@ const filteredCategories = computed(() => {
 }
 
 .close-btn:hover {
-  background: var(--weyl-surface-3, #222);
-  color: var(--weyl-text-primary, #e5e5e5);
+  background: var(--lattice-surface-3, #222);
+  color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .search-bar {
   padding: 12px 20px;
-  border-bottom: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
 }
 
 .search-input {
   width: 100%;
   padding: 8px 12px;
-  background: var(--weyl-surface-0, #0a0a0a);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-0, #0a0a0a);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 4px;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   font-size: 13px;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--weyl-accent, #8b5cf6);
+  border-color: var(--lattice-accent, #8b5cf6);
 }
 
 .search-input::placeholder {
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .modal-content {
@@ -351,7 +351,7 @@ const filteredCategories = computed(() => {
   margin: 0 0 10px 0;
   font-size: 12px;
   font-weight: 600;
-  color: var(--weyl-accent, #8b5cf6);
+  color: var(--lattice-accent, #8b5cf6);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -371,7 +371,7 @@ const filteredCategories = computed(() => {
 }
 
 .shortcut-item:hover {
-  background: var(--weyl-surface-2, #1a1a1a);
+  background: var(--lattice-surface-2, #1a1a1a);
 }
 
 .shortcut-keys {
@@ -387,37 +387,37 @@ kbd {
   min-width: 24px;
   height: 22px;
   padding: 0 6px;
-  background: var(--weyl-surface-3, #222);
-  border: 1px solid var(--weyl-border-default, #333);
+  background: var(--lattice-surface-3, #222);
+  border: 1px solid var(--lattice-border-default, #333);
   border-radius: 4px;
   font-size: 11px;
   font-family: inherit;
-  color: var(--weyl-text-primary, #e5e5e5);
+  color: var(--lattice-text-primary, #e5e5e5);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
 }
 
 .shortcut-description {
   flex: 1;
   font-size: 13px;
-  color: var(--weyl-text-secondary, #9ca3af);
+  color: var(--lattice-text-secondary, #9ca3af);
 }
 
 .no-results {
   text-align: center;
   padding: 40px 20px;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
   font-size: 14px;
 }
 
 .modal-footer {
   padding: 12px 20px;
-  border-top: 1px solid var(--weyl-border-subtle, #2a2a2a);
+  border-top: 1px solid var(--lattice-border-subtle, #2a2a2a);
   text-align: center;
 }
 
 .hint {
   font-size: 12px;
-  color: var(--weyl-text-muted, #6b7280);
+  color: var(--lattice-text-muted, #6b7280);
 }
 
 .hint kbd {
@@ -434,11 +434,11 @@ kbd {
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-  background: var(--weyl-surface-3, #222);
+  background: var(--lattice-surface-3, #222);
   border-radius: 4px;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
-  background: var(--weyl-surface-4, #2a2a2a);
+  background: var(--lattice-surface-4, #2a2a2a);
 }
 </style>

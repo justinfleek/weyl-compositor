@@ -36,15 +36,15 @@ function toggleExpand() {
 
 <style scoped>
 .style-section {
-  border-bottom: 1px solid var(--weyl-border-subtle);
+  border-bottom: 1px solid var(--lattice-border-subtle);
 }
 
 .style-section.enabled .section-header {
-  background: var(--weyl-surface-2);
+  background: var(--lattice-surface-2);
 }
 
 .style-section.expanded .section-header {
-  border-left: 2px solid var(--weyl-accent);
+  border-left: 2px solid var(--lattice-accent);
 }
 
 .section-header {
@@ -58,7 +58,7 @@ function toggleExpand() {
 }
 
 .section-header:hover {
-  background: var(--weyl-surface-2);
+  background: var(--lattice-surface-2);
 }
 
 .enable-toggle {
@@ -69,31 +69,31 @@ function toggleExpand() {
 .enable-toggle input {
   width: 12px;
   height: 12px;
-  accent-color: var(--weyl-accent);
+  accent-color: var(--lattice-accent);
 }
 
 .section-title {
   flex: 1;
-  font-size: var(--weyl-font-size-sm);
-  color: var(--weyl-text-primary);
+  font-size: var(--lattice-font-size-sm);
+  color: var(--lattice-text-primary);
 }
 
 .style-section:not(.enabled) .section-title {
-  color: var(--weyl-text-muted);
+  color: var(--lattice-text-muted);
 }
 
 .expand-icon {
   font-size: 8px;
-  color: var(--weyl-text-muted);
+  color: var(--lattice-text-muted);
   transition: transform 0.15s ease;
 }
 
 .style-section.expanded .expand-icon {
-  color: var(--weyl-accent);
+  color: var(--lattice-accent);
 }
 
 .section-content {
   padding: 8px 12px 12px 24px;
-  background: var(--weyl-surface-1);
+  background: var(--lattice-surface-1);
 }
 </style>

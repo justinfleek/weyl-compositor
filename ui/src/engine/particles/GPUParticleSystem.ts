@@ -1,7 +1,7 @@
 /**
  * GPU Particle System - Main Implementation
  *
- * This is the PRIMARY particle system for Weyl Compositor.
+ * This is the PRIMARY particle system for Lattice Compositor.
  * Use this for all particle rendering and simulation.
  *
  * FEATURES:

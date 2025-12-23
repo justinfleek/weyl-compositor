@@ -7,7 +7,7 @@
 
 import { toRaw } from 'vue';
 import { storeLogger } from '@/utils/logger';
-import type { WeylProject } from '@/types/project';
+import type { LatticeProject } from '@/types/project';
 import { saveProject, loadProject, listProjects, deleteProject } from '@/services/projectStorage';
 import { migrateProject, needsMigration, CURRENT_SCHEMA_VERSION } from '@/services/projectMigration';
 
@@ -16,8 +16,8 @@ import { migrateProject, needsMigration, CURRENT_SCHEMA_VERSION } from '@/servic
 // ============================================================================
 
 export interface ProjectStore {
-  project: WeylProject;
-  historyStack: WeylProject[];
+  project: LatticeProject;
+  historyStack: LatticeProject[];
   historyIndex: number;
   lastSaveProjectId: string | null;
   lastSaveTime: number | null;
@@ -63,7 +63,7 @@ export function undo(store: ProjectStore): boolean {
   store.historyIndex--;
   // Use toRaw to deproxy Pinia's reactive wrapper before cloning
   const historyEntry = toRaw(store.historyStack[store.historyIndex]);
-  store.project = structuredClone(historyEntry) as WeylProject;
+  store.project = structuredClone(historyEntry) as LatticeProject;
   return true;
 }
 
@@ -76,7 +76,7 @@ export function redo(store: ProjectStore): boolean {
   store.historyIndex++;
   // Use toRaw to deproxy Pinia's reactive wrapper before cloning
   const historyEntry = toRaw(store.historyStack[store.historyIndex]);
-  store.project = structuredClone(historyEntry) as WeylProject;
+  store.project = structuredClone(historyEntry) as LatticeProject;
   return true;
 }
 
@@ -125,7 +125,7 @@ export function importProject(
   pushHistoryFn: () => void
 ): boolean {
   try {
-    let project = JSON.parse(json) as WeylProject;
+    let project = JSON.parse(json) as LatticeProject;
 
     // Check if migration is needed and apply it
     if (needsMigration(project)) {
@@ -133,7 +133,7 @@ export function importProject(
       storeLogger.info(`Migrating project from schema v${oldVersion} to v${CURRENT_SCHEMA_VERSION}`);
       const migrationResult = migrateProject(project);
       if (migrationResult.success && migrationResult.project) {
-        project = migrationResult.project as WeylProject;
+        project = migrationResult.project as LatticeProject;
         storeLogger.info('Project migration completed successfully');
       } else {
         storeLogger.error('Project migration failed:', migrationResult.error);
@@ -202,7 +202,7 @@ export async function loadProjectFromServer(
         storeLogger.info(`Migrating project from schema v${oldVersion} to v${CURRENT_SCHEMA_VERSION}`);
         const migrationResult = migrateProject(project);
         if (migrationResult.success && migrationResult.project) {
-          project = migrationResult.project as WeylProject;
+          project = migrationResult.project as LatticeProject;
           storeLogger.info('Project migration completed successfully');
         } else {
           storeLogger.error('Project migration failed:', migrationResult.error);
@@ -350,7 +350,7 @@ export function markUnsavedChanges(store: ProjectStore): void {
 /**
  * Create a default new project structure
  */
-export function createDefaultProject(): WeylProject {
+export function createDefaultProject(): LatticeProject {
   const mainCompId = 'comp_main';
 
   return {
@@ -535,7 +535,7 @@ export async function collectFiles(
   const zip = new JSZip();
 
   // Create project folder
-  const folderName = projectName || store.project.meta.name || 'weyl-project';
+  const folderName = projectName || store.project.meta.name || 'lattice-project';
   const folder = zip.folder(folderName);
   if (!folder) throw new Error('Failed to create ZIP folder');
 
@@ -587,7 +587,7 @@ export async function collectFiles(
   (exportProject as any)._assetManifest = assetManifest;
 
   // Save project JSON
-  folder.file('project.weyl.json', JSON.stringify(exportProject, null, 2));
+  folder.file('project.lattice.json', JSON.stringify(exportProject, null, 2));
 
   // Generate ZIP
   const zipBlob = await zip.generateAsync({
@@ -626,7 +626,7 @@ export async function downloadCollectedFiles(
   store: ProjectStore,
   options: { includeUnused?: boolean } = {}
 ): Promise<void> {
-  const projectName = store.project.meta.name || 'weyl-project';
+  const projectName = store.project.meta.name || 'lattice-project';
   const zipBlob = await collectFiles(store, { ...options, projectName });
 
   // Trigger download
