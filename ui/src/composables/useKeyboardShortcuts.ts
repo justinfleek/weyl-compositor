@@ -982,7 +982,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   function triggerAssetImport() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.svg,.gltf,.glb,.obj,.fbx,.hdr,.exr,.png,.jpg';
+    input.accept = '.svg,.gltf,.glb,.obj,.fbx,.hdr,.exr,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.mov';
     input.multiple = true;
     input.onchange = async (e) => {
       const files = (e.target as HTMLInputElement).files;
@@ -995,10 +995,50 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
           await assetStore.importSvgFromFile(file);
         } else if (['hdr', 'exr'].includes(ext || '')) {
           await assetStore.loadEnvironment(file);
+        } else if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext || '')) {
+          // Import image as layer
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            store.addLayer({
+              name: file.name.replace(/\.[^/.]+$/, ''),
+              type: 'image',
+              data: {
+                src: url,
+                width: img.width,
+                height: img.height,
+                originalFilename: file.name
+              }
+            });
+          };
+          img.src = url;
+        } else if (['mp4', 'webm', 'mov'].includes(ext || '')) {
+          // Import video as layer
+          const url = URL.createObjectURL(file);
+          store.addLayer({
+            name: file.name.replace(/\.[^/.]+$/, ''),
+            type: 'video',
+            data: {
+              src: url,
+              originalFilename: file.name
+            }
+          });
+        } else if (['gltf', 'glb', 'obj', 'fbx'].includes(ext || '')) {
+          // Import 3D model
+          const url = URL.createObjectURL(file);
+          store.addLayer({
+            name: file.name.replace(/\.[^/.]+$/, ''),
+            type: 'model',
+            data: {
+              src: url,
+              format: ext,
+              originalFilename: file.name
+            }
+          });
         }
       }
 
-      leftTab.value = 'assets';
+      leftTab.value = 'project';
     };
     input.click();
   }

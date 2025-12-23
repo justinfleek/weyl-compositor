@@ -41,17 +41,19 @@ function toggle() {
 <style scoped>
 .collapsible-panel {
   border-bottom: 1px solid var(--lattice-border-default, #2a2a2a);
+  margin-bottom: 4px;
 }
 
 .collapsible-panel:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
 .panel-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 10px 14px;
   background: var(--lattice-surface-0, #0a0a0a);
   border-left: 3px solid transparent;
   cursor: pointer;

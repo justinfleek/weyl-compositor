@@ -180,6 +180,9 @@ export async function initializeGPUDetection(): Promise<void> {
         ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
         : 'Unknown';
 
+      // Log raw renderer string for debugging
+      console.log('[Lattice] GPU Renderer string:', renderer);
+
       // Estimate VRAM based on GPU
       const estimatedVRAM = estimateVRAMFromRenderer(renderer);
       const tier = determineTier(estimatedVRAM);
@@ -191,7 +194,7 @@ export async function initializeGPUDetection(): Promise<void> {
         tier,
       };
 
-      logger.info(`GPU detected: ${renderer} (~${estimatedVRAM}MB VRAM, tier: ${tier})`);
+      console.log(`[Lattice] GPU detected: ${renderer} (~${estimatedVRAM}MB VRAM, tier: ${tier})`);
     } else {
       // Fallback for no WebGL
       gpuInfo.value = {
@@ -413,50 +416,73 @@ export function getMemorySummary(): {
 function estimateVRAMFromRenderer(renderer: string): number {
   const r = renderer.toLowerCase();
 
-  // NVIDIA GPUs - 50 series
-  if (r.includes('rtx 5090')) return 32000;
-  if (r.includes('rtx 5080')) return 16000;
-  if (r.includes('rtx 5070')) return 12000;
-  if (r.includes('rtx 5060')) return 8000;
-  // NVIDIA GPUs - 40 series
-  if (r.includes('rtx 4090')) return 24000;
-  if (r.includes('rtx 4080')) return 16000;
-  if (r.includes('rtx 4070')) return 12000;
-  if (r.includes('rtx 4060')) return 8000;
-  if (r.includes('rtx 3090')) return 24000;
-  if (r.includes('rtx 3080')) return 10000;
-  if (r.includes('rtx 3070')) return 8000;
-  if (r.includes('rtx 3060')) return 12000;
-  if (r.includes('rtx 2080')) return 8000;
-  if (r.includes('rtx 2070')) return 8000;
-  if (r.includes('rtx 2060')) return 6000;
-  if (r.includes('gtx 1080')) return 8000;
-  if (r.includes('gtx 1070')) return 8000;
-  if (r.includes('gtx 1060')) return 6000;
+  // NVIDIA GPUs - 50 series (Blackwell, 2025)
+  // Check both with and without "rtx " prefix for flexibility
+  if (r.includes('5090') && (r.includes('rtx') || r.includes('geforce'))) return 32000;
+  if (r.includes('5080') && (r.includes('rtx') || r.includes('geforce'))) return 16000;
+  if (r.includes('5070') && (r.includes('rtx') || r.includes('geforce'))) return 12000;
+  if (r.includes('5060') && (r.includes('rtx') || r.includes('geforce'))) return 8000;
 
-  // AMD GPUs
-  if (r.includes('rx 7900')) return 24000;
-  if (r.includes('rx 7800')) return 16000;
-  if (r.includes('rx 7700')) return 12000;
-  if (r.includes('rx 6900')) return 16000;
-  if (r.includes('rx 6800')) return 16000;
-  if (r.includes('rx 6700')) return 12000;
-  if (r.includes('rx 6600')) return 8000;
+  // NVIDIA GPUs - 40 series (Ada Lovelace)
+  if (r.includes('4090') && (r.includes('rtx') || r.includes('geforce'))) return 24000;
+  if (r.includes('4080') && (r.includes('rtx') || r.includes('geforce'))) return 16000;
+  if (r.includes('4070') && (r.includes('rtx') || r.includes('geforce'))) return 12000;
+  if (r.includes('4060') && (r.includes('rtx') || r.includes('geforce'))) return 8000;
 
-  // Apple Silicon
-  if (r.includes('apple m3 max')) return 48000; // Up to 48GB unified
-  if (r.includes('apple m3 pro')) return 18000;
+  // NVIDIA GPUs - 30 series (Ampere)
+  if (r.includes('3090') && (r.includes('rtx') || r.includes('geforce'))) return 24000;
+  if (r.includes('3080') && (r.includes('rtx') || r.includes('geforce'))) return 10000;
+  if (r.includes('3070') && (r.includes('rtx') || r.includes('geforce'))) return 8000;
+  if (r.includes('3060') && (r.includes('rtx') || r.includes('geforce'))) return 12000;
+
+  // NVIDIA GPUs - 20 series (Turing)
+  if (r.includes('2080') && (r.includes('rtx') || r.includes('geforce'))) return 8000;
+  if (r.includes('2070') && (r.includes('rtx') || r.includes('geforce'))) return 8000;
+  if (r.includes('2060') && (r.includes('rtx') || r.includes('geforce'))) return 6000;
+
+  // NVIDIA GTX series
+  if (r.includes('1080') && (r.includes('gtx') || r.includes('geforce'))) return 8000;
+  if (r.includes('1070') && (r.includes('gtx') || r.includes('geforce'))) return 8000;
+  if (r.includes('1060') && (r.includes('gtx') || r.includes('geforce'))) return 6000;
+
+  // AMD GPUs - RX 7000 series
+  if (r.includes('7900') && r.includes('rx')) return 24000;
+  if (r.includes('7800') && r.includes('rx')) return 16000;
+  if (r.includes('7700') && r.includes('rx')) return 12000;
+
+  // AMD GPUs - RX 6000 series
+  if (r.includes('6900') && r.includes('rx')) return 16000;
+  if (r.includes('6800') && r.includes('rx')) return 16000;
+  if (r.includes('6700') && r.includes('rx')) return 12000;
+  if (r.includes('6600') && r.includes('rx')) return 8000;
+
+  // Apple Silicon (unified memory)
+  if (r.includes('apple m4 max') || r.includes('m4 max')) return 64000;
+  if (r.includes('apple m4 pro') || r.includes('m4 pro')) return 24000;
+  if (r.includes('apple m4') || r.includes('m4')) return 16000;
+  if (r.includes('apple m3 max') || r.includes('m3 max')) return 48000;
+  if (r.includes('apple m3 pro') || r.includes('m3 pro')) return 18000;
   if (r.includes('apple m3')) return 8000;
-  if (r.includes('apple m2 max')) return 32000;
-  if (r.includes('apple m2 pro')) return 16000;
+  if (r.includes('apple m2 max') || r.includes('m2 max')) return 32000;
+  if (r.includes('apple m2 pro') || r.includes('m2 pro')) return 16000;
   if (r.includes('apple m2')) return 8000;
   if (r.includes('apple m1')) return 8000;
 
   // Intel integrated
   if (r.includes('intel') && r.includes('iris')) return 4000;
   if (r.includes('intel') && r.includes('uhd')) return 2000;
+  if (r.includes('intel') && r.includes('arc')) return 8000;
 
-  // Default
+  // Fallback: Try to extract high-end keywords
+  if (r.includes('nvidia') || r.includes('geforce')) {
+    // Assume high-end if NVIDIA but unrecognized model
+    return 12000;
+  }
+  if (r.includes('radeon') || r.includes('amd')) {
+    return 8000;
+  }
+
+  // Default conservative estimate
   return 8000;
 }
 

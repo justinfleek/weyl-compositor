@@ -168,39 +168,113 @@
       >
         Effects
       </button>
-      <div v-if="activeMenu === 'effects'" class="menu-dropdown" @mouseenter="cancelClose" @mouseleave="scheduleClose">
-        <button @click="handleAction('applyBlur')">
-          <span class="label">Blur</span>
-        </button>
-        <button @click="handleAction('applyGlow')">
-          <span class="label">Glow</span>
-        </button>
-        <button @click="handleAction('applyDropShadow')">
-          <span class="label">Drop Shadow</span>
-        </button>
+      <div v-if="activeMenu === 'effects'" class="menu-dropdown effects-dropdown" @mouseenter="cancelClose" @mouseleave="scheduleClose">
+        <!-- Blur & Sharpen -->
+        <div class="menu-section-label">Blur & Sharpen</div>
+        <button @click="handleAction('effect:gaussian-blur')"><span class="label">Gaussian Blur</span></button>
+        <button @click="handleAction('effect:directional-blur')"><span class="label">Directional Blur</span></button>
+        <button @click="handleAction('effect:radial-blur')"><span class="label">Radial Blur</span></button>
+        <button @click="handleAction('effect:box-blur')"><span class="label">Box Blur</span></button>
+        <button @click="handleAction('effect:sharpen')"><span class="label">Sharpen</span></button>
+
         <div class="separator"></div>
-        <button @click="handleAction('applyColorCorrection')">
-          <span class="label">Color Correction</span>
-        </button>
-        <button @click="handleAction('applyHueSaturation')">
-          <span class="label">Hue/Saturation</span>
-        </button>
-        <button @click="handleAction('applyLevels')">
-          <span class="label">Levels</span>
-        </button>
-        <button @click="handleAction('applyCurves')">
-          <span class="label">Curves</span>
-        </button>
+
+        <!-- Color Correction -->
+        <div class="menu-section-label">Color Correction</div>
+        <button @click="handleAction('effect:brightness-contrast')"><span class="label">Brightness/Contrast</span></button>
+        <button @click="handleAction('effect:hue-saturation')"><span class="label">Hue/Saturation</span></button>
+        <button @click="handleAction('effect:levels')"><span class="label">Levels</span></button>
+        <button @click="handleAction('effect:curves')"><span class="label">Curves</span></button>
+        <button @click="handleAction('effect:color-balance')"><span class="label">Color Balance</span></button>
+        <button @click="handleAction('effect:exposure')"><span class="label">Exposure</span></button>
+        <button @click="handleAction('effect:vibrance')"><span class="label">Vibrance</span></button>
+        <button @click="handleAction('effect:tint')"><span class="label">Tint</span></button>
+        <button @click="handleAction('effect:invert')"><span class="label">Invert</span></button>
+        <button @click="handleAction('effect:posterize')"><span class="label">Posterize</span></button>
+        <button @click="handleAction('effect:threshold')"><span class="label">Threshold</span></button>
+        <button @click="handleAction('effect:lut')"><span class="label">LUT (Color Lookup)</span></button>
+
         <div class="separator"></div>
-        <button @click="handleAction('applyDistort')">
-          <span class="label">Distort</span>
-        </button>
-        <button @click="handleAction('applyNoise')">
-          <span class="label">Noise</span>
-        </button>
-        <button @click="handleAction('applySharpen')">
-          <span class="label">Sharpen</span>
-        </button>
+
+        <!-- Color Grading -->
+        <div class="menu-section-label">Color Grading</div>
+        <button @click="handleAction('effect:lift-gamma-gain')"><span class="label">Lift/Gamma/Gain</span></button>
+        <button @click="handleAction('effect:hsl-secondary')"><span class="label">HSL Secondary</span></button>
+        <button @click="handleAction('effect:hue-vs-curves')"><span class="label">Hue vs Curves</span></button>
+        <button @click="handleAction('effect:color-match')"><span class="label">Color Match</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Light & Glow -->
+        <div class="menu-section-label">Light & Glow</div>
+        <button @click="handleAction('effect:glow')"><span class="label">Glow</span></button>
+        <button @click="handleAction('effect:cinematic-bloom')"><span class="label">Cinematic Bloom</span></button>
+        <button @click="handleAction('effect:drop-shadow')"><span class="label">Drop Shadow</span></button>
+        <button @click="handleAction('effect:vignette')"><span class="label">Vignette</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Distort -->
+        <div class="menu-section-label">Distort</div>
+        <button @click="handleAction('effect:transform')"><span class="label">Transform</span></button>
+        <button @click="handleAction('effect:warp')"><span class="label">Warp</span></button>
+        <button @click="handleAction('effect:displacement-map')"><span class="label">Displacement Map</span></button>
+        <button @click="handleAction('effect:turbulent-displace')"><span class="label">Turbulent Displace</span></button>
+        <button @click="handleAction('effect:ripple-distort')"><span class="label">Ripple</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Stylize -->
+        <div class="menu-section-label">Stylize</div>
+        <button @click="handleAction('effect:pixel-sort')"><span class="label">Pixel Sort</span></button>
+        <button @click="handleAction('effect:glitch')"><span class="label">Glitch</span></button>
+        <button @click="handleAction('effect:vhs')"><span class="label">VHS</span></button>
+        <button @click="handleAction('effect:rgb-split')"><span class="label">RGB Split</span></button>
+        <button @click="handleAction('effect:scanlines')"><span class="label">Scanlines</span></button>
+        <button @click="handleAction('effect:halftone')"><span class="label">Halftone</span></button>
+        <button @click="handleAction('effect:dither')"><span class="label">Dither</span></button>
+        <button @click="handleAction('effect:emboss')"><span class="label">Emboss</span></button>
+        <button @click="handleAction('effect:find-edges')"><span class="label">Find Edges</span></button>
+        <button @click="handleAction('effect:mosaic')"><span class="label">Mosaic</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Generate -->
+        <div class="menu-section-label">Generate</div>
+        <button @click="handleAction('effect:fill')"><span class="label">Fill</span></button>
+        <button @click="handleAction('effect:gradient-ramp')"><span class="label">Gradient Ramp</span></button>
+        <button @click="handleAction('effect:fractal-noise')"><span class="label">Fractal Noise</span></button>
+        <button @click="handleAction('effect:add-grain')"><span class="label">Add Grain</span></button>
+        <button @click="handleAction('effect:radio-waves')"><span class="label">Radio Waves</span></button>
+        <button @click="handleAction('effect:ellipse')"><span class="label">Ellipse</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Audio Visualization -->
+        <div class="menu-section-label">Audio Visualization</div>
+        <button @click="handleAction('effect:audio-spectrum')"><span class="label">Audio Spectrum</span></button>
+        <button @click="handleAction('effect:audio-waveform')"><span class="label">Audio Waveform</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Time Effects -->
+        <div class="menu-section-label">Time</div>
+        <button @click="handleAction('effect:echo')"><span class="label">Echo</span></button>
+        <button @click="handleAction('effect:posterize-time')"><span class="label">Posterize Time</span></button>
+        <button @click="handleAction('effect:time-displacement')"><span class="label">Time Displacement</span></button>
+
+        <div class="separator"></div>
+
+        <!-- Expression Controls -->
+        <div class="menu-section-label">Expression Controls</div>
+        <button @click="handleAction('effect:slider-control')"><span class="label">Slider Control</span></button>
+        <button @click="handleAction('effect:checkbox-control')"><span class="label">Checkbox Control</span></button>
+        <button @click="handleAction('effect:color-control')"><span class="label">Color Control</span></button>
+        <button @click="handleAction('effect:point-control')"><span class="label">Point Control</span></button>
+        <button @click="handleAction('effect:angle-control')"><span class="label">Angle Control</span></button>
+        <button @click="handleAction('effect:dropdown-menu-control')"><span class="label">Dropdown Menu Control</span></button>
+        <button @click="handleAction('effect:layer-control')"><span class="label">Layer Control</span></button>
+
         <div class="separator"></div>
         <button @click="handleAction('removeAllEffects')" :disabled="!hasSelection">
           <span class="label">Remove All Effects</span>
@@ -616,5 +690,48 @@ if (typeof window !== 'undefined') {
   color: var(--lattice-accent);
   font-weight: bold;
   margin-right: 2px;
+}
+
+/* Effects Dropdown - Scrollable with sections */
+.effects-dropdown {
+  max-height: 70vh;
+  overflow-y: auto;
+  min-width: 240px;
+}
+
+.effects-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.effects-dropdown::-webkit-scrollbar-track {
+  background: var(--lattice-surface-2);
+  border-radius: 3px;
+}
+
+.effects-dropdown::-webkit-scrollbar-thumb {
+  background: var(--lattice-surface-4);
+  border-radius: 3px;
+}
+
+.effects-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--lattice-accent-muted);
+}
+
+.menu-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--lattice-text-muted);
+  padding: 10px 12px 4px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  border-top: 1px solid var(--lattice-surface-3);
+  margin-top: 4px;
+}
+
+.menu-section-label:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 6px;
 }
 </style>

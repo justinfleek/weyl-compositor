@@ -242,15 +242,11 @@
     <div class="divider"></div>
 
     <!-- GPU & Memory (right side) -->
-    <div class="tool-group">
+    <div class="tool-group right-status-group">
       <span class="gpu-badge" :class="gpuTier">{{ gpuTier.toUpperCase() }}</span>
       <MemoryIndicator />
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- Theme Selector (circular, far right) -->
-    <div class="tool-group theme-selector-group">
+      <div class="divider"></div>
+      <!-- Theme Selector (circular) -->
       <button
         class="theme-btn-circle"
         :class="{ active: showThemeSelector }"
@@ -567,33 +563,45 @@ function redo() {
   font-weight: 500;
 }
 
-/* Theme Selector */
-.theme-selector-group {
-  position: relative;
+/* Right Status Group */
+.right-status-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px;
+  margin-left: auto;
 }
 
+/* Theme Selector */
 .theme-btn-circle {
-  width: 28px;
-  height: 28px;
-  padding: 3px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 2px;
   border: none;
   background: var(--lattice-surface-2, #1a1a1a);
   border-radius: 50%;
   cursor: pointer;
   transition: var(--lattice-transition-fast, 100ms ease);
+  flex-shrink: 0;
 }
 
 .theme-btn-circle:hover,
 .theme-btn-circle.active {
   background: var(--lattice-surface-3, #222222);
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 .theme-indicator-circle {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
   border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
 }
 
 .theme-dropdown {
