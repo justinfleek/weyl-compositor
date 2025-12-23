@@ -278,12 +278,41 @@ For AI video generation, every frame must be **reproducible**. Weyl guarantees:
 | Document | Description |
 |----------|-------------|
 | [CLAUDE.md](CLAUDE.md) | Complete technical guide (1750+ lines) |
-| [HANDOFF.md](HANDOFF.md) | Knowledge transfer document |
+| [FEATURE_AUDIT.md](FEATURE_AUDIT.md) | All features mapped to UI access |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | Current status and roadmap |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture (101KB) |
 | [docs/SERVICE_API_REFERENCE.md](docs/SERVICE_API_REFERENCE.md) | Service API documentation |
 | [docs/EFFECT_PARAMETERS.md](docs/EFFECT_PARAMETERS.md) | Effect documentation |
 | [docs/GLOSSARY.md](docs/GLOSSARY.md) | 150+ term definitions |
+
+See `docs/` folder for 37 additional technical documents.
+
+---
+
+## Known Limitations
+
+**Fully functional but with these gaps:**
+
+### Unmounted UI Panels
+Two panels exist but are not accessible in the UI:
+- `DriverList.vue` — Property driver management (linking properties together)
+- `LayerDecompositionPanel.vue` — AI layer separation
+
+### Partial Features
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Spline Point Animation | ⚠️ Service exists | Keyframing individual spline points needs UI work |
+| Audio Path Animation | ⚠️ Service exists | Creating path animators needs menu access |
+| Asset Cleanup | ⚠️ Service exists | "Remove unused assets" needs menu item |
+
+### Requires External Setup
+| Feature | Requirement |
+|---------|-------------|
+| AI Agent | `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` env var |
+| Depth Estimation | Python backend with DepthAnything model |
+| Pose Estimation | Python backend with Sapiens model |
+
+See [FEATURE_AUDIT.md](FEATURE_AUDIT.md) for complete feature-to-UI mapping.
 
 ---
 
