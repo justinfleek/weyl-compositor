@@ -254,21 +254,19 @@ export class SceneManager {
   addUIElement(object: THREE.Object3D): void {
     if (!object) return;
 
-    // First try the normal add method
-    const childCountBefore = this.scene.children.length;
-    this.scene.add(object);
-
-    // If add() failed due to instanceof check (multiple Three.js instances),
-    // manually add the object to the scene
-    if (this.scene.children.length === childCountBefore) {
-      // Manually add to scene's children array
-      if ((object as any).parent !== null) {
-        (object as any).parent?.remove?.(object);
-      }
-      (object as any).parent = this.scene;
-      this.scene.children.push(object as any);
-      object.dispatchEvent?.({ type: 'added' });
+    // Check if the object is from our Three.js instance
+    if (object instanceof THREE.Object3D) {
+      this.scene.add(object);
+      return;
     }
+
+    // Object is from a different Three.js instance (common in ComfyUI
+    // when model-viewer or other extensions load their own Three.js)
+    // DO NOT add to scene - it will crash the render loop
+    console.warn(
+      '[SceneManager] Cannot add UI element - different Three.js instance detected. ' +
+      'Transform gizmos will not be visible. This is caused by other extensions loading Three.js.'
+    );
   }
 
   /**
