@@ -254,7 +254,7 @@ export class SceneManager {
   addUIElement(object: THREE.Object3D): void {
     if (!object) return;
 
-    // Check if the object is from our Three.js instance
+    // Check if the object passes instanceof (same Three.js instance)
     if (object instanceof THREE.Object3D) {
       this.scene.add(object);
       return;
@@ -262,11 +262,51 @@ export class SceneManager {
 
     // Object is from a different Three.js instance (common in ComfyUI
     // when model-viewer or other extensions load their own Three.js)
-    // DO NOT add to scene - it will crash the render loop
-    console.warn(
-      '[SceneManager] Cannot add UI element - different Three.js instance detected. ' +
-      'Transform gizmos will not be visible. This is caused by other extensions loading Three.js.'
-    );
+    // Try to make it work anyway by ensuring it has the required methods
+    console.warn('[SceneManager] UI element from different Three.js instance - attempting compatibility fix');
+
+    // Ensure the object has required methods by binding them from our THREE.Object3D
+    // This is a compatibility shim for multi-Three.js environments
+    const proto = THREE.Object3D.prototype;
+    const obj = object as any;
+
+    // Patch missing methods if they don't exist or are from wrong prototype
+    if (typeof obj.updateMatrixWorld !== 'function') {
+      obj.updateMatrixWorld = proto.updateMatrixWorld.bind(obj);
+    }
+    if (typeof obj.updateWorldMatrix !== 'function') {
+      obj.updateWorldMatrix = proto.updateWorldMatrix.bind(obj);
+    }
+
+    // Recursively patch children
+    if (obj.children && Array.isArray(obj.children)) {
+      const patchChild = (child: any) => {
+        if (typeof child.updateMatrixWorld !== 'function') {
+          child.updateMatrixWorld = proto.updateMatrixWorld.bind(child);
+        }
+        if (typeof child.updateWorldMatrix !== 'function') {
+          child.updateWorldMatrix = proto.updateWorldMatrix.bind(child);
+        }
+        if (child.children) {
+          child.children.forEach(patchChild);
+        }
+      };
+      obj.children.forEach(patchChild);
+    }
+
+    // Force add to scene by temporarily spoofing the prototype
+    try {
+      // Manually add since scene.add() will reject it
+      if (obj.parent !== null && obj.parent !== undefined) {
+        obj.parent.remove?.(obj);
+      }
+      obj.parent = this.scene;
+      this.scene.children.push(obj);
+      obj.dispatchEvent?.({ type: 'added' });
+      console.log('[SceneManager] Successfully added UI element with compatibility shim');
+    } catch (error) {
+      console.error('[SceneManager] Failed to add UI element:', error);
+    }
   }
 
   /**
@@ -287,6 +327,60 @@ export class SceneManager {
         (object as any).parent = null;
         object.dispatchEvent?.({ type: 'removed' });
       }
+    }
+  }
+
+  /**
+   * Prepare scene for render by ensuring all objects have required methods.
+   * This handles cases where TransformControls or other UI elements from
+   * different Three.js instances create new children dynamically.
+   */
+  prepareForRender(): void {
+    const proto = THREE.Object3D.prototype;
+
+    const ensureMethods = (obj: any) => {
+      if (!obj) return;
+
+      // Skip if already a proper THREE.Object3D from our instance
+      if (obj instanceof THREE.Object3D) return;
+
+      // Patch required methods
+      if (typeof obj.updateMatrixWorld !== 'function') {
+        obj.updateMatrixWorld = function(force?: boolean) {
+          if (this.matrixAutoUpdate) this.updateMatrix?.();
+          if (this.matrixWorldNeedsUpdate || force) {
+            if (this.matrixWorldAutoUpdate) {
+              if (this.parent === null) {
+                this.matrixWorld?.copy?.(this.matrix);
+              } else {
+                this.matrixWorld?.multiplyMatrices?.(this.parent.matrixWorld, this.matrix);
+              }
+            }
+            this.matrixWorldNeedsUpdate = false;
+            force = true;
+          }
+          if (this.children) {
+            for (let i = 0; i < this.children.length; i++) {
+              const child = this.children[i];
+              if (child.matrixWorldAutoUpdate === true || force === true) {
+                child.updateMatrixWorld?.(force);
+              }
+            }
+          }
+        };
+      }
+
+      // Recursively check children
+      if (obj.children && Array.isArray(obj.children)) {
+        for (const child of obj.children) {
+          ensureMethods(child);
+        }
+      }
+    };
+
+    // Check all scene children
+    for (const child of this.scene.children) {
+      ensureMethods(child);
     }
   }
 

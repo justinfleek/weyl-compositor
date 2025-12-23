@@ -714,6 +714,9 @@ export class RenderPipeline {
     // Ensure layers are sorted by Z
     this.scene.sortByZ();
 
+    // Ensure all scene objects have required methods (multi-Three.js compatibility)
+    this.scene.prepareForRender();
+
     // Render through effect composer
     this.composer.render();
   }
