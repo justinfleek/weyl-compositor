@@ -393,13 +393,13 @@ export class AudioLayer extends BaseLayer {
 
     // Interpolate and apply level
     if (this.audioData.level) {
-      const level = interpolateProperty(this.audioData.level, frame);
+      const level: number = interpolateProperty(this.audioData.level, frame);
       this.updateGain(level);
     }
 
     // Interpolate and apply pan
     if (this.audioData.pan) {
-      const pan = interpolateProperty(this.audioData.pan, frame);
+      const pan: number = interpolateProperty(this.audioData.pan, frame);
       this.updatePan(pan);
     }
   }

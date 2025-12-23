@@ -570,12 +570,12 @@ export function evaluateCustomExpression(
 
     // Helper: loopOut (alias for repeatAfter)
     const loopOut = (type: string = 'cycle', numKf: number = 0): number | number[] => {
-      return repeatAfter(ctx, type as LoopType, numKf);
+      return repeatAfter(ctx, type as _LoopType, numKf);
     };
 
     // Helper: loopIn (alias for repeatBefore)
     const loopIn = (type: string = 'cycle', numKf: number = 0): number | number[] => {
-      return repeatBefore(ctx, type as LoopType, numKf);
+      return repeatBefore(ctx, type as _LoopType, numKf);
     };
 
     // Helper: length (vector distance)

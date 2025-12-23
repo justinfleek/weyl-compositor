@@ -16,7 +16,14 @@
  */
 
 import { createBezierCurve } from '../arcLength';
-import type { SplineControlPoint } from '@/types/project';
+import type { ControlPoint } from '@/types/spline';
+
+// Extended type with optional z coordinate for 3D curves
+type SplineControlPoint = ControlPoint & {
+  z?: number;
+  handleIn?: { x: number; y: number; z?: number } | null;
+  handleOut?: { x: number; y: number; z?: number } | null;
+};
 import * as THREE from 'three';
 
 // ============================================================================

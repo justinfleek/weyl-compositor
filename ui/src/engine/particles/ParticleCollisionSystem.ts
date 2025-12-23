@@ -15,7 +15,7 @@ import { SpatialHashGrid } from './SpatialHashGrid';
 // TYPES
 // ============================================================================
 
-export type BoundsBehavior = 'none' | 'kill' | 'bounce' | 'wrap' | 'stick';
+export type BoundsBehavior = 'none' | 'kill' | 'bounce' | 'wrap' | 'clamp' | 'stick';
 
 export interface CollisionConfig {
   enabled: boolean;
@@ -124,6 +124,9 @@ export class ParticleCollisionSystem {
         } else if (behavior === 'kill') {
           buffer[offset + 6] = buffer[offset + 7]; // Set age = lifetime (kill)
           continue;
+        } else if (behavior === 'clamp') {
+          px = min.x;
+          vx = 0; // Stop X velocity but keep other motion
         } else if (behavior === 'stick') {
           px = min.x;
           vx = 0; vy = 0; vz = 0; // Stop all motion when stuck
@@ -138,6 +141,9 @@ export class ParticleCollisionSystem {
         } else if (behavior === 'kill') {
           buffer[offset + 6] = buffer[offset + 7];
           continue;
+        } else if (behavior === 'clamp') {
+          px = max.x;
+          vx = 0; // Stop X velocity but keep other motion
         } else if (behavior === 'stick') {
           px = max.x;
           vx = 0; vy = 0; vz = 0;
@@ -155,6 +161,9 @@ export class ParticleCollisionSystem {
         } else if (behavior === 'kill') {
           buffer[offset + 6] = buffer[offset + 7];
           continue;
+        } else if (behavior === 'clamp') {
+          py = min.y;
+          vy = 0; // Stop Y velocity but keep other motion
         } else if (behavior === 'stick') {
           py = min.y;
           vx = 0; vy = 0; vz = 0;
@@ -169,6 +178,9 @@ export class ParticleCollisionSystem {
         } else if (behavior === 'kill') {
           buffer[offset + 6] = buffer[offset + 7];
           continue;
+        } else if (behavior === 'clamp') {
+          py = max.y;
+          vy = 0; // Stop Y velocity but keep other motion
         } else if (behavior === 'stick') {
           py = max.y;
           vx = 0; vy = 0; vz = 0;
@@ -186,6 +198,9 @@ export class ParticleCollisionSystem {
         } else if (behavior === 'kill') {
           buffer[offset + 6] = buffer[offset + 7];
           continue;
+        } else if (behavior === 'clamp') {
+          pz = min.z;
+          vz = 0; // Stop Z velocity but keep other motion
         } else if (behavior === 'stick') {
           pz = min.z;
           vx = 0; vy = 0; vz = 0;
@@ -200,6 +215,9 @@ export class ParticleCollisionSystem {
         } else if (behavior === 'kill') {
           buffer[offset + 6] = buffer[offset + 7];
           continue;
+        } else if (behavior === 'clamp') {
+          pz = max.z;
+          vz = 0; // Stop Z velocity but keep other motion
         } else if (behavior === 'stick') {
           pz = max.z;
           vx = 0; vy = 0; vz = 0;

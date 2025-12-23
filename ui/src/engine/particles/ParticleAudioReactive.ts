@@ -116,12 +116,12 @@ export class ParticleAudioReactive {
       if (binding.target === 'emitter') {
         const emitter = emitters.get(binding.targetId);
         if (emitter) {
-          (emitter as Record<string, unknown>)[binding.parameter] = output;
+          (emitter as unknown as Record<string, unknown>)[binding.parameter] = output;
         }
       } else if (binding.target === 'forceField') {
         const field = forceFields.get(binding.targetId);
         if (field) {
-          (field as Record<string, unknown>)[binding.parameter] = output;
+          (field as unknown as Record<string, unknown>)[binding.parameter] = output;
         }
       }
     }

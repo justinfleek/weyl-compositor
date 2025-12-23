@@ -1141,8 +1141,7 @@ export {
   isWebCodecsSupported,
   type VideoInfo,
   type VideoFrameInfo,
-  type VideoDecoderConfig,
-  type VideoDecoderStats,
+  type DecoderOptions,
 } from './videoDecoder';
 
 // ============================================================================
@@ -1458,7 +1457,7 @@ export {
   safeJSONParse,
   safeJSONStringify,
   // Schema validation
-  validateProject,
+  validateProject as validateProjectSchema,
   validateComposition,
   validateLayer,
   validateMOGRT,
@@ -1690,3 +1689,75 @@ export {
   type PhysicsLayerData,
   type PhysicsCompositionData,
 } from './physics';
+
+// ============================================================================
+// COLOR & DEPTH REACTIVITY
+// (Inspired by RyanOnTheInside's ComfyUI nodes for color/depth-driven animations)
+// ============================================================================
+
+export {
+  // Color utilities
+  rgbToHsv,
+  calculateBrightness,
+  createColorSample,
+
+  // Pixel sampling
+  samplePixel,
+  sampleAreaAverage,
+  sampleAreaMax,
+  sampleAreaMin,
+  getFeatureValue,
+  sampleColorFromImageData,
+
+  // Color reactivity
+  getMappedColorValue,
+
+  // Depth reactivity
+  sampleDepth,
+  sampleDepthWithGradient,
+  getMappedDepthValue,
+
+  // Motion detection (frame differencing)
+  calculateMotion,
+  getMappedMotionValue as getMappedColorMotionValue,
+
+  // Region analysis
+  analyzeRegion,
+
+  // Types
+  type ColorSample,
+  type DepthSample,
+  type SampleMode,
+  type ColorFeature,
+  type ColorReactivityConfig,
+  type DepthReactivityConfig,
+  type MotionDetectionConfig,
+} from './colorDepthReactivity';
+
+// ============================================================================
+// MOTION-BASED REACTIVITY
+// (Layer velocity, acceleration, proximity-based property modulation)
+// ============================================================================
+
+export {
+  // Motion state computation
+  computeMotionState,
+  getMotionFeatureValue,
+
+  // Proximity
+  calculateProximity,
+  getProximityValue,
+
+  // Mapping
+  applyMotionCurve,
+  getMappedMotionValue as getMappedLayerMotionValue,
+
+  // Cache management
+  clearMotionCache,
+  getMotionCacheStats,
+
+  // Types
+  type MotionState,
+  type MotionReactivityConfig,
+  type MotionFeature,
+} from './motionReactivity';

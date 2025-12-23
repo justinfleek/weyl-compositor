@@ -1,6 +1,6 @@
 # Weyl Compositor Design System
 
-**Version:** 1.0 | **Date:** December 20, 2025
+**Version:** 1.0 | **Date:** December 23, 2025
 
 This document defines the complete design system for the Weyl Compositor UI. All components MUST use these CSS variables - never hardcode colors or spacing values.
 
@@ -323,4 +323,4 @@ All hardcoded `#1a1a2e` colors were replaced with `#050505` in:
 ---
 
 **Document Version:** 1.0
-**Last Updated:** December 20, 2025
+**Last Updated:** December 23, 2025

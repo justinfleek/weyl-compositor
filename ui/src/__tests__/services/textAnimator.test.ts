@@ -221,8 +221,8 @@ describe('Range Selector - calculateCharacterInfluence', () => {
         ...DEFAULT_RANGE_SELECTOR.start,
         animated: true,
         keyframes: [
-          { id: 'k1', frame: 0, value: 100, interpolation: 'linear' as const, controlMode: 'smooth' as const },
-          { id: 'k2', frame: 60, value: 0, interpolation: 'linear' as const, controlMode: 'smooth' as const },
+          { id: 'k1', frame: 0, value: 100, interpolation: 'linear' as const, controlMode: 'smooth' as const, inHandle: { frame: -5, value: 0, enabled: true }, outHandle: { frame: 5, value: 0, enabled: true } },
+          { id: 'k2', frame: 60, value: 0, interpolation: 'linear' as const, controlMode: 'smooth' as const, inHandle: { frame: -5, value: 0, enabled: true }, outHandle: { frame: 5, value: 0, enabled: true } },
         ],
       };
 

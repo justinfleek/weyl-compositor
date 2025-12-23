@@ -261,13 +261,17 @@ export class PoseLayer extends BaseLayer {
   private mesh: THREE.Mesh;
   private lastRenderedFrame: number = -1;
 
+  // Composition dimensions (set by LayerManager when composition changes)
+  private compWidth: number = 512;
+  private compHeight: number = 512;
+
   constructor(layerData: Layer) {
     super(layerData);
 
     // Create canvas for 2D pose rendering
     this.canvas = document.createElement('canvas');
-    this.canvas.width = 512;
-    this.canvas.height = 512;
+    this.canvas.width = this.compWidth;
+    this.canvas.height = this.compHeight;
     this.ctx = this.canvas.getContext('2d')!;
 
     // Create Three.js texture and mesh
@@ -283,7 +287,7 @@ export class PoseLayer extends BaseLayer {
     });
 
     this.mesh = new THREE.Mesh(geometry, material);
-    this.object3D.add(this.mesh);
+    this.object.add(this.mesh);
   }
 
   /**
@@ -436,14 +440,21 @@ export class PoseLayer extends BaseLayer {
   }
 
   /**
+   * Set composition dimensions for proper rendering
+   * Called by LayerManager when layer is added or composition changes
+   */
+  setCompositionSize(width: number, height: number): void {
+    this.compWidth = width;
+    this.compHeight = height;
+  }
+
+  /**
    * Evaluate layer at frame
    */
-  evaluate(frame: number): void {
-    super.evaluate(frame);
-
-    // Get composition dimensions (default to 512x512)
-    const width = 512;  // TODO: Get from composition
-    const height = 512;
+  protected onEvaluateFrame(frame: number): void {
+    // Use composition dimensions
+    const width = this.compWidth;
+    const height = this.compHeight;
 
     // Re-render poses
     this.renderPoses(width, height);
@@ -451,6 +462,17 @@ export class PoseLayer extends BaseLayer {
 
     // Update mesh scale to match canvas
     this.mesh.scale.set(width, height, 1);
+  }
+
+  /**
+   * Handle property updates
+   */
+  protected onUpdate(properties: Partial<Layer>): void {
+    // Update pose data if it changed
+    if (properties.data) {
+      // Re-render on next evaluate
+      this.lastRenderedFrame = -1;
+    }
   }
 
   /**
@@ -519,7 +541,7 @@ export class PoseLayer extends BaseLayer {
 
     if (newPoses.length > 0) {
       data.poses = newPoses;
-      (this.layerData.data as PoseLayerData) = data;
+      this.layerData.data = data as any;
     }
   }
 
@@ -556,7 +578,7 @@ export class PoseLayer extends BaseLayer {
       }
     }
 
-    (this.layerData.data as PoseLayerData) = data;
+    this.layerData.data = data as any;
   }
 
   /**

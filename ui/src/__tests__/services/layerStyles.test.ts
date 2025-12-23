@@ -220,7 +220,7 @@ describe('Layer Style Renderers', () => {
       const input = createTestCanvas();
       const styles: LayerStyles = { enabled: false };
 
-      const result = renderLayerStyles(input, styles, 0);
+      const result = renderLayerStyles(input, styles);
       expect(result).toBe(input);
     });
 
@@ -228,7 +228,7 @@ describe('Layer Style Renderers', () => {
       const input = createTestCanvas();
       const styles: LayerStyles = { enabled: true };
 
-      const result = renderLayerStyles(input, styles, 0);
+      const result = renderLayerStyles(input, styles);
       expect(result).toBe(input);
     });
 
@@ -239,7 +239,7 @@ describe('Layer Style Renderers', () => {
         dropShadow: createDefaultDropShadow()
       };
 
-      const result = renderLayerStyles(input, styles, 0);
+      const result = renderLayerStyles(input, styles);
       // Result should be a new canvas with shadow applied
       expect(result).not.toBe(input);
       expect(result.width).toBe(input.width);
@@ -254,7 +254,7 @@ describe('Layer Style Renderers', () => {
       shadow.distance.value = 10;
       shadow.angle.value = 0; // Right
 
-      const result = renderDropShadowStyle(input, shadow, 0);
+      const result = renderDropShadowStyle(input, shadow);
       expect(result).not.toBe(input);
     });
   });
@@ -266,7 +266,7 @@ describe('Layer Style Renderers', () => {
       stroke.size.value = 5;
       stroke.position = 'outside';
 
-      const result = renderStrokeStyle(input, stroke, 0);
+      const result = renderStrokeStyle(input, stroke);
       expect(result).not.toBe(input);
     });
   });
@@ -277,7 +277,7 @@ describe('Layer Style Renderers', () => {
       const overlay = createDefaultColorOverlay();
       overlay.color.value = { r: 255, g: 0, b: 0, a: 1 };
 
-      const result = renderColorOverlayStyle(input, overlay, 0);
+      const result = renderColorOverlayStyle(input, overlay);
       expect(result).not.toBe(input);
     });
   });
@@ -375,7 +375,7 @@ describe('Layer Style Store Actions', () => {
 
   describe('copyLayerStyles / pasteLayerStyles', () => {
     it('copies and pastes styles between layers', () => {
-      const layer2 = { id: 'layer-2', name: 'Layer 2', layerStyles: undefined };
+      const layer2: { id: string; name: string; layerStyles?: LayerStyles } = { id: 'layer-2', name: 'Layer 2', layerStyles: undefined };
       mockStore.getActiveCompLayers = vi.fn(() => [testLayer, layer2]);
 
       // Setup source layer
@@ -392,7 +392,7 @@ describe('Layer Style Store Actions', () => {
       // Paste
       pasteLayerStyles(mockStore, 'layer-2');
       expect(layer2.layerStyles).toBeDefined();
-      expect(layer2.layerStyles.dropShadow.opacity.value).toBe(80);
+      expect(layer2.layerStyles!.dropShadow!.opacity.value).toBe(80);
     });
 
     it('deep clones to avoid reference issues', () => {
@@ -404,13 +404,13 @@ describe('Layer Style Store Actions', () => {
       // Modify source after copy
       testLayer.layerStyles.dropShadow.opacity.value = 10;
 
-      const layer2 = { id: 'layer-2', name: 'Layer 2', layerStyles: undefined };
+      const layer2: { id: string; name: string; layerStyles?: LayerStyles } = { id: 'layer-2', name: 'Layer 2', layerStyles: undefined };
       mockStore.getActiveCompLayers = vi.fn(() => [testLayer, layer2]);
 
       pasteLayerStyles(mockStore, 'layer-2');
 
       // Pasted value should be original, not modified
-      expect(layer2.layerStyles.dropShadow.opacity.value).toBe(75);
+      expect(layer2.layerStyles!.dropShadow!.opacity.value).toBe(75);
     });
   });
 
@@ -541,25 +541,39 @@ describe('Layer Styles Integration', () => {
       };
 
       // Should not throw
-      const result = renderLayerStyles(canvas, styles, 0);
+      const result = renderLayerStyles(canvas, styles);
       expect(result).toBeDefined();
       expect(result.width).toBe(canvas.width);
     });
   });
 
   describe('Animation Support', () => {
-    it('interpolates property values at different frames', () => {
+    it('supports animated property values', () => {
       const shadow = createDefaultDropShadow();
       shadow.opacity.animated = true;
       shadow.opacity.keyframes = [
-        { frame: 0, value: 0, interpolation: 'linear' },
-        { frame: 100, value: 100, interpolation: 'linear' }
+        {
+          id: 'kf1',
+          frame: 0,
+          value: 0,
+          interpolation: 'linear',
+          inHandle: { frame: -5, value: 0, enabled: true },
+          outHandle: { frame: 5, value: 0, enabled: true },
+          controlMode: 'smooth'
+        },
+        {
+          id: 'kf2',
+          frame: 100,
+          value: 100,
+          interpolation: 'linear',
+          inHandle: { frame: -5, value: 0, enabled: true },
+          outHandle: { frame: 5, value: 0, enabled: true },
+          controlMode: 'smooth'
+        }
       ];
 
-      // At frame 0: opacity should be 0
-      // At frame 50: opacity should be 50
-      // At frame 100: opacity should be 100
-      // The renderer uses interpolateProperty internally
+      // The renderer uses getValue() internally which reads the default value
+      // or interpolated value from AnimatableProperty
 
       const canvas = document.createElement('canvas');
       canvas.width = 50;
@@ -573,14 +587,10 @@ describe('Layer Styles Integration', () => {
         dropShadow: shadow
       };
 
-      // Render at different frames - should not throw
-      const result0 = renderLayerStyles(canvas, styles, 0);
-      const result50 = renderLayerStyles(canvas, styles, 50);
-      const result100 = renderLayerStyles(canvas, styles, 100);
+      // Should render without error - animation values are evaluated separately
+      const result = renderLayerStyles(canvas, styles);
 
-      expect(result0).toBeDefined();
-      expect(result50).toBeDefined();
-      expect(result100).toBeDefined();
+      expect(result).toBeDefined();
     });
   });
 
@@ -607,7 +617,7 @@ describe('Layer Styles Integration', () => {
       };
 
       // Should handle all styles without error
-      const result = renderLayerStyles(canvas, styles, 0);
+      const result = renderLayerStyles(canvas, styles);
       expect(result).toBeDefined();
     });
   });

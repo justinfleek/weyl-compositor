@@ -85,11 +85,11 @@ function createTestEffect(effectKey: string, params: Record<string, any> = {}): 
     name: effectKey,
     enabled: true,
     expanded: true,
-    category: 'blur',
+    category: 'blur-sharpen',
     parameters: Object.fromEntries(
       Object.entries(params).map(([key, value]) => [
         key,
-        { defaultValue: value, animated: false, keyframes: [] }
+        { id: `param-${key}`, name: key, type: 'number' as const, value, animated: false, keyframes: [] }
       ])
     ),
   };

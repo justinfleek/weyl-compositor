@@ -27,6 +27,8 @@
  * ============================================================================
  */
 
+import { useCompositorStore } from '@/stores/compositorStore';
+
 export interface PreprocessorInfo {
   id: string;
   display_name: string;
@@ -740,12 +742,10 @@ export async function generateFromLayer(
  */
 async function createAssetFromBase64(base64Data: string, filename: string): Promise<string | null> {
   try {
-    // Import compositorStore
-    const { useCompositorStore } = await import('@/stores/compositorStore');
     const store = useCompositorStore();
 
     // Create a unique asset ID
-    const assetId = `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const assetId = `generated_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     // Get image dimensions from the base64 data
     const dimensions = await getImageDimensions(`data:image/png;base64,${base64Data}`);

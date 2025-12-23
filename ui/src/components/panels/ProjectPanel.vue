@@ -19,6 +19,8 @@
             <hr class="menu-divider" />
             <button @click="openDecomposeDialog"><PhSparkle class="menu-icon" /> AI Layer Decompose</button>
             <button @click="openVectorizeDialog"><span class="menu-icon">✒️</span> Vectorize Image</button>
+            <hr class="menu-divider" />
+            <button @click="cleanupUnusedAssets"><span class="menu-icon">🗑️</span> Remove Unused Assets</button>
           </div>
         </div>
         <button @click="showSearch = !showSearch" title="Search">🔍</button>
@@ -161,6 +163,7 @@
 import { ref, computed, type Ref } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { useSelectionStore } from '@/stores/selectionStore';
+import { useAudioStore } from '@/stores/audioStore';
 import DecomposeDialog from '@/components/dialogs/DecomposeDialog.vue';
 import VectorizeDialog from '@/components/dialogs/VectorizeDialog.vue';
 import {
@@ -434,11 +437,9 @@ function openItem(item: ProjectItem) {
         .then(response => response.blob())
         .then(blob => {
           const file = new File([blob], item.name, { type: blob.type || 'audio/mpeg' });
-          import('@/stores/audioStore').then(({ useAudioStore }) => {
-            const audioStore = useAudioStore();
-            const fps = store.activeComposition?.settings.frameRate || 16;
-            audioStore.loadAudio(file, fps);
-          });
+          const audioStore = useAudioStore();
+          const fps = store.activeComposition?.settings.frameRate || 16;
+          audioStore.loadAudio(file, fps);
         })
         .catch(err => console.error('[ProjectPanel] Failed to load audio:', err));
     }
@@ -454,7 +455,7 @@ function createNewFolder() {
   showNewMenu.value = false;
   const folderNumber = customFolders.value.length + 1;
   const newFolder: Folder = {
-    id: `folder_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `folder_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name: `Folder ${folderNumber}`,
     items: []
   };
@@ -516,6 +517,17 @@ function onDecomposed(layers: DecomposedLayer[]) {
 
 function onVectorized(layerIds: string[]) {
   console.log('[ProjectPanel] Created', layerIds.length, 'vectorized layers');
+}
+
+function cleanupUnusedAssets() {
+  showNewMenu.value = false;
+  const result = store.removeUnusedAssets();
+  if (result.removed > 0) {
+    console.log(`[ProjectPanel] Removed ${result.removed} unused assets:`, result.assetNames);
+    // Could show a toast notification here
+  } else {
+    console.log('[ProjectPanel] No unused assets to remove');
+  }
 }
 
 // ============================================================
@@ -684,7 +696,7 @@ async function handleFileImport(event: Event) {
 
     const type = getFileType(file);
     const newItem: ProjectItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       name: file.name,
       type,
     };
@@ -711,7 +723,7 @@ async function handleFileImport(event: Event) {
       // Handle image import - add to project assets only (no layer creation)
       // User double-clicks in project panel to add to timeline
       const imageUrl = URL.createObjectURL(file);
-      const assetId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const assetId = `image_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       // Load image to get dimensions
       const img = new Image();

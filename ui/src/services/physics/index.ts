@@ -213,7 +213,7 @@ export function createGravityForce(
     enabled: true,
     startFrame: 0,
     endFrame: -1,
-    gravity: { defaultValue: gravity, animated: false, keyframes: [] },
+    gravity: { id: `${id}-gravity`, name: 'Gravity', type: 'position' as const, value: { x: gravity.x, y: gravity.y, z: 0 }, animated: false, keyframes: [] },
   } as ForceField;
 }
 

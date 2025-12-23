@@ -264,9 +264,9 @@ function calculateVectorscopeTargets() {
     m: colorToUV(1, 0, 1),      // Magenta
     // Skin tone line (I-line) - approximately from center toward skin tones
     skinLine: [
-      [128, 128] as [number, number],  // Center
-      [175, 95] as [number, number]    // Toward typical skin tones
-    ]
+      [128, 128],  // Center
+      [175, 95]    // Toward typical skin tones
+    ] as [[number, number], [number, number]]
   };
 }
 

@@ -53,7 +53,7 @@ vi.mock('three-stdlib', () => ({
 
 function createAnimatableProp<T>(value: T, name: string = 'prop'): any {
   return {
-    id: `prop_${Math.random().toString(36).substr(2, 9)}`,
+    id: `prop_${Math.random().toString(36).slice(2, 11)}`,
     name,
     type: 'number',
     value,

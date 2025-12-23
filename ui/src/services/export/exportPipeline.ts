@@ -19,7 +19,8 @@ import { exportCameraForTarget } from './cameraExportFormats';
 import { getComfyUIClient } from '@/services/comfyui/comfyuiClient';
 import { generateWorkflowForTarget, validateWorkflow, type WorkflowParams } from '@/services/comfyui/workflowTemplates';
 import { EXPORT_PRESETS, DEPTH_FORMAT_SPECS } from '@/config/exportPresets';
-import { evaluateLayerCached, type EvaluatedLayer } from '@/services/layerEvaluationCache';
+import { evaluateLayerCached } from '@/services/layerEvaluationCache';
+import type { EvaluatedLayer } from '@/engine/MotionEngine';
 
 // ============================================================================
 // Types

@@ -6,8 +6,35 @@
  */
 
 import { storeLogger } from '@/utils/logger';
-import type { Layer, AnimatableProperty, SplineData, ControlPoint, AnimatableControlPoint, EvaluatedControlPoint } from '@/types/project';
-import { createDefaultTransform, createAnimatableProperty, controlPointToAnimatable, animatableToControlPoint } from '@/types/project';
+import type {
+  Layer,
+  AnimatableProperty,
+  SplineData,
+  ControlPoint,
+  AnimatableControlPoint,
+  EvaluatedControlPoint,
+  ClipboardKeyframe,
+  AnyLayerData,
+  PropertyValue,
+  LayerType,
+  ImageLayerData,
+  VideoData,
+  NestedCompData,
+  Keyframe
+} from '@/types/project';
+import { createDefaultTransform, createAnimatableProperty, controlPointToAnimatable, animatableToControlPoint, isLayerOfType } from '@/types/project';
+
+/**
+ * Layer source replacement data for asset/composition swapping
+ */
+export interface LayerSourceReplacement {
+  type: 'asset' | 'composition' | string;
+  name: string;
+  path?: string;
+  id?: string;
+  assetId?: string;
+  data?: string;  // Base64 data URL for asset data
+}
 import { useSelectionStore } from '../selectionStore';
 import { markLayerDirty, clearLayerCache } from '@/services/layerEvaluationCache';
 import { interpolateProperty } from '@/services/interpolation';
@@ -56,7 +83,7 @@ export interface LayerStore {
   };
   clipboard: {
     layers: Layer[];
-    keyframes: any[];
+    keyframes: ClipboardKeyframe[];
   };
   getActiveComp(): { settings: { width: number; height: number; frameCount: number }; layers: Layer[] } | null;
   getActiveCompLayers(): Layer[];
@@ -75,10 +102,11 @@ export function createLayer(
   type: Layer['type'],
   name?: string
 ): Layer {
-  const id = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
   // Initialize type-specific data
-  let layerData: any = null;
+  // Using type assertions since runtime data may include additional/fewer properties than strict types
+  let layerData: AnyLayerData | null = null;
 
   switch (type) {
     case 'text':
@@ -93,6 +121,11 @@ export function createLayer(
         strokeWidth: 0,
         tracking: 0,
         letterSpacing: 0,
+        lineSpacing: 1.2,
+        lineAnchor: 50,
+        characterOffset: 0,
+        characterValue: 0,
+        blur: { x: 0, y: 0 },
         lineHeight: 1.2,
         textAlign: 'left',
         pathLayerId: null,
@@ -103,7 +136,7 @@ export function createLayer(
         pathLastMargin: 0,
         pathOffset: 0,
         pathAlign: 'left'
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'solid':
@@ -132,7 +165,7 @@ export function createLayer(
         lineJoin: 'round',   // miter, round, bevel
         dashArray: '',       // e.g., "10, 5" for dashed lines
         dashOffset: 0
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'path':
@@ -235,7 +268,7 @@ export function createLayer(
           spriteFrameRate: 10,
           spriteRandomStart: false
         }
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'depthflow':
@@ -258,7 +291,7 @@ export function createLayer(
           edgeDilation: 0,
           inpaintEdges: false
         }
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'light':
@@ -272,7 +305,7 @@ export function createLayer(
         castShadows: false,
         shadowDarkness: 100,
         shadowDiffusion: 0
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'camera':
@@ -280,14 +313,14 @@ export function createLayer(
       layerData = {
         cameraId: null,
         isActiveCamera: false
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'image':
       layerData = {
         assetId: null,
         fit: 'contain'
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'video':
@@ -296,7 +329,7 @@ export function createLayer(
         loop: false,
         startTime: 0,
         speed: 1.0
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'shape':
@@ -323,7 +356,7 @@ export function createLayer(
         // Backwards compatibility
         timeRemap: null,
         timeRemapEnabled: false
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'matte':
@@ -335,7 +368,7 @@ export function createLayer(
         expansion: 0,
         sourceLayerId: null,
         previewMode: 'matte' as const
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'model':
@@ -426,7 +459,7 @@ export function createLayer(
         meshDisplacement: createAnimatableProperty('Displacement', 50, 'number'),
         meshResolution: 128,
         wireframe: false
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'normal':
@@ -444,7 +477,7 @@ export function createLayer(
         lightDirection: { x: 0.5, y: 0.5, z: 1.0 },
         lightIntensity: 1.0,
         ambientIntensity: 0.2
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'audio':
@@ -461,7 +494,7 @@ export function createLayer(
         showWaveform: true,
         waveformColor: '#4a90d9',
         exposeFeatures: true
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'generated':
@@ -474,7 +507,7 @@ export function createLayer(
         generatedAssetId: null,
         status: 'pending' as const,
         autoRegenerate: false
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'group':
@@ -484,7 +517,7 @@ export function createLayer(
         color: null,
         passThrough: true,
         isolate: false
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'particle':
@@ -498,7 +531,7 @@ export function createLayer(
         gravity: -9.8,
         color: '#ffffff',
         size: 5
-      };
+      } as unknown as AnyLayerData;
       break;
 
     case 'adjustment':
@@ -507,7 +540,7 @@ export function createLayer(
         color: '#808080',
         effectLayer: true,
         adjustmentLayer: true  // Backwards compatibility
-      };
+      } as unknown as AnyLayerData;
       break;
   }
 
@@ -520,14 +553,15 @@ export function createLayer(
   }
 
   // Initialize layer-specific properties
-  let layerProperties: AnimatableProperty<any>[] = [];
+  let layerProperties: AnimatableProperty<PropertyValue>[] = [];
 
   // Spline layer properties for timeline
   // Note: Splines don't have Fill (only shapes/text do) - they only have stroke
   if (type === 'spline') {
+    const splineData = layerData as unknown as { strokeWidth?: number; strokeOpacity?: number };
     layerProperties = [
-      createAnimatableProperty('Stroke Width', layerData?.strokeWidth ?? 2, 'number', 'Stroke'),
-      createAnimatableProperty('Stroke Opacity', layerData?.strokeOpacity ?? 100, 'number', 'Stroke'),
+      createAnimatableProperty('Stroke Width', splineData?.strokeWidth ?? 2, 'number', 'Stroke'),
+      createAnimatableProperty('Stroke Opacity', splineData?.strokeOpacity ?? 100, 'number', 'Stroke'),
       // Line Cap, Line Join, Dashes are stored in layer.data and shown in More Options
       createAnimatableProperty('Trim Start', 0, 'number', 'Trim Paths'),
       createAnimatableProperty('Trim End', 100, 'number', 'Trim Paths'),
@@ -569,7 +603,7 @@ export function createLayer(
     audio: audioProps,
     properties: layerProperties,
     effects: [],
-    data: layerData
+    data: layerData as Layer['data']
   };
 
   // Camera layers should use createCameraLayer() instead
@@ -721,12 +755,12 @@ export function updateLayer(store: LayerStore, layerId: string, updates: Partial
 /**
  * Update layer-specific data (e.g., text content, image path, etc.)
  */
-export function updateLayerData(store: LayerStore, layerId: string, dataUpdates: Record<string, any>): void {
+export function updateLayerData(store: LayerStore, layerId: string, dataUpdates: Partial<AnyLayerData>): void {
   const layer = store.getActiveCompLayers().find(l => l.id === layerId);
   if (!layer || !layer.data) return;
 
   // Use spread operator instead of Object.assign for proper Vue reactivity
-  layer.data = { ...layer.data, ...dataUpdates };
+  layer.data = { ...layer.data, ...dataUpdates } as Layer['data'];
   markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
 }
@@ -738,7 +772,7 @@ export function updateLayerData(store: LayerStore, layerId: string, dataUpdates:
 export function replaceLayerSource(
   store: LayerStore,
   layerId: string,
-  newSource: { type: string; name: string; path?: string; id?: string; assetId?: string; data?: any }
+  newSource: LayerSourceReplacement
 ): void {
   const layer = store.getActiveCompLayers().find(l => l.id === layerId);
   if (!layer) return;
@@ -747,27 +781,36 @@ export function replaceLayerSource(
   const assetId = newSource.assetId || newSource.id || null;
 
   // Determine source update based on layer type and new source type
-  if (layer.type === 'image' && newSource.type === 'asset' && assetId) {
+  if (isLayerOfType(layer, 'image') && newSource.type === 'asset' && assetId) {
     // Replace image source - preserve existing data, update assetId
-    (layer.data as any).assetId = assetId;
+    layer.data.assetId = assetId;
     layer.name = newSource.name || layer.name;
-  } else if (layer.type === 'video' && newSource.type === 'asset' && assetId) {
+  } else if (isLayerOfType(layer, 'video') && newSource.type === 'asset' && assetId) {
     // Replace video source - preserve existing data, update assetId
-    (layer.data as any).assetId = assetId;
+    layer.data.assetId = assetId;
     layer.name = newSource.name || layer.name;
   } else if (layer.type === 'solid' && newSource.type === 'asset' && assetId) {
     // Convert solid to image layer (source replacement changes type)
-    layer.type = 'image' as any;
-    layer.data = { assetId, fit: 'none' as const } as any;
+    // Type assertion needed: we're intentionally mutating the layer type
+    (layer as Layer).type = 'image';
+    const imageData: ImageLayerData = { assetId, fit: 'none' };
+    layer.data = imageData;
     layer.name = newSource.name || layer.name;
-  } else if (layer.type === 'nestedComp' && newSource.type === 'composition' && newSource.id) {
+  } else if (isLayerOfType(layer, 'nestedComp') && newSource.type === 'composition' && newSource.id) {
     // Replace nested comp source - preserve existing data, update compositionId
-    (layer.data as any).compositionId = newSource.id;
+    layer.data.compositionId = newSource.id;
     layer.name = newSource.name || layer.name;
   } else if (newSource.type === 'composition' && newSource.id) {
     // Convert any layer to nested comp
-    layer.type = 'nestedComp' as any;
-    layer.data = { compositionId: newSource.id, speedMapEnabled: false, flattenTransform: false, overrideFrameRate: false } as any;
+    // Type assertion needed: we're intentionally mutating the layer type
+    (layer as Layer).type = 'nestedComp';
+    const nestedCompData: NestedCompData = {
+      compositionId: newSource.id,
+      speedMapEnabled: false,
+      flattenTransform: false,
+      overrideFrameRate: false
+    };
+    layer.data = nestedCompData;
     layer.name = newSource.name || layer.name;
   } else if (newSource.type === 'asset' && assetId) {
     // Generic asset replacement - determine new type from asset or file extension
@@ -777,22 +820,26 @@ export function replaceLayerSource(
     const videoExts = ['mp4', 'webm', 'mov', 'avi'];
 
     if (imageExts.includes(ext)) {
-      layer.type = 'image' as any;
-      layer.data = { assetId, fit: 'none' as const } as any;
+      // Type assertion needed: we're intentionally mutating the layer type
+      (layer as Layer).type = 'image';
+      const imageData: ImageLayerData = { assetId, fit: 'none' };
+      layer.data = imageData;
     } else if (videoExts.includes(ext)) {
-      layer.type = 'video' as any;
-      layer.data = {
+      // Type assertion needed: we're intentionally mutating the layer type
+      (layer as Layer).type = 'video';
+      const videoData: VideoData = {
         assetId,
         loop: true,
         pingPong: false,
         startTime: 0,
         speed: 1,
         speedMapEnabled: false,
-        frameBlending: 'none' as const,
+        frameBlending: 'none',
         audioEnabled: true,
         audioLevel: 100,
         posterFrame: 0
-      } as any;
+      };
+      layer.data = videoData;
     }
     layer.name = newSource.name || layer.name;
   }
@@ -800,7 +847,7 @@ export function replaceLayerSource(
   markLayerDirty(layerId);
   store.project.meta.modified = new Date().toISOString();
   store.pushHistory();
-  console.log(`[Weyl] Replaced layer source: ${layer.name}`);
+  storeLogger.info(`Replaced layer source: ${layer.name}`);
 }
 
 /**
@@ -835,21 +882,24 @@ export function toggleLayer3D(store: LayerStore, layerId: string): void {
 
     // Force reactivity by replacing the entire value objects
     // Position - always create new object with z
-    const pos = t.position.value;
-    t.position.value = { x: pos.x, y: pos.y, z: (pos as any).z ?? 0 };
+    const pos = t.position.value as { x: number; y: number; z?: number };
+    const posZ = 'z' in pos && typeof pos.z === 'number' ? pos.z : 0;
+    t.position.value = { x: pos.x, y: pos.y, z: posZ };
     t.position.type = 'vector3';
 
     // Origin (formerly Anchor Point)
     const originProp = t.origin || t.anchorPoint;
     if (originProp) {
-      const orig = originProp.value;
-      originProp.value = { x: orig.x, y: orig.y, z: (orig as any).z ?? 0 };
+      const orig = originProp.value as { x: number; y: number; z?: number };
+      const origZ = 'z' in orig && typeof orig.z === 'number' ? orig.z : 0;
+      originProp.value = { x: orig.x, y: orig.y, z: origZ };
       originProp.type = 'vector3';
     }
 
     // Scale
-    const scl = t.scale.value;
-    t.scale.value = { x: scl.x, y: scl.y, z: (scl as any).z ?? 100 };
+    const scl = t.scale.value as { x: number; y: number; z?: number };
+    const sclZ = 'z' in scl && typeof scl.z === 'number' ? scl.z : 100;
+    t.scale.value = { x: scl.x, y: scl.y, z: sclZ };
     t.scale.type = 'vector3';
 
     // Initialize 3D rotations
@@ -978,11 +1028,15 @@ export function clearSelection(_store: LayerStore): void {
  * Regenerate all keyframe IDs in a layer to avoid conflicts
  */
 function regenerateKeyframeIds(layer: Layer): void {
+  // Type for dynamic transform property access
+  type TransformProp = AnimatableProperty<PropertyValue> | undefined;
+
   if (layer.transform) {
+    const transformRecord = layer.transform as unknown as Record<string, TransformProp>;
     for (const key of Object.keys(layer.transform)) {
-      const prop = (layer.transform as any)[key];
+      const prop = transformRecord[key];
       if (prop?.keyframes) {
-        prop.keyframes = prop.keyframes.map((kf: any) => ({
+        prop.keyframes = prop.keyframes.map((kf: Keyframe<PropertyValue>) => ({
           ...kf,
           id: crypto.randomUUID()
         }));
@@ -992,7 +1046,7 @@ function regenerateKeyframeIds(layer: Layer): void {
   if (layer.properties) {
     for (const prop of layer.properties) {
       if (prop.keyframes) {
-        prop.keyframes = prop.keyframes.map((kf: any) => ({
+        prop.keyframes = prop.keyframes.map((kf: Keyframe<PropertyValue>) => ({
           ...kf,
           id: crypto.randomUUID()
         }));
@@ -1469,9 +1523,8 @@ export function copyPathToPosition(
   store.pushHistory();
 
   targetLayer.transform.position.animated = true;
-  // Cast to any to allow assignment - structure is correct but TS doesn't fully match
-  // due to optional spatial tangent fields
-  targetLayer.transform.position.keyframes = keyframes as any;
+  // Type assertion needed: our keyframes match Keyframe<{x,y,z}> structure
+  targetLayer.transform.position.keyframes = keyframes as Keyframe<{ x: number; y: number; z: number }>[];
 
   // Mark layer dirty for re-evaluation
   markLayerDirty(targetLayerId);
@@ -1712,10 +1765,16 @@ export function timeStretchLayer(
   layer.startFrame = options.newStartFrame;
   layer.endFrame = options.newEndFrame;
 
-  // Update speed in layer data
-  if (layer.data) {
-    const data = layer.data as any;
-    data.speed = options.speed;
+  // Update speed in layer data - only VideoData has a direct speed property
+  if (isLayerOfType(layer, 'video') && layer.data) {
+    layer.data.speed = options.speed;
+  } else if (layer.type === 'nestedComp' && layer.data) {
+    // NestedCompData uses speedMap/timewarp, not a simple speed property
+    // Set speed via timewarp if enabled, otherwise this is a no-op
+    const nestedData = layer.data as NestedCompData;
+    if (nestedData.timewarpEnabled && nestedData.timewarpSpeed) {
+      nestedData.timewarpSpeed.value = options.speed * 100; // Convert to percentage
+    }
   }
 
   markLayerDirty(layerId);
@@ -1745,10 +1804,15 @@ export function reverseLayer(store: LayerStore, layerId: string): void {
 
   store.pushHistory();
 
-  if (layer.data) {
-    const data = layer.data as any;
-    // Negate speed to reverse
-    data.speed = -(data.speed ?? 1);
+  // Negate speed to reverse - only VideoData has a direct speed property
+  if (isLayerOfType(layer, 'video') && layer.data) {
+    layer.data.speed = -(layer.data.speed ?? 1);
+  } else if (layer.type === 'nestedComp' && layer.data) {
+    // NestedCompData uses speedMap/timewarp, not a simple speed property
+    const nestedData = layer.data as NestedCompData;
+    if (nestedData.timewarpEnabled && nestedData.timewarpSpeed) {
+      nestedData.timewarpSpeed.value = -nestedData.timewarpSpeed.value;
+    }
   }
 
   markLayerDirty(layerId);
@@ -1782,8 +1846,12 @@ export function freezeFrameAtPlayhead(
   const fps = store.fps ?? 30;
   const sourceTime = currentFrame / fps;
 
+  // Both VideoData and NestedCompData have speedMapEnabled and speedMap properties
+  // Use type assertion for common properties
+  type SpeedMappableData = { speedMapEnabled: boolean; speedMap?: AnimatableProperty<number> };
+
   if (layer.data) {
-    const data = layer.data as any;
+    const data = layer.data as SpeedMappableData;
 
     // Enable speed map if not already
     data.speedMapEnabled = true;
@@ -1800,7 +1868,7 @@ export function freezeFrameAtPlayhead(
         frame: currentFrame,
         value: sourceTime,
         interpolation: 'hold' as const,
-        controlMode: 'linked' as const,
+        controlMode: 'smooth' as const,
         inHandle: { frame: -5, value: 0, enabled: true },
         outHandle: { frame: 5, value: 0, enabled: true }
       },
@@ -1809,7 +1877,7 @@ export function freezeFrameAtPlayhead(
         frame: (layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81) - 1,
         value: sourceTime,
         interpolation: 'hold' as const,
-        controlMode: 'linked' as const,
+        controlMode: 'smooth' as const,
         inHandle: { frame: -5, value: 0, enabled: true },
         outHandle: { frame: 5, value: 0, enabled: true }
       }
@@ -1851,7 +1919,7 @@ export function splitLayerAtPlayhead(
   store.pushHistory();
 
   // Create new layer as copy of original
-  const newLayerId = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const newLayerId = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   const newLayer: Layer = {
     ...JSON.parse(JSON.stringify(layer)),
     id: newLayerId,
@@ -1865,18 +1933,18 @@ export function splitLayerAtPlayhead(
   newLayer.startFrame = currentFrame;
   newLayer.endFrame = endFrame;
 
-  // Adjust source time for video layers
-  if ((layer.type === 'video' || layer.type === 'nestedComp') && newLayer.data) {
-    const data = newLayer.data as any;
+  // Adjust source time for video layers (VideoData has startTime and speed properties)
+  if (isLayerOfType(newLayer, 'video') && newLayer.data) {
     const fps = 30; // Default FPS
-    const originalStartTime = data.startTime ?? 0;
-    const speed = data.speed ?? 1;
+    const originalStartTime = newLayer.data.startTime ?? 0;
+    const speed = newLayer.data.speed ?? 1;
 
     // Calculate new source start time based on split point
     const frameOffset = currentFrame - startFrame;
     const timeOffset = (frameOffset / fps) * speed;
-    data.startTime = originalStartTime + timeOffset;
+    newLayer.data.startTime = originalStartTime + timeOffset;
   }
+  // NestedCompData doesn't have startTime - uses speedMap for time manipulation instead
 
   // Add new layer after original
   const layers = store.getActiveCompLayers();

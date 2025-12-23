@@ -200,7 +200,7 @@ export class ParticleSystem {
 
   // SEEDED RNG - For deterministic simulation
   // Same seed + same config + same frame = identical particle state
-  private rng: SeededRandom;
+  private rng: InstanceType<typeof SeededRandom>;
 
   // Spline path provider for emitters with shape='spline'
   // Set by the engine integration (e.g., WeylEngine) to resolve spline paths
@@ -225,7 +225,7 @@ export class ParticleSystem {
   /**
    * Get the RNG instance (for external access/checkpointing)
    */
-  getRng(): SeededRandom {
+  getRng(): InstanceType<typeof SeededRandom> {
     return this.rng;
   }
 

@@ -73,7 +73,7 @@ const activeTrack = computed(() =>
  * Generate a unique track ID
  */
 function generateTrackId(): string {
-  return `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `track_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**

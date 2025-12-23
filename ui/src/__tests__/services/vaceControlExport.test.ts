@@ -11,14 +11,14 @@ import {
   calculateSpeed,
   splineLayerToPathFollower
 } from '../../services/export/vaceControlExport';
-import type { SplineControlPoint } from '@/types/project';
+import type { ControlPoint } from '@/types/spline';
 
 // Helper to create test control points
-function createTestPath(): SplineControlPoint[] {
+function createTestPath(): ControlPoint[] {
   return [
-    { x: 100, y: 100, handleIn: null, handleOut: { x: 50, y: 0, z: 0 } },
-    { x: 200, y: 100, handleIn: { x: -50, y: 0, z: 0 }, handleOut: { x: 50, y: 0, z: 0 } },
-    { x: 300, y: 200, handleIn: { x: -50, y: 0, z: 0 }, handleOut: null }
+    { id: 'cp1', x: 100, y: 100, handleIn: null, handleOut: { x: 50, y: 0 }, type: 'smooth' },
+    { id: 'cp2', x: 200, y: 100, handleIn: { x: -50, y: 0 }, handleOut: { x: 50, y: 0 }, type: 'smooth' },
+    { id: 'cp3', x: 300, y: 200, handleIn: { x: -50, y: 0 }, handleOut: null, type: 'corner' }
   ];
 }
 

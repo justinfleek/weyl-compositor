@@ -44,7 +44,10 @@ import type {
   ImageLayerData,
   VideoData,
   NestedCompData,
-  InterpolationType
+  InterpolationType,
+  PropertyValue,
+  ClipboardKeyframe,
+  AnyLayerData
 } from '@/types/project';
 import type { VideoMetadata } from '@/engine/layers/VideoLayer';
 import { extractVideoMetadata, calculateCompositionFromVideo } from '@/engine/layers/VideoLayer';
@@ -56,6 +59,7 @@ import { getFeatureAtFrame, detectPeaks, isBeatAtFrame } from '@/services/audioF
 import { loadAndAnalyzeAudio, cancelAnalysis } from '@/services/audioWorkerClient';
 import { createEmptyProject, createDefaultTransform, createAnimatableProperty } from '@/types/project';
 import { interpolateProperty } from '@/services/interpolation';
+import { markLayerDirty } from '@/services/layerEvaluationCache';
 import type { AudioMapping, TargetParameter } from '@/services/audioReactiveMapping';
 import { AudioReactiveMapper } from '@/services/audioReactiveMapping';
 import { AudioPathAnimator, type PathAnimatorConfig } from '@/services/audioPathAnimator';
@@ -81,6 +85,7 @@ import { type CacheStats } from '@/services/frameCache';
 
 // Extracted action modules
 import * as layerActions from './actions/layerActions';
+import type { LayerSourceReplacement } from './actions/layerActions';
 import * as keyframeActions from './actions/keyframeActions';
 import * as projectActions from './actions/projectActions';
 import * as audioActions from './actions/audioActions';
@@ -189,7 +194,7 @@ interface CompositorState {
   // Clipboard for copy/paste
   clipboard: {
     layers: Layer[];
-    keyframes: { layerId: string; propertyPath: string; keyframes: Keyframe<any>[] }[];
+    keyframes: ClipboardKeyframe[];
   };
 
   // Autosave state
@@ -203,6 +208,10 @@ interface CompositorState {
   // Frame cache state
   frameCacheEnabled: boolean;
   projectStateHash: string;
+
+  // Timeline UI state
+  timelineZoom: number;
+  selectedAssetId: string | null;
 }
 
 export const useCompositorStore = defineStore('compositor', {
@@ -281,7 +290,11 @@ export const useCompositorStore = defineStore('compositor', {
 
     // Frame cache (enabled by default)
     frameCacheEnabled: true,
-    projectStateHash: ''
+    projectStateHash: '',
+
+    // Timeline UI state
+    timelineZoom: 1,
+    selectedAssetId: null
     };
   },
 
@@ -580,6 +593,20 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Alias for createLayer - used by keyboard shortcuts
+     */
+    addLayer(type: Layer['type'], name?: string): Layer {
+      return layerActions.createLayer(this, type, name);
+    },
+
+    /**
+     * Get a layer by ID
+     */
+    getLayerById(layerId: string): Layer | null {
+      return layerActions.getLayerById(this, layerId);
+    },
+
+    /**
      * Delete a layer
      */
     deleteLayer(layerId: string): void {
@@ -661,7 +688,7 @@ export const useCompositorStore = defineStore('compositor', {
     /**
      * Update layer-specific data (e.g., text content, image path, etc.)
      */
-    updateLayerData(layerId: string, dataUpdates: Record<string, any>): void {
+    updateLayerData(layerId: string, dataUpdates: Partial<AnyLayerData>): void {
       layerActions.updateLayerData(this, layerId, dataUpdates);
     },
 
@@ -813,7 +840,7 @@ export const useCompositorStore = defineStore('compositor', {
      * Replace layer source with a new asset (Alt+drag replacement)
      * Keeps all keyframes, effects, and transforms
      */
-    replaceLayerSource(layerId: string, newSource: { type: string; name: string; path?: string; id?: string; data?: any }): void {
+    replaceLayerSource(layerId: string, newSource: LayerSourceReplacement): void {
       layerActions.replaceLayerSource(this, layerId, newSource);
     },
 
@@ -1251,7 +1278,7 @@ export const useCompositorStore = defineStore('compositor', {
     /**
      * Set a property's value (for direct editing in timeline)
      */
-    setPropertyValue(layerId: string, propertyPath: string, value: any): void {
+    setPropertyValue(layerId: string, propertyPath: string, value: PropertyValue): void {
       keyframeActions.setPropertyValue(this, layerId, propertyPath, value);
     },
 
@@ -1300,7 +1327,7 @@ export const useCompositorStore = defineStore('compositor', {
       layerId: string,
       propertyPath: string,
       keyframeId: string,
-      updates: { frame?: number; value?: any }
+      updates: { frame?: number; value?: PropertyValue }
     ): void {
       keyframeActions.updateKeyframe(this, layerId, propertyPath, keyframeId, updates);
     },
@@ -1316,6 +1343,31 @@ export const useCompositorStore = defineStore('compositor', {
       handle: BezierHandle
     ): void {
       keyframeActions.setKeyframeHandle(this, layerId, propertyPath, keyframeId, handleType, handle);
+    },
+
+    /**
+     * Update both keyframe handles at once (convenience method for easing presets)
+     */
+    updateKeyframeHandles(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string,
+      handles: { inHandle?: { x: number; y: number }; outHandle?: { x: number; y: number } }
+    ): void {
+      if (handles.inHandle) {
+        keyframeActions.setKeyframeHandle(this, layerId, propertyPath, keyframeId, 'in', {
+          frame: handles.inHandle.x * 10, // Convert normalized x to frame offset
+          value: handles.inHandle.y * 100, // Convert normalized y to value offset
+          enabled: true
+        });
+      }
+      if (handles.outHandle) {
+        keyframeActions.setKeyframeHandle(this, layerId, propertyPath, keyframeId, 'out', {
+          frame: handles.outHandle.x * 10,
+          value: handles.outHandle.y * 100,
+          enabled: true
+        });
+      }
     },
 
     /**
@@ -1578,7 +1630,7 @@ export const useCompositorStore = defineStore('compositor', {
     removeEffectFromLayer(layerId: string, effectId: string): void {
       effectActions.removeEffectFromLayer(this, layerId, effectId);
     },
-    updateEffectParameter(layerId: string, effectId: string, paramKey: string, value: any): void {
+    updateEffectParameter(layerId: string, effectId: string, paramKey: string, value: PropertyValue): void {
       effectActions.updateEffectParameter(this, layerId, effectId, paramKey, value);
     },
     setEffectParamAnimated(layerId: string, effectId: string, paramKey: string, animated: boolean): void {
@@ -1590,7 +1642,7 @@ export const useCompositorStore = defineStore('compositor', {
     reorderEffects(layerId: string, fromIndex: number, toIndex: number): void {
       effectActions.reorderEffects(this, layerId, fromIndex, toIndex);
     },
-    getEffectParameterValue(layerId: string, effectId: string, paramKey: string, frame?: number): any {
+    getEffectParameterValue(layerId: string, effectId: string, paramKey: string, frame?: number): PropertyValue | undefined {
       return effectActions.getEffectParameterValue(this, layerId, effectId, paramKey, frame);
     },
 
@@ -1740,14 +1792,14 @@ export const useCompositorStore = defineStore('compositor', {
     setSnapConfig(config: Partial<SnapConfig>): void { this.snapConfig = { ...this.snapConfig, ...config }; },
     toggleSnapping(): void { this.snapConfig.enabled = !this.snapConfig.enabled; },
     toggleSnapType(type: 'grid' | 'keyframes' | 'beats' | 'peaks' | 'layerBounds' | 'playhead'): void {
-      const typeMap: Record<string, keyof SnapConfig> = {
+      // Type-safe snap toggle mapping
+      type BooleanSnapKey = 'snapToGrid' | 'snapToKeyframes' | 'snapToBeats' | 'snapToPeaks' | 'snapToLayerBounds' | 'snapToPlayhead';
+      const typeMap: Record<typeof type, BooleanSnapKey> = {
         'grid': 'snapToGrid', 'keyframes': 'snapToKeyframes', 'beats': 'snapToBeats',
         'peaks': 'snapToPeaks', 'layerBounds': 'snapToLayerBounds', 'playhead': 'snapToPlayhead',
       };
       const key = typeMap[type];
-      if (key && typeof this.snapConfig[key] === 'boolean') {
-        (this.snapConfig as any)[key] = !(this.snapConfig as any)[key];
-      }
+      this.snapConfig[key] = !this.snapConfig[key];
     },
 
     // Path animator (delegated to audioActions module)
@@ -1958,6 +2010,88 @@ export const useCompositorStore = defineStore('compositor', {
     },
     computeProjectHash(): string {
       return cacheActions.computeProjectHash(this);
+    },
+
+    // ============================================================
+    // UI STATE ACTIONS (timeline, asset selection)
+    // ============================================================
+
+    /**
+     * Set timeline zoom level
+     */
+    setTimelineZoom(zoom: number): void {
+      this.timelineZoom = Math.max(0.1, Math.min(10, zoom));
+    },
+
+    /**
+     * Select an asset by ID
+     */
+    selectAsset(assetId: string | null): void {
+      this.selectedAssetId = assetId;
+    },
+
+    /**
+     * Select multiple layers (delegates to selectionStore)
+     */
+    selectLayers(layerIds: string[]): void {
+      const selection = useSelectionStore();
+      selection.selectLayers(layerIds);
+    },
+
+    /**
+     * Time reverse keyframes - reverses keyframe timing order
+     * @param layerId The layer ID
+     * @param propertyPath Optional specific property, otherwise reverses all transform properties
+     * @returns Number of keyframes reversed
+     */
+    timeReverseKeyframes(layerId: string, propertyPath?: string): number {
+      return keyframeActions.timeReverseKeyframes(this, layerId, propertyPath);
+    },
+
+    /**
+     * Update layer transform properties (convenience method)
+     * Supports both single property updates and batch updates with an object
+     * @param layerId The layer ID
+     * @param updates Object with transform properties to update (position, scale, rotation, opacity, origin/anchor)
+     */
+    updateLayerTransform(
+      layerId: string,
+      updates: {
+        position?: { x: number; y: number; z?: number };
+        scale?: { x: number; y: number; z?: number };
+        rotation?: number;
+        opacity?: number;
+        origin?: { x: number; y: number; z?: number };
+        anchor?: { x: number; y: number; z?: number }; // Alias for origin
+      }
+    ): void {
+      const layer = this.getLayerById(layerId);
+      if (!layer?.transform) return;
+
+      if (updates.position !== undefined && layer.transform.position) {
+        layer.transform.position.value = updates.position;
+      }
+      if (updates.scale !== undefined && layer.transform.scale) {
+        layer.transform.scale.value = updates.scale;
+      }
+      if (updates.rotation !== undefined && layer.transform.rotation) {
+        layer.transform.rotation.value = updates.rotation;
+      }
+      if (updates.opacity !== undefined) {
+        // Opacity might be at layer level or transform level
+        const opacityProp = (layer.transform as unknown as Record<string, unknown>).opacity;
+        if (opacityProp && typeof opacityProp === 'object' && 'value' in opacityProp) {
+          (opacityProp as { value: number }).value = updates.opacity;
+        }
+      }
+      // Handle origin/anchor (anchor is alias for origin)
+      const originUpdate = updates.origin ?? updates.anchor;
+      if (originUpdate !== undefined && layer.transform.origin) {
+        layer.transform.origin.value = originUpdate;
+      }
+
+      markLayerDirty(layerId);
+      this.project.meta.modified = new Date().toISOString();
     }
   }
 });

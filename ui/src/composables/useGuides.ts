@@ -25,7 +25,7 @@ export function useGuides() {
   });
 
   function addGuide(orientation: 'horizontal' | 'vertical', position: number) {
-    const id = `guide-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `guide-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     guides.value.push({ id, orientation, position });
     console.log(`[Weyl] Added ${orientation} guide at ${position}px`);
   }

@@ -783,7 +783,7 @@ function ensureProperty(propName: string, defaultValue: number, group: string) {
   const existing = props.layer.properties.find(p => p.name === propName);
   if (!existing) {
     props.layer.properties.push({
-      id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      id: `prop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       name: propName,
       type: 'number',
       value: defaultValue,
@@ -808,7 +808,7 @@ function toggleKeyframe(propName: string, dataKey: string, defaultValue: number)
       prop.animated = prop.keyframes.length > 0;
     } else {
       prop.keyframes.push({
-        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         frame,
         value: prop.value,
         easing: 'linear',
@@ -833,7 +833,7 @@ function togglePathKeyframe(propName: string) {
       prop.animated = prop.keyframes.length > 0;
     } else {
       prop.keyframes.push({
-        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         frame,
         value: prop.value,
         easing: 'linear',
@@ -899,7 +899,7 @@ function toggleVec3Keyframe(propName: string, dataKey: string) {
     animProp.animated = animProp.keyframes.length > 0;
   } else {
     animProp.keyframes.push({
-      id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       frame,
       value: { ...animProp.value },
       easing: 'linear',

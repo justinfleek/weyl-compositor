@@ -1,6 +1,6 @@
 # Weyl Compositor Product Specification
 
-**Version:** 1.0 | **Date:** December 22, 2025
+**Version:** 1.0 | **Date:** December 23, 2025
 
 ---
 

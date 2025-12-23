@@ -15,7 +15,16 @@ import type { ShapeLayerData } from './shapes';
 import type { TemplateConfig } from './essentialGraphics';
 import type { LayerStyles, GlobalLightSettings } from './layerStyles';
 
+// Import types needed for local use in this file
+import type { AnimatableProperty } from './animation';
+import { createAnimatableProperty } from './animation';
+import type { LayerTransform, Vec3 } from './transform';
+import type { MatteType, LayerMask } from './masks';
+import type { SplineData, PathLayerData } from './spline';
+import type { TextData } from './text';
+
 // Re-export types from modular files for backwards compatibility
+// (Files importing from '@/types/project' directly need these)
 export type { EffectInstance } from './effects';
 export type { ShapeLayerData } from './shapes';
 export type { TemplateConfig } from './essentialGraphics';
@@ -30,7 +39,9 @@ export type {
   ControlMode,
   BaseInterpolationType,
   EasingType,
-  InterpolationType
+  InterpolationType,
+  PropertyValue,
+  ClipboardKeyframe
 } from './animation';
 export { createAnimatableProperty, createKeyframe } from './animation';
 
@@ -39,11 +50,6 @@ export type {
   Vec2,
   Vec3,
   LayerTransform,
-  MotionBlurType,
-  LayerMotionBlurSettings,
-  LayerMaterialOptions,
-  AutoOrientMode,
-  FollowPathConstraint
 } from './transform';
 export { createDefaultTransform, normalizeLayerTransform, createFollowPathConstraint } from './transform';
 
@@ -559,6 +565,12 @@ export type LayerDataMap = {
   effectLayer: EffectLayerData;
   adjustment: EffectLayerData;  // @deprecated - use effectLayer
 };
+
+/**
+ * Union type of all possible layer data types.
+ * Use for generic layer data operations where the specific layer type is unknown.
+ */
+export type AnyLayerData = LayerDataMap[keyof LayerDataMap];
 
 /**
  * Type guard to check if a layer has specific data type
@@ -2052,12 +2064,6 @@ export interface CameraDepthOfField {
   focusDistance: number;
   aperture: number;
   blurLevel: number;
-}
-
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
 }
 
 // Camera path following configuration

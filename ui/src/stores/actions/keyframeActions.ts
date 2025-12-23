@@ -19,6 +19,7 @@ export interface KeyframeStore {
   };
   getActiveComp(): { currentFrame: number; layers: Layer[] } | null;
   getActiveCompLayers(): Layer[];
+  getLayerById(id: string): Layer | null | undefined;
 }
 
 // ============================================================================
@@ -104,7 +105,7 @@ export function addKeyframe<T>(
 
   // Create keyframe with default linear handles (disabled until graph editor enables them)
   const keyframe: Keyframe<T> = {
-    id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     frame,
     value,
     interpolation: 'linear',
@@ -481,7 +482,7 @@ export function setPropertyAnimated(
       const frame = comp?.currentFrame ?? 0;
 
       const keyframe: Keyframe<any> = {
-        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         frame,
         value: property.value,
         interpolation: 'linear',
@@ -765,7 +766,7 @@ export function insertKeyframeOnPath(
   );
 
   // Create the keyframe
-  const newKf = addKeyframe(store, layerId, 'transform.position', frame, interpolatedValue);
+  const newKf = addKeyframe(store, layerId, 'transform.position', interpolatedValue, frame);
 
   return newKf?.id ?? null;
 }

@@ -5,7 +5,7 @@
  */
 
 export { useCanvasSelection } from './useCanvasSelection';
-export type { SelectableItem, SelectionMode, CanvasSelectionOptions } from './useCanvasSelection';
+export type { SelectableItem, SelectionMode, UseCanvasSelectionOptions } from './useCanvasSelection';
 
 export { useCanvasSegmentation } from './useCanvasSegmentation';
 export type { SegmentBoxState } from './useCanvasSegmentation';

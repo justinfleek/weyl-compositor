@@ -15,6 +15,31 @@ import {
   type Expression,
   type ExpressionContext,
 } from '@/services/expressions';
+import type { Keyframe } from '@/types/animation';
+
+// Helper to create properly typed keyframes for tests
+function createTestKeyframe<T>(frame: number, value: T): Keyframe<T> {
+  return {
+    id: `kf-${frame}`,
+    frame,
+    value,
+    interpolation: 'linear',
+    inHandle: { frame: -5, value: 0, enabled: true },
+    outHandle: { frame: 5, value: 0, enabled: true },
+    controlMode: 'smooth',
+  };
+}
+
+// Helper to create properly typed Expression for tests
+function createTestExpression(code: string): Expression {
+  return {
+    type: 'custom',
+    name: 'test-expression',
+    params: {},
+    code,
+    enabled: true,
+  };
+}
 
 describe('Easing Functions', () => {
   describe('linear', () => {
@@ -470,16 +495,12 @@ describe('Temporal Expression Functions', () => {
         velocity: 0,
         numKeys: 2,
         keyframes: [
-          { frame: 0, value: 0 },
-          { frame: 60, value: 200 },
+          createTestKeyframe(0, 0),
+          createTestKeyframe(60, 200),
         ],
       };
 
-      const expression: Expression = {
-        type: 'custom',
-        code: 'return smooth(0.2, 5)',
-        enabled: true,
-      };
+      const expression = createTestExpression('return smooth(0.2, 5)');
 
       const result = evaluateExpression(expression, context);
 
@@ -508,11 +529,7 @@ describe('Temporal Expression Functions', () => {
         keyframes: [],
       };
 
-      const expression: Expression = {
-        type: 'custom',
-        code: 'return smooth()',
-        enabled: true,
-      };
+      const expression = createTestExpression('return smooth()');
 
       const result = evaluateExpression(expression, context);
 
@@ -540,11 +557,7 @@ describe('Temporal Expression Functions', () => {
         keyframes: [],
       };
 
-      const expression: Expression = {
-        type: 'custom',
-        code: 'return posterizeTime(12)', // 12 fps = steps every 1/12 second
-        enabled: true,
-      };
+      const expression = createTestExpression('return posterizeTime(12)');
 
       const result = evaluateExpression(expression, context);
 
@@ -571,17 +584,13 @@ describe('Temporal Expression Functions', () => {
         velocity: 0,
         numKeys: 2,
         keyframes: [
-          { frame: 0, value: 0 },
-          { frame: 90, value: 300 },
+          createTestKeyframe(0, 0),
+          createTestKeyframe(90, 300),
         ],
       };
 
       // Typical usage: posterizeTime(fps); return value
-      const expression: Expression = {
-        type: 'custom',
-        code: 'posterizeTime(8); return value',
-        enabled: true,
-      };
+      const expression = createTestExpression('posterizeTime(8); return value');
 
       const result = evaluateExpression(expression, context);
 
@@ -610,11 +619,7 @@ describe('Temporal Expression Functions', () => {
         keyframes: [],
       };
 
-      const expression: Expression = {
-        type: 'custom',
-        code: 'return clamp(value, 0, 100)',
-        enabled: true,
-      };
+      const expression = createTestExpression('return clamp(value, 0, 100)');
 
       const result = evaluateExpression(expression, context);
 
@@ -640,11 +645,7 @@ describe('Temporal Expression Functions', () => {
         keyframes: [],
       };
 
-      const expression: Expression = {
-        type: 'custom',
-        code: 'return clamp(value, 0, 100)',
-        enabled: true,
-      };
+      const expression = createTestExpression('return clamp(value, 0, 100)');
 
       const result = evaluateExpression(expression, context);
 
@@ -670,11 +671,7 @@ describe('Temporal Expression Functions', () => {
         keyframes: [],
       };
 
-      const expression: Expression = {
-        type: 'custom',
-        code: 'return clamp(value, 0, 100)',
-        enabled: true,
-      };
+      const expression = createTestExpression('return clamp(value, 0, 100)');
 
       const result = evaluateExpression(expression, context);
 

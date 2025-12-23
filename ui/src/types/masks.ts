@@ -110,7 +110,7 @@ function createMaskAnimatableProperty<T>(
   type: 'number' | 'position' | 'color' | 'enum' | 'vector3' = 'number'
 ): AnimatableProperty<T> {
   return {
-    id: `mask_prop_${name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    id: `mask_prop_${name}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name,
     type,
     value,

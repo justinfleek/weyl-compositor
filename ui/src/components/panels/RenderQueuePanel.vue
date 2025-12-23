@@ -354,8 +354,59 @@ async function removeJob(jobId: string) {
 }
 
 async function downloadJob(jobId: string) {
-  // TODO: Implement download from IndexedDB
-  console.log('Download job:', jobId);
+  if (!queueManager) {
+    console.error('Queue manager not initialized');
+    return;
+  }
+
+  try {
+    // Get job info and frames
+    const job = await queueManager.getJob(jobId);
+    if (!job) {
+      console.error('Job not found:', jobId);
+      return;
+    }
+
+    const frames = await queueManager.getFrames(jobId);
+    if (!frames || frames.length === 0) {
+      console.error('No frames found for job:', jobId);
+      return;
+    }
+
+    // Sort frames by frame number
+    frames.sort((a, b) => a.frameNumber - b.frameNumber);
+
+    // Dynamically import JSZip
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    // Add frames to ZIP
+    const format = job.config.format || 'png';
+    const extension = format.includes('png') ? 'png' : format.includes('jpg') ? 'jpg' : 'webp';
+
+    for (const frame of frames) {
+      const paddedNumber = frame.frameNumber.toString().padStart(5, '0');
+      const filename = `frame_${paddedNumber}.${extension}`;
+      zip.file(filename, frame.data);
+    }
+
+    // Generate ZIP blob
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+    // Create download link
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${job.config.name || 'render'}_frames.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    console.log(`Downloaded ${frames.length} frames for job:`, jobId);
+  } catch (error) {
+    console.error('Failed to download job:', error);
+  }
 }
 
 // Format time helper

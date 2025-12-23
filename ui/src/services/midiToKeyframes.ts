@@ -592,12 +592,13 @@ export function createMIDIAnimatableProperty(
     ? midiCCToKeyframes(midiFile, config)
     : midiNotesToKeyframes(midiFile, config);
 
-  const id = `midi_prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `midi_prop_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
   return {
     id,
     name,
-    defaultValue: config.valueMin,
+    type: 'number' as const,
+    value: config.valueMin,
     animated: keyframes.length > 0,
     keyframes
   };

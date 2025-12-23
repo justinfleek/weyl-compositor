@@ -69,7 +69,7 @@ export async function createVideoLayer(
   }
 
   // Create asset reference
-  const assetId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const assetId = `video_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   const asset: AssetReference = {
     id: assetId,
     type: 'video',

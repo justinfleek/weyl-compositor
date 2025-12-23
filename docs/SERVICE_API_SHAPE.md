@@ -6,70 +6,117 @@
 
 ## 5.1 arcLength.ts
 
-**Purpose**: Arc-length parameterization for even spacing along curves.
+**Purpose**: Arc-length parameterization for even spacing along curves using Three.js.
 
 **Location**: `ui/src/services/arcLength.ts`
 
 **Size**: ~8KB
 
+**Note**: Uses Three.js curves (not bezier-js). Three.js has built-in arc-length parameterization.
+
 ### Exports
 
 ```typescript
-// Main parameterizer class
-export class ArcLengthParameterizer {
-  constructor(curve: Bezier, samples?: number);  // Default: 100 samples
+import * as THREE from 'three';
 
-  // Get total curve length
-  getTotalLength(): number;
-
-  // Get t parameter for given arc length distance
-  getTAtLength(length: number): number;
-
-  // Get point at arc length distance
-  getPointAtLength(length: number): { x: number; y: number };
-
-  // Get tangent at arc length distance
-  getTangentAtLength(length: number): { x: number; y: number };
-
-  // Get normal at arc length distance
-  getNormalAtLength(length: number): { x: number; y: number };
-
-  // Resample curve at even intervals
-  resample(count: number): Array<{ x: number; y: number }>;
+interface PointOnPath {
+  point: { x: number; y: number };
+  tangent: { x: number; y: number };
+  t: number;
 }
 
-// Convert SVG path commands to Bezier
-export function pathCommandsToBezier(
-  pathCommands: Array<{
-    type: string;
-    x?: number;
-    y?: number;
-    x1?: number;
-    y1?: number;
-    x2?: number;
-    y2?: number;
-  }>
-): Bezier | null;
+interface PointOnPath3D {
+  point: { x: number; y: number; z: number };
+  tangent: { x: number; y: number; z: number };
+  t: number;
+}
 
-// Convert control points to Bezier curves
+// Main parameterizer class (wraps Three.js curves)
+export class ArcLengthParameterizer {
+  public totalLength: number;
+
+  constructor(
+    curve: THREE.Curve<THREE.Vector2 | THREE.Vector3>,
+    arcLengthDivisions?: number  // Default: 200
+  );
+
+  // Convert arc length distance to t parameter
+  distanceToT(distance: number): number;
+
+  // Get point and tangent at arc length distance (2D)
+  getPointAtDistance(distance: number): PointOnPath;
+
+  // Get point and tangent at arc length distance (3D)
+  getPointAtDistance3D(distance: number): PointOnPath3D;
+
+  // Get evenly spaced points along the curve (2D)
+  getEvenlySpacedPoints(count: number): PointOnPath[];
+
+  // Get evenly spaced points along the curve (3D)
+  getEvenlySpacedPoints3D(count: number): PointOnPath3D[];
+}
+
+// Multi-segment parameterizer (uses THREE.CurvePath)
+export class MultiSegmentParameterizer {
+  public totalLength: number;
+
+  constructor(curves: THREE.Curve<THREE.Vector2 | THREE.Vector3>[]);
+
+  distanceToT(distance: number): number;
+  getPointAtDistance(distance: number): PointOnPath;
+  getEvenlySpacedPoints(count: number): PointOnPath[];
+}
+
+// Helper to create Three.js bezier curve from control points
+export function createBezierCurve(
+  p1: Point2D | Point3D,
+  cp1: Point2D | Point3D,
+  cp2: Point2D | Point3D,
+  p2: Point2D | Point3D
+): THREE.CubicBezierCurve3;
+
+// Convert control points array to Bezier curves
 export function controlPointsToBeziers(
   controlPoints: Array<{
     x: number;
     y: number;
-    handleIn?: { x: number; y: number };
-    handleOut?: { x: number; y: number };
+    z?: number;
+    handleIn: { x: number; y: number; z?: number } | null;
+    handleOut: { x: number; y: number; z?: number } | null;
   }>
-): Bezier[];
+): THREE.CubicBezierCurve3[];
 
-// Multi-segment parameterizer (for paths with multiple curves)
-export class MultiSegmentParameterizer {
-  constructor(curves: Bezier[]);
+// Convert SVG-style path commands to Bezier curve (legacy support)
+export function pathCommandsToBezier(
+  pathCommands: any[]
+): THREE.CubicBezierCurve3 | null;
 
-  getTotalLength(): number;
-  getPointAtLength(length: number): { x: number; y: number };
-  getTangentAtLength(length: number): { x: number; y: number };
-  resample(count: number): Array<{ x: number; y: number }>;
-}
+// Default export
+export default ArcLengthParameterizer;
+```
+
+### Usage Example
+
+```typescript
+import * as THREE from 'three';
+import { ArcLengthParameterizer } from '@/services/arcLength';
+
+// Create a cubic bezier curve using Three.js
+const curve = new THREE.CubicBezierCurve3(
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(50, 100, 0),
+  new THREE.Vector3(100, 100, 0),
+  new THREE.Vector3(150, 0, 0)
+);
+
+// Create parameterizer
+const param = new ArcLengthParameterizer(curve);
+
+// Get point at 50% of curve length
+const midPoint = param.getPointAtDistance(param.totalLength * 0.5);
+
+// Get 10 evenly spaced points
+const points = param.getEvenlySpacedPoints(10);
 ```
 
 ---
@@ -114,8 +161,8 @@ export interface CharacterPlacement {
 export class TextOnPathService {
   constructor();
 
-  // Set the path to place text on
-  setPath(curves: Bezier[]): void;
+  // Set the path to place text on (uses Three.js CurvePath)
+  setPath(curvePath: THREE.CurvePath<THREE.Vector3>): void;
 
   // Calculate character placements
   placeText(config: TextOnPathConfig): CharacterPlacement[];
@@ -366,4 +413,4 @@ export class ImageTrace {
 
 **See also**: [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) for index of all categories.
 
-*Generated: December 19, 2025*
+*Generated: December 23, 2025*

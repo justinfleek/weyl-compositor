@@ -63,7 +63,7 @@ export function parseJSON(
   }
 
   const asset: JSONDataAsset = {
-    id: `data_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `data_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name,
     type: name.toLowerCase().endsWith('.mgjson') ? 'mgjson' : 'json',
     rawContent: content,
@@ -148,7 +148,7 @@ export function parseCSV(
   }
 
   const asset: CSVDataAsset = {
-    id: `data_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `data_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name,
     type: delimiter === '\t' ? 'tsv' : 'csv',
     rawContent: content,

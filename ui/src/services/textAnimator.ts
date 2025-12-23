@@ -27,7 +27,7 @@ import { SeededRandom } from './particleSystem';
 // ============================================================================
 
 function generateId(): string {
-  return `animator_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  return `animator_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function createAnimatableProp<T>(value: T, name: string): AnimatableProperty<T> {

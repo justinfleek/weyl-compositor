@@ -15,25 +15,25 @@
 │                                                             │
 │   ┌──────────────┐                                         │
 │   │  Components  │ ──▶ User interactions                   │
-│   │  (55 total)  │                                         │
+│   │ (146 total)  │                                         │
 │   └──────┬───────┘                                         │
 │          │                                                  │
 │          ▼                                                  │
 │   ┌──────────────┐                                         │
 │   │    Stores    │ ──▶ State management (Pinia)            │
-│   │ (1 central)  │                                         │
+│   │  (20 files)  │                                         │
 │   └──────┬───────┘                                         │
 │          │                                                  │
 │          ▼                                                  │
 │   ┌──────────────┐                                         │
-│   │   Services   │ ──▶ Business logic (42 services)        │
-│   │  (42 total)  │                                         │
+│   │   Services   │ ──▶ Business logic (160 services)       │
+│   │ (160 total)  │                                         │
 │   └──────┬───────┘                                         │
 │          │                                                  │
 │          ▼                                                  │
 │   ┌──────────────┐                                         │
 │   │    Engine    │ ──▶ Rendering (Three.js/WebGL2)         │
-│   │ (WeylEngine) │                                         │
+│   │  (55 files)  │                                         │
 │   └──────────────┘                                         │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -295,14 +295,16 @@ Target property receives source property value
 | Controls | 7 | 0% | 29% |
 | Dialogs | 4 | 75% | 50% |
 | Export | 1 | 100% | 100% |
-| Graph Editor | 1 | 0% | 0% |
+| Curve Editor | 2 | 100% | 100% |
 | Layout | 1 | 100% | 0% |
 | Materials | 4 | 0% | 0% |
 | Panels | 10 | 100% | 40% |
 | Properties | 10 | 100% | 20% |
 | Timeline | 9 | 100% | 11% |
 | Viewport | 2 | 100% | 0% |
-| **Total** | **55** | **71%** | **25%** |
+| **Total (Core)** | **54** | **71%** | **25%** |
+
+**Note**: This table shows core UI components. Full component count: 146 (includes properties, dialogs, editors, utilities).
 
 ---
 

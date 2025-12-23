@@ -10,6 +10,7 @@
 
 import type { GlobalLightSettings } from '@/types/layerStyles';
 import type { AnimatableProperty } from '@/types/project';
+import { interpolateProperty } from './interpolation';
 
 // ============================================================================
 // DEFAULT VALUES
@@ -87,9 +88,9 @@ export function getGlobalLightAngle(
   const settings = getGlobalLight(compositionId);
 
   if (settings.angle.animated && settings.angle.keyframes.length > 0) {
-    // TODO: Integrate with interpolation service for proper keyframe evaluation
-    // For now, return the current value
-    return settings.angle.value;
+    // Use interpolation service for proper keyframe evaluation
+    const interpolated = interpolateProperty(settings.angle, frame);
+    return typeof interpolated === 'number' ? interpolated : settings.angle.value;
   }
 
   return settings.angle.value;
@@ -106,8 +107,9 @@ export function getGlobalLightAltitude(
   const settings = getGlobalLight(compositionId);
 
   if (settings.altitude.animated && settings.altitude.keyframes.length > 0) {
-    // TODO: Integrate with interpolation service for proper keyframe evaluation
-    return settings.altitude.value;
+    // Use interpolation service for proper keyframe evaluation
+    const interpolated = interpolateProperty(settings.altitude, frame);
+    return typeof interpolated === 'number' ? interpolated : settings.altitude.value;
   }
 
   return settings.altitude.value;

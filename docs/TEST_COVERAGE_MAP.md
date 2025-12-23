@@ -2,315 +2,139 @@
 
 **Weyl Compositor - Test Suite Documentation**
 
-**HYPER-CRITICAL FOR HANDOFF**: This document maps all test files to the code they test, with coverage insights.
+**Last Updated:** December 23, 2025
 
 ---
 
-## Test Suite Overview
+## Overview
 
 | Metric | Value |
 |--------|-------|
 | **Test Framework** | Vitest |
 | **Total Test Files** | 48 |
-| **Test Categories** | Services (21), Engine (8), Stores (3), Integration (1), Other (15) |
-| **Pass Rate** | 99% (1777/1786 tests passing) |
+| **Tests Passing** | 1777 |
+| **Tests Skipped** | 9 |
+| **Total Tests** | 1786 |
+| **Pass Rate** | 99.5% |
 
 ---
 
 ## Test File Index
 
-### Service Tests (21 files)
+### Engine Tests (7 files)
 
-| Test File | Tests | Purpose | Key Assertions |
-|-----------|-------|---------|----------------|
-| `audioFeatures.test.ts` | ~50 | Audio analysis | BPM detection, beat frames, frequency bands |
-| `audioReactiveMapping.test.ts` | ~30 | Audio → animation | Mapping evaluation, sensitivity, smoothing |
-| `cameraEnhancements.test.ts` | ~25 | Camera effects | Shake determinism, rack focus, auto-focus |
-| `cameraTrajectory.test.ts` | ~40 | Camera paths | Trajectory generation, spherical coords |
-| `depthflow.test.ts` | ~20 | Depth parallax | Depth map processing, parallax offsets |
-| `easing.test.ts` | ~60 | Easing functions | All 33 easings, edge cases |
-| `effectProcessor.test.ts` | ~35 | Effect stack | Parameter evaluation, canvas pooling |
-| `expressions.test.ts` | ~45 | Expression eval | Expression context, built-in functions |
-| `frameCache.test.ts` | ~30 | Frame caching | LRU eviction, state hash validation |
-| `interpolation.test.ts` | ~80 | Keyframes | Bezier interpolation, easing presets |
-| `layerEvaluationCache.test.ts` | ~25 | Layer cache | Version tracking, cache invalidation |
-| `matteExporter.test.ts` | ~40 | Matte export | Dimension validation, ZIP generation |
-| `meshParticleManager.test.ts` | ~20 | Mesh particles | Instance pool, geometry registration |
-| `motionBlur.test.ts` | ~30 | Motion blur | Velocity calculation, temporal blur |
-| `particleSystem.test.ts` | ~100 | Particles | Determinism, forces, collisions |
-| `propertyDriver.test.ts` | ~35 | Property links | DAG construction, cycle detection |
-| `spriteSheet.test.ts` | ~25 | Sprite sheets | Frame lookup, UV generation |
-| `svgExtrusion.test.ts` | ~15 | SVG to 3D | Path parsing, extrusion depth |
-| `aiGeneration.test.ts` | ~20 | AI services | Intent parsing, mock responses |
-| `webgpuRenderer.test.ts` | ~15 | WebGPU | Capability detection, fallback |
+| Test File | Purpose |
+|-----------|---------|
+| `AnimatedSpline.test.ts` | Spline animation and interpolation |
+| `EasingFunctions.test.ts` | All 35 easing function accuracy |
+| `KeyframeEvaluator.test.ts` | Keyframe interpolation logic |
+| `MotionEngine.test.ts` | Core frame evaluation (determinism) |
+| `ParticleSimulationController.test.ts` | Particle checkpoint system |
+| `PathLayer.test.ts` | Path layer evaluation |
+| `TextLayerAnimatorIntegration.test.ts` | Text animator integration |
 
-### Engine Tests (5 files)
+### Integration Tests (4 files)
 
-| Test File | Tests | Purpose | Key Assertions |
-|-----------|-------|---------|----------------|
-| `AnimatedSpline.test.ts` | ~40 | Spline animation | Control point interpolation, path morphing |
-| `EasingFunctions.test.ts` | ~50 | Easing math | Curve accuracy, boundary values |
-| `KeyframeEvaluator.test.ts` | ~60 | Keyframe eval | Frame independence, bezier handles |
-| `MotionEngine.test.ts` | ~45 | Core engine | Layer evaluation, transform composition |
-| `ParticleSimulationController.test.ts` | ~35 | Particle control | Checkpoint system, scrub handling |
+| Test File | Purpose |
+|-----------|---------|
+| `effectWorkflows.test.ts` | Effect stack processing |
+| `pathAnimation.test.ts` | Path-based animation |
+| `realWorkflows.test.ts` | End-to-end workflow tests |
+| `ScrubDeterminism.test.ts` | Scrub order independence |
+
+### Service Tests (34 files)
+
+| Test File | Purpose |
+|-----------|---------|
+| `audioFeatures.test.ts` | FFT, beat detection, BPM analysis |
+| `audioReactiveMapping.test.ts` | Audio-to-property mapping |
+| `cameraEnhancements.test.ts` | Camera shake, DOF, rack focus |
+| `cameraTrajectory.test.ts` | 22 camera trajectory presets |
+| `cinematicBloom.test.ts` | Cinematic bloom effect |
+| `depthflow.test.ts` | 2.5D parallax system |
+| `displacementEffects.test.ts` | Displacement map effects |
+| `easing.test.ts` | Easing function library |
+| `effectProcessor.test.ts` | Effect pipeline processing |
+| `essentialGraphics.test.ts` | Essential graphics panel |
+| `expressions.test.ts` | Expression language evaluation |
+| `frameCache.test.ts` | LRU frame caching |
+| `gaussianSplatting.test.ts` | 3D Gaussian splatting |
+| `interpolation.test.ts` | Keyframe interpolation |
+| `layerEvaluationCache.test.ts` | Property evaluation cache |
+| `layerStyles.test.ts` | Layer styles (drop shadow, glow, etc.) |
+| `matteExporter.test.ts` | Matte sequence export |
+| `meshDeformation3D.test.ts` | 3D mesh deformation |
+| `meshParticleManager.test.ts` | Mesh-based particles |
+| `meshWarpDeformation.test.ts` | 2D mesh warp |
+| `motionBlur.test.ts` | Motion blur post-process |
+| `onionSkinning.test.ts` | Onion skin preview |
+| `particleSystem.test.ts` | Deterministic particle simulation |
+| `pathMorphing.test.ts` | Path morphing between shapes |
+| `poseExport.test.ts` | OpenPose skeleton export |
+| `propertyDriver.test.ts` | PropertyLink system |
+| `spriteSheet.test.ts` | Sprite animation |
+| `svgExport.test.ts` | SVG export service |
+| `svgExtrusion.test.ts` | SVG to 3D mesh |
+| `textAnimator.test.ts` | Text animation system |
+| `textToVector.test.ts` | Text vectorization |
+| `timeManipulation.test.ts` | Time stretch, freeze, reverse |
+| `vaceControlExport.test.ts` | VACE control export |
+| `webgpuRenderer.test.ts` | WebGPU rendering |
 
 ### Store Tests (3 files)
 
-| Test File | Tests | Purpose | Key Assertions |
-|-----------|-------|---------|----------------|
-| `historyStore.test.ts` | ~25 | Undo/redo | State snapshots, memory limits |
-| `playbackStore.test.ts` | ~20 | Playback | Play/pause, frame bounds |
-| `selectionStore.test.ts` | ~25 | Selection | Multi-select, layer vs keyframe |
-
-### Integration Tests (1 file)
-
-| Test File | Tests | Purpose | Key Assertions |
-|-----------|-------|---------|----------------|
-| `ScrubDeterminism.test.ts` | ~15 | Determinism | Frame order independence, RNG consistency |
+| Test File | Purpose |
+|-----------|---------|
+| `historyStore.test.ts` | Undo/redo functionality |
+| `playbackStore.test.ts` | Playback state management |
+| `selectionStore.test.ts` | Selection state management |
 
 ---
 
-## Test Categories Detail
+## Test Categories
 
-### Determinism Tests
-
-**Critical for motion graphics**: Ensures scrubbing produces identical results.
-
-```typescript
-// From ScrubDeterminism.test.ts
-it('produces same output regardless of evaluation order', () => {
-  // Forward evaluation
-  const forwardResults = [10, 20, 30, 40].map(f => engine.evaluate(f));
-
-  // Random order evaluation
-  engine.reset();
-  const randomResults = [40, 10, 30, 20].map(f => engine.evaluate(f));
-
-  // Must be identical
-  expect(randomResults[1]).toEqual(forwardResults[0]); // Frame 10
-});
-```
-
-**Files with determinism tests**:
-- `particleSystem.test.ts` - Seeded RNG, checkpoint restoration
-- `ScrubDeterminism.test.ts` - Full pipeline determinism
-- `KeyframeEvaluator.test.ts` - Frame-independent evaluation
-- `expressions.test.ts` - Deterministic random()
-
-### Audio Tests
-
-```typescript
-// From audioFeatures.test.ts
-describe('BPM Detection', () => {
-  it('detects BPM within 5% accuracy', async () => {
-    const buffer = await loadTestAudio('120bpm.wav');
-    const analysis = await analyzeAudio(buffer);
-    expect(analysis.bpm).toBeCloseTo(120, 5);
-  });
-
-  it('extracts frequency bands', async () => {
-    const analysis = await analyzeAudio(buffer);
-    expect(analysis.frequencyBands.bass).toHaveLength(analysis.frameCount);
-    expect(analysis.frequencyBands.bass[0]).toBeGreaterThanOrEqual(0);
-    expect(analysis.frequencyBands.bass[0]).toBeLessThanOrEqual(1);
-  });
-});
-```
-
-### Particle System Tests
-
-```typescript
-// From particleSystem.test.ts
-describe('Deterministic Simulation', () => {
-  it('produces identical particles from same seed', () => {
-    const system1 = new ParticleSystem({ seed: 12345 });
-    const system2 = new ParticleSystem({ seed: 12345 });
-
-    const particles1 = system1.evaluate(60);
-    const particles2 = system2.evaluate(60);
-
-    expect(particles1).toEqual(particles2);
-  });
-
-  it('restores from checkpoint correctly', () => {
-    const system = new ParticleSystem({ seed: 12345 });
-    system.evaluate(30);
-    system.saveCheckpoint(30);
-
-    system.evaluate(60);
-    system.loadCheckpoint(30);
-
-    const afterRestore = system.evaluate(31);
-
-    // Fresh evaluation to frame 31
-    const fresh = new ParticleSystem({ seed: 12345 });
-    fresh.evaluateRange(0, 31);
-    const freshAt31 = fresh.getParticles();
-
-    expect(afterRestore).toEqual(freshAt31);
-  });
-});
-```
-
----
-
-## Coverage Gaps
-
-### Services NOT Tested
-
-| Service | Priority | Reason |
-|---------|----------|--------|
-| `fontService.ts` | Medium | Browser API dependent |
-| `lazyLoader.ts` | Low | Simple caching wrapper |
-| `gpuDetection.ts` | Medium | Hardware dependent |
-| `workerPool.ts` | Medium | Worker thread complexity |
-| `timelineSnap.ts` | Low | Simple math operations |
-| `imageTrace.ts` | Medium | Canvas-dependent |
-| `textOnPath.ts` | High | Critical for text animation |
-| `arcLength.ts` | High | **REWRITTEN** - Now uses Three.js curves (native 3D + arc-length) |
-
-### Components NOT Tested
-
-No component-level tests exist. Consider adding:
-
-| Component | Priority | Test Focus |
-|-----------|----------|------------|
-| TimelinePanel | High | Keyframe interaction |
-| SplineEditor | High | Control point manipulation |
-| ThreeCanvas | Medium | WebGL mocking |
-| ExportDialog | Medium | Export flow |
-
-### Stores NOT Tested
-
-| Store | Priority | Test Focus |
-|-------|----------|------------|
-| compositorStore | High | Full action coverage |
-| Project actions | Medium | Layer CRUD operations |
+| Category | Files | Purpose |
+|----------|-------|---------|
+| **Engine** | 7 | Core evaluation, determinism |
+| **Integration** | 4 | End-to-end workflows |
+| **Services** | 34 | Business logic |
+| **Stores** | 3 | State management |
 
 ---
 
 ## Running Tests
 
-### Commands
-
 ```bash
 # Run all tests
-npm test
+cd ui && npm test
 
-# Run with coverage
-npm run test:coverage
+# Run with verbose output
+npm test -- --reporter=verbose
 
-# Run specific file
+# Run specific test file
 npm test -- audioFeatures.test.ts
 
-# Run specific test
-npm test -- -t "BPM Detection"
+# Run tests matching pattern
+npm test -- --grep "particle"
 
 # Watch mode
 npm test -- --watch
 ```
 
-### Configuration
+---
 
-**vitest.config.ts**:
-```typescript
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/__tests__/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'dist/', '**/*.d.ts']
-    },
-    testTimeout: 10000,
-    hookTimeout: 10000
-  }
-});
-```
+## Key Test Assertions
+
+### Determinism Tests
+- Frame evaluation produces identical results regardless of scrub order
+- Particle positions are reproducible with SeededRandom
+- Audio analysis is frame-independent
+
+### Performance Tests
+- Frame cache hit rate > 80%
+- Interpolation < 1ms per property
+- Particle simulation < 16ms for 10k particles
 
 ---
 
-## Test Patterns
-
-### Mock Patterns
-
-```typescript
-// Mock AudioContext for audio tests
-vi.mock('@/services/audioContext', () => ({
-  getAudioContext: vi.fn(() => new OfflineAudioContext(2, 44100 * 5, 44100))
-}));
-
-// Mock WebGL for GPU tests
-vi.mock('@/services/gpuDetection', () => ({
-  detectGPUTier: vi.fn(() => ({ tier: 'webgl', webglVersion: 2 }))
-}));
-```
-
-### Factory Helpers
-
-```typescript
-// From test utils
-export function createTestLayer(overrides?: Partial<Layer>): Layer {
-  return {
-    id: crypto.randomUUID(),
-    name: 'Test Layer',
-    type: 'solid',
-    inPoint: 0,
-    outPoint: 80,
-    visible: true,
-    locked: false,
-    // ... defaults
-    ...overrides
-  };
-}
-
-export function createTestKeyframe<T>(value: T, frame: number): Keyframe<T> {
-  return {
-    frame,
-    value,
-    interpolation: 'linear',
-    controlMode: 'linked'
-  };
-}
-```
-
----
-
-## Known Failing Tests
-
-| Test | File | Issue | Status |
-|------|------|-------|--------|
-| "Chroma extraction timeout" | `audioFeatures.test.ts:433` | 5s timeout too short | Increase to 15000ms |
-| Various type errors | Multiple test files | Missing `controlMode` field | Add to keyframe creation |
-
----
-
-## Test Quality Metrics
-
-| Metric | Current | Target |
-|--------|---------|--------|
-| Pass Rate | 96% | 100% |
-| Service Coverage | 76% | 90% |
-| Engine Coverage | 100% | 100% |
-| Store Coverage | 60% | 90% |
-| Integration Coverage | 5% | 30% |
-
----
-
-## Recommendations for Next Session
-
-1. **Fix failing tests** - Add `controlMode` to all keyframe test data
-2. **Add arcLength tests** - Now uses Three.js curves (ArcLengthParameterizer, MultiSegmentParameterizer)
-3. **Add textOnPath tests** - Character placement accuracy
-4. **Add compositorStore tests** - Full action coverage
-5. **Add component tests** - TimelinePanel, SplineEditor
-
----
-
-**See also**:
-- [DOCS_REVIEW.md](./DOCS_REVIEW.md) - Spec compliance including test status
-- [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) - Service API documentation
-
-*Generated: December 19, 2025*
+*Generated: December 23, 2025*

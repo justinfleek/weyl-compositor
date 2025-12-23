@@ -13,6 +13,11 @@ import type { AudioMapping, TargetParameter } from '@/services/audioReactiveMapp
 import { AudioReactiveMapper } from '@/services/audioReactiveMapping';
 import type { AudioParticleMapping } from '@/types/project';
 
+interface StemData {
+  buffer: AudioBuffer;
+  analysis: AudioAnalysis;
+}
+
 interface AudioState {
   // Audio buffer and analysis
   audioBuffer: AudioBuffer | null;
@@ -41,6 +46,10 @@ interface AudioState {
   // New audio reactive system
   reactiveMappings: AudioMapping[];
   reactiveMapper: AudioReactiveMapper | null;
+
+  // Stem reactivity support
+  stemBuffers: Map<string, StemData>;
+  activeStemName: string | null;  // null = use main audio
 }
 
 export const useAudioStore = defineStore('audio', {
@@ -61,6 +70,9 @@ export const useAudioStore = defineStore('audio', {
     legacyMappings: new Map(),
     reactiveMappings: [],
     reactiveMapper: null,
+    // Stem reactivity
+    stemBuffers: new Map(),
+    activeStemName: null,
   }),
 
   getters: {
@@ -91,6 +103,30 @@ export const useAudioStore = defineStore('audio', {
     },
     /** Get BPM for audio */
     getBPM: (state) => (_assetId?: string): number | undefined => state.audioAnalysis?.bpm,
+
+    // Stem reactivity getters
+    /** Get list of available stem names */
+    availableStems: (state) => Array.from(state.stemBuffers.keys()),
+    /** Check if any stems are loaded */
+    hasStems: (state) => state.stemBuffers.size > 0,
+    /** Get the active stem name (null = main audio) */
+    getActiveStemName: (state) => state.activeStemName,
+    /** Get the active audio analysis (stem or main) */
+    activeAnalysis: (state) => {
+      if (state.activeStemName) {
+        const stemData = state.stemBuffers.get(state.activeStemName);
+        return stemData?.analysis ?? state.audioAnalysis;
+      }
+      return state.audioAnalysis;
+    },
+    /** Get the active audio buffer (stem or main) */
+    activeBuffer: (state) => {
+      if (state.activeStemName) {
+        const stemData = state.stemBuffers.get(state.activeStemName);
+        return stemData?.buffer ?? state.audioBuffer;
+      }
+      return state.audioBuffer;
+    },
   },
 
   actions: {
@@ -492,6 +528,178 @@ export const useAudioStore = defineStore('audio', {
       // Start at frame time, play for scrubDuration
       const endTime = Math.min(time + scrubDuration, this.audioBuffer.duration);
       this.audioSource.start(0, time, endTime - time);
+    },
+
+    // ============================================================
+    // STEM REACTIVITY (Audio source separation support)
+    // ============================================================
+
+    /**
+     * Load and analyze an audio stem from a data URL or Blob
+     * @param stemName - Name of the stem (e.g., 'vocals', 'drums', 'bass', 'other')
+     * @param audioData - Blob or data URL containing the stem audio
+     * @param fps - Frames per second for analysis
+     */
+    async loadStem(stemName: string, audioData: Blob | string, fps: number): Promise<void> {
+      storeLogger.debug(`Loading stem: ${stemName}`);
+
+      try {
+        // Convert data URL to Blob if needed
+        let blob: Blob;
+        if (typeof audioData === 'string') {
+          // Data URL
+          const response = await fetch(audioData);
+          blob = await response.blob();
+        } else {
+          blob = audioData;
+        }
+
+        // Create a File from the Blob for the worker
+        const file = new File([blob], `${stemName}.wav`, { type: 'audio/wav' });
+
+        // Analyze the stem using the same worker
+        const result = await loadAndAnalyzeAudio(file, fps, {
+          onProgress: (progress) => {
+            storeLogger.debug(`Stem ${stemName} analysis: ${progress.message}`);
+          }
+        });
+
+        // Store the stem data
+        this.stemBuffers.set(stemName, {
+          buffer: result.buffer,
+          analysis: result.analysis
+        });
+
+        storeLogger.debug(`Stem ${stemName} loaded:`, {
+          duration: result.buffer.duration,
+          bpm: result.analysis.bpm,
+          frameCount: result.analysis.frameCount
+        });
+      } catch (error) {
+        storeLogger.error(`Failed to load stem ${stemName}:`, error);
+        throw error;
+      }
+    },
+
+    /**
+     * Set the active stem for audio reactivity
+     * @param stemName - Name of the stem to use, or null for main audio
+     */
+    setActiveStem(stemName: string | null): void {
+      if (stemName !== null && !this.stemBuffers.has(stemName)) {
+        storeLogger.warn(`Stem ${stemName} not found, using main audio`);
+        this.activeStemName = null;
+        return;
+      }
+
+      this.activeStemName = stemName;
+      storeLogger.debug(`Active stem set to: ${stemName ?? 'main audio'}`);
+
+      // Re-initialize the reactive mapper with the new analysis
+      this.initializeReactiveMapperForActiveStem();
+    },
+
+    /**
+     * Initialize reactive mapper for the currently active stem/main audio
+     */
+    initializeReactiveMapperForActiveStem(): void {
+      const analysis = this.activeStemName
+        ? this.stemBuffers.get(this.activeStemName)?.analysis
+        : this.audioAnalysis;
+
+      if (!analysis) return;
+
+      this.reactiveMapper = new AudioReactiveMapper(analysis);
+
+      // Re-add any existing mappings
+      for (const mapping of this.reactiveMappings) {
+        this.reactiveMapper.addMapping(mapping);
+      }
+
+      // Re-add peak data if available
+      if (this.peakData) {
+        this.reactiveMapper.setPeakData(this.peakData);
+      }
+    },
+
+    /**
+     * Get audio feature value at frame from the active stem or main audio
+     * @param feature - Feature name (amplitude, bass, mid, high, etc.)
+     * @param frame - Frame number
+     */
+    getActiveFeatureAtFrame(feature: string, frame: number): number {
+      const analysis = this.activeStemName
+        ? this.stemBuffers.get(this.activeStemName)?.analysis
+        : this.audioAnalysis;
+
+      if (!analysis) return 0;
+      return getFeatureAtFrame(analysis, feature, frame);
+    },
+
+    /**
+     * Get stem analysis by name
+     * @param stemName - Name of the stem
+     */
+    getStemAnalysis(stemName: string): AudioAnalysis | null {
+      return this.stemBuffers.get(stemName)?.analysis ?? null;
+    },
+
+    /**
+     * Get stem buffer by name
+     * @param stemName - Name of the stem
+     */
+    getStemBuffer(stemName: string): AudioBuffer | null {
+      return this.stemBuffers.get(stemName)?.buffer ?? null;
+    },
+
+    /**
+     * Check if a stem is loaded
+     * @param stemName - Name of the stem
+     */
+    hasStem(stemName: string): boolean {
+      return this.stemBuffers.has(stemName);
+    },
+
+    /**
+     * Remove a specific stem
+     * @param stemName - Name of the stem to remove
+     */
+    removeStem(stemName: string): void {
+      this.stemBuffers.delete(stemName);
+
+      // If the removed stem was active, switch back to main audio
+      if (this.activeStemName === stemName) {
+        this.activeStemName = null;
+        this.initializeReactiveMapperForActiveStem();
+      }
+    },
+
+    /**
+     * Clear all loaded stems
+     */
+    clearStems(): void {
+      this.stemBuffers.clear();
+      this.activeStemName = null;
+
+      // Re-initialize with main audio
+      this.initializeReactiveMapper();
+    },
+
+    /**
+     * Get all stem names and their durations
+     */
+    getStemInfo(): Array<{ name: string; duration: number; bpm: number }> {
+      const info: Array<{ name: string; duration: number; bpm: number }> = [];
+
+      for (const [name, data] of this.stemBuffers.entries()) {
+        info.push({
+          name,
+          duration: data.buffer.duration,
+          bpm: data.analysis.bpm
+        });
+      }
+
+      return info;
     },
   },
 });

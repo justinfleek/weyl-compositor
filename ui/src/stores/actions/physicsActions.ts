@@ -27,8 +27,9 @@ import type {
   KeyframeExportOptions,
   ExportedKeyframes,
   PhysicsLayerData,
+  PhysicsVec2,
 } from '@/types/physics';
-import type { Layer, Keyframe, AnimatableProperty } from '@/types/project';
+import type { Layer } from '@/types/project';
 
 // ============================================================================
 // STORE INTERFACE
@@ -83,13 +84,8 @@ export function initializePhysicsEngine(
   // Create physics engine with composition-aware config
   const fullConfig: Partial<PhysicsSpaceConfig> = {
     ...config,
-    // Default to composition dimensions for world bounds
-    worldBounds: config?.worldBounds ?? {
-      minX: 0,
-      minY: 0,
-      maxX: comp.settings.width,
-      maxY: comp.settings.height,
-    },
+    // Use composition dimensions to set default gravity scale
+    // (worldBounds is handled internally by the engine)
   };
 
   physicsEngine = createPhysicsEngine(fullConfig);
@@ -171,10 +167,8 @@ export function enableLayerPhysics(
 
   // Update layer data
   const physicsData: PhysicsLayerData = {
-    enabled: true,
-    bodyId: layerId,
-    type: 'rigid',
-    config: finalConfig,
+    physicsEnabled: true,
+    rigidBody: finalConfig,
   };
 
   store.updateLayerData(layerId, { physics: physicsData });
@@ -192,7 +186,7 @@ export function disableLayerPhysics(
   engine.removeRigidBody(layerId);
 
   store.updateLayerData(layerId, {
-    physics: { enabled: false },
+    physics: { physicsEnabled: false },
   });
   storeLogger.info('Physics disabled for layer:', layerId);
 }
@@ -209,7 +203,7 @@ export function updateLayerPhysicsConfig(
   if (!layer) return;
 
   const physicsData = (layer.data as any)?.physics as PhysicsLayerData | undefined;
-  if (!physicsData?.enabled) return;
+  if (!physicsData?.physicsEnabled || !physicsData.rigidBody) return;
 
   const engine = getPhysicsEngine(store);
 
@@ -217,16 +211,16 @@ export function updateLayerPhysicsConfig(
   engine.removeRigidBody(layerId);
 
   const newConfig: RigidBodyConfig = {
-    ...physicsData.config,
+    ...physicsData.rigidBody,
     ...updates,
-  } as RigidBodyConfig;
+  };
 
   engine.addRigidBody(newConfig);
 
   store.updateLayerData(layerId, {
     physics: {
       ...physicsData,
-      config: newConfig,
+      rigidBody: newConfig,
     },
   });
 }
@@ -234,6 +228,9 @@ export function updateLayerPhysicsConfig(
 // ============================================================================
 // FORCE FIELD MANAGEMENT
 // ============================================================================
+
+/** Track force fields locally */
+const compositionForceFields = new Map<string, ForceField[]>();
 
 /**
  * Add a force field to the physics simulation
@@ -243,7 +240,20 @@ export function addForceField(
   force: ForceField
 ): void {
   const engine = getPhysicsEngine(store);
-  engine.addForce(force);
+  const compId = store.activeCompositionId;
+
+  // Get existing force fields for this composition
+  const fields = compositionForceFields.get(compId) || [];
+  const existingIndex = fields.findIndex(f => f.id === force.id);
+
+  if (existingIndex >= 0) {
+    fields[existingIndex] = force;
+  } else {
+    fields.push(force);
+  }
+
+  compositionForceFields.set(compId, fields);
+  engine.setForceFields(fields);
   storeLogger.info('Force field added:', force.id);
 }
 
@@ -255,7 +265,13 @@ export function removeForceField(
   forceId: string
 ): void {
   const engine = getPhysicsEngine(store);
-  engine.removeForce(forceId);
+  const compId = store.activeCompositionId;
+
+  const fields = compositionForceFields.get(compId) || [];
+  const newFields = fields.filter(f => f.id !== forceId);
+
+  compositionForceFields.set(compId, newFields);
+  engine.setForceFields(newFields);
   storeLogger.info('Force field removed:', forceId);
 }
 
@@ -268,13 +284,20 @@ export function setGravity(
   gravityY: number
 ): void {
   const engine = getPhysicsEngine(store);
+  const compId = store.activeCompositionId;
+
+  // Get existing force fields
+  const fields = compositionForceFields.get(compId) || [];
 
   // Remove existing gravity force if any
-  engine.removeForce('global-gravity');
+  const newFields = fields.filter(f => f.id !== 'global-gravity');
 
   // Add new gravity force
   const gravityForce = createGravityForce('global-gravity', { x: gravityX, y: gravityY });
-  engine.addForce(gravityForce);
+  newFields.push(gravityForce);
+
+  compositionForceFields.set(compId, newFields);
+  engine.setForceFields(newFields);
 
   storeLogger.info('Gravity set to:', gravityX, gravityY);
 }
@@ -284,64 +307,33 @@ export function setGravity(
 // ============================================================================
 
 /**
- * Step the physics simulation
+ * Step the physics simulation to a specific frame
  * Called during playback to advance physics state
  */
 export function stepPhysics(
   store: PhysicsStore,
-  deltaTime: number
+  targetFrame: number
 ): void {
   const engine = getPhysicsEngine(store);
-  engine.step(deltaTime);
+  const state = engine.evaluateFrame(targetFrame);
 
   // Apply physics state back to layers
-  applyPhysicsStateToLayers(store);
+  applyPhysicsStateToLayers(store, state);
 }
 
 /**
  * Evaluate physics at a specific frame (for scrubbing)
- * Uses checkpoints for deterministic results
+ * Uses checkpoints for deterministic results (handled internally by engine)
  */
 export function evaluatePhysicsAtFrame(
   store: PhysicsStore,
   targetFrame: number
 ): void {
   const engine = getPhysicsEngine(store);
-  const comp = store.project.compositions[store.activeCompositionId];
-  if (!comp) return;
-
-  const fps = comp.settings.fps;
-
-  // Find nearest checkpoint and simulate forward
-  const checkpointInterval = 30; // Checkpoint every 30 frames
-  const nearestCheckpoint = Math.floor(targetFrame / checkpointInterval) * checkpointInterval;
-
-  // Load checkpoint state if available
-  const stateKey = `${store.activeCompositionId}-${nearestCheckpoint}`;
-  const checkpointState = compositionPhysicsStates.get(stateKey);
-
-  if (checkpointState && nearestCheckpoint > 0) {
-    engine.loadState(checkpointState);
-  } else if (nearestCheckpoint === 0) {
-    engine.reset();
-  }
-
-  // Simulate from checkpoint to target frame
-  const deltaTime = 1 / fps;
-  for (let frame = nearestCheckpoint; frame < targetFrame; frame++) {
-    engine.step(deltaTime);
-
-    // Save checkpoint
-    if (frame > 0 && frame % checkpointInterval === 0) {
-      const key = `${store.activeCompositionId}-${frame}`;
-      if (!compositionPhysicsStates.has(key)) {
-        compositionPhysicsStates.set(key, engine.saveState());
-      }
-    }
-  }
+  const state = engine.evaluateFrame(targetFrame);
 
   // Apply physics state to layers
-  applyPhysicsStateToLayers(store);
+  applyPhysicsStateToLayers(store, state);
 }
 
 /**
@@ -349,9 +341,9 @@ export function evaluatePhysicsAtFrame(
  */
 export function resetPhysicsSimulation(store: PhysicsStore): void {
   const engine = getPhysicsEngine(store);
-  engine.reset();
+  engine.clearCache();
 
-  // Clear composition-specific checkpoints
+  // Clear composition-specific states
   for (const key of compositionPhysicsStates.keys()) {
     if (key.startsWith(store.activeCompositionId)) {
       compositionPhysicsStates.delete(key);
@@ -364,8 +356,8 @@ export function resetPhysicsSimulation(store: PhysicsStore): void {
 
   for (const layer of comp.layers) {
     const physicsData = (layer.data as any)?.physics as PhysicsLayerData | undefined;
-    if (physicsData?.enabled && physicsData.config) {
-      const initialPos = physicsData.config.position;
+    if (physicsData?.physicsEnabled && physicsData.rigidBody) {
+      const initialPos = physicsData.rigidBody.position;
       if (layer.transform?.position) {
         layer.transform.position.value = {
           x: initialPos?.x ?? 0,
@@ -380,18 +372,18 @@ export function resetPhysicsSimulation(store: PhysicsStore): void {
 }
 
 /**
- * Apply current physics state to layer transforms
+ * Apply physics state to layer transforms
  */
-function applyPhysicsStateToLayers(store: PhysicsStore): void {
-  const engine = getPhysicsEngine(store);
+function applyPhysicsStateToLayers(store: PhysicsStore, state: PhysicsSimulationState): void {
   const comp = store.project.compositions[store.activeCompositionId];
   if (!comp) return;
 
   for (const layer of comp.layers) {
     const physicsData = (layer.data as any)?.physics as PhysicsLayerData | undefined;
-    if (!physicsData?.enabled) continue;
+    if (!physicsData?.physicsEnabled) continue;
 
-    const bodyState = engine.getRigidBodyState(layer.id);
+    // Find the body state for this layer
+    const bodyState = state.rigidBodies.find(b => b.id === layer.id);
     if (!bodyState) continue;
 
     // Update layer transform from physics state
@@ -414,6 +406,28 @@ function applyPhysicsStateToLayers(store: PhysicsStore): void {
 // BAKE TO KEYFRAMES
 // ============================================================================
 
+/** Internal keyframe structure for baking */
+interface BakedKeyframe<T> {
+  frame: number;
+  value: T;
+  interpolation: 'linear' | 'bezier';
+}
+
+/** Options for baking physics to keyframes */
+export interface BakeOptions {
+  startFrame?: number;
+  endFrame?: number;
+  sampleInterval?: number;
+  simplify?: boolean;
+}
+
+/** Result of baking physics to keyframes */
+export interface BakeResult {
+  layerId: string;
+  positionKeyframes: BakedKeyframe<{ x: number; y: number; z: number }>[];
+  rotationKeyframes: BakedKeyframe<number>[];
+}
+
 /**
  * Bake physics simulation to keyframes
  * Creates position and rotation keyframes from simulation
@@ -421,8 +435,8 @@ function applyPhysicsStateToLayers(store: PhysicsStore): void {
 export async function bakePhysicsToKeyframes(
   store: PhysicsStore,
   layerId: string,
-  options: KeyframeExportOptions = {}
-): Promise<ExportedKeyframes> {
+  options: BakeOptions = {}
+): Promise<BakeResult> {
   const layer = store.getLayerById(layerId);
   if (!layer) {
     throw new Error(`Layer not found: ${layerId}`);
@@ -436,57 +450,46 @@ export async function bakePhysicsToKeyframes(
   const startFrame = options.startFrame ?? 0;
   const endFrame = options.endFrame ?? comp.settings.frameCount - 1;
   const sampleInterval = options.sampleInterval ?? 1;
-  const fps = comp.settings.fps;
-  const deltaTime = 1 / fps;
 
   const engine = getPhysicsEngine(store);
 
-  // Reset to beginning
-  engine.reset();
+  // Clear cache to start fresh
+  engine.clearCache();
 
-  const positionKeyframes: Keyframe<{ x: number; y: number; z: number }>[] = [];
-  const rotationKeyframes: Keyframe<number>[] = [];
+  const positionKeyframes: BakedKeyframe<{ x: number; y: number; z: number }>[] = [];
+  const rotationKeyframes: BakedKeyframe<number>[] = [];
 
   // Simulate and collect keyframes
-  for (let frame = 0; frame <= endFrame; frame++) {
-    engine.step(deltaTime);
+  for (let frame = startFrame; frame <= endFrame; frame += sampleInterval) {
+    const state = engine.evaluateFrame(frame);
+    const bodyState = state.rigidBodies.find(b => b.id === layerId);
 
-    if (frame >= startFrame && frame % sampleInterval === 0) {
-      const bodyState = engine.getRigidBodyState(layerId);
-      if (bodyState) {
-        positionKeyframes.push({
-          frame,
-          value: {
-            x: bodyState.position.x,
-            y: bodyState.position.y,
-            z: layer.transform?.position?.value?.z ?? 0,
-          },
-          interpolation: 'linear',
-        });
+    if (bodyState) {
+      positionKeyframes.push({
+        frame,
+        value: {
+          x: bodyState.position.x,
+          y: bodyState.position.y,
+          z: layer.transform?.position?.value?.z ?? 0,
+        },
+        interpolation: 'linear',
+      });
 
-        rotationKeyframes.push({
-          frame,
-          value: bodyState.angle * (180 / Math.PI),
-          interpolation: 'linear',
-        });
-      }
+      rotationKeyframes.push({
+        frame,
+        value: bodyState.angle * (180 / Math.PI),
+        interpolation: 'linear',
+      });
     }
   }
 
-  // Apply keyframes to layer
-  if (layer.transform?.position) {
-    layer.transform.position.animated = true;
-    layer.transform.position.keyframes = positionKeyframes;
+  // Apply keyframes to layer (store should handle the Keyframe type conversion)
+  for (const kf of positionKeyframes) {
+    store.addKeyframe(layerId, 'transform.position', kf.frame, kf.value);
   }
 
-  if (layer.transform?.rotation) {
-    layer.transform.rotation.animated = true;
-    layer.transform.rotation.keyframes = rotationKeyframes;
-  }
-
-  // Optionally simplify keyframes
-  if (options.simplify) {
-    // TODO: Implement keyframe simplification (remove redundant keyframes)
+  for (const kf of rotationKeyframes) {
+    store.addKeyframe(layerId, 'transform.rotation', kf.frame, kf.value);
   }
 
   // Disable physics after baking
@@ -499,10 +502,8 @@ export async function bakePhysicsToKeyframes(
 
   return {
     layerId,
-    properties: {
-      'transform.position': positionKeyframes,
-      'transform.rotation': rotationKeyframes,
-    },
+    positionKeyframes,
+    rotationKeyframes,
   };
 }
 
@@ -511,16 +512,16 @@ export async function bakePhysicsToKeyframes(
  */
 export async function bakeAllPhysicsToKeyframes(
   store: PhysicsStore,
-  options: KeyframeExportOptions = {}
-): Promise<ExportedKeyframes[]> {
+  options: BakeOptions = {}
+): Promise<BakeResult[]> {
   const comp = store.project.compositions[store.activeCompositionId];
   if (!comp) return [];
 
-  const results: ExportedKeyframes[] = [];
+  const results: BakeResult[] = [];
 
   for (const layer of comp.layers) {
     const physicsData = (layer.data as any)?.physics as PhysicsLayerData | undefined;
-    if (physicsData?.enabled) {
+    if (physicsData?.physicsEnabled) {
       const result = await bakePhysicsToKeyframes(store, layer.id, options);
       results.push(result);
     }
@@ -600,17 +601,41 @@ export function createRagdollForLayer(
   const engine = getPhysicsEngine(store);
   const builder = createRagdollBuilder(layerId, layerId);
 
-  // Build ragdoll based on preset
-  const ragdoll = builder.buildFromPreset(preset);
+  // Build ragdoll based on preset - use builder pattern
+  const ragdoll = builder.fromPreset(preset).build();
 
-  // Add ragdoll to engine
-  engine.addRagdoll(ragdoll);
+  // Add ragdoll's rigid bodies to engine, then register the ragdoll
+  for (const bone of ragdoll.bones) {
+    const bodyConfig: RigidBodyConfig = {
+      id: `${ragdoll.id}_${bone.id}`,
+      layerId: ragdoll.layerId,
+      type: 'dynamic',
+      mass: bone.mass,
+      position: ragdoll.position,
+      velocity: { x: 0, y: 0 },
+      angle: ragdoll.rotation,
+      angularVelocity: 0,
+      shape: {
+        type: 'capsule',
+        length: bone.length,
+        radius: bone.width / 2,
+      },
+      material: ragdoll.material,
+      filter: ragdoll.filter,
+      response: 'collide',
+      linearDamping: ragdoll.damping,
+      angularDamping: ragdoll.damping,
+      canSleep: true,
+      sleepThreshold: 10,
+    };
+    engine.addRigidBody(bodyConfig);
+  }
+  engine.addRagdoll(ragdoll.id, ragdoll.bones);
 
   store.updateLayerData(layerId, {
     physics: {
-      enabled: true,
-      type: 'ragdoll',
-      config: ragdoll,
+      physicsEnabled: true,
+      ragdoll: ragdoll,
     },
   });
 

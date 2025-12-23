@@ -623,7 +623,7 @@ export class ConditioningRenderer {
       return this.canvas.convertToBlob({ type, quality });
     } else {
       return new Promise((resolve) => {
-        this.canvas.toBlob((blob) => resolve(blob!), type, quality);
+        (this.canvas as HTMLCanvasElement).toBlob((blob: Blob | null) => resolve(blob!), type, quality);
       });
     }
   }

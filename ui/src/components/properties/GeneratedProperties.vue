@@ -135,6 +135,19 @@ const sourceLayers = computed(() => {
   );
 });
 
+// Get composition resolution for generation (use smaller dimension to maintain aspect)
+const generationResolution = computed(() => {
+  const comp = store.activeComposition;
+  if (!comp) return 512;
+  // Use the smaller dimension, clamped to common AI model resolutions
+  const minDim = Math.min(comp.width, comp.height);
+  // Round to nearest standard resolution (256, 384, 512, 768, 1024)
+  const standardResolutions = [256, 384, 512, 768, 1024];
+  return standardResolutions.reduce((prev, curr) =>
+    Math.abs(curr - minDim) < Math.abs(prev - minDim) ? curr : prev
+  );
+});
+
 // Get available preprocessors based on selected generation type
 const availablePreprocessors = computed((): PreprocessorInfo[] => {
   return getPreprocessorsForType(generatedData.value.generationType || 'depth');
@@ -203,13 +216,13 @@ async function regenerate() {
   progressMessage.value = 'Starting...';
 
   try {
-    // Call the real preprocessor backend
+    // Call the real preprocessor backend using composition-derived resolution
     const result = await generateFromLayer(
       sourceLayerId,
       props.layer.id,
       preprocessorId,
       {
-        resolution: 512, // TODO: Make configurable
+        resolution: generationResolution.value,
       },
       store.currentFrame,
       (status) => {

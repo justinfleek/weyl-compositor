@@ -34,20 +34,18 @@ function createMockComposition(): Composition {
   return {
     id: 'comp-1',
     name: 'Test Composition',
-    width: 1920,
-    height: 1080,
-    frameRate: 30,
-    duration: 5,
-    frameCount: 150,
-    backgroundColor: '#000000',
+    settings: {
+      width: 1920,
+      height: 1080,
+      fps: 30,
+      duration: 5,
+      frameCount: 150,
+      backgroundColor: '#000000',
+      autoResizeToContent: false,
+    },
     layers: [],
-    cameras: [],
-    audioTracks: [],
-    markers: [],
-    guides: [],
     currentFrame: 0,
-    createdAt: new Date().toISOString(),
-    modifiedAt: new Date().toISOString(),
+    isNestedComp: false,
   };
 }
 
@@ -317,11 +315,11 @@ describe('Essential Graphics Service', () => {
       movePropertyToGroup(config, exposed.id, group.id);
       expect(config.exposedProperties[0].groupId).toBe(group.id);
 
-      const result = movePropertyToGroup(config, exposed.id, null);
+      const result = movePropertyToGroup(config, exposed.id, undefined);
 
       expect(result).toBe(true);
-      // After ungrouping, groupId is set to null (no group)
-      expect(config.exposedProperties[0].groupId).toBeNull();
+      // After ungrouping, groupId is set to undefined (no group)
+      expect(config.exposedProperties[0].groupId).toBeUndefined();
     });
   });
 

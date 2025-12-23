@@ -198,4 +198,4 @@ Both services implement memory-conscious patterns:
 
 **See also**: [SERVICE_API_REFERENCE.md](./SERVICE_API_REFERENCE.md) for index of all categories.
 
-*Generated: December 19, 2025*
+*Generated: December 23, 2025*

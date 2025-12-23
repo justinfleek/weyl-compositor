@@ -85,24 +85,24 @@ function weylPathToPaperPath(path: BezierPath): paper.Path {
 
     if (i === 0) {
       // First point: just moveTo
-      paperPath.moveTo(new paper.Point(v.x, v.y));
+      paperPath.moveTo(new paper.Point(v.point.x, v.point.y));
     } else {
       // Subsequent points: use bezier curves with handles
-      const handleOut = prevV.handleOut || { x: 0, y: 0 };
-      const handleIn = v.handleIn || { x: 0, y: 0 };
+      const handleOut = prevV.outHandle;
+      const handleIn = v.inHandle;
 
       // Check if this is a straight line (no handles)
       if (
         Math.abs(handleOut.x) < 0.001 && Math.abs(handleOut.y) < 0.001 &&
         Math.abs(handleIn.x) < 0.001 && Math.abs(handleIn.y) < 0.001
       ) {
-        paperPath.lineTo(new paper.Point(v.x, v.y));
+        paperPath.lineTo(new paper.Point(v.point.x, v.point.y));
       } else {
         // Bezier curve
         paperPath.cubicCurveTo(
-          new paper.Point(prevV.x + handleOut.x, prevV.y + handleOut.y),
-          new paper.Point(v.x + handleIn.x, v.y + handleIn.y),
-          new paper.Point(v.x, v.y)
+          new paper.Point(prevV.point.x + handleOut.x, prevV.point.y + handleOut.y),
+          new paper.Point(v.point.x + handleIn.x, v.point.y + handleIn.y),
+          new paper.Point(v.point.x, v.point.y)
         );
       }
     }
@@ -112,8 +112,8 @@ function weylPathToPaperPath(path: BezierPath): paper.Path {
   if (path.closed && path.vertices.length > 1) {
     const lastV = path.vertices[path.vertices.length - 1];
     const firstV = path.vertices[0];
-    const handleOut = lastV.handleOut || { x: 0, y: 0 };
-    const handleIn = firstV.handleIn || { x: 0, y: 0 };
+    const handleOut = lastV.outHandle;
+    const handleIn = firstV.inHandle;
 
     if (
       Math.abs(handleOut.x) < 0.001 && Math.abs(handleOut.y) < 0.001 &&
@@ -122,9 +122,9 @@ function weylPathToPaperPath(path: BezierPath): paper.Path {
       paperPath.closePath();
     } else {
       paperPath.cubicCurveTo(
-        new paper.Point(lastV.x + handleOut.x, lastV.y + handleOut.y),
-        new paper.Point(firstV.x + handleIn.x, firstV.y + handleIn.y),
-        new paper.Point(firstV.x, firstV.y)
+        new paper.Point(lastV.point.x + handleOut.x, lastV.point.y + handleOut.y),
+        new paper.Point(firstV.point.x + handleIn.x, firstV.point.y + handleIn.y),
+        new paper.Point(firstV.point.x, firstV.point.y)
       );
     }
   }
@@ -147,10 +147,9 @@ function paperPathToWeylPath(paperPath: paper.Path): BezierPath {
     const handleOut = segment.handleOut;
 
     vertices.push({
-      x: point.x,
-      y: point.y,
-      handleIn: handleIn.length > 0.001 ? { x: handleIn.x, y: handleIn.y } : undefined,
-      handleOut: handleOut.length > 0.001 ? { x: handleOut.x, y: handleOut.y } : undefined,
+      point: { x: point.x, y: point.y },
+      inHandle: handleIn.length > 0.001 ? { x: handleIn.x, y: handleIn.y } : { x: 0, y: 0 },
+      outHandle: handleOut.length > 0.001 ? { x: handleOut.x, y: handleOut.y } : { x: 0, y: 0 },
     });
   }
 

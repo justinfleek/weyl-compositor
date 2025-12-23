@@ -18,9 +18,8 @@ import type {
   PhysicsMaterial,
   CollisionFilter,
   HumanoidRagdollPreset,
-  HUMANOID_PRESETS,
-  MATERIAL_PRESETS,
 } from '@/types/physics';
+import { HUMANOID_PRESETS, MATERIAL_PRESETS } from '@/types/physics';
 
 import type { JointConfig, PivotJointConfig } from '@/types/physics';
 

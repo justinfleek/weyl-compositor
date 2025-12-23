@@ -1,6 +1,6 @@
 # CLAUDE.md - Weyl Compositor Development Guide
 
-**Version:** 8.4 | **Last Updated:** December 23, 2025
+**Version:** 8.5 | **Last Updated:** December 23, 2025
 
 ---
 
@@ -764,6 +764,36 @@ Use `offset` and `limit` parameters when reading:
 
 ---
 
+## Recent Changes (December 23, 2025 - Comprehensive Audit)
+
+### Stub Elimination & Feature Completion
+
+**Animated Spline Export (modelExport.ts):**
+- `extractSplineTrajectories()` now supports animated control points
+- Interpolates `AnimatableControlPoint.x/y` per-frame using `interpolateProperty()`
+- Falls back to static control points when `splineData.animated` is false
+
+**Physics Ragdoll State Tracking (PhysicsEngine.ts):**
+- Added `ragdollRegistry: Map<string, RagdollBone[]>` for tracking ragdolls
+- New methods: `addRagdoll()`, `removeRagdoll()`, `getRagdollIds()`
+- `getState()` now returns proper ragdoll states via `extractRagdollState()`
+
+**Dynamic Composition Values (Hardcoded → Dynamic):**
+- `PoseLayer.ts`: Added `setCompositionSize(width, height)` - was hardcoded 512x512
+- `TextLayer.ts`: Added `setCompositionFps(fps)` - was hardcoded 16fps
+- `GeneratedProperties.vue`: Uses `generationResolution` computed from composition - was hardcoded 512
+
+**Service Integration (services/index.ts):**
+- `colorDepthReactivity.ts` now exported - pixel-based color/depth sampling
+- `motionReactivity.ts` now exported - layer velocity/acceleration tracking
+- Both aliased to avoid naming conflicts with existing motion detection
+
+**Verified Working (No Fix Needed):**
+- PoseLayer registration in LayerManager (lines 408-409)
+- Audio FPS uses composition setting with 16 as fallback only
+
+---
+
 ## Recent Changes (December 22, 2025 - Tutorial 20)
 
 ### Tutorial 20: Advanced Trajectories & Export Pipeline
@@ -815,16 +845,27 @@ Use `offset` and `limit` parameters when reading:
 
 ---
 
-## Planned Features (Not Yet Integrated)
+## Newly Integrated Services (December 23, 2025)
 
-The following services are **complete implementations** but not yet wired into the UI:
+The following services are now **exported from services/index.ts** and available for use:
 
 | Service | Purpose | Status |
 |---------|---------|--------|
-| `colorDepthReactivity.ts` | Pixel-based color/depth sampling for audio-style reactivity | Complete, needs UI |
-| `motionReactivity.ts` | Layer motion-based reactivity (velocity, acceleration) | Complete, needs UI |
+| `colorDepthReactivity.ts` | Pixel-based color/depth sampling for audio-style reactivity | ✅ Exported, needs UI panel |
+| `motionReactivity.ts` | Layer motion-based reactivity (velocity, acceleration) | ✅ Exported, needs UI panel |
 
-These were inspired by RyanOnTheInside's ComfyUI nodes and provide frame-based reactive values. Integration would require adding UI in the Properties panel similar to audio reactivity mappings.
+**Usage (programmatic):**
+```typescript
+import {
+  getMappedColorValue,
+  getMappedDepthValue,
+  getMappedColorMotionValue, // frame differencing
+  getMappedLayerMotionValue, // layer velocity
+  computeMotionState,
+} from '@/services';
+```
+
+These were inspired by RyanOnTheInside's ComfyUI nodes. To complete integration, add UI panels similar to audio reactivity mappings in the Properties panel.
 
 ---
 

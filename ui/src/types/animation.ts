@@ -46,6 +46,9 @@ export interface Keyframe<T> {
   inHandle: BezierHandle;
   outHandle: BezierHandle;
   controlMode: ControlMode;  // How handles behave when dragged
+  // Spatial tangents for position keyframes (motion path curves)
+  spatialInTangent?: { x: number; y: number; z: number };
+  spatialOutTangent?: { x: number; y: number; z: number };
 }
 
 /**
@@ -80,6 +83,31 @@ export type EasingType =
 export type InterpolationType = BaseInterpolationType | EasingType;
 
 // ============================================================
+// PROPERTY VALUE TYPES
+// ============================================================
+
+/**
+ * All possible values that can be stored in keyframes.
+ * Used for type-safe clipboard operations and generic property handling.
+ */
+export type PropertyValue =
+  | number                                           // Opacity, rotation, scalar values
+  | string                                           // Enum values, hex colors
+  | { x: number; y: number }                         // Vec2 (2D position/scale)
+  | { x: number; y: number; z?: number }             // Position/Scale (optional z)
+  | { x: number; y: number; z: number }              // Vec3 (orientation, 3D vectors)
+  | { r: number; g: number; b: number; a: number };  // RGBA color
+
+/**
+ * Clipboard keyframe entry with property path context
+ */
+export interface ClipboardKeyframe {
+  layerId: string;
+  propertyPath: string;
+  keyframes: Keyframe<PropertyValue>[];
+}
+
+// ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
@@ -93,7 +121,7 @@ export function createAnimatableProperty<T>(
   group?: string
 ): AnimatableProperty<T> {
   return {
-    id: `prop_${name}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    id: `prop_${name}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name,
     type,
     value,
@@ -112,7 +140,7 @@ export function createKeyframe<T>(
   interpolation: InterpolationType = 'linear'
 ): Keyframe<T> {
   return {
-    id: `kf_${frame}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    id: `kf_${frame}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     frame,
     value,
     interpolation,

@@ -124,6 +124,26 @@
         </label>
         <span class="z-depth-hint">(↑/↓ keys)</span>
       </div>
+      <div class="toolbar-separator"></div>
+      <!-- Animation controls -->
+      <div class="toolbar-group animation-controls" v-if="hasControlPoints">
+        <button
+          class="toolbar-btn"
+          :class="{ active: isSplineAnimated }"
+          @click="toggleSplineAnimation"
+          :title="isSplineAnimated ? 'Spline animation enabled' : 'Enable spline point animation'"
+        >
+          {{ isSplineAnimated ? '◆ Animated' : '◇ Animate' }}
+        </button>
+        <button
+          v-if="selectedPointIds.length > 0"
+          class="toolbar-btn keyframe-btn"
+          @click="keyframeSelectedPoints"
+          title="Add keyframe to selected points at current frame"
+        >
+          ◆ Keyframe ({{ selectedPointIds.length }})
+        </button>
+      </div>
     </div>
 
     <!-- Control point visuals are rendered via SVG overlay -->
@@ -520,6 +540,9 @@ const layerTransform = computed(() => {
   return { position, rotation, scale, anchorPoint };
 });
 
+// Debug rate-limiting flag for transformPoint
+let transformPointLogged = false;
+
 // Transform a point from layer space to composition space
 function transformPoint(p: { x: number; y: number }): { x: number; y: number } {
   const { position, rotation, scale, anchorPoint } = layerTransform.value;
@@ -546,16 +569,14 @@ function transformPoint(p: { x: number; y: number }): { x: number; y: number } {
   };
 
   // Debug first call only to avoid console spam
-  if (!transformPoint._logged) {
+  if (!transformPointLogged) {
     console.log('[SplineEditor] transformPoint:', { input: p, output: result, position, scale, anchorPoint });
-    transformPoint._logged = true;
-    setTimeout(() => { transformPoint._logged = false; }, 1000);
+    transformPointLogged = true;
+    setTimeout(() => { transformPointLogged = false; }, 1000);
   }
 
   return result;
 }
-// @ts-ignore - debugging flag
-transformPoint._logged = false;
 
 // Inverse transform: from composition space to layer space
 function inverseTransformPoint(p: { x: number; y: number }): { x: number; y: number } {
@@ -596,6 +617,15 @@ const smoothTolerance = ref(10);
 
 // Check if spline has control points
 const hasControlPoints = computed(() => visibleControlPoints.value.length > 0);
+
+// Check if spline is in animated mode
+const isSplineAnimated = computed(() => {
+  if (!props.layerId) return false;
+  const layer = store.layers.find(l => l.id === props.layerId);
+  if (!layer || layer.type !== 'spline') return false;
+  const splineData = layer.data as SplineData;
+  return splineData?.animated === true;
+});
 
 // Get type of selected point
 const selectedPointType = computed<'smooth' | 'corner' | null>(() => {
@@ -750,6 +780,23 @@ function smoothSpecificPoints(pointIds: string[]) {
 function simplifySpline() {
   if (!props.layerId) return;
   store.simplifySpline(props.layerId, smoothTolerance.value);
+  emit('pathUpdated');
+}
+
+// Toggle spline animation mode
+function toggleSplineAnimation() {
+  if (!props.layerId) return;
+  store.enableSplineAnimation(props.layerId);
+  emit('pathUpdated');
+}
+
+// Add keyframes to selected control points at current frame
+function keyframeSelectedPoints() {
+  if (!props.layerId || selectedPointIds.value.length === 0) return;
+  const frame = props.currentFrame;
+  for (const pointId of selectedPointIds.value) {
+    store.addSplinePointPositionKeyframe(props.layerId, pointId, frame);
+  }
   emit('pathUpdated');
 }
 
@@ -1039,7 +1086,7 @@ function handleMouseDown(event: MouseEvent) {
   if (penSubMode.value === 'add') {
     // Add point at end of path (in layer space)
     const newPoint: ControlPoint = {
-      id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `cp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       x: layerPos.x,
       y: layerPos.y,
       handleIn: null,
@@ -1072,7 +1119,7 @@ function handleMouseDown(event: MouseEvent) {
     if (closest) {
       const closestLayerPos = inverseTransformPoint({ x: closest.x, y: closest.y });
       const newPoint: ControlPoint = {
-        id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `cp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         x: closestLayerPos.x,
         y: closestLayerPos.y,
         handleIn: null,

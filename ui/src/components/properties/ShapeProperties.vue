@@ -673,7 +673,7 @@ function toggleKeyframe(propName: string, dataKey: string) {
     } else {
       // Add keyframe at current frame
       prop.keyframes.push({
-        id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         frame,
         value: prop.value,
         easing: 'linear',
@@ -694,7 +694,7 @@ function ensureProperty(propName: string, dataKey: string) {
   if (!existing) {
     const currentValue = (shapeData.value as any)[dataKey] ?? 0;
     props.layer.properties.push({
-      id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      id: `prop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       name: propName,
       type: 'number',
       value: currentValue,
@@ -725,7 +725,7 @@ function getEffectDisplayName(type: SplinePathEffectType): string {
 }
 
 function generateId(): string {
-  return `effect_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  return `effect_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function createAnimatableProp(value: number, name: string): AnimatableProperty<number> {
@@ -896,7 +896,7 @@ function toggleEffectKeyframe(effectId: string, propName: string) {
     prop.animated = prop.keyframes.length > 0;
   } else {
     prop.keyframes.push({
-      id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       frame,
       value: prop.value,
       easing: 'linear',

@@ -672,7 +672,7 @@ export class ShapeLayer extends BaseLayer {
   private getAnimatedValue<T>(prop: AnimatableProperty<T>): T {
     // Use the interpolation service for proper keyframe interpolation
     // This handles all interpolation types (linear, bezier, hold) and expressions
-    return interpolateProperty(prop, this.currentFrame, 30, this.layer.id);
+    return interpolateProperty(prop, this.currentFrame, 30, this.layerData.id);
   }
 
   /**

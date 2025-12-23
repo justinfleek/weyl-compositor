@@ -113,7 +113,7 @@ export function createDefaultAudioMapping(
   target: TargetParameter = 'particle.emissionRate'
 ): AudioMapping {
   return {
-    id: id || `mapping_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: id || `mapping_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     feature,
     target,
     targetLayerId: undefined,

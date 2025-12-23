@@ -22,7 +22,8 @@ import type {
   BlenderFormat,
 } from '@/types/cameraTracking';
 import { useCompositorStore } from '@/stores/compositorStore';
-import type { AnimatableProperty, Keyframe } from '@/types/project';
+import type { AnimatableProperty } from '@/types/animation';
+import { createKeyframe, createAnimatableProperty } from '@/types/animation';
 
 /**
  * Parse Weyl native JSON format
@@ -358,62 +359,53 @@ export async function importCameraTracking(
       const fov = 2 * Math.atan(intrinsics.height / (2 * intrinsics.focalLength)) * (180 / Math.PI);
 
       // Create position keyframes
-      const positionKeyframes: Keyframe<{ x: number; y: number; z: number }>[] =
-        transformedPoses.map(pose => ({
-          frame: pose.frame,
-          value: pose.position,
-          interpolation: 'linear' as const,
-        }));
+      const positionKeyframes = transformedPoses.map(pose =>
+        createKeyframe(pose.frame, pose.position, 'linear')
+      );
 
       // Create rotation keyframes (convert quaternion to euler)
-      const rotationKeyframes: Keyframe<{ x: number; y: number; z: number }>[] =
-        transformedPoses.map(pose => {
-          const euler = quaternionToEuler(
-            pose.rotation.w,
-            pose.rotation.x,
-            pose.rotation.y,
-            pose.rotation.z
-          );
-          return {
-            frame: pose.frame,
-            value: euler,
-            interpolation: 'linear' as const,
-          };
-        });
+      const rotationKeyframes = transformedPoses.map(pose => {
+        const euler = quaternionToEuler(
+          pose.rotation.w,
+          pose.rotation.x,
+          pose.rotation.y,
+          pose.rotation.z
+        );
+        return createKeyframe(pose.frame, euler, 'linear');
+      });
 
       // Create camera layer
-      const cameraLayer = store.addLayer({
-        type: 'camera',
-        name: `Tracked Camera (${solve.source})`,
-        data: {
-          cameraType: 'perspective',
-          fov: { defaultValue: fov, animated: false, keyframes: [] },
-          near: 0.1,
-          far: 10000,
-          dof: { enabled: false, focusDistance: 100, aperture: 2.8, blurLevel: 1 },
-        },
-      });
+      const cameraLayer = store.addLayer('camera', `Tracked Camera (${solve.source})`);
 
       if (cameraLayer) {
         // Apply keyframed transform
-        const positionProp: AnimatableProperty<{ x: number; y: number; z: number }> = {
-          defaultValue: transformedPoses[0]?.position ?? { x: 0, y: 0, z: 0 },
-          animated: true,
-          keyframes: positionKeyframes,
-        };
+        // Position uses { x, y, z? } - z is optional but we include it for 3D
+        const positionProp = createAnimatableProperty(
+          'position',
+          transformedPoses[0]?.position ?? { x: 0, y: 0, z: 0 },
+          'position',
+          'Transform'
+        );
+        positionProp.animated = true;
+        positionProp.keyframes = positionKeyframes as any; // keyframes match the value type
 
-        const rotationProp: AnimatableProperty<{ x: number; y: number; z: number }> = {
-          defaultValue: rotationKeyframes[0]?.value ?? { x: 0, y: 0, z: 0 },
-          animated: true,
-          keyframes: rotationKeyframes,
-        };
+        // Use orientation for 3D rotation (vector3), rotation is for 2D (number)
+        const orientationProp = createAnimatableProperty(
+          'orientation',
+          rotationKeyframes[0]?.value ?? { x: 0, y: 0, z: 0 },
+          'vector3',
+          'Transform'
+        );
+        orientationProp.animated = true;
+        orientationProp.keyframes = rotationKeyframes as any;
 
+        // Update the camera layer with camera-specific data and transform
         store.updateLayer(cameraLayer.id, {
           threeD: true,
           transform: {
             ...cameraLayer.transform,
-            position: positionProp,
-            rotation: rotationProp,
+            position: positionProp as any, // Cast needed due to z optional mismatch
+            orientation: orientationProp,
           },
         });
 
@@ -436,28 +428,14 @@ export async function importCameraTracking(
           z: (options.flipZ ? -point.position.z : point.position.z) * scale + offset.z,
         };
 
-        const nullLayer = store.addLayer({
-          type: 'control',
-          name: `Track Point ${point.id}`,
-          data: {
-            iconSize: 10,
-            iconShape: 'crosshair',
-            iconColor: point.color
-              ? `rgb(${point.color.r}, ${point.color.g}, ${point.color.b})`
-              : '#FFFF00',
-          },
-        });
+        const nullLayer = store.addLayer('control', `Track Point ${point.id}`);
 
         if (nullLayer) {
           store.updateLayer(nullLayer.id, {
             threeD: true,
             transform: {
               ...nullLayer.transform,
-              position: {
-                defaultValue: pos,
-                animated: false,
-                keyframes: [],
-              },
+              position: createAnimatableProperty('position', pos, 'position', 'Transform') as any,
             },
           });
 
@@ -495,18 +473,18 @@ export async function importCameraTracking(
         }
       }
 
-      const pointCloudLayer = store.addLayer({
-        type: 'point_cloud',
-        name: `Track Points (${solve.source})`,
-        data: {
-          positions: new Float32Array(positions),
-          colors: new Float32Array(colors),
-          pointSize,
-          format: 'xyz_rgb',
-        },
-      });
+      const pointCloudLayer = store.addLayer('pointcloud', `Track Points (${solve.source})`);
 
       if (pointCloudLayer) {
+        // Note: point cloud data structure may vary - cast as any for flexibility
+        store.updateLayer(pointCloudLayer.id, {
+          data: {
+            positions: new Float32Array(positions),
+            colors: new Float32Array(colors),
+            pointSize,
+            format: 'xyz_rgb',
+          } as any,
+        });
         result.pointCloudLayerId = pointCloudLayer.id;
       }
     }
@@ -590,9 +568,10 @@ export function exportCameraToTrackingFormat(
 
   const poses: CameraPose[] = [];
 
-  // Get position and rotation keyframes
+  // Get position and orientation (3D rotation) properties
   const positionProp = layer.transform?.position;
-  const rotationProp = layer.transform?.rotation;
+  // Use orientation for 3D rotation, fall back to individual rotationX/Y/Z
+  const orientationProp = layer.transform?.orientation;
 
   // Generate poses for each frame with keyframes
   const allFrames = new Set<number>();
@@ -600,14 +579,22 @@ export function exportCameraToTrackingFormat(
   if (positionProp?.keyframes) {
     positionProp.keyframes.forEach(kf => allFrames.add(kf.frame));
   }
-  if (rotationProp?.keyframes) {
-    rotationProp.keyframes.forEach(kf => allFrames.add(kf.frame));
+  if (orientationProp?.keyframes) {
+    orientationProp.keyframes.forEach(kf => allFrames.add(kf.frame));
   }
+
+  // Helper to ensure z is defined
+  const ensureZ = (v: { x: number; y: number; z?: number }): { x: number; y: number; z: number } => ({
+    x: v.x,
+    y: v.y,
+    z: v.z ?? 0
+  });
 
   // If no keyframes, just export default pose
   if (allFrames.size === 0) {
-    const pos = positionProp?.defaultValue ?? { x: 0, y: 0, z: 0 };
-    const rot = rotationProp?.defaultValue ?? { x: 0, y: 0, z: 0 };
+    const posValue = positionProp?.value ?? { x: 0, y: 0 };
+    const pos = ensureZ(posValue);
+    const rot = orientationProp?.value ?? { x: 0, y: 0, z: 0 };
 
     poses.push({
       frame: 0,
@@ -620,9 +607,10 @@ export function exportCameraToTrackingFormat(
     const sortedFrames = Array.from(allFrames).sort((a, b) => a - b);
 
     for (const frame of sortedFrames) {
-      // Interpolate position
-      const pos = interpolateProperty(positionProp, frame);
-      const rot = interpolateProperty(rotationProp, frame);
+      // Interpolate position - handle z being optional
+      const posValue = interpolatePositionProperty(positionProp, frame);
+      const pos = ensureZ(posValue);
+      const rot = interpolateOrientationProperty(orientationProp, frame);
 
       poses.push({
         frame,
@@ -635,26 +623,26 @@ export function exportCameraToTrackingFormat(
 
   // Get camera data for intrinsics
   const cameraData = layer.data as {
-    fov?: { defaultValue?: number };
+    fov?: { value?: number };
   };
 
-  const fov = cameraData?.fov?.defaultValue ?? 50;
-  const focalLength = comp.height / (2 * Math.tan((fov * Math.PI / 180) / 2));
+  const fov = cameraData?.fov?.value ?? 50;
+  const focalLength = comp.settings.height / (2 * Math.tan((fov * Math.PI / 180) / 2));
 
   return {
     version: '1.0',
     source: 'custom',
     metadata: {
-      sourceWidth: comp.width,
-      sourceHeight: comp.height,
-      frameRate: comp.frameRate,
-      frameCount: comp.frameCount,
+      sourceWidth: comp.settings.width,
+      sourceHeight: comp.settings.height,
+      frameRate: comp.settings.fps,
+      frameCount: comp.settings.frameCount,
     },
     intrinsics: {
       focalLength,
-      principalPoint: { x: comp.width / 2, y: comp.height / 2 },
-      width: comp.width,
-      height: comp.height,
+      principalPoint: { x: comp.settings.width / 2, y: comp.settings.height / 2 },
+      width: comp.settings.width,
+      height: comp.settings.height,
       model: 'pinhole',
     },
     poses,
@@ -686,18 +674,63 @@ function eulerToQuaternion(
 }
 
 /**
- * Simple linear interpolation for properties
+ * Simple linear interpolation for position properties (z is optional)
  */
-function interpolateProperty<T extends { x: number; y: number; z: number }>(
-  prop: AnimatableProperty<T> | undefined,
+function interpolatePositionProperty(
+  prop: AnimatableProperty<{ x: number; y: number; z?: number }> | undefined,
   frame: number
-): T {
+): { x: number; y: number; z?: number } {
   if (!prop) {
-    return { x: 0, y: 0, z: 0 } as T;
+    return { x: 0, y: 0, z: 0 };
   }
 
   if (!prop.animated || !prop.keyframes || prop.keyframes.length === 0) {
-    return prop.defaultValue;
+    return prop.value;
+  }
+
+  // Find surrounding keyframes
+  let prev = prop.keyframes[0];
+  let next = prop.keyframes[0];
+
+  for (const kf of prop.keyframes) {
+    if (kf.frame <= frame) {
+      prev = kf;
+    }
+    if (kf.frame >= frame && next.frame < frame) {
+      next = kf;
+      break;
+    }
+    next = kf;
+  }
+
+  if (prev.frame === next.frame) {
+    return prev.value;
+  }
+
+  // Linear interpolation
+  const t = (frame - prev.frame) / (next.frame - prev.frame);
+  const prevZ = prev.value.z ?? 0;
+  const nextZ = next.value.z ?? 0;
+  return {
+    x: prev.value.x + (next.value.x - prev.value.x) * t,
+    y: prev.value.y + (next.value.y - prev.value.y) * t,
+    z: prevZ + (nextZ - prevZ) * t,
+  };
+}
+
+/**
+ * Simple linear interpolation for orientation properties (all components required)
+ */
+function interpolateOrientationProperty(
+  prop: AnimatableProperty<{ x: number; y: number; z: number }> | undefined,
+  frame: number
+): { x: number; y: number; z: number } {
+  if (!prop) {
+    return { x: 0, y: 0, z: 0 };
+  }
+
+  if (!prop.animated || !prop.keyframes || prop.keyframes.length === 0) {
+    return prop.value;
   }
 
   // Find surrounding keyframes
@@ -725,5 +758,5 @@ function interpolateProperty<T extends { x: number; y: number; z: number }>(
     x: prev.value.x + (next.value.x - prev.value.x) * t,
     y: prev.value.y + (next.value.y - prev.value.y) * t,
     z: prev.value.z + (next.value.z - prev.value.z) * t,
-  } as T;
+  };
 }

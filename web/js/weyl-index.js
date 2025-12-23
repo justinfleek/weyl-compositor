@@ -187,7 +187,7 @@ class RenderQueueManager {
    * Add a new render job to the queue
    */
   async addJob(config) {
-    const jobId = `render-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const jobId = `render-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const job = {
       ...config,
       id: jobId,

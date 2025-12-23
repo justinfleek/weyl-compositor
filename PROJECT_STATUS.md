@@ -12,14 +12,14 @@
 |--------|-------|
 | Lines of Code | 240,000+ |
 | TypeScript Files | 297 |
-| Vue Components | 147 |
+| Vue Components | 146 |
 | Services | 160 |
 | Engine Files | 55 |
-| Store Files | 20 |
+| Store Files | 10 (+17 actions) |
 | Test Files | 48 |
 | Layer Types | 26 |
-| Effects | 69 |
-| Easing Functions | 45 |
+| Effects | 65 |
+| Easing Functions | 31 (+23 presets) |
 | Total Exports | 2,788 |
 
 ---
@@ -79,7 +79,7 @@
 - Undo/Redo (50 entry stack)
 - Expression system
 - Keyframe animation with bezier interpolation
-- 35 easing functions
+- 45 easing functions
 - Delete layer (button + context menu + keyboard)
 - Keyframe dragging
 - Curve editor handle dragging
@@ -117,6 +117,32 @@
 
 ---
 
+## December 23, 2025 Updates
+
+### Completed TODOs
+
+| Feature | File | Change |
+|---------|------|--------|
+| Animated Spline Export | `modelExport.ts` | `extractSplineTrajectories()` now interpolates AnimatableControlPoints |
+| Ragdoll State Tracking | `PhysicsEngine.ts` | Added ragdoll registry and `extractRagdollState()` integration |
+| Dynamic Composition Size | `PoseLayer.ts` | Added `setCompositionSize()` - was hardcoded 512x512 |
+| Dynamic FPS | `TextLayer.ts` | Added `setCompositionFps()` - was hardcoded 16fps |
+| Dynamic Resolution | `GeneratedProperties.vue` | Computed from composition - was hardcoded 512 |
+
+### Newly Exported Services
+
+| Service | Exports | Purpose |
+|---------|---------|---------|
+| `colorDepthReactivity.ts` | `getMappedColorValue`, `getMappedDepthValue`, `samplePixel`, etc. | Pixel-based color/depth sampling |
+| `motionReactivity.ts` | `getMappedLayerMotionValue`, `computeMotionState`, etc. | Layer velocity/acceleration tracking |
+
+### Verified Working
+
+- PoseLayer registration in LayerManager (line 408-409)
+- Audio FPS uses composition setting with 16 as fallback only
+
+---
+
 ## Known Limitations
 
 | Issue | Notes |
@@ -133,14 +159,14 @@
 
 ```
 ui/src/
-├── components/     106 .vue files
-├── engine/          41 .ts files
-├── services/       122 .ts files
+├── components/     147 .vue files
+├── engine/          55 .ts files
+├── services/       160 .ts files
 ├── stores/          20 .ts files
-├── types/           21 .ts files
+├── types/           23 .ts files
 ├── composables/      6 .ts files
-├── __tests__/       43 test files
-└── Total:          359 source files
+├── __tests__/       48 test files
+└── Total:          459 source files
 ```
 
 ---

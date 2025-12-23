@@ -603,7 +603,7 @@ export class ParticleLayer extends BaseLayer {
     bounciness: number;
     friction: number;
     bounds?: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } };
-    boundsBehavior: 'none' | 'kill' | 'bounce' | 'wrap';
+    boundsBehavior: 'none' | 'kill' | 'bounce' | 'wrap' | 'clamp' | 'stick';
   } | null = null;
 
   /**

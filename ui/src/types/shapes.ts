@@ -6,6 +6,7 @@
  */
 
 import type { AnimatableProperty, Keyframe } from './project';
+import { createAnimatableProperty } from './animation';
 
 // ============================================================================
 // BASE TYPES
@@ -441,7 +442,7 @@ export interface ShapeLayerData {
 let shapePropertyIdCounter = 0;
 
 function generateShapePropertyId(): string {
-  return `shape_prop_${++shapePropertyIdCounter}_${Math.random().toString(36).substr(2, 5)}`;
+  return `shape_prop_${++shapePropertyIdCounter}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
 export function createDefaultAnimatablePoint(name: string = 'Point'): AnimatableProperty<Point2D> {
@@ -771,22 +772,20 @@ export function createDefaultSmoothPath(): SmoothPathOperator {
 }
 
 export function createDefaultGradientFill(): GradientFillShape {
+  const gradientValue: GradientDef = {
+    type: 'linear',
+    stops: [
+      { position: 0, color: { r: 0, g: 0, b: 0, a: 1 } },
+      { position: 1, color: { r: 255, g: 255, b: 255, a: 1 } },
+    ],
+    startPoint: { x: 0, y: 0.5 },
+    endPoint: { x: 1, y: 0.5 },
+  };
+
   return {
     type: 'gradientFill',
     name: 'Gradient Fill',
-    gradient: {
-      value: {
-        type: 'linear',
-        stops: [
-          { position: 0, color: { r: 0, g: 0, b: 0, a: 1 } },
-          { position: 1, color: { r: 255, g: 255, b: 255, a: 1 } },
-        ],
-        startPoint: { x: 0, y: 0.5 },
-        endPoint: { x: 1, y: 0.5 },
-      },
-      animated: false,
-      keyframes: [],
-    },
+    gradient: createAnimatableProperty('Gradient', gradientValue, 'enum'),
     opacity: createDefaultAnimatableNumber(100, 'Opacity'),
     fillRule: 'nonzero',
     blendMode: 'normal',
@@ -794,22 +793,20 @@ export function createDefaultGradientFill(): GradientFillShape {
 }
 
 export function createDefaultGradientStroke(): GradientStrokeShape {
+  const gradientValue: GradientDef = {
+    type: 'linear',
+    stops: [
+      { position: 0, color: { r: 255, g: 255, b: 255, a: 1 } },
+      { position: 1, color: { r: 0, g: 0, b: 0, a: 1 } },
+    ],
+    startPoint: { x: 0, y: 0.5 },
+    endPoint: { x: 1, y: 0.5 },
+  };
+
   return {
     type: 'gradientStroke',
     name: 'Gradient Stroke',
-    gradient: {
-      value: {
-        type: 'linear',
-        stops: [
-          { position: 0, color: { r: 255, g: 255, b: 255, a: 1 } },
-          { position: 1, color: { r: 0, g: 0, b: 0, a: 1 } },
-        ],
-        startPoint: { x: 0, y: 0.5 },
-        endPoint: { x: 1, y: 0.5 },
-      },
-      animated: false,
-      keyframes: [],
-    },
+    gradient: createAnimatableProperty('Gradient', gradientValue, 'enum'),
     opacity: createDefaultAnimatableNumber(100, 'Opacity'),
     width: createDefaultAnimatableNumber(2, 'Width'),
     lineCap: 'round',

@@ -318,14 +318,14 @@ Full definitions in `types/effects.ts` (1,294 lines).
 
 ### HIGH PRIORITY - Core Animation Features
 
-| Feature | Location | What It Does |
-|---------|----------|--------------|
-| **Enable Spline Animation** | `layerActions.ts:910` | Enable keyframing on spline control points |
-| **Add Spline Point Keyframe** | `layerActions.ts:946` | Keyframe individual spline points |
-| **Simplify Spline** | `layerActions.ts:1202` | Reduce spline complexity (Ramer-Douglas-Peucker) |
-| **Smooth Spline Handles** | `layerActions.ts:1305` | Auto-smooth handles for natural curves |
-| **Convert Text to Splines** | `layerActions.ts:1581` | Convert text layer to editable path |
-| **Copy Path to Position** | `layerActions.ts:1772` | Use spline as motion path |
+| Feature | Location | UI Access |
+|---------|----------|-----------|
+| **Enable Spline Animation** | `layerActions.ts:910` | ✅ SplineEditor toolbar → "Animate" toggle |
+| **Add Spline Point Keyframe** | `layerActions.ts:946` | ✅ SplineEditor toolbar → "Keyframe" button |
+| **Simplify Spline** | `layerActions.ts:1202` | ✅ SplineEditor toolbar |
+| **Smooth Spline Handles** | `layerActions.ts:1305` | ✅ SplineEditor toolbar |
+| **Convert Text to Splines** | `layerActions.ts:1581` | Context menu |
+| **Copy Path to Position** | `layerActions.ts:1772` | Context menu |
 
 ### HIGH PRIORITY - Property Linking
 
@@ -335,21 +335,21 @@ Full definitions in `types/effects.ts` (1,294 lines).
 | **Create Audio Property Driver** | `compositorStore.ts:2757` | Drive properties from audio |
 | **DriverList Panel** | `panels/DriverList.vue` | ✅ Mounted in right sidebar → Drivers |
 
-### MEDIUM PRIORITY - Audio Path Animation
+### ✅ MEDIUM PRIORITY - Audio Path Animation (NOW COMPLETE)
 
-| Feature | Location | What It Does |
-|---------|----------|--------------|
-| **Create Path Animator** | `audioActions.ts` | Create audio-driven path animation |
-| **Set Path Animator Path** | `audioActions.ts` | Assign path to animator |
-| **Update Path Animator Config** | `audioActions.ts` | Configure animation params |
+| Feature | Location | UI Access |
+|---------|----------|-----------|
+| **Create Path Animator** | `AudioPanel.vue` | ✅ Audio panel → "Audio Path Animation" section |
+| **Set Path Animator Path** | `AudioPanel.vue` | ✅ Path layer dropdown |
+| **Update Path Animator Config** | `AudioPanel.vue` | ✅ Sensitivity, smoothing, mode controls |
 
-### MEDIUM PRIORITY - Asset Management
+### ✅ MEDIUM PRIORITY - Asset Management (NOW COMPLETE)
 
-| Feature | Location | What It Does |
-|---------|----------|--------------|
-| **Find Used Asset IDs** | `projectActions.ts:385` | Find which assets are in use |
-| **Remove Unused Assets** | `projectActions.ts:434` | Clean up unused assets |
-| **Get Asset Usage Stats** | `projectActions.ts:462` | Show asset usage statistics |
+| Feature | Location | UI Access |
+|---------|----------|-----------|
+| **Find Used Asset IDs** | `projectActions.ts:385` | Internal (used by cleanup) |
+| **Remove Unused Assets** | `projectActions.ts:434` | ✅ Project panel → "+" menu → "Remove Unused Assets" |
+| **Get Asset Usage Stats** | `projectActions.ts:462` | Internal (used by cleanup) |
 
 ### LOW PRIORITY - AI Features
 

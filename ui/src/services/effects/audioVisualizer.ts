@@ -459,13 +459,13 @@ function generateWaveformData(
  */
 export function registerAudioVisualizerEffects(): void {
   // Audio Spectrum Effect
-  registerEffectRenderer('audio-spectrum', (input, params, frame) => {
-    return renderAudioSpectrum(input, params as AudioSpectrumParams, frame);
+  registerEffectRenderer('audio-spectrum', (input: EffectStackResult, params: EvaluatedEffectParams) => {
+    return renderAudioSpectrum(input, params as unknown as AudioSpectrumParams, 0);
   });
 
   // Audio Waveform Effect
-  registerEffectRenderer('audio-waveform', (input, params, frame) => {
-    return renderAudioWaveform(input, params as AudioWaveformParams, frame);
+  registerEffectRenderer('audio-waveform', (input: EffectStackResult, params: EvaluatedEffectParams) => {
+    return renderAudioWaveform(input, params as unknown as AudioWaveformParams, 0);
   });
 }
 

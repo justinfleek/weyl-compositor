@@ -125,7 +125,7 @@ export function createEnhancedBeatGrid(
   const firstBeatFrame = findFirstStrongBeat(analysis, detectedBeats, fps);
 
   // Convert detected beats to enhanced beats
-  let beats = detectedBeats.map(frame => ({
+  let beats: EnhancedBeat[] = detectedBeats.map(frame => ({
     frame,
     strength: calculateBeatStrength(analysis, frame),
     confidence: 1.0,
@@ -293,10 +293,10 @@ function findFirstStrongBeat(
  * Calculate beat strength from audio analysis
  */
 function calculateBeatStrength(analysis: AudioAnalysis, frame: number): number {
-  const clampedFrame = Math.max(0, Math.min(frame, analysis.amplitude.length - 1));
+  const clampedFrame = Math.max(0, Math.min(frame, analysis.amplitudeEnvelope.length - 1));
 
   // Combine multiple features for strength estimation
-  const amplitude = analysis.amplitude[clampedFrame] || 0;
+  const amplitude = analysis.amplitudeEnvelope[clampedFrame] || 0;
   const bass = analysis.frequencyBands.bass[clampedFrame] || 0;
   const flux = analysis.spectralFlux?.[clampedFrame] || 0;
 

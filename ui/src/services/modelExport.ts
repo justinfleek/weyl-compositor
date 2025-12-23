@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import type { Camera3D } from '@/types/camera';
 import type { Layer, ControlPoint, SplineData } from '@/types/project';
+import { interpolateProperty } from './interpolation';
 
 // ============================================================================
 // CAMERA MATRIX EXPORT (camera-comfyUI compatible)
@@ -271,22 +272,45 @@ export function extractLayerTrajectory(
 
 /**
  * Extract trajectories from spline control points
+ * Supports both static and animated control points
  */
 export function extractSplineTrajectories(
   splineData: SplineData,
   startFrame: number,
   endFrame: number
 ): PointTrajectory[] {
-  // For now, splines are static - return constant positions
-  // TODO: Support animated spline control points
+  const frameCount = endFrame - startFrame + 1;
+
+  // Check if using animated control points
+  if (splineData.animated && splineData.animatedControlPoints?.length) {
+    return splineData.animatedControlPoints.map(acp => {
+      const points: Array<{ frame: number; x: number; y: number }> = [];
+
+      for (let i = 0; i < frameCount; i++) {
+        const frame = startFrame + i;
+        // Interpolate x and y at this frame
+        const x = interpolateProperty(acp.x, frame);
+        const y = interpolateProperty(acp.y, frame);
+        points.push({ frame, x, y });
+      }
+
+      return {
+        id: acp.id,
+        points,
+        visibility: Array(frameCount).fill(true)
+      };
+    });
+  }
+
+  // Fall back to static control points
   return splineData.controlPoints.map(cp => ({
     id: cp.id,
-    points: Array.from({ length: endFrame - startFrame + 1 }, (_, i) => ({
+    points: Array.from({ length: frameCount }, (_, i) => ({
       frame: startFrame + i,
       x: cp.x,
       y: cp.y
     })),
-    visibility: Array(endFrame - startFrame + 1).fill(true)
+    visibility: Array(frameCount).fill(true)
   }));
 }
 

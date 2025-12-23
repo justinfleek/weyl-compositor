@@ -448,7 +448,7 @@ export function segmentationToMask(
   }
 
   // Create unique ID
-  const maskId = `mask_seg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  const maskId = `mask_seg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
   // Create mask path
   const path: MaskPath = {

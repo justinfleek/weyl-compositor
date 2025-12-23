@@ -291,14 +291,7 @@ See `docs/` folder for 37 additional technical documents.
 
 ## Known Limitations
 
-**Fully functional with minor gaps:**
-
-### Partial Features
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Spline Point Animation | ⚠️ Service exists | Keyframing individual spline points needs UI work |
-| Audio Path Animation | ⚠️ Service exists | Creating path animators needs menu access |
-| Asset Cleanup | ⚠️ Service exists | "Remove unused assets" needs menu item |
+**Fully functional:**
 
 ### Requires External Setup
 | Feature | Requirement |

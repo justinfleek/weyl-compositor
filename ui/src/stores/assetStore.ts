@@ -214,7 +214,7 @@ export const useAssetStore = defineStore('assets', {
      * Create a new material from preset
      */
     createMaterialFromPreset(presetName: string, customName?: string): string {
-      const id = `mat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = `mat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
       // Get preset base config (these are partial configs)
       const presetConfigs: Record<string, Partial<PBRMaterialConfig>> = {
@@ -255,7 +255,7 @@ export const useAssetStore = defineStore('assets', {
      * Create a new empty material
      */
     createEmptyMaterial(name: string = 'New Material'): string {
-      const id = `mat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = `mat_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       const config = this.createDefaultMaterialConfig(id, name);
 
       const stored: StoredMaterial = {

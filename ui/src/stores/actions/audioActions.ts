@@ -596,7 +596,7 @@ function createAmplitudeProperty(
   amplitudes: number[],
   scale: number
 ): AnimatableProperty<number> {
-  const id = `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `prop_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
   const keyframes: Keyframe<number>[] = amplitudes.map((amp, frame) => ({
     id: `kf_${id}_${frame}`,
@@ -611,7 +611,8 @@ function createAmplitudeProperty(
   return {
     id,
     name,
-    defaultValue: 0,
+    type: 'number' as const,
+    value: 0,
     animated: true,
     keyframes
   };
@@ -664,7 +665,7 @@ export function getAudioAmplitudeAtFrame(
     .filter(k => k.frame > frame)
     .sort((a, b) => a.frame - b.frame)[0];
 
-  if (!prevKf && !nextKf) return property.defaultValue as number;
+  if (!prevKf && !nextKf) return property.value as number;
   if (!prevKf) return nextKf.value as number;
   if (!nextKf) return prevKf.value as number;
 
@@ -1006,5 +1007,5 @@ export function getFrequencyBandAtFrame(
   const keyframe = property.keyframes.find(k => k.frame === frame);
   if (keyframe) return keyframe.value as number;
 
-  return property.defaultValue as number;
+  return property.value as number;
 }

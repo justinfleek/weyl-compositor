@@ -185,17 +185,42 @@
           </div>
 
           <div v-if="separatedStems" class="stems-list">
-            <div class="stems-header">Separated Stems</div>
+            <div class="stems-header">
+              Separated Stems
+              <span v-if="activeStemName" class="active-stem-badge">Active: {{ activeStemName }}</span>
+            </div>
+            <!-- Main audio option -->
+            <div
+              class="stem-item"
+              :class="{ 'active-stem': !activeStemName }"
+            >
+              <span class="stem-icon">🎵</span>
+              <span class="stem-name">Main Audio</span>
+              <button
+                class="stem-btn use"
+                :class="{ active: !activeStemName }"
+                @click="useMainAudio"
+                :disabled="!activeStemName"
+                title="Use Main Audio for Reactivity"
+              >{{ !activeStemName ? '✓' : '🔗' }}</button>
+            </div>
+            <!-- Separated stems -->
             <div
               v-for="(data, stemName) in separatedStems"
               :key="stemName"
               class="stem-item"
+              :class="{ 'active-stem': activeStemName === stemName }"
             >
               <span class="stem-icon">{{ getStemIcon(stemName as string) }}</span>
               <span class="stem-name">{{ stemName }}</span>
               <button class="stem-btn play" @click="playStem(stemName as string)" title="Play">▶</button>
               <button class="stem-btn download" @click="downloadStemFile(stemName as string)" title="Download">⬇</button>
-              <button class="stem-btn use" @click="useStemForReactivity(stemName as string)" title="Use for Audio Reactivity">🔗</button>
+              <button
+                class="stem-btn use"
+                :class="{ active: activeStemName === stemName }"
+                @click="useStemForReactivity(stemName as string)"
+                title="Use for Audio Reactivity"
+              >{{ activeStemName === stemName ? '✓' : '🔗' }}</button>
             </div>
           </div>
 
@@ -373,6 +398,108 @@
         </div>
       </div>
 
+      <!-- Audio Path Animation Section -->
+      <div class="path-anim-section">
+        <div class="section-header clickable" @click="pathAnimSectionExpanded = !pathAnimSectionExpanded">
+          <span class="expand-icon">{{ pathAnimSectionExpanded ? '▼' : '►' }}</span>
+          <span class="section-title">Audio Path Animation</span>
+        </div>
+
+        <div v-if="pathAnimSectionExpanded" class="section-content">
+          <p class="section-description">
+            Animate objects along a spline path driven by audio features.
+          </p>
+
+          <!-- Path Layer Selection -->
+          <div class="control-row">
+            <label>Path Layer</label>
+            <select v-model="pathAnimSplineId" class="path-select">
+              <option value="">Select a spline/path layer...</option>
+              <option v-for="layer in splineLayers" :key="layer.id" :value="layer.id">
+                {{ layer.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Target Layer Selection -->
+          <div class="control-row">
+            <label>Target</label>
+            <select v-model="pathAnimTargetId" class="target-select">
+              <option value="">Select target layer...</option>
+              <option v-for="layer in animatableLayers" :key="layer.id" :value="layer.id">
+                {{ layer.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Movement Mode -->
+          <div class="control-row">
+            <label>Mode</label>
+            <select v-model="pathAnimMode" class="mode-select">
+              <option value="amplitude">Amplitude (position maps to volume)</option>
+              <option value="accumulate">Accumulate (travels on sound)</option>
+            </select>
+          </div>
+
+          <!-- Sensitivity -->
+          <div class="control-row">
+            <label>Sensitivity</label>
+            <input
+              type="range"
+              min="0.1"
+              max="3"
+              step="0.1"
+              v-model.number="pathAnimSensitivity"
+              class="sensitivity-slider"
+            />
+            <span class="value">{{ pathAnimSensitivity.toFixed(1) }}x</span>
+          </div>
+
+          <!-- Smoothing -->
+          <div class="control-row">
+            <label>Smoothing</label>
+            <input
+              type="range"
+              min="0"
+              max="0.9"
+              step="0.05"
+              v-model.number="pathAnimSmoothing"
+              class="smoothing-slider"
+            />
+            <span class="value">{{ Math.round(pathAnimSmoothing * 100) }}%</span>
+          </div>
+
+          <!-- Audio Feature -->
+          <div class="control-row">
+            <label>Audio Source</label>
+            <select v-model="pathAnimFeature" class="feature-select">
+              <option value="amplitude">Overall Amplitude</option>
+              <option value="bass">Bass (20-250 Hz)</option>
+              <option value="mid">Mid (500-2000 Hz)</option>
+              <option value="high">High (4000+ Hz)</option>
+            </select>
+          </div>
+
+          <!-- Create Button -->
+          <button
+            class="create-path-anim-btn"
+            @click="createPathAnimator"
+            :disabled="!pathAnimSplineId || !pathAnimTargetId || isCreatingPathAnim"
+          >
+            {{ isCreatingPathAnim ? 'Creating...' : '🎵 Create Path Animator' }}
+          </button>
+
+          <div v-if="pathAnimResult" class="convert-result">
+            <span class="result-icon">✅</span>
+            <span>{{ pathAnimResult }}</span>
+          </div>
+
+          <div v-if="pathAnimError" class="error-message">
+            {{ pathAnimError }}
+          </div>
+        </div>
+      </div>
+
       <!-- MIDI File to Keyframes Section -->
       <div class="midi-file-section">
         <div class="section-header clickable" @click="midiFileSectionExpanded = !midiFileSectionExpanded">
@@ -508,6 +635,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+import { useAudioStore } from '@/stores/audioStore';
 import { SliderInput } from '@/components/controls';
 import AudioProperties from '@/components/properties/AudioProperties.vue';
 import AudioValuePreview from '@/components/panels/AudioValuePreview.vue';
@@ -545,6 +673,7 @@ import {
 } from '@/services/midiToKeyframes';
 
 const store = useCompositorStore();
+const audioStore = useAudioStore();
 
 // Stem separation state
 const stemSectionExpanded = ref(false);
@@ -609,6 +738,18 @@ const isConvertingMIDI = ref(false);
 const midiConvertResult = ref<{ layerName: string; keyframeCount: number } | null>(null);
 const midiConvertError = ref<string | null>(null);
 
+// Audio Path Animation state
+const pathAnimSectionExpanded = ref(false);
+const pathAnimSplineId = ref('');
+const pathAnimTargetId = ref('');
+const pathAnimMode = ref<'amplitude' | 'accumulate'>('amplitude');
+const pathAnimSensitivity = ref(1.0);
+const pathAnimSmoothing = ref(0.3);
+const pathAnimFeature = ref<'amplitude' | 'bass' | 'mid' | 'high'>('amplitude');
+const isCreatingPathAnim = ref(false);
+const pathAnimResult = ref<string | null>(null);
+const pathAnimError = ref<string | null>(null);
+
 // Audio volume/mute now uses store state
 const masterVolume = computed({
   get: () => store.audioVolume,
@@ -628,6 +769,138 @@ const audioDuration = computed(() => {
   const s = Math.floor(store.audioBuffer.duration % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 });
+
+// Active stem for audio reactivity
+const activeStemName = computed(() => audioStore.activeStemName);
+
+// Path animator computed properties
+const splineLayers = computed(() => {
+  return store.layers.filter(l => l.type === 'spline' || l.type === 'path');
+});
+
+const animatableLayers = computed(() => {
+  return store.layers.filter(l =>
+    l.type !== 'camera' &&
+    l.type !== 'light' &&
+    l.type !== 'audio' &&
+    l.id !== pathAnimSplineId.value
+  );
+});
+
+// Create path animator function
+async function createPathAnimator() {
+  if (!pathAnimSplineId.value || !pathAnimTargetId.value) {
+    pathAnimError.value = 'Please select both a path layer and target layer';
+    return;
+  }
+
+  if (!store.audioBuffer || !store.audioAnalysis) {
+    pathAnimError.value = 'Please load and analyze audio first';
+    return;
+  }
+
+  isCreatingPathAnim.value = true;
+  pathAnimError.value = null;
+  pathAnimResult.value = null;
+
+  try {
+    const splineLayer = store.layers.find(l => l.id === pathAnimSplineId.value);
+    const targetLayer = store.layers.find(l => l.id === pathAnimTargetId.value);
+
+    if (!splineLayer || !targetLayer) {
+      pathAnimError.value = 'Could not find selected layers';
+      return;
+    }
+
+    // Get audio feature data based on selection
+    const audioData = store.audioAnalysis;
+    const fps = store.fps || 16;
+    const frameCount = store.frameCount;
+
+    // Build keyframes for the target layer position based on audio
+    const keyframes: Array<{ frame: number; value: { x: number; y: number; z: number } }> = [];
+
+    // Get spline path data for position mapping
+    const splineData = splineLayer.data as any;
+    const controlPoints = splineData?.controlPoints || [];
+
+    if (controlPoints.length < 2) {
+      pathAnimError.value = 'Path layer needs at least 2 control points';
+      return;
+    }
+
+    // Calculate path positions for each frame based on audio
+    for (let frame = 0; frame < frameCount; frame++) {
+      // Get audio value for this frame based on selected feature
+      let audioValue = 0;
+      if (pathAnimFeature.value === 'amplitude') {
+        audioValue = audioData.amplitude?.[frame] || 0;
+      } else if (pathAnimFeature.value === 'bass') {
+        audioValue = audioData.frequencyBands?.[frame]?.bass || 0;
+      } else if (pathAnimFeature.value === 'mid') {
+        audioValue = audioData.frequencyBands?.[frame]?.mid || 0;
+      } else if (pathAnimFeature.value === 'high') {
+        audioValue = audioData.frequencyBands?.[frame]?.high || 0;
+      }
+
+      // Apply sensitivity
+      audioValue = Math.min(1, audioValue * pathAnimSensitivity.value);
+
+      // Map audio value to position along path (0-1)
+      const t = pathAnimMode.value === 'amplitude'
+        ? audioValue  // Direct mapping
+        : frame / frameCount;  // Linear for accumulate (simplified)
+
+      // Linear interpolation along control points
+      const pathIndex = t * (controlPoints.length - 1);
+      const startIndex = Math.floor(pathIndex);
+      const endIndex = Math.min(startIndex + 1, controlPoints.length - 1);
+      const localT = pathIndex - startIndex;
+
+      const startPoint = controlPoints[startIndex];
+      const endPoint = controlPoints[endIndex];
+
+      const x = startPoint.x + (endPoint.x - startPoint.x) * localT;
+      const y = startPoint.y + (endPoint.y - startPoint.y) * localT;
+
+      // Add keyframe every 4 frames to keep it manageable
+      if (frame % 4 === 0 || frame === frameCount - 1) {
+        keyframes.push({
+          frame,
+          value: { x, y, z: 0 }
+        });
+      }
+    }
+
+    // Apply keyframes to target layer's position
+    if (keyframes.length > 0) {
+      store.updateLayerProperty(targetLayer.id, 'transform.position', {
+        ...targetLayer.transform.position,
+        animated: true,
+        keyframes: keyframes.map(kf => ({
+          id: `kf_${Date.now()}_${kf.frame}`,
+          frame: kf.frame,
+          value: kf.value,
+          interpolation: 'bezier' as const,
+          handles: { in: { x: -0.25, y: 0 }, out: { x: 0.25, y: 0 } }
+        }))
+      });
+
+      pathAnimResult.value = `Created ${keyframes.length} keyframes on "${targetLayer.name}" following "${splineLayer.name}"`;
+      console.log(`[Weyl] Audio path animator: ${keyframes.length} keyframes created`);
+    }
+  } catch (err) {
+    pathAnimError.value = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[Weyl] Audio path animator error:', err);
+  } finally {
+    isCreatingPathAnim.value = false;
+  }
+}
+
+function useMainAudio() {
+  audioStore.setActiveStem(null);
+  console.log('[Weyl] Switched to main audio for reactivity');
+}
 
 function loadAudioFile() { audioFileInput.value?.click(); }
 
@@ -850,13 +1123,29 @@ function downloadStemFile(stemName: string) {
   downloadStem(separatedStems.value[stemName], fileName);
 }
 
-function useStemForReactivity(stemName: string) {
+async function useStemForReactivity(stemName: string) {
   if (!separatedStems.value?.[stemName]) return;
 
-  // TODO: Integrate with audio store to use this stem for audio reactivity
-  // For now, show a message
-  console.log(`[Weyl] Using ${stemName} stem for audio reactivity`);
-  alert(`${stemName} stem selected for audio reactivity.\nThis feature will be fully integrated in a future update.`);
+  const stemData = separatedStems.value[stemName];
+  console.log(`[Weyl] Loading ${stemName} stem for audio reactivity`);
+
+  try {
+    // Get FPS from compositor store or use default
+    const fps = store.project?.composition?.fps || 16;
+
+    // Check if stem is already loaded in the audio store
+    if (!audioStore.hasStem(stemName)) {
+      // Load and analyze the stem
+      await audioStore.loadStem(stemName, stemData, fps);
+    }
+
+    // Set this stem as the active source for audio reactivity
+    audioStore.setActiveStem(stemName);
+
+    console.log(`[Weyl] ${stemName} stem now active for audio reactivity`);
+  } catch (error) {
+    console.error(`[Weyl] Failed to use ${stemName} stem for reactivity:`, error);
+  }
 }
 
 // ============================================================================
@@ -1285,6 +1574,14 @@ onUnmounted(() => {
 .stem-btn.play:hover { background: #4a90d9; }
 .stem-btn.download:hover { background: #10B981; }
 .stem-btn.use:hover { background: #8B5CF6; }
+.stem-btn.use.active { background: #8B5CF6; color: #fff; }
+.stem-btn.use:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Active stem highlighting */
+.stem-item.active-stem { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.5); }
+.stem-item.active-stem .stem-name { color: #fff; font-weight: 500; }
+.active-stem-badge { margin-left: auto; font-size: 10px; color: #8B5CF6; font-weight: 600; }
+.stems-header { display: flex; align-items: center; }
 
 .error-message { padding: 8px; background: #ff4444; color: #fff; border-radius: 4px; font-size: 12px; }
 
@@ -1413,4 +1710,27 @@ onUnmounted(() => {
 .convert-midi-btn { padding: 10px 16px; background: #8B5CF6; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s; }
 .convert-midi-btn:hover:not(:disabled) { background: #9D6FF8; }
 .convert-midi-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Audio Path Animation Styles */
+.path-anim-section { border-top: 1px solid #333; }
+.path-anim-section .section-header.clickable { display: flex; align-items: center; gap: 8px; padding: 10px; background: #252525; cursor: pointer; user-select: none; }
+.path-anim-section .section-header.clickable:hover { background: #2a2a2a; }
+.path-anim-section .expand-icon { width: 12px; font-size: 10px; color: #666; }
+.path-anim-section .section-title { flex: 1; font-weight: 600; color: #888; }
+
+.path-anim-section .section-content { padding: 10px; background: #1a1a1a; display: flex; flex-direction: column; gap: 10px; }
+.path-anim-section .section-description { margin: 0; font-size: 11px; color: #666; line-height: 1.4; }
+
+.path-anim-section .path-select,
+.path-anim-section .target-select,
+.path-anim-section .mode-select,
+.path-anim-section .feature-select { flex: 1; padding: 6px 8px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 4px; font-size: 12px; }
+.path-anim-section select:focus { outline: none; border-color: #10B981; }
+
+.path-anim-section .sensitivity-slider { flex: 1; height: 4px; accent-color: #10B981; }
+.path-anim-section .value { width: 40px; text-align: right; font-size: 11px; color: #666; font-variant-numeric: tabular-nums; }
+
+.create-path-anim-btn { padding: 10px 16px; background: #10B981; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s; }
+.create-path-anim-btn:hover:not(:disabled) { background: #34D399; }
+.create-path-anim-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

@@ -171,7 +171,7 @@ export function duplicateEffect(
 
   // Deep clone the effect
   const duplicate: EffectInstance = structuredClone(effect);
-  duplicate.id = `effect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  duplicate.id = `effect_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   duplicate.name = `${effect.name} Copy`;
 
   // Insert after original

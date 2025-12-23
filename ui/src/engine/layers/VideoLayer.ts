@@ -213,12 +213,11 @@ export class VideoLayer extends BaseLayer {
       // Fetch the video file as blob for WebCodecs
       const response = await fetch(videoUrl);
       const videoBlob = await response.blob();
-      const videoFile = new File([videoBlob], 'video.mp4', { type: videoBlob.type });
+      const blobUrl = URL.createObjectURL(videoBlob);
 
       // Create and initialize the decoder
-      this.frameAccurateDecoder = new VideoDecoderService(videoFile, {
+      this.frameAccurateDecoder = new VideoDecoderService(blobUrl, {
         maxCacheSize: 100,  // Cache up to 100 frames
-        enableAudio: this.videoData.audioEnabled,
       });
 
       const info = await this.frameAccurateDecoder.initialize();
@@ -226,7 +225,7 @@ export class VideoLayer extends BaseLayer {
       // Update metadata with accurate frame info from decoder
       if (this.metadata) {
         this.metadata.fps = info.fps;
-        this.metadata.frameCount = info.totalFrames;
+        this.metadata.frameCount = info.frameCount;
         this.metadata.duration = info.duration;
         this.metadata.width = info.width;
         this.metadata.height = info.height;
@@ -239,7 +238,7 @@ export class VideoLayer extends BaseLayer {
       this.decodedFrameCtx = this.decodedFrameCanvas.getContext('2d');
 
       this.useFrameAccurateDecoding = true;
-      layerLogger.debug(`VideoLayer: WebCodecs decoder initialized - ${info.totalFrames} frames @ ${info.fps}fps`);
+      layerLogger.debug(`VideoLayer: WebCodecs decoder initialized - ${info.frameCount} frames @ ${info.fps}fps`);
     } catch (error) {
       layerLogger.warn('VideoLayer: WebCodecs decoder failed, falling back to HTMLVideoElement:', error);
       this.useFrameAccurateDecoding = false;
@@ -417,8 +416,8 @@ export class VideoLayer extends BaseLayer {
         // Draw the decoded frame to canvas
         this.decodedFrameCtx.clearRect(0, 0, this.decodedFrameCanvas.width, this.decodedFrameCanvas.height);
 
-        if (frameInfo.image instanceof ImageBitmap) {
-          this.decodedFrameCtx.drawImage(frameInfo.image, 0, 0);
+        if (frameInfo.bitmap instanceof ImageBitmap) {
+          this.decodedFrameCtx.drawImage(frameInfo.bitmap, 0, 0);
         }
 
         // Update texture from decoded frame

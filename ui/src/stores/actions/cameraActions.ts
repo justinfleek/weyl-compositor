@@ -39,7 +39,7 @@ export function createCameraLayer(
   const comp = store.getActiveComp();
   const layers = store.getActiveCompLayers();
 
-  const cameraId = `camera_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const cameraId = `camera_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   const cameraName = name || `Camera ${store.cameras.size + 1}`;
 
   // Create the camera object
@@ -59,7 +59,7 @@ export function createCameraLayer(
   }
 
   // Create the layer
-  const layerId = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const layerId = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   const frameCount = (comp?.settings.frameCount || 81) - 1;
   const layer: Layer = {
     id: layerId,

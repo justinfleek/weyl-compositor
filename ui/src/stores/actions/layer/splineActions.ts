@@ -204,7 +204,7 @@ export function addSplinePointKeyframe(
   } else {
     // Add new keyframe
     animatableProp.keyframes.push({
-      id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       frame,
       value: animatableProp.value,
       interpolation: 'bezier',

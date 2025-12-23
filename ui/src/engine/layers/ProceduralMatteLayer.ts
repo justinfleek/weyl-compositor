@@ -179,9 +179,9 @@ export class ProceduralMatteLayer extends BaseLayer {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, w, h);
 
-    // Get animation time
-    const speed = this.matteEvaluator.evaluate(this.matteData.animation.speed, frame);
-    const phase = this.matteEvaluator.evaluate(this.matteData.animation.phase, frame);
+    // Get animation time (explicit types for TypeScript inference)
+    const speed: number = this.matteEvaluator.evaluate(this.matteData.animation.speed, frame);
+    const phase: number = this.matteEvaluator.evaluate(this.matteData.animation.phase, frame);
     const time = this.matteData.animation.enabled ? (frame * speed / 60 + phase) : 0;
 
     // Render based on pattern type
@@ -246,8 +246,8 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderLinearGradient(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const angle = this.matteEvaluator.evaluate(params.angle!, frame) + time * 360;
-    const blend = this.matteEvaluator.evaluate(params.blend!, frame);
+    const angle: number = this.matteEvaluator.evaluate(params.angle!, frame) + time * 360;
+    const blend: number = this.matteEvaluator.evaluate(params.blend!, frame);
 
     const rad = angle * Math.PI / 180;
     const cos = Math.cos(rad);
@@ -274,10 +274,10 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderRadialGradient(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const centerX = this.matteEvaluator.evaluate(params.centerX!, frame);
-    const centerY = this.matteEvaluator.evaluate(params.centerY!, frame);
-    const radius = this.matteEvaluator.evaluate(params.radius!, frame) + time * 0.5;
-    const blend = params.blend ? this.matteEvaluator.evaluate(params.blend, frame) : 0.3;
+    const centerX: number = this.matteEvaluator.evaluate(params.centerX!, frame);
+    const centerY: number = this.matteEvaluator.evaluate(params.centerY!, frame);
+    const radius: number = this.matteEvaluator.evaluate(params.radius!, frame) + time * 0.5;
+    const blend: number = params.blend ? this.matteEvaluator.evaluate(params.blend, frame) : 0.3;
 
     const cx = centerX * w;
     const cy = centerY * h;
@@ -293,9 +293,9 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderAngularGradient(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const centerX = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
-    const centerY = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
-    const rotation = (params.angle ? this.matteEvaluator.evaluate(params.angle, frame) : 0) + time * 360;
+    const centerX: number = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
+    const centerY: number = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
+    const rotation: number = (params.angle ? this.matteEvaluator.evaluate(params.angle, frame) : 0) + time * 360;
 
     const cx = centerX * w;
     const cy = centerY * h;
@@ -320,11 +320,11 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderRamp(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const progress = this.matteEvaluator.evaluate(params.progress!, frame);
-    const softness = params.softness ? this.matteEvaluator.evaluate(params.softness, frame) : 0.1;
-    const angle = params.angle ? this.matteEvaluator.evaluate(params.angle, frame) : 0;
+    const progress: number = this.matteEvaluator.evaluate(params.progress!, frame);
+    const softness: number = params.softness ? this.matteEvaluator.evaluate(params.softness, frame) : 0.1;
+    const angle: number = params.angle ? this.matteEvaluator.evaluate(params.angle, frame) : 0;
 
-    const animProgress = this.matteData.animation.enabled ? (progress + time) % 1 : progress;
+    const animProgress: number = this.matteData.animation.enabled ? (progress + time) % 1 : progress;
 
     const rad = angle * Math.PI / 180;
     const cos = Math.cos(rad);
@@ -350,7 +350,7 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderNoise(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const scale = params.scale ? this.matteEvaluator.evaluate(params.scale, frame) : 50;
+    const scale: number = params.scale ? this.matteEvaluator.evaluate(params.scale, frame) : 50;
     const octaves = params.octaves ?? 4;
 
     const imageData = ctx.getImageData(0, 0, w, h);
@@ -382,9 +382,9 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderCheckerboard(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const tilesX = params.tilesX ? this.matteEvaluator.evaluate(params.tilesX, frame) : 8;
-    const tilesY = params.tilesY ? this.matteEvaluator.evaluate(params.tilesY, frame) : 8;
-    const rotation = params.rotation ? this.matteEvaluator.evaluate(params.rotation, frame) : 0;
+    const tilesX: number = params.tilesX ? this.matteEvaluator.evaluate(params.tilesX, frame) : 8;
+    const tilesY: number = params.tilesY ? this.matteEvaluator.evaluate(params.tilesY, frame) : 8;
+    const rotation: number = params.rotation ? this.matteEvaluator.evaluate(params.rotation, frame) : 0;
 
     const tileW = w / tilesX;
     const tileH = h / tilesY;
@@ -408,10 +408,10 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderCircle(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const centerX = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
-    const centerY = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
-    const radius = params.radius ? this.matteEvaluator.evaluate(params.radius, frame) : 0.5;
-    const feather = params.feather ? this.matteEvaluator.evaluate(params.feather, frame) : 0;
+    const centerX: number = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
+    const centerY: number = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
+    const radius: number = params.radius ? this.matteEvaluator.evaluate(params.radius, frame) : 0.5;
+    const feather: number = params.feather ? this.matteEvaluator.evaluate(params.feather, frame) : 0;
 
     const cx = centerX * w;
     const cy = centerY * h;
@@ -433,11 +433,11 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderRectangle(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const centerX = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
-    const centerY = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
-    const rectWidth = params.width ? this.matteEvaluator.evaluate(params.width, frame) : 0.5;
-    const rectHeight = params.height ? this.matteEvaluator.evaluate(params.height, frame) : 0.5;
-    const cornerRadius = params.cornerRadius ? this.matteEvaluator.evaluate(params.cornerRadius, frame) : 0;
+    const centerX: number = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
+    const centerY: number = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
+    const rectWidth: number = params.width ? this.matteEvaluator.evaluate(params.width, frame) : 0.5;
+    const rectHeight: number = params.height ? this.matteEvaluator.evaluate(params.height, frame) : 0.5;
+    const cornerRadius: number = params.cornerRadius ? this.matteEvaluator.evaluate(params.cornerRadius, frame) : 0;
 
     const cx = centerX * w;
     const cy = centerY * h;
@@ -453,12 +453,12 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderIris(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const progress = params.progress ? this.matteEvaluator.evaluate(params.progress, frame) : 0.5;
-    const feather = params.feather ? this.matteEvaluator.evaluate(params.feather, frame) : 0.1;
-    const centerX = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
-    const centerY = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
+    const progress: number = params.progress ? this.matteEvaluator.evaluate(params.progress, frame) : 0.5;
+    const feather: number = params.feather ? this.matteEvaluator.evaluate(params.feather, frame) : 0.1;
+    const centerX: number = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
+    const centerY: number = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
 
-    const animProgress = this.matteData.animation.enabled ? (progress + time) % 1 : progress;
+    const animProgress: number = this.matteData.animation.enabled ? (progress + time) % 1 : progress;
     const cx = centerX * w;
     const cy = centerY * h;
     const maxRadius = Math.sqrt(w * w + h * h) / 2;
@@ -474,12 +474,12 @@ export class ProceduralMatteLayer extends BaseLayer {
 
   private renderRadialWipe(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number, time: number): void {
     const params = this.matteData.parameters;
-    const progress = params.progress ? this.matteEvaluator.evaluate(params.progress, frame) : 0.5;
-    const centerX = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
-    const centerY = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
-    const softness = params.softness ? this.matteEvaluator.evaluate(params.softness, frame) : 0.05;
+    const progress: number = params.progress ? this.matteEvaluator.evaluate(params.progress, frame) : 0.5;
+    const centerX: number = params.centerX ? this.matteEvaluator.evaluate(params.centerX, frame) : 0.5;
+    const centerY: number = params.centerY ? this.matteEvaluator.evaluate(params.centerY, frame) : 0.5;
+    const softness: number = params.softness ? this.matteEvaluator.evaluate(params.softness, frame) : 0.05;
 
-    const animProgress = this.matteData.animation.enabled ? (progress + time) % 1 : progress;
+    const animProgress: number = this.matteData.animation.enabled ? (progress + time) % 1 : progress;
     const cx = centerX * w;
     const cy = centerY * h;
     const angle = animProgress * Math.PI * 2;

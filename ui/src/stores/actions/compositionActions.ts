@@ -52,7 +52,7 @@ export function createComposition(
   settings?: Partial<CompositionSettings>,
   isNestedComp: boolean = false
 ): Composition {
-  const id = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `comp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
   // Get settings from active comp or use defaults
   const activeComp = store.project.compositions[store.activeCompositionId];
@@ -354,7 +354,7 @@ export function nestSelectedLayers(store: CompositionStore, name?: string): Comp
   // Create nested comp layer in parent composition
   const nestedEndFrame = earliestIn + nestedComp.settings.frameCount - 1;
   const nestedCompLayer: Layer = {
-    id: `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `layer_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name: nestedComp.name,
     type: 'nestedComp',
     visible: true,

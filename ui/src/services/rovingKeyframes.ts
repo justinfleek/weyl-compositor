@@ -337,6 +337,3 @@ export function calculateVelocities(
 
   return velocities;
 }
-
-// Export types
-export type { RovingOptions, RovingResult };

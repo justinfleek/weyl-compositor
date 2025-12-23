@@ -471,5 +471,5 @@ export const MathUtils = {
   lerp: (a: number, b: number, t: number) => a + (b - a) * t,
   degToRad: (degrees: number) => degrees * (Math.PI / 180),
   radToDeg: (radians: number) => radians * (180 / Math.PI),
-  generateUUID: () => Math.random().toString(36).substr(2, 9),
+  generateUUID: () => Math.random().toString(36).slice(2, 11),
 };

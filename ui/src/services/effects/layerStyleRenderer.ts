@@ -38,18 +38,39 @@ import type {
   GlobalLightSettings
 } from '@/types/layerStyles';
 import type { AnimatableProperty } from '@/types/project';
-import { applyBlendMode } from './blendModes';
+// blendModes module provides blendImages, blendPixel etc. via default export
+// import blendModes from '../blendModes';
+import { interpolateProperty } from '../interpolation';
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
 /**
+ * Current frame for animation evaluation (set per render call)
+ */
+let currentFrame = 0;
+
+/**
+ * Set current frame for getValue calls
+ */
+export function setCurrentFrame(frame: number): void {
+  currentFrame = frame;
+}
+
+/**
  * Get value from animatable property at current frame
+ * Uses keyframe interpolation when property is animated
  */
 function getValue<T>(prop: AnimatableProperty<T> | undefined, defaultValue: T): T {
   if (!prop) return defaultValue;
-  // TODO: Integrate with keyframe interpolation for animation
+
+  // Use keyframe interpolation if property is animated
+  if (prop.animated && prop.keyframes && prop.keyframes.length > 0) {
+    const interpolated = interpolateProperty(prop, currentFrame);
+    return (interpolated as T) ?? prop.value ?? defaultValue;
+  }
+
   return prop.value ?? defaultValue;
 }
 

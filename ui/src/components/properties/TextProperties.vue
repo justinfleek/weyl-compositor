@@ -909,7 +909,7 @@ function duplicateAnimator(animatorId: string) {
   if (!source) return;
 
   const duplicated: TextAnimator = structuredClone(source);
-  duplicated.id = `animator_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  duplicated.id = `animator_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   duplicated.name = `${source.name} (Copy)`;
 
   const currentAnimators = [...animators.value, duplicated];

@@ -282,8 +282,11 @@ function evaluateLayerProperties(
 ): Record<string, unknown> {
   const evaluated: Record<string, unknown> = {};
 
-  for (const prop of layer.properties) {
-    evaluated[prop.name] = interpolateProperty(prop, frame);
+  // Guard against missing properties array (e.g., from old/corrupted project data)
+  if (layer.properties && Array.isArray(layer.properties)) {
+    for (const prop of layer.properties) {
+      evaluated[prop.name] = interpolateProperty(prop, frame);
+    }
   }
 
   // Handle type-specific animatable properties in data
@@ -338,6 +341,7 @@ export function evaluateLayerCached(layer: Layer, frame: number): EvaluatedLayer
     threeD: layer.threeD,
     layerRef: layer,
     frame, // Include frame for particle system deterministic simulation
+    audioModifiers: {}, // Empty audio modifiers for non-audio-reactive layers
   });
 
   // Store in cache

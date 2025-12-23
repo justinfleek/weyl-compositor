@@ -6,7 +6,14 @@
  */
 
 import JSZip from 'jszip';
-import type { WeylProject, Asset } from '@/types/project';
+import type { WeylProject, AssetReference } from '@/types/project';
+
+// Extended asset type with additional collection properties
+type Asset = AssetReference & {
+  name?: string;       // Alias for filename
+  url?: string;        // URL source
+  mimeType?: string;   // MIME type for categorization
+};
 
 // ============================================================================
 // Types
@@ -72,7 +79,7 @@ class ProjectCollectionService {
 
     const zip = new JSZip();
     const manifest: CollectionManifest = {
-      projectName: project.name || 'Untitled Project',
+      projectName: project.meta?.name || 'Untitled Project',
       exportDate: new Date().toISOString(),
       weylVersion: '1.0.0',
       assetCount: 0,
@@ -135,16 +142,16 @@ class ProjectCollectionService {
 
           const assetType = this.getAssetType(asset);
           const folder = options.flatStructure ? '' : `assets/${assetType}/`;
-          const filename = this.sanitizeFilename(asset.name || `asset_${assetId}`);
+          const filename = this.sanitizeFilename(asset.name || asset.filename || `asset_${assetId}`);
           const extension = this.getExtension(asset);
           const assetPath = `${folder}${filename}${extension}`;
 
           zip.file(assetPath, assetData);
 
-          const sizeBytes = assetData.size || assetData.byteLength || 0;
+          const sizeBytes = (assetData instanceof Blob ? assetData.size : (assetData as ArrayBuffer).byteLength) || 0;
           manifest.files.push({
             path: assetPath,
-            originalName: asset.name || assetId,
+            originalName: asset.name || asset.filename || assetId,
             type: assetType,
             sizeBytes,
           });
@@ -269,18 +276,19 @@ class ProjectCollectionService {
         return await response.blob();
       }
 
-      // If asset has raw data
-      if (asset.data instanceof Blob) {
-        return asset.data;
+      // If asset has raw data (cast to unknown first for type compatibility)
+      const rawData = asset.data as unknown;
+      if (rawData instanceof Blob) {
+        return rawData;
       }
 
-      if (asset.data instanceof ArrayBuffer) {
-        return asset.data;
+      if (rawData instanceof ArrayBuffer) {
+        return rawData;
       }
 
       return null;
     } catch (error) {
-      console.warn(`[ProjectCollection] Failed to fetch asset: ${asset.name}`, error);
+      console.warn(`[ProjectCollection] Failed to fetch asset: ${asset.name || asset.filename}`, error);
       return null;
     }
   }
@@ -293,7 +301,7 @@ class ProjectCollectionService {
     if (mimeType.includes('font')) return 'font';
 
     // Check by name/extension
-    const name = (asset.name || '').toLowerCase();
+    const name = (asset.name || asset.filename || '').toLowerCase();
     if (/\.(png|jpg|jpeg|gif|webp|svg|bmp|tiff?)$/i.test(name)) return 'image';
     if (/\.(mp4|webm|mov|avi|mkv)$/i.test(name)) return 'video';
     if (/\.(mp3|wav|ogg|aac|flac|m4a)$/i.test(name)) return 'audio';
@@ -303,7 +311,7 @@ class ProjectCollectionService {
   }
 
   private getExtension(asset: Asset): string {
-    const name = asset.name || '';
+    const name = asset.name || asset.filename || '';
     const match = name.match(/\.[^.]+$/);
     if (match) return match[0];
 

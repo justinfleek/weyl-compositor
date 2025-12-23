@@ -215,7 +215,7 @@ async function createLayerFromDecomposed(
 ): Promise<Layer | null> {
   try {
     // Generate asset ID
-    const assetId = `decomp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const assetId = `decomp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     // Get image dimensions from data URL
     const dimensions = await getImageDimensions(decomposed.image);

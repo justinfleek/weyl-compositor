@@ -11,7 +11,10 @@
  * @see https://github.com/ali-vilab/Wan-Move
  */
 
-import type { SplinePoint } from '@/types/project';
+import type { ControlPoint } from '@/types/spline';
+
+// Type alias for backwards compatibility
+type SplinePoint = ControlPoint;
 
 // ============================================================================
 // TYPES
@@ -2075,9 +2078,9 @@ export const FLOW_PRESETS = {
   'metamorphosis': {
     pattern: 'morph' as const,
     params: {
-      morphSource: 'grid',
-      morphTarget: 'circle',
-      morphEasing: 'ease-in-out',
+      morphSource: 'grid' as const,
+      morphTarget: 'circle' as const,
+      morphEasing: 'ease-in-out' as const,
       noiseStrength: 0.08
     }
   },

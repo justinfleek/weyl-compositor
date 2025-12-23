@@ -80,7 +80,7 @@ import { getEmitterPosition, getEmissionDirection, type SplineProvider } from '.
 import { calculateForceField, getForceFieldTypeIndex, getFalloffTypeIndex } from './ParticleForceCalculator';
 import { ParticleTextureSystem } from './ParticleTextureSystem';
 import { ParticleAudioReactive } from './ParticleAudioReactive';
-import { ParticleFrameCacheSystem, type ParticleFrameCache } from './ParticleFrameCache';
+import { ParticleFrameCacheSystem } from './ParticleFrameCache';
 import { SpatialHashGrid } from './SpatialHashGrid';
 import { ParticleModulationCurves, type ModulationTextures, type LifetimeModulation } from './ParticleModulationCurves';
 
@@ -913,7 +913,7 @@ export class GPUParticleSystem {
       }
 
       // Check for beat-triggered burst
-      if (emitter.burstOnBeat && this.audioFeatures.get('beat') === 1) {
+      if (emitter.burstOnBeat && this.state.currentAudioFeatures.get('beat') === 1) {
         const burstCount = Math.floor(emitter.burstCount * emitter.beatEmissionMultiplier);
         for (let i = 0; i < burstCount; i++) {
           this.spawnParticle(emitter);

@@ -337,7 +337,7 @@ export class SVGExtrusionService {
    * Parse SVGLoader result into our format
    */
   private parseSVGResult(data: SVGResult, name: string): ParsedSVGDocument {
-    const id = `svg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `svg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     const paths: ParsedSVGPath[] = [];
 
     let minX = Infinity, minY = Infinity;

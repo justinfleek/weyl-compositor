@@ -23,7 +23,7 @@ export interface TrailConfig {
 }
 
 export interface TrailBlendingConfig {
-  blendMode: 'normal' | 'additive' | 'multiply' | 'screen';
+  blendMode: 'normal' | 'additive' | 'multiply' | 'screen' | 'premultiplied';
 }
 
 // ============================================================================

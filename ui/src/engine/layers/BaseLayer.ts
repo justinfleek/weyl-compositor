@@ -928,7 +928,10 @@ export abstract class BaseLayer implements LayerInstance {
       // Layer styles include: drop shadow, stroke, glow, bevel/emboss, overlays
       let styledCanvas = sourceCanvas;
       if (hasStyles && this.layerStyles) {
-        styledCanvas = renderLayerStyles(sourceCanvas, this.layerStyles, frame);
+        // Note: renderLayerStyles expects (canvas, styles, globalLight?)
+        // Frame-based animation of layer styles should be handled by evaluating
+        // animated properties before calling this function
+        styledCanvas = renderLayerStyles(sourceCanvas, this.layerStyles);
       }
 
       // STEP 2: Apply effects on styled content

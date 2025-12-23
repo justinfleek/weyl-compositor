@@ -334,7 +334,8 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   function toggleLayerHidden(layerId: string) {
     const layer = store.getLayerById(layerId);
     if (layer) {
-      store.updateLayer(layerId, { hidden: !layer.hidden });
+      // Layer uses 'visible' property (true = visible, false = hidden)
+      store.updateLayer(layerId, { visible: !layer.visible });
     }
   }
 
@@ -843,11 +844,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   // CREATE EFFECT LAYER (Ctrl+Alt+Y)
   // ========================================================================
   function createAdjustmentLayer() {
-    store.addLayer('adjustment', {
-      name: 'Effect Layer',
-      width: compWidth.value,
-      height: compHeight.value
-    });
+    store.addLayer('adjustment', 'Effect Layer');
     console.log('[Weyl] Created effect layer');
   }
 
@@ -855,9 +852,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
   // CREATE CONTROL LAYER (Ctrl+Alt+Shift+Y)
   // ========================================================================
   function createNullLayer() {
-    store.addLayer('null', {
-      name: 'Control'
-    });
+    store.addLayer('null', 'Control');
     console.log('[Weyl] Created control layer');
   }
 
@@ -879,10 +874,10 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
 
     if (data?.assetId) {
       assetId = data.assetId;
-    } else if (layer.type === 'precomp') {
+    } else if (layer.type === 'nestedComp') {
       if (data?.compositionId) {
         leftTab.value = 'comps';
-        console.log(`[Weyl] Revealed precomp source: ${data.compositionId}`);
+        console.log(`[Weyl] Revealed nested comp source: ${data.compositionId}`);
         return;
       }
     }
@@ -959,20 +954,24 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
     const firstLayer = store.getLayerById(selectedIds[0]);
     if (!firstLayer) return;
 
-    const targetColor = firstLayer.labelColor || firstLayer.color || '#808080';
+    const targetColor = firstLayer.labelColor || '#808080';
 
     const layers = store.layers;
     const matchingIds: string[] = [];
 
     for (const layer of layers) {
-      const layerColor = layer.labelColor || layer.color || '#808080';
+      const layerColor = layer.labelColor || '#808080';
       if (layerColor === targetColor) {
         matchingIds.push(layer.id);
       }
     }
 
     if (matchingIds.length > 0) {
-      store.selectLayers?.(matchingIds) || matchingIds.forEach(id => store.selectLayer(id, true));
+      if (store.selectLayers) {
+        store.selectLayers(matchingIds);
+      } else {
+        matchingIds.forEach(id => store.selectLayer(id, true));
+      }
       console.log(`[Weyl] Selected ${matchingIds.length} layers with label color ${targetColor}`);
     }
   }
@@ -989,7 +988,8 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
       const files = (e.target as HTMLInputElement).files;
       if (!files) return;
 
-      for (const file of files) {
+      // Use Array.from() for explicit iteration (FileList is array-like)
+      for (const file of Array.from(files)) {
         const ext = file.name.split('.').pop()?.toLowerCase();
         if (ext === 'svg') {
           await assetStore.importSvgFromFile(file);

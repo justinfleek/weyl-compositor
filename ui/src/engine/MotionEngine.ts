@@ -568,8 +568,8 @@ export class MotionEngine {
       // Evaluate transform
       const transform = this.evaluateTransform(frame, layer.transform, layer.threeD);
 
-      // Evaluate opacity
-      let opacity = interpolateProperty(layer.opacity, frame);
+      // Evaluate opacity (explicit type for TypeScript inference)
+      let opacity: number = interpolateProperty(layer.opacity, frame);
 
       // Evaluate effects
       const effects = this.evaluateEffects(frame, layer.effects);
@@ -776,12 +776,12 @@ export class MotionEngine {
 
     // Evaluate animated camera properties if they exist
     if (cameraData.animatedPosition) {
-      const pos = interpolateProperty(cameraData.animatedPosition, frame);
+      const pos: { x: number; y: number; z?: number } = interpolateProperty(cameraData.animatedPosition, frame);
       position = { x: pos.x, y: pos.y, z: pos.z ?? 0 };
     }
 
     if (cameraData.animatedTarget) {
-      const tgt = interpolateProperty(cameraData.animatedTarget, frame);
+      const tgt: { x: number; y: number; z?: number } = interpolateProperty(cameraData.animatedTarget, frame);
       target = { x: tgt.x, y: tgt.y, z: tgt.z ?? 0 };
     }
 

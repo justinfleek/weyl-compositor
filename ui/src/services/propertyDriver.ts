@@ -518,7 +518,7 @@ export function createPropertyDriver(
   sourceType: DriverSourceType = 'property'
 ): PropertyDriver {
   return {
-    id: `driver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `driver_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name: 'New Driver',
     enabled: true,
     targetLayerId,

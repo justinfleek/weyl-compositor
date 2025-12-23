@@ -201,4 +201,4 @@ import { ParticleSystem, SeededRandom } from '@/services/particleSystem';
 **Total Lines of Code**: ~350KB
 **Split into**: 10 category files for easier reading
 
-*Generated: December 19, 2025*
+*Generated: December 23, 2025*

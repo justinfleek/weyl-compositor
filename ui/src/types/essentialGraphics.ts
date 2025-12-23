@@ -353,7 +353,7 @@ export function createExpressionControl(
   type: ExpressionControlType,
   name: string
 ): ExpressionControl {
-  const id = `ctrl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `ctrl_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
   let defaultValue: any;
   let config: ExpressionControlConfig = {};
@@ -412,7 +412,7 @@ export function createExposedProperty(
   order: number
 ): ExposedProperty {
   return {
-    id: `exp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `exp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name,
     type,
     sourceLayerId: layerId,
@@ -427,7 +427,7 @@ export function createExposedProperty(
  */
 export function createPropertyGroup(name: string, order: number): PropertyGroup {
   return {
-    id: `grp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `grp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     name,
     expanded: true,
     order
@@ -439,7 +439,7 @@ export function createPropertyGroup(name: string, order: number): PropertyGroup 
  */
 export function createTemplateComment(text: string, order: number): TemplateComment {
   return {
-    id: `cmt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `cmt_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     text,
     order
   };

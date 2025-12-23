@@ -22,7 +22,7 @@ export type EffectCategory =
 export interface EffectParameter {
   id: string;
   name: string;
-  type: 'number' | 'color' | 'point' | 'angle' | 'checkbox' | 'dropdown' | 'layer';
+  type: 'number' | 'color' | 'point' | 'angle' | 'checkbox' | 'dropdown' | 'layer' | 'string' | 'curve' | 'data';
   value: any;
   defaultValue: any;
   min?: number;
@@ -61,7 +61,7 @@ export interface EffectInstance {
 /**
  * Parameter type mapping for effect definitions
  */
-export type EffectParameterType = 'number' | 'color' | 'point' | 'point3d' | 'angle' | 'checkbox' | 'dropdown' | 'layer';
+export type EffectParameterType = 'number' | 'color' | 'point' | 'point3d' | 'angle' | 'checkbox' | 'dropdown' | 'layer' | 'string' | 'curve' | 'data';
 
 /**
  * Get the AnimatableProperty type string for a parameter type
@@ -81,6 +81,9 @@ export function getAnimatableType(paramType: EffectParameterType): 'number' | 'p
     case 'checkbox':
     case 'dropdown':
     case 'layer':
+    case 'string':
+    case 'curve':
+    case 'data':
       return 'enum';
     default:
       return 'number';
@@ -1222,7 +1225,7 @@ export function createEffect(definitionKey: string): Effect | null {
   if (!def) return null;
 
   return {
-    id: `effect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `effect-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
     name: def.name,
     category: def.category,
     enabled: true,
@@ -1264,7 +1267,7 @@ export function createEffectInstance(definitionKey: string): EffectInstance | nu
   });
 
   return {
-    id: `effect-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `effect-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
     effectKey: definitionKey,
     name: def.name,
     category: def.category,

@@ -2,7 +2,7 @@
 
 **Document ID**: 00_MASTER_GROUND_TRUTH
 **Version**: 1.1.0
-**Last Updated**: December 20, 2025
+**Last Updated**: December 23, 2025
 **Status**: CANONICAL
 **Authority**: This document overrides all prior chat instructions, inline code comments, and legacy assumptions.
 

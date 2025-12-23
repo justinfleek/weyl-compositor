@@ -370,7 +370,7 @@ function startDragHandle(handleType: 'in' | 'out', event: MouseEvent) {
 function createNewMask(x: number, y: number) {
   if (!props.layerId) return;
 
-  const maskId = `mask_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  const maskId = `mask_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const newMask: LayerMask = {
     id: maskId,
     name: `Mask ${visibleMasks.value.length + 1}`,

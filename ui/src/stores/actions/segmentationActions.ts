@@ -59,7 +59,7 @@ export async function createLayerFromMask(
     );
 
     // Generate asset ID
-    const assetId = `seg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const assetId = `seg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     // Create asset reference
     const asset: AssetReference = {

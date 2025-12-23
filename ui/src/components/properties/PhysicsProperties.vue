@@ -436,6 +436,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
 import { MATERIAL_PRESETS } from '@/types/physics';
+import { bakePhysicsToKeyframes, resetPhysicsSimulation } from '@/stores/actions/physicsActions';
 
 const props = defineProps<{
   layerId: string;
@@ -593,18 +594,27 @@ function toggleCollisionMask(group: number) {
 }
 
 async function bakeToKeyframes() {
-  // TODO: Implement bake to keyframes using physics engine
-  console.log('Baking physics to keyframes...', {
-    layerId: props.layerId,
-    startFrame: bakeSettings.value.startFrame,
-    endFrame: bakeSettings.value.endFrame,
-    simplify: bakeSettings.value.simplify,
-  });
+  try {
+    await bakePhysicsToKeyframes(store, props.layerId, {
+      startFrame: bakeSettings.value.startFrame,
+      endFrame: bakeSettings.value.endFrame,
+      simplify: bakeSettings.value.simplify,
+    });
+    // Refresh layer data after baking
+    loadLayerPhysics();
+  } catch (error) {
+    console.error('Failed to bake physics to keyframes:', error);
+  }
 }
 
 function resetSimulation() {
-  // TODO: Reset physics simulation
-  console.log('Resetting physics simulation');
+  try {
+    resetPhysicsSimulation(store);
+    // Refresh layer data after reset
+    loadLayerPhysics();
+  } catch (error) {
+    console.error('Failed to reset physics simulation:', error);
+  }
 }
 
 // Watch for layer changes

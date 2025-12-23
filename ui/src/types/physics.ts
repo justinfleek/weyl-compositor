@@ -7,8 +7,8 @@
  * and support keyframe export for After Effects-style workflows.
  */
 
-import type { Vec2, Vec3 } from './common';
-import type { AnimatableProperty } from './project';
+import type { Vec2, Vec3 } from './transform';
+import type { AnimatableProperty } from './animation';
 
 // =============================================================================
 // ENUMS & CONSTANTS

@@ -131,8 +131,14 @@ export function importProject(
     if (needsMigration(project)) {
       const oldVersion = (project as any).schemaVersion ?? 1;
       storeLogger.info(`Migrating project from schema v${oldVersion} to v${CURRENT_SCHEMA_VERSION}`);
-      project = migrateProject(project);
-      storeLogger.info('Project migration completed successfully');
+      const migrationResult = migrateProject(project);
+      if (migrationResult.success && migrationResult.project) {
+        project = migrationResult.project as WeylProject;
+        storeLogger.info('Project migration completed successfully');
+      } else {
+        storeLogger.error('Project migration failed:', migrationResult.error);
+        return false;
+      }
     }
 
     store.project = project;
@@ -194,8 +200,14 @@ export async function loadProjectFromServer(
       if (needsMigration(project)) {
         const oldVersion = (project as any).schemaVersion ?? 1;
         storeLogger.info(`Migrating project from schema v${oldVersion} to v${CURRENT_SCHEMA_VERSION}`);
-        project = migrateProject(project);
-        storeLogger.info('Project migration completed successfully');
+        const migrationResult = migrateProject(project);
+        if (migrationResult.success && migrationResult.project) {
+          project = migrationResult.project as WeylProject;
+          storeLogger.info('Project migration completed successfully');
+        } else {
+          storeLogger.error('Project migration failed:', migrationResult.error);
+          return false;
+        }
       }
 
       store.project = project;

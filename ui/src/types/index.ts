@@ -1,36 +1,51 @@
 // ============================================================
 // TYPES INDEX - Barrel export for all type modules
 // ============================================================
-// This file re-exports all types for backwards compatibility.
-// Import from '@/types' or '@/types/project' will work the same.
+// NOTE: For conflicting exports, import directly from the specific module.
 // ============================================================
 
-// Animation types (foundational - no dependencies)
+// Core foundational types
 export * from './animation';
-
-// Blend modes (foundational - no dependencies)
 export * from './blendModes';
+// Transform - exclude AutoOrientMode (defined in project.ts)
+export type {
+  Vec2,
+  Vec3,
+  LayerTransform,
+  MotionBlurType,
+  LayerMotionBlurSettings,
+  LayerMaterialOptions,
+  FollowPathConstraint
+} from './transform';
+export { createDefaultTransform, normalizeLayerTransform, createFollowPathConstraint } from './transform';
 
-// Transform types (depends on animation)
-export * from './transform';
-
-// Mask types (depends on animation)
 export * from './masks';
-
-// Spline types (depends on animation)
 export * from './spline';
-
-// Text types (depends on animation)
 export * from './text';
-
-// Particle types (depends on animation, blendModes)
 export * from './particles';
 
-// Previously extracted type files
-export * from './effects';
+// Feature-specific types
+// Effects - exclude AnimationPreset (conflicts with presets.ts)
+export type {
+  EffectCategory,
+  EffectParameter,
+  Effect,
+  EffectInstance,
+  EffectParameterType,
+  EffectDefinition
+} from './effects';
+export { getAnimatableType, EFFECT_DEFINITIONS } from './effects';
+
+// Shapes - primary source for GradientDef, GradientStop, createDefaultStroke
 export * from './shapes';
+
+// EssentialGraphics - some conflicts handled
 export * from './essentialGraphics';
-export * from './layerStyles';
+
+// LayerStyles - has its own RGBA, GradientDef, GradientStop (different from shapes.ts)
+// Import directly from '@/types/layerStyles' if needed
+// export * from './layerStyles';  // Disabled due to GradientDef/GradientStop conflicts
+
 export * from './meshWarp';
 export * from './physics';
 export * from './camera';
@@ -38,10 +53,8 @@ export * from './cameraTracking';
 export * from './dataAsset';
 export * from './export';
 export * from './presets';
-
-// New modular type files (December 2025)
 export * from './assets';
 export * from './layerData';
 
-// Main project types (depends on all above)
-export * from './project';
+// Project types - DO NOT use export * to avoid conflicts
+// Import these directly from '@/types/project' instead

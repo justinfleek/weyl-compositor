@@ -61,7 +61,7 @@ function createMockCanvas(width = 100, height = 100): HTMLCanvasElement | null {
 
 function createAnimatableProperty<T>(value: T): AnimatableProperty<T> {
   return {
-    id: `prop_${Math.random().toString(36).substr(2, 9)}`,
+    id: `prop_${Math.random().toString(36).slice(2, 11)}`,
     name: 'Test Property',
     type: 'number',
     value,

@@ -463,17 +463,13 @@ export function exportToUni3CFormat(
   const point_cloud = trackPoints.length > 0 ? {
     points: trackPoints.map(p => [p.position.x, p.position.y, p.position.z]),
     colors: trackPoints.map(p => {
-      // Parse color - handle both string and object formats
-      if (typeof p.color === 'object' && p.color) {
-        const c = p.color as { r: number; g: number; b: number };
-        return [c.r / 255, c.g / 255, c.b / 255];
+      // Color is typed as { r, g, b } | undefined - convert to 0-1 range
+      const color = p.color;
+      if (color) {
+        return [color.r / 255, color.g / 255, color.b / 255];
       }
-      const hex = (p.color as string)?.replace('#', '') || 'ffffff';
-      return [
-        parseInt(hex.substring(0, 2), 16) / 255,
-        parseInt(hex.substring(2, 4), 16) / 255,
-        parseInt(hex.substring(4, 6), 16) / 255,
-      ];
+      // Default white color
+      return [1, 1, 1];
     }),
   } : undefined;
 

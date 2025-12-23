@@ -54,7 +54,7 @@ export function clearTemplate(composition: Composition): void {
  */
 export function updateTemplateMetadata(
   config: TemplateConfig,
-  updates: Partial<Pick<TemplateConfig, 'name' | 'description' | 'author' | 'version' | 'tags'>>
+  updates: Partial<Pick<TemplateConfig, 'name' | 'description' | 'author' | 'version' | 'tags' | 'posterFrame'>>
 ): void {
   Object.assign(config, updates);
   config.modified = new Date().toISOString();

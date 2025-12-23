@@ -28,10 +28,12 @@ import type {
   PhysicsVec2,
   KeyframeExportOptions,
   ExportedKeyframes,
-  DEFAULT_SPACE_CONFIG,
+  RagdollBone,
 } from '@/types/physics';
+import { DEFAULT_SPACE_CONFIG } from '@/types/physics';
 
 import { SeededRandom } from '../particleSystem';
+import { extractRagdollState } from './RagdollBuilder';
 
 // =============================================================================
 // SEEDED RANDOM FOR PHYSICS
@@ -1285,10 +1287,15 @@ class ForceFieldProcessor {
     }
   }
 
-  private evaluateAnimatable<T>(prop: { defaultValue?: T } | T, _frame: number): T {
+  private evaluateAnimatable<T>(prop: { value?: T; defaultValue?: T } | T, _frame: number): T {
     // Simplified - in production would evaluate keyframes
-    if (typeof prop === 'object' && prop !== null && 'defaultValue' in prop) {
-      return prop.defaultValue as T;
+    if (typeof prop === 'object' && prop !== null) {
+      if ('value' in prop) {
+        return prop.value as T;
+      }
+      if ('defaultValue' in prop) {
+        return prop.defaultValue as T;
+      }
     }
     return prop as T;
   }
@@ -1325,6 +1332,9 @@ export class PhysicsEngine {
 
   private lastSimulatedFrame: number = -1;
   private isInitialized: boolean = false;
+
+  // Ragdoll registry: tracks ragdoll ID -> bones configuration
+  private ragdollRegistry: Map<string, RagdollBone[]> = new Map();
 
   constructor(config: Partial<PhysicsSpaceConfig> = {}) {
     this.config = { ...DEFAULT_SPACE_CONFIG, ...config };
@@ -1382,6 +1392,31 @@ export class PhysicsEngine {
   removeCloth(id: string): void {
     this.clothSimulator.removeCloth(id);
     this.clearCache();
+  }
+
+  /**
+   * Register a ragdoll for state tracking
+   * The ragdoll's rigid bodies should already be added via addRigidBody
+   */
+  addRagdoll(ragdollId: string, bones: RagdollBone[]): void {
+    this.ragdollRegistry.set(ragdollId, bones);
+    this.clearCache();
+  }
+
+  /**
+   * Remove a ragdoll from state tracking
+   * Note: This does NOT remove the underlying rigid bodies
+   */
+  removeRagdoll(ragdollId: string): void {
+    this.ragdollRegistry.delete(ragdollId);
+    this.clearCache();
+  }
+
+  /**
+   * Get all registered ragdoll IDs
+   */
+  getRagdollIds(): string[] {
+    return Array.from(this.ragdollRegistry.keys());
   }
 
   // Simulation
@@ -1480,12 +1515,28 @@ export class PhysicsEngine {
     const bodies = this.rigidBodySimulator.getAllBodies();
     const pairs = this.collisionDetector.detectCollisions(bodies);
 
+    // Extract ragdoll states from registered ragdolls
+    const ragdollStates: RagdollState[] = [];
+    for (const [ragdollId, bones] of this.ragdollRegistry) {
+      const state = extractRagdollState(ragdollId, bones, (bodyId: string) => {
+        const body = this.rigidBodySimulator.getBody(bodyId);
+        if (!body) return null;
+        return {
+          position: body.position,
+          velocity: body.velocity,
+          angle: body.angle,
+          angularVelocity: body.angularVelocity,
+        };
+      });
+      ragdollStates.push(state);
+    }
+
     return {
       frame,
       rigidBodies: this.rigidBodySimulator.getState(),
       softBodies: this.getSoftBodyIds().map(id => this.softBodySimulator.getState(id)!).filter(Boolean),
       cloths: this.getClothIds().map(id => this.clothSimulator.getState(id)!).filter(Boolean),
-      ragdolls: [], // TODO: Implement ragdoll state
+      ragdolls: ragdollStates,
       contacts: pairs.map(p => ({
         bodyA: p.bodyA.config.id,
         bodyB: p.bodyB.config.id,
@@ -1594,9 +1645,9 @@ export class PhysicsEngine {
   }
 
   private simplifyKeyframes<T>(
-    keyframes: Array<{ frame: number; value: T; interpolation: string }>,
+    keyframes: Array<{ frame: number; value: T; interpolation: 'linear' | 'bezier' }>,
     tolerance: number
-  ): Array<{ frame: number; value: T; interpolation: string }> {
+  ): Array<{ frame: number; value: T; interpolation: 'linear' | 'bezier' }> {
     if (keyframes.length <= 2) return keyframes;
 
     // Simple Douglas-Peucker-like simplification for position keyframes
@@ -1609,7 +1660,7 @@ export class PhysicsEngine {
       const next = keyframes[i + 1].value;
 
       // Check if current point deviates significantly from line
-      if (typeof curr === 'object' && 'x' in curr) {
+      if (typeof curr === 'object' && curr !== null && 'x' in curr) {
         const p = prev as unknown as PhysicsVec2;
         const c = curr as unknown as PhysicsVec2;
         const n = next as unknown as PhysicsVec2;

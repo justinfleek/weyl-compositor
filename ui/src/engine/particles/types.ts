@@ -229,7 +229,7 @@ export interface ForceFieldConfig {
   // Bounds
   boundsMin?: { x: number; y: number; z: number };
   boundsMax?: { x: number; y: number; z: number };
-  boundsBehavior?: 'kill' | 'bounce' | 'wrap' | 'clamp' | 'stick';
+  boundsBehavior?: 'none' | 'kill' | 'bounce' | 'wrap' | 'clamp' | 'stick';
   bounceDamping?: number;
 
   // Collision
@@ -430,7 +430,7 @@ export interface RenderConfig {
   trailSegments: number;
   trailWidthStart: number;
   trailWidthEnd: number;
-  trailFadeMode: 'none' | 'alpha' | 'size' | 'both';
+  trailFadeMode: 'none' | 'alpha' | 'width' | 'both';
 
   // Mesh rendering
   meshGeometry?: string;  // Built-in or custom

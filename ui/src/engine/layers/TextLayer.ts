@@ -130,6 +130,9 @@ export class TextLayer extends BaseLayer {
   // Text animators (After Effects-style per-character animation)
   private animators: TextAnimator[] = [];
 
+  // Composition fps (set by LayerManager when composition changes)
+  private compositionFps: number = 16;
+
   // Additional evaluator for text-specific properties
   private readonly textEvaluator: KeyframeEvaluator;
 
@@ -997,8 +1000,16 @@ export class TextLayer extends BaseLayer {
       if (!this.perCharacterGroup) {
         this.enablePerCharacter3D();
       }
-      this.applyAnimatorsToCharacters(frame, 16); // TODO: get fps from composition
+      this.applyAnimatorsToCharacters(frame, this.compositionFps);
     }
+  }
+
+  /**
+   * Set composition fps for accurate time-based calculations
+   * Called by LayerManager when layer is added or composition changes
+   */
+  setCompositionFps(fps: number): void {
+    this.compositionFps = fps;
   }
 
   protected override onApplyEvaluatedState(state: import('../MotionEngine').EvaluatedLayer): void {

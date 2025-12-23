@@ -146,7 +146,7 @@ export class SpriteSheetService {
     } = {}
   ): Promise<SpriteSheetConfig> {
     const texture = await this.loadTexture(url);
-    const id = `spritesheet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `spritesheet_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     const imageWidth = texture.image.width;
     const imageHeight = texture.image.height;
@@ -230,7 +230,7 @@ export class SpriteSheetService {
 
     const metadata: SpriteSheetMetadata = await metadataResponse.json();
 
-    const id = `spritesheet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `spritesheet_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     const imageWidth = texture.image.width;
     const imageHeight = texture.image.height;
 

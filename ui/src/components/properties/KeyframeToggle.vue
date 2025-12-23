@@ -109,7 +109,7 @@ function addKeyframe(): void {
   const defaultHandle: BezierHandle = { frame: 0, value: 0, enabled: false };
 
   const newKeyframe: Keyframe<any> = {
-    id: `kf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     frame: store.currentFrame,
     value: props.property.value,
     interpolation: 'linear',

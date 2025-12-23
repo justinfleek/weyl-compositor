@@ -1413,13 +1413,42 @@ function onMotionPathGoToFrame(frame: number) {
 }
 
 function onMotionPathTangentUpdated(
-  _keyframeId: string,
-  _tangentType: 'in' | 'out',
-  _value: { x: number; y: number }
+  keyframeId: string,
+  tangentType: 'in' | 'out',
+  delta: { x: number; y: number }
 ) {
-  // TODO: Update spatial tangent in keyframe data
-  // This requires adding spatialInTangent/spatialOutTangent to Keyframe type
-  console.log('[ThreeCanvas] Motion path tangent update - spatial tangents not yet implemented');
+  // Get the selected layer (motion path only shows for single selected layer)
+  const layerId = store.selectedLayerIds?.[0];
+  if (!layerId) return;
+
+  // Get the layer and its position property
+  const layer = store.getLayerById?.(layerId);
+  if (!layer) return;
+
+  const positionProp = layer.transform?.position;
+  if (!positionProp?.keyframes) return;
+
+  // Find the keyframe by ID
+  const keyframe = positionProp.keyframes.find(kf => kf.id === keyframeId);
+  if (!keyframe) return;
+
+  // Initialize spatial tangent if not present
+  const tangentKey = tangentType === 'in' ? 'spatialInTangent' : 'spatialOutTangent';
+  if (!keyframe[tangentKey]) {
+    keyframe[tangentKey] = { x: 0, y: 0, z: 0 };
+  }
+
+  // Apply delta to spatial tangent
+  keyframe[tangentKey]!.x += delta.x;
+  keyframe[tangentKey]!.y += delta.y;
+
+  // Mark layer as dirty for re-evaluation
+  store.markLayerDirty?.(layerId);
+
+  // Mark project as modified
+  if (store.project?.meta) {
+    store.project.meta.modified = new Date().toISOString();
+  }
 }
 
 // Zoom controls
