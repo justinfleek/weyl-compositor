@@ -38,6 +38,7 @@
       @showPreview="showHDPreview = true"
       @showExport="showExportDialog = true"
       @showComfyUI="showComfyUIExportDialog = true"
+      @showTemplateBuilder="showTemplateBuilderDialog = true"
     />
 
     <!-- Main Workspace with Splitpanes -->
@@ -283,16 +284,6 @@
                   <CollapsiblePanel title="Preview" :expanded="expandedPanels.preview" @toggle="expandedPanels.preview = $event">
                     <PreviewPanel :engine="canvasEngine" />
                   </CollapsiblePanel>
-
-                  <!-- Essential Graphics Panel -->
-                  <CollapsiblePanel title="Essential Graphics" :expanded="expandedPanels.essentialGraphics" @toggle="expandedPanels.essentialGraphics = $event">
-                    <EssentialGraphicsPanel />
-                  </CollapsiblePanel>
-
-                  <!-- Render Queue Panel -->
-                  <CollapsiblePanel title="Render Queue" :expanded="expandedPanels.renderQueue" @toggle="expandedPanels.renderQueue = $event">
-                    <RenderQueuePanel />
-                  </CollapsiblePanel>
                 </div>
               </div>
             </Pane>
@@ -417,6 +408,12 @@
       @close="showKeyboardShortcutsModal = false"
     />
 
+    <!-- Template Builder Dialog -->
+    <TemplateBuilderDialog
+      :visible="showTemplateBuilderDialog"
+      @close="showTemplateBuilderDialog = false"
+    />
+
     <!-- AI Path Suggestion Dialog -->
     <PathSuggestionDialog
       :visible="showPathSuggestionDialog"
@@ -492,8 +489,7 @@ import AIChatPanel from '@/components/panels/AIChatPanel.vue';
 import AIGeneratePanel from '@/components/panels/AIGeneratePanel.vue';
 import GenerativeFlowPanel from '@/components/panels/GenerativeFlowPanel.vue';
 import AlignPanel from '@/components/panels/AlignPanel.vue';
-import EssentialGraphicsPanel from '@/components/panels/EssentialGraphicsPanel.vue';
-import RenderQueuePanel from '@/components/panels/RenderQueuePanel.vue';
+// Template Builder and Render Queue moved to dialogs (accessible from toolbar)
 import ScopesPanel from '@/components/panels/ScopesPanel.vue';
 import DriverList from '@/components/panels/DriverList.vue';
 import LayerDecompositionPanel from '@/components/panels/LayerDecompositionPanel.vue';
@@ -522,6 +518,7 @@ import TimeStretchDialog from '@/components/dialogs/TimeStretchDialog.vue';
 import CameraTrackingImportDialog from '@/components/dialogs/CameraTrackingImportDialog.vue';
 import PreferencesDialog from '@/components/dialogs/PreferencesDialog.vue';
 import KeyboardShortcutsModal from '@/components/dialogs/KeyboardShortcutsModal.vue';
+import TemplateBuilderDialog from '@/components/dialogs/TemplateBuilderDialog.vue';
 import ExpressionInput from '@/components/properties/ExpressionInput.vue';
 import { useExpressionEditor } from '@/composables/useExpressionEditor';
 import { useGuides } from '@/composables/useGuides';
@@ -591,9 +588,7 @@ const expandedPanels = ref({
   camera: false,
   audio: false,
   align: false,
-  preview: false,
-  essentialGraphics: false,
-  renderQueue: false
+  preview: false
 });
 
 // AI section tab
@@ -613,6 +608,7 @@ const showCameraTrackingImportDialog = ref(false);
 const showPreferencesDialog = ref(false);
 const showKeyboardShortcutsModal = ref(false);
 const showHDPreview = ref(false);
+const showTemplateBuilderDialog = ref(false);
 
 // Vision authoring state
 const pathSuggestions = ref<any[]>([]);

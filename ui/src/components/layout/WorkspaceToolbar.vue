@@ -228,6 +228,9 @@
       <button @click="emit('showPreview')" title="Full Resolution Preview (`)">
         <PhMonitor class="icon" /> Preview
       </button>
+      <button @click="emit('showTemplateBuilder')" title="Create reusable motion graphics templates">
+        <PhPackage class="icon" /> Template
+      </button>
       <button class="primary-btn" @click="emit('showExport')" title="Export frame sequence for AI processing">
         <PhExport class="icon" /> Export
       </button>
@@ -283,7 +286,7 @@ import {
   PhSquare, PhCircle, PhPolygon, PhStar, PhDownload,
   PhSkipBack, PhRewind, PhPlay, PhPause, PhFastForward, PhSkipForward,
   PhArrowCounterClockwise, PhArrowClockwise, PhMonitor, PhExport, PhLink,
-  PhCheck, PhX
+  PhCheck, PhX, PhPackage
 } from '@phosphor-icons/vue';
 
 const props = defineProps<{
@@ -298,6 +301,7 @@ const emit = defineEmits<{
   (e: 'showPreview'): void;
   (e: 'showExport'): void;
   (e: 'showComfyUI'): void;
+  (e: 'showTemplateBuilder'): void;
 }>();
 
 const store = useCompositorStore();

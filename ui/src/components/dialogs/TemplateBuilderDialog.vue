@@ -1,8 +1,16 @@
 <template>
-  <div class="essential-graphics-panel">
-    <!-- Panel Header with Tabs -->
-    <div class="panel-header">
-      <div class="tabs">
+  <div class="template-builder-overlay" v-if="visible" @click.self="close">
+    <div class="template-builder-dialog">
+      <!-- Dialog Header -->
+      <div class="dialog-header">
+        <h2>Template Builder</h2>
+        <p class="dialog-subtitle">Create reusable motion graphics templates with exposed controls</p>
+        <button class="close-btn" @click="close" title="Close">×</button>
+      </div>
+
+      <!-- Panel Header with Tabs -->
+      <div class="panel-header">
+        <div class="tabs">
         <button
           class="tab"
           :class="{ active: activeTab === 'browse' }"
@@ -301,6 +309,7 @@
       style="display: none"
       @change="handleFileImport"
     />
+    </div>
   </div>
 </template>
 
@@ -340,8 +349,21 @@ import {
   validateMOGRT
 } from '@/services/jsonValidation';
 import type { Layer, Composition } from '@/types/project';
-import ExposedPropertyControl from './ExposedPropertyControl.vue';
-import CommentControl from './CommentControl.vue';
+import ExposedPropertyControl from '../panels/ExposedPropertyControl.vue';
+import CommentControl from '../panels/CommentControl.vue';
+
+// Props and emits for dialog mode
+const props = defineProps<{
+  visible: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'close'): void;
+}>();
+
+function close() {
+  emit('close');
+}
 
 // Inject frame capture from parent
 const captureFrame = inject<() => Promise<string | null>>('captureFrame');
@@ -956,17 +978,74 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.essential-graphics-panel {
+.template-builder-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.template-builder-dialog {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 80vh;
   background: var(--lattice-surface-1, #121212);
+  border-radius: 12px;
+  color: var(--lattice-text-primary, #e5e5e5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  background: var(--lattice-surface-0, #0a0a0a);
+  position: relative;
+}
+
+.dialog-header h2 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.dialog-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--lattice-text-muted, #6b7280);
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--lattice-text-muted, #6b7280);
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: var(--lattice-surface-2, #1a1a1a);
   color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .panel-header {
-  padding: 8px;
-  border-bottom: 1px solid var(--lattice-border-subtle, #2a2a2a);
+  padding: 8px 16px;
 }
 
 .tabs {
