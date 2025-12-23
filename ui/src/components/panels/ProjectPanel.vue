@@ -843,7 +843,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .panel-title {
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .header-actions {
@@ -1045,7 +1046,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 .expand-icon {
   width: 12px;
   font-size: 11px;
-  color: var(--lattice-text-muted, #6B7280);
+  color: var(--lattice-text-secondary, #9CA3AF);
 }
 
 .folder-icon {
@@ -1054,6 +1055,8 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
 
 .folder-name {
   flex: 1;
+  color: var(--lattice-text-primary, #E5E5E5);
+  font-weight: 500;
 }
 
 .item-count {
@@ -1099,6 +1102,7 @@ function onDragStart(item: ProjectItem, event: DragEvent) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--lattice-text-primary, #E5E5E5);
 }
 
 .item-info {

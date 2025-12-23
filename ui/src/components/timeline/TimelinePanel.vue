@@ -873,7 +873,7 @@ watch(() => [
 
 .timeline-content { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; }
 .timeline-sidebar { background: var(--lattice-surface-1, #0f0f0f); border-right: 1px solid var(--lattice-border-subtle, #1a1a1a); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
-.sidebar-header-row { height: 30px; background: var(--lattice-surface-2, #161616); display: flex; align-items: center; border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a); }
+.sidebar-header-row { height: 34px; background: var(--lattice-surface-2, #161616); display: flex; align-items: center; border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a); }
 .col-header { font-size: 12px; color: var(--lattice-text-muted, #6B7280); display: flex; align-items: center; }
 .col-header.col-av-features {
   display: flex;
@@ -890,7 +890,7 @@ watch(() => [
   padding: 0 2px;
 }
 .col-header.col-parent { min-width: 80px; border-left: 1px solid var(--lattice-border-subtle, #1a1a1a); padding: 0 8px; }
-.header-icon { display: inline-flex; justify-content: center; align-items: center; width: 22px; height: 28px; font-size: 12px; color: var(--lattice-text-muted, #6B7280); cursor: default; }
+.header-icon { display: inline-flex; justify-content: center; align-items: center; width: 26px; height: 32px; font-size: 13px; color: var(--lattice-text-secondary, #9CA3AF); cursor: default; }
 .header-icon.clickable { cursor: pointer; transition: color 0.15s; }
 .header-icon.clickable:hover { color: var(--lattice-text-secondary, #9CA3AF); }
 .header-icon.clickable.active { color: var(--lattice-accent, #8B5CF6); }
@@ -910,26 +910,29 @@ watch(() => [
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  background: var(--lattice-surface-0, #080808);
+  background: var(--lattice-surface-1, #121212);
 }
 
 /* Ruler wrapper - scrolls horizontally only */
 .ruler-scroll-wrapper {
-  height: 30px;
+  height: 42px;
   overflow-x: auto;
   overflow-y: hidden;
   flex-shrink: 0;
   scrollbar-width: none; /* Firefox */
+  padding-top: 2px;
 }
 .ruler-scroll-wrapper::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
 }
 
 .time-ruler {
-  height: 30px;
+  height: 36px;
+  margin-top: 4px;
   position: relative;
-  background: var(--lattice-surface-2, #161616);
+  background: var(--lattice-surface-2, #1a1a1a);
   border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
+  border-top: 1px solid var(--lattice-border-subtle, #1a1a1a);
   cursor: pointer;
   z-index: 10;
 }

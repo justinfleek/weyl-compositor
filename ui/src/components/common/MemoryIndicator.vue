@@ -141,12 +141,12 @@ onMounted(() => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  background: #1e1e1e;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--lattice-surface-2, #1e1e1e);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   user-select: none;
 }
 
@@ -187,8 +187,9 @@ onMounted(() => {
 }
 
 .memory-text {
-  color: #888;
+  color: var(--lattice-text-secondary, #9CA3AF);
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .level-warning .memory-text {

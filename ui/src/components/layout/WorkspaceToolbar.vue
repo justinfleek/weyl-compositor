@@ -227,7 +227,7 @@
 
     <div class="spacer"></div>
 
-    <div class="tool-group">
+    <div class="tool-group action-buttons">
       <button @click="emit('showPreview')" title="Full Resolution Preview (`)">
         <PhMonitor class="icon" /> Preview
       </button>
@@ -356,7 +356,7 @@ const themeGradient = computed(() => themeStore.themeGradient);
 const themes: Array<{ name: ThemeName; label: string; gradient: string }> = [
   { name: 'violet', label: 'Violet', gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)' },
   { name: 'ocean', label: 'Ocean', gradient: 'linear-gradient(135deg, #06B6D4, #3B82F6)' },
-  { name: 'sunset', label: 'Sunset', gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)' },
+  { name: 'sunset', label: 'Rose', gradient: 'linear-gradient(135deg, #FB7185, #F43F5E)' },
   { name: 'forest', label: 'Forest', gradient: 'linear-gradient(135deg, #10B981, #06B6D4)' },
   { name: 'ember', label: 'Ember', gradient: 'linear-gradient(135deg, #EF4444, #F97316)' },
   { name: 'mono', label: 'Mono', gradient: 'linear-gradient(135deg, #4B5563, #6B7280)' },
@@ -512,7 +512,7 @@ function redo() {
 }
 
 .icon {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .divider {
@@ -735,11 +735,20 @@ function redo() {
   border-color: var(--lattice-accent, #8B5CF6);
 }
 
+/* Action buttons group (Preview/Export/ComfyUI) */
+.action-buttons {
+  gap: 12px !important;
+}
+
+.action-buttons button {
+  padding: 0 14px !important;
+}
+
 /* Primary action button (Export) */
 .tool-group button.primary-btn {
   background: var(--lattice-accent, #8B5CF6);
   color: white;
-  padding: 0 12px;
+  padding: 0 14px;
   font-weight: 500;
 }
 

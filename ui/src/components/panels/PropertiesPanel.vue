@@ -1,7 +1,8 @@
 <template>
   <div class="properties-panel">
-    <div class="panel-header">
-      <span class="panel-title">Properties: {{ selectedLayer?.name || 'No Selection' }}</span>
+    <div class="panel-header" v-if="selectedLayer">
+      <span class="panel-title">{{ selectedLayer.name }}</span>
+      <span class="layer-type">{{ selectedLayer.type }}</span>
     </div>
 
     <div class="panel-content" v-if="selectedLayer">
@@ -275,8 +276,9 @@
 
     <!-- No Selection -->
     <div v-else class="empty-state">
-      <p>No layer selected</p>
-      <p class="hint">Select a layer to edit its properties</p>
+      <div class="empty-icon">📋</div>
+      <p class="empty-title">No Layer Selected</p>
+      <p class="empty-hint">Click a layer in the timeline or canvas to view and edit its properties</p>
     </div>
   </div>
 </template>
@@ -813,9 +815,12 @@ function hasDriver(property: PropertyPath): boolean {
 }
 
 .panel-header {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
   background: var(--lattice-surface-2, #1a1a1a);
-  border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
+  border-bottom: 1px solid var(--lattice-border-default, #2a2a2a);
 }
 
 .panel-title {
@@ -1090,6 +1095,15 @@ function hasDriver(property: PropertyPath): boolean {
   accent-color: var(--lattice-accent, #8B5CF6);
 }
 
+.layer-type {
+  font-size: 11px;
+  color: var(--lattice-text-muted, #6B7280);
+  text-transform: capitalize;
+  background: var(--lattice-surface-2, #1a1a1a);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -1101,9 +1115,25 @@ function hasDriver(property: PropertyPath): boolean {
   color: var(--lattice-text-muted, #6B7280);
 }
 
-.empty-state .hint {
-  font-size: var(--lattice-text-sm, 11px);
-  margin-top: 4px;
+.empty-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lattice-text-secondary, #9CA3AF);
+  margin: 0 0 8px 0;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: var(--lattice-text-muted, #6B7280);
+  max-width: 200px;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .layer-styles-content {

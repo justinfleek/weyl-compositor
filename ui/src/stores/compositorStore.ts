@@ -218,7 +218,7 @@ export const useCompositorStore = defineStore('compositor', {
   state: (): CompositorState => {
     // Create initial project and pre-populate history with it
     // This ensures undo works for the very first action
-    const initialProject = createEmptyProject(832, 480);  // Wan 2.1 480p default
+    const initialProject = createEmptyProject(1280, 720);  // 720p HD default
     return {
       project: initialProject,
       activeCompositionId: 'main',

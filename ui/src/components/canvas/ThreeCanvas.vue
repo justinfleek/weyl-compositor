@@ -1968,28 +1968,28 @@ defineExpose({
 /* Viewer Controls (AE-style bottom bar) - positioned bottom-left */
 .viewer-controls {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 12px;
+  left: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(30, 30, 30, 0.9);
-  padding: 4px 12px;
-  border-radius: 4px;
-  border: 1px solid #444;
+  gap: 12px;
+  background: rgba(26, 26, 26, 0.95);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
   z-index: 15;
 }
 
 .zoom-dropdown,
 .resolution-dropdown {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: #e0e0e0;
+  background: var(--lattice-surface-3, #222222);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  color: var(--lattice-text-primary, #E5E5E5);
   font-size: 13px;
-  padding: 3px 8px;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: 4px;
   cursor: pointer;
-  min-width: 60px;
+  min-width: 70px;
 }
 
 .zoom-dropdown:hover,

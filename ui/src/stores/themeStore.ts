@@ -31,7 +31,7 @@ export const useThemeStore = defineStore('theme', {
       const glowColors: Record<ThemeName, string> = {
         violet: 'rgba(139, 92, 246, 0.3)',
         ocean: 'rgba(6, 182, 212, 0.3)',
-        sunset: 'rgba(245, 158, 11, 0.3)',
+        sunset: 'rgba(251, 113, 133, 0.3)',
         forest: 'rgba(16, 185, 129, 0.3)',
         ember: 'rgba(239, 68, 68, 0.3)',
         mono: 'rgba(107, 114, 128, 0.3)'

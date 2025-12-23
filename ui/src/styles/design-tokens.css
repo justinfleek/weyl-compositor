@@ -41,10 +41,10 @@
   --lattice-theme-ocean-secondary: #3B82F6;
   --lattice-theme-ocean-gradient: linear-gradient(135deg, #06B6D4, #3B82F6);
 
-  /* Sunset */
-  --lattice-theme-sunset-primary: #F59E0B;
-  --lattice-theme-sunset-secondary: #EF4444;
-  --lattice-theme-sunset-gradient: linear-gradient(135deg, #F59E0B, #EF4444);
+  /* Rose (formerly Sunset) */
+  --lattice-theme-sunset-primary: #FB7185;
+  --lattice-theme-sunset-secondary: #F43F5E;
+  --lattice-theme-sunset-gradient: linear-gradient(135deg, #FB7185, #F43F5E);
 
   /* Forest */
   --lattice-theme-forest-primary: #10B981;

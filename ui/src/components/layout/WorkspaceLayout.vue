@@ -91,7 +91,7 @@
         </Pane>
 
         <!-- Center: Viewport + Timeline -->
-        <Pane :size="62" :min-size="45">
+        <Pane :size="66" :min-size="45">
           <Splitpanes horizontal class="default-theme">
             <!-- Viewport -->
             <Pane :size="65" :min-size="20">
@@ -124,15 +124,6 @@
                     </button>
                   </div>
                   <div class="viewport-controls">
-                    <select v-model="viewZoom" @change="handleZoomChange" class="zoom-select" aria-label="Zoom level">
-                      <option value="fit">Fit</option>
-                      <option value="25">25%</option>
-                      <option value="50">50%</option>
-                      <option value="75">75%</option>
-                      <option value="100">100%</option>
-                      <option value="150">150%</option>
-                      <option value="200">200%</option>
-                    </select>
                     <button
                       :class="{ active: viewOptions.showRulers }"
                       @click="viewOptions.showRulers = !viewOptions.showRulers"
@@ -244,7 +235,7 @@
         </Pane>
 
         <!-- Right Panel: Stacked Collapsible Panels -->
-        <Pane :size="24" :min-size="16" :max-size="35">
+        <Pane :size="20" :min-size="14" :max-size="30">
           <Splitpanes horizontal class="default-theme right-splitpanes">
             <!-- Main Properties Section -->
             <Pane :size="45" :min-size="25">
@@ -1650,28 +1641,27 @@ onUnmounted(() => {
   height: 100%;
 }
 
-/* Panels - floating islands with subtle borders */
+/* Panels - floating islands with visible borders */
 .panel {
   display: flex;
   flex-direction: column;
   height: 100%;
   background: var(--lattice-surface-1, #0f0f0f);
   border-radius: var(--lattice-radius-lg, 6px);
-  border: 1px solid var(--lattice-border-subtle, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
   overflow: hidden;
 }
 
 .left-panel,
 .right-panel {
-  /* No borders - use shadows for separation */
-  /* Minimum pixel widths ensure readability on all screens */
+  /* Visible borders for panel separation */
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
   min-width: 180px;
 }
 
 .right-panel {
-  /* No borders - use shadows for separation */
   /* Properties panel needs more space for controls */
-  min-width: 220px;
+  min-width: 200px;
 }
 
 .panel-tabs {
@@ -1842,8 +1832,8 @@ onUnmounted(() => {
 .viewport-tabs button {
   padding: 8px 16px;
   border: none;
-  background: transparent;
-  color: var(--lattice-text-muted, #6B7280);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-secondary, #9CA3AF);
   font-size: var(--lattice-text-base, 13px);
   font-weight: 600;
   border-radius: var(--lattice-radius-sm, 2px);
@@ -1853,7 +1843,7 @@ onUnmounted(() => {
 
 .viewport-tabs button:hover {
   color: var(--lattice-text-primary, #e5e5e5);
-  background: var(--lattice-surface-2, #1a1a1a);
+  background: var(--lattice-surface-3, #2a2a2a);
 }
 
 .viewport-tabs button.active {
@@ -1878,24 +1868,25 @@ onUnmounted(() => {
 }
 
 .viewport-controls button {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
-  background: transparent;
-  color: var(--lattice-text-muted, #6B7280);
+  background: var(--lattice-surface-2, #1a1a1a);
+  color: var(--lattice-text-secondary, #9CA3AF);
   border-radius: var(--lattice-radius-md, 4px);
   cursor: pointer;
-  font-size: var(--lattice-text-base, 12px);
+  font-size: 16px;
   transition: var(--lattice-transition-fast, 100ms ease);
 }
 
 .viewport-controls button:hover {
-  background: var(--lattice-surface-3, #222222);
+  background: var(--lattice-surface-3, #2a2a2a);
   color: var(--lattice-text-primary, #e5e5e5);
 }
 
 .viewport-controls button.active {
+  background: var(--lattice-accent-muted, rgba(139, 92, 246, 0.2));
   color: var(--lattice-accent, #8B5CF6);
 }
 

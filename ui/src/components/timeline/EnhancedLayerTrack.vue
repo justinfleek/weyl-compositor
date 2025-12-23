@@ -879,11 +879,11 @@ onUnmounted(() => {
 .sidebar-row {
   display: flex;
   align-items: stretch;
-  height: 28px;
+  height: 32px;
   border-bottom: 1px solid var(--lattice-border-subtle, #1a1a1a);
   background: var(--lattice-surface-1, #0f0f0f);
-  color: var(--lattice-text-secondary, #ccc);
-  font-size: 12px;
+  color: var(--lattice-text-primary, #E5E5E5);
+  font-size: 13px;
   user-select: none;
   cursor: pointer;
 }
@@ -926,10 +926,10 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 22px;
+  width: 26px;
   height: 100%;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
 }
 .icon-col span { color: var(--lattice-text-muted, #6B7280); transition: color 0.15s; }
 .icon-col:hover span { color: var(--lattice-text-secondary, #9CA3AF); }
