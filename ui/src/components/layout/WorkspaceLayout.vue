@@ -46,293 +46,55 @@
       <Splitpanes class="default-theme horizontal-split">
         <!-- Left Panel: Project/Effects -->
         <Pane :size="14" :min-size="10" :max-size="20">
-          <div class="panel left-panel">
-            <div class="panel-tabs" role="tablist" aria-label="Left panel tabs">
-              <button
-                role="tab"
-                :aria-selected="leftTab === 'project'"
-                aria-controls="left-panel-project"
-                :class="{ active: leftTab === 'project' }"
-                @click="leftTab = 'project'"
-              >
-                Project
-              </button>
-              <button
-                role="tab"
-                :aria-selected="leftTab === 'effects'"
-                aria-controls="left-panel-effects"
-                :class="{ active: leftTab === 'effects' }"
-                @click="leftTab = 'effects'"
-              >
-                Effects
-              </button>
-              <button
-                role="tab"
-                :aria-selected="leftTab === 'assets'"
-                aria-controls="left-panel-assets"
-                :class="{ active: leftTab === 'assets' }"
-                @click="leftTab = 'assets'"
-              >
-                Assets
-              </button>
-            </div>
-            <div class="panel-content" role="tabpanel" :id="`left-panel-${leftTab}`">
-              <ProjectPanel v-if="leftTab === 'project'" @openCompositionSettings="showCompositionSettingsDialog = true" />
-              <EffectsPanel v-else-if="leftTab === 'effects'" />
-              <AssetsPanel
-                v-else-if="leftTab === 'assets'"
-                @create-layers-from-svg="onCreateLayersFromSvg"
-                @use-mesh-as-emitter="onUseMeshAsEmitter"
-                @environment-update="onEnvironmentUpdate"
-                @environment-load="onEnvironmentLoad"
-                @environment-clear="onEnvironmentClear"
-              />
-            </div>
-          </div>
+          <LeftSidebar
+            v-model="leftTab"
+            @openCompositionSettings="showCompositionSettingsDialog = true"
+            @createLayersFromSvg="onCreateLayersFromSvg"
+            @useMeshAsEmitter="onUseMeshAsEmitter"
+            @environmentUpdate="onEnvironmentUpdate"
+            @environmentLoad="onEnvironmentLoad"
+            @environmentClear="onEnvironmentClear"
+          />
         </Pane>
 
         <!-- Center: Viewport + Timeline -->
         <Pane :size="66" :min-size="45">
-          <Splitpanes horizontal class="default-theme">
-            <!-- Viewport -->
-            <Pane :size="65" :min-size="20">
-              <div class="panel viewport-panel">
-                <div class="viewport-header">
-                  <div class="viewport-tabs" role="tablist" aria-label="Viewport tabs">
-                    <button
-                      role="tab"
-                      :aria-selected="viewportTab === 'composition'"
-                      :class="{ active: viewportTab === 'composition' }"
-                      @click="viewportTab = 'composition'"
-                    >
-                      Composition
-                    </button>
-                    <button
-                      role="tab"
-                      :aria-selected="viewportTab === 'layer'"
-                      :class="{ active: viewportTab === 'layer' }"
-                      @click="viewportTab = 'layer'"
-                    >
-                      Layer
-                    </button>
-                    <button
-                      role="tab"
-                      :aria-selected="viewportTab === 'footage'"
-                      :class="{ active: viewportTab === 'footage' }"
-                      @click="viewportTab = 'footage'"
-                    >
-                      Footage
-                    </button>
-                  </div>
-                  <div class="viewport-controls">
-                    <button
-                      :class="{ active: viewOptions.showRulers }"
-                      @click="viewOptions.showRulers = !viewOptions.showRulers"
-                      title="Toggle Rulers/Guides"
-                      aria-label="Toggle rulers and guides"
-                      :aria-pressed="viewOptions.showRulers"
-                    >
-                      <span class="icon" aria-hidden="true">📏</span>
-                    </button>
-                    <button
-                      :class="{ active: viewOptions.showGrid }"
-                      @click="viewOptions.showGrid = !viewOptions.showGrid"
-                      title="Toggle Grid"
-                      aria-label="Toggle grid"
-                      :aria-pressed="viewOptions.showGrid"
-                    >
-                      <span class="icon">▦</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="viewport-content" :class="{ 'rulers-active': viewOptions.showRulers }">
-                  <!-- Grid overlay -->
-                  <div v-if="viewOptions.showGrid" class="grid-overlay" :style="gridOverlayStyle"></div>
-
-                  <!-- Guides overlay -->
-                  <div v-if="guides.length > 0" class="guides-overlay">
-                    <div
-                      v-for="guide in guides"
-                      :key="guide.id"
-                      :class="['guide', guide.orientation]"
-                      :style="getGuideStyle(guide)"
-                      @mousedown="startGuideDrag(guide, $event)"
-                      @contextmenu.prevent="showGuideContextMenu(guide, $event)"
-                    >
-                      <button
-                        class="guide-delete-btn"
-                        @click.stop="removeGuide(guide.id)"
-                        @mousedown.stop
-                        title="Delete guide"
-                      >×</button>
-                    </div>
-                  </div>
-
-                  <!-- Guide context menu -->
-                  <Teleport to="body">
-                    <div
-                      v-if="guideContextMenu.visible"
-                      class="guide-context-menu"
-                      :style="{ left: guideContextMenu.x + 'px', top: guideContextMenu.y + 'px' }"
-                      @click.stop
-                    >
-                      <button @click="deleteGuideFromMenu">Delete Guide</button>
-                      <button @click="clearAllGuides">Clear All Guides</button>
-                    </div>
-                  </Teleport>
-
-                  <!-- Rulers overlay -->
-                  <div v-if="viewOptions.showRulers" class="rulers-overlay">
-                    <div class="ruler ruler-horizontal" @mousedown="createGuideFromRuler('horizontal', $event)">
-                      <span v-for="i in 20" :key="'h'+i" class="tick" :style="{ left: (i * 5) + '%' }">
-                        {{ Math.round((i * 5 / 100) * compWidth) }}
-                      </span>
-                    </div>
-                    <div class="ruler ruler-vertical" @mousedown="createGuideFromRuler('vertical', $event)">
-                      <span v-for="i in 20" :key="'v'+i" class="tick" :style="{ top: (i * 5) + '%' }">
-                        {{ Math.round((i * 5 / 100) * compHeight) }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Snap indicator -->
-                  <div v-if="snapEnabled && (snapIndicatorX || snapIndicatorY)" class="snap-indicator">
-                    <div v-if="snapIndicatorX" class="snap-line vertical" :style="{ left: snapIndicatorX + 'px' }"></div>
-                    <div v-if="snapIndicatorY" class="snap-line horizontal" :style="{ top: snapIndicatorY + 'px' }"></div>
-                  </div>
-
-                  <ThreeCanvas v-if="viewportTab === 'composition'" ref="threeCanvasRef" />
-                  <ViewportRenderer
-                    v-else
-                    :camera="activeCamera"
-                    :viewportState="viewportState"
-                    :viewOptions="viewOptions"
-                    :compWidth="compWidth"
-                    :compHeight="compHeight"
-                  />
-                </div>
-              </div>
-            </Pane>
-
-            <!-- Timeline + Graph Editor -->
-            <Pane :size="35" :min-size="15">
-              <Splitpanes v-if="showCurveEditor" horizontal class="default-theme">
-                <Pane :size="50" :min-size="20">
-                  <div class="panel timeline-panel">
-                    <TimelinePanel @openCompositionSettings="showCompositionSettingsDialog = true" @openPathSuggestion="showPathSuggestionDialog = true" />
-                  </div>
-                </Pane>
-                <Pane :size="50" :min-size="20">
-                  <div class="panel curve-editor-panel">
-                    <CurveEditor @close="showCurveEditor = false" />
-                  </div>
-                </Pane>
-              </Splitpanes>
-              <div v-else class="panel timeline-panel">
-                <TimelinePanel @openCompositionSettings="showCompositionSettingsDialog = true" @openPathSuggestion="showPathSuggestionDialog = true" />
-              </div>
-            </Pane>
-          </Splitpanes>
+          <CenterViewport
+            ref="centerViewportRef"
+            v-model:viewportTab="viewportTab"
+            v-model:showCurveEditor="showCurveEditor"
+            :viewOptions="viewOptions"
+            :guides="guides"
+            :guideContextMenu="guideContextMenu"
+            :snapEnabled="snapEnabled"
+            :snapIndicatorX="snapIndicatorX"
+            :snapIndicatorY="snapIndicatorY"
+            :compWidth="compWidth"
+            :compHeight="compHeight"
+            :gridOverlayStyle="gridOverlayStyle"
+            :activeCamera="activeCamera"
+            :viewportState="viewportState"
+            @update:viewOptions="viewOptions = $event"
+            @openCompositionSettings="showCompositionSettingsDialog = true"
+            @openPathSuggestion="showPathSuggestionDialog = true"
+            @startGuideDrag="startGuideDrag"
+            @showGuideContextMenu="showGuideContextMenu"
+            @removeGuide="removeGuide"
+            @deleteGuideFromMenu="deleteGuideFromMenu"
+            @clearAllGuides="clearAllGuides"
+            @createGuideFromRuler="createGuideFromRuler"
+          />
         </Pane>
 
         <!-- Right Panel: Stacked Collapsible Panels -->
         <Pane :size="20" :min-size="14" :max-size="30">
-          <Splitpanes horizontal class="default-theme right-splitpanes">
-            <!-- Main Properties Section -->
-            <Pane :size="45" :min-size="25">
-              <div class="panel right-panel stacked-panels">
-                <div class="panel-content">
-                  <!-- Properties Panel -->
-                  <CollapsiblePanel title="Properties" :expanded="expandedPanels.properties" @toggle="expandedPanels.properties = $event">
-                    <PropertiesPanel />
-                  </CollapsiblePanel>
-
-                  <!-- Effects Panel -->
-                  <CollapsiblePanel title="Effects" :expanded="expandedPanels.effects" @toggle="expandedPanels.effects = $event">
-                    <EffectControlsPanel />
-                  </CollapsiblePanel>
-
-                  <!-- Drivers Panel -->
-                  <CollapsiblePanel title="Drivers" :expanded="expandedPanels.drivers" @toggle="expandedPanels.drivers = $event">
-                    <DriverList />
-                  </CollapsiblePanel>
-
-                  <!-- Scopes Panel -->
-                  <CollapsiblePanel title="Scopes" :expanded="expandedPanels.scopes" @toggle="expandedPanels.scopes = $event">
-                    <ScopesPanel />
-                  </CollapsiblePanel>
-
-                  <!-- Camera Panel -->
-                  <CollapsiblePanel title="Camera" :expanded="expandedPanels.camera" @toggle="expandedPanels.camera = $event">
-                    <CameraProperties
-                      :camera="activeCamera"
-                      @update:camera="updateCamera"
-                    />
-                  </CollapsiblePanel>
-
-                  <!-- Audio Panel -->
-                  <CollapsiblePanel title="Audio" :expanded="expandedPanels.audio" @toggle="expandedPanels.audio = $event">
-                    <AudioPanel />
-                  </CollapsiblePanel>
-
-                  <!-- Align Panel -->
-                  <CollapsiblePanel title="Align" :expanded="expandedPanels.align" @toggle="expandedPanels.align = $event">
-                    <AlignPanel />
-                  </CollapsiblePanel>
-
-                  <!-- Preview Panel -->
-                  <CollapsiblePanel title="Preview" :expanded="expandedPanels.preview" @toggle="expandedPanels.preview = $event">
-                    <PreviewPanel :engine="canvasEngine" />
-                  </CollapsiblePanel>
-                </div>
-              </div>
-            </Pane>
-
-            <!-- AI Section (Bottom) -->
-            <Pane :size="55" :min-size="30">
-              <div class="panel ai-section">
-                <div class="ai-section-header">
-                  <span class="ai-section-title">AI Tools</span>
-                </div>
-                <div class="ai-section-tabs">
-                  <button
-                    :class="{ active: aiTab === 'chat' }"
-                    @click="aiTab = 'chat'"
-                    title="AI Compositor Agent"
-                  >
-                    Chat
-                  </button>
-                  <button
-                    :class="{ active: aiTab === 'generate' }"
-                    @click="aiTab = 'generate'"
-                    title="AI Generation (Depth, Normal, Segment)"
-                  >
-                    Generate
-                  </button>
-                  <button
-                    :class="{ active: aiTab === 'flow' }"
-                    @click="aiTab = 'flow'"
-                    title="Generative Flow Trajectories for Wan-Move"
-                  >
-                    Flow
-                  </button>
-                  <button
-                    :class="{ active: aiTab === 'decompose' }"
-                    @click="aiTab = 'decompose'"
-                    title="AI Layer Decomposition"
-                  >
-                    Decompose
-                  </button>
-                </div>
-                <div class="ai-section-content">
-                  <AIChatPanel v-if="aiTab === 'chat'" />
-                  <AIGeneratePanel v-else-if="aiTab === 'generate'" />
-                  <GenerativeFlowPanel v-else-if="aiTab === 'flow'" />
-                  <LayerDecompositionPanel v-else-if="aiTab === 'decompose'" />
-                </div>
-              </div>
-            </Pane>
-          </Splitpanes>
+          <RightSidebar
+            v-model:expandedPanels="expandedPanels"
+            v-model:aiTab="aiTab"
+            :camera="activeCamera"
+            :engine="canvasEngine"
+            @updateCamera="updateCamera"
+          />
         </Pane>
       </Splitpanes>
     </div>
@@ -476,36 +238,15 @@ import { detectGPUTier, type GPUTier } from '@/services/gpuDetection';
 import { createDefaultCamera, createDefaultViewportState } from '@/types/camera';
 import type { Camera3D, ViewportState } from '@/types/camera';
 
-// Panels
-import ProjectPanel from '@/components/panels/ProjectPanel.vue';
-import EffectsPanel from '@/components/panels/EffectsPanel.vue';
-import EffectControlsPanel from '@/components/panels/EffectControlsPanel.vue';
-import PropertiesPanel from '@/components/panels/PropertiesPanel.vue';
-import CameraProperties from '@/components/panels/CameraProperties.vue';
-import AudioPanel from '@/components/panels/AudioPanel.vue';
-import AssetsPanel from '@/components/panels/AssetsPanel.vue';
-import PreviewPanel from '@/components/panels/PreviewPanel.vue';
-import AIChatPanel from '@/components/panels/AIChatPanel.vue';
-import AIGeneratePanel from '@/components/panels/AIGeneratePanel.vue';
-import GenerativeFlowPanel from '@/components/panels/GenerativeFlowPanel.vue';
-import AlignPanel from '@/components/panels/AlignPanel.vue';
-// Template Builder and Render Queue moved to dialogs (accessible from toolbar)
-import ScopesPanel from '@/components/panels/ScopesPanel.vue';
-import DriverList from '@/components/panels/DriverList.vue';
-import LayerDecompositionPanel from '@/components/panels/LayerDecompositionPanel.vue';
-import CollapsiblePanel from '@/components/panels/CollapsiblePanel.vue';
-
 // Layout
 import WorkspaceToolbar from '@/components/layout/WorkspaceToolbar.vue';
 import MenuBar from '@/components/layout/MenuBar.vue';
+import LeftSidebar from '@/components/layout/LeftSidebar.vue';
+import RightSidebar from '@/components/layout/RightSidebar.vue';
+import CenterViewport from '@/components/layout/CenterViewport.vue';
 
-// Viewport
-import ViewportRenderer from '@/components/viewport/ViewportRenderer.vue';
+// ThreeCanvas still needed for ref type
 import ThreeCanvas from '@/components/canvas/ThreeCanvas.vue';
-
-// Timeline
-import TimelinePanel from '@/components/timeline/TimelinePanel.vue';
-import CurveEditor from '@/components/curve-editor/CurveEditor.vue';
 
 // Dialogs
 import ExportDialog from '@/components/dialogs/ExportDialog.vue';
@@ -523,6 +264,8 @@ import ExpressionInput from '@/components/properties/ExpressionInput.vue';
 import { useExpressionEditor } from '@/composables/useExpressionEditor';
 import { useGuides } from '@/composables/useGuides';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import { useMenuActions } from '@/composables/useMenuActions';
+import { useAssetHandlers } from '@/composables/useAssetHandlers';
 import { useSelectionStore } from '@/stores/selectionStore';
 
 // Canvas overlays
@@ -616,10 +359,23 @@ const selectedPathIndex = ref<number | null>(null);
 
 const gpuTier = ref<GPUTier['tier']>('cpu');
 
-const threeCanvasRef = ref<InstanceType<typeof ThreeCanvas> | null>(null);
+// CenterViewport ref - exposes threeCanvasRef
+const centerViewportRef = ref<InstanceType<typeof CenterViewport> | null>(null);
+
+// Computed ref to access threeCanvasRef through CenterViewport
+const threeCanvasRef = computed(() => centerViewportRef.value?.threeCanvasRef ?? null);
 
 // Engine accessor for panels
-const canvasEngine = computed(() => threeCanvasRef.value?.engine ?? null);
+const canvasEngine = computed(() => centerViewportRef.value?.engine ?? null);
+
+// Asset handlers composable
+const {
+  onCreateLayersFromSvg,
+  onUseMeshAsEmitter,
+  onEnvironmentUpdate,
+  onEnvironmentLoad,
+  onEnvironmentClear,
+} = useAssetHandlers({ canvasRef: centerViewportRef });
 
 // Camera state - use computed to get from store, fallback to default
 const activeCamera = computed<Camera3D>(() => {
@@ -798,7 +554,7 @@ provide('updateGuidePosition', updateGuidePosition);
 
 // Provide frame capture for MOGRT export and other features
 provide('captureFrame', async (): Promise<string | null> => {
-  return threeCanvasRef.value?.captureFrame() ?? null;
+  return centerViewportRef.value?.threeCanvasRef?.captureFrame() ?? null;
 });
 
 // ========================================================================
@@ -1179,244 +935,36 @@ const activeCameraKeyframes = computed(() => {
 
 // Handle zoom dropdown change
 function handleZoomChange() {
-  if (!threeCanvasRef.value) return;
+  const canvas = centerViewportRef.value?.threeCanvasRef;
+  if (!canvas) return;
 
   if (viewZoom.value === 'fit') {
-    threeCanvasRef.value.fitToView();
+    canvas.fitToView();
   } else {
     // Convert percentage string to decimal (e.g., '100' → 1.0, '200' → 2.0)
     const zoomLevel = parseInt(viewZoom.value) / 100;
-    threeCanvasRef.value.setZoom(zoomLevel);
+    canvas.setZoom(zoomLevel);
   }
 }
 
 // ========================================================================
-// MENU BAR ACTION HANDLER
+// MENU BAR ACTION HANDLER (using composable)
 // ========================================================================
-
-/**
- * Handle actions from the menu bar
- */
-function handleMenuAction(action: string) {
-  switch (action) {
-    // File menu
-    case 'newProject':
-      if (confirm('Create a new project? Unsaved changes will be lost.')) {
-        store.newProject();
-      }
-      break;
-    case 'openProject':
-      triggerProjectOpen();
-      break;
-    case 'saveProject':
-      store.saveProject();
-      break;
-    case 'saveProjectAs':
-      store.saveProjectAs();
-      break;
-    case 'import':
-      triggerAssetImport();
-      break;
-    case 'export':
-      showExportDialog.value = true;
-      break;
-
-    // Edit menu
-    case 'undo':
-      historyStore.undo();
-      break;
-    case 'redo':
-      historyStore.redo();
-      break;
-    case 'cut':
-      store.cutSelected();
-      break;
-    case 'copy':
-      store.copySelected();
-      break;
-    case 'paste':
-      store.paste();
-      break;
-    case 'duplicate':
-      store.duplicateSelectedLayers();
-      break;
-    case 'delete':
-      store.deleteSelectedLayers();
-      break;
-    case 'selectAll':
-      store.selectAllLayers();
-      break;
-    case 'deselectAll':
-      store.clearSelection();
-      break;
-
-    // Create menu - layer types
-    case 'createSolid':
-      store.createLayer('solid');
-      break;
-    case 'createText':
-      store.createLayer('text');
-      break;
-    case 'createShape':
-      store.createLayer('spline');
-      break;
-    case 'createPath':
-      store.createLayer('path');
-      break;
-    case 'createCamera':
-      store.createLayer('camera');
-      break;
-    case 'createLight':
-      store.createLayer('light');
-      break;
-    case 'createControl':
-      store.createLayer('control');
-      break;
-    case 'createParticle':
-      store.createLayer('particle');
-      break;
-    case 'createDepth':
-      store.createLayer('depth');
-      break;
-    case 'createNormal':
-      store.createLayer('normal');
-      break;
-    case 'createGenerated':
-      store.createLayer('generated');
-      break;
-    case 'createGroup':
-      store.createLayer('group');
-      break;
-    case 'createEffectLayer':
-      store.createLayer('effectLayer');
-      break;
-    case 'createMatte':
-      store.createLayer('matte');
-      break;
-
-    // Layer menu
-    case 'precompose':
-      showPrecomposeDialog.value = true;
-      break;
-    case 'splitLayer':
-      store.splitLayerAtPlayhead();
-      break;
-    case 'timeStretch':
-      showTimeStretchDialog.value = true;
-      break;
-    case 'timeReverse':
-      store.reverseSelectedLayers();
-      break;
-    case 'freezeFrame':
-      store.freezeFrameAtPlayhead();
-      break;
-    case 'lockLayer':
-      store.toggleLayerLock();
-      break;
-    case 'toggleVisibility':
-      store.toggleLayerVisibility();
-      break;
-    case 'isolateLayer':
-      store.toggleLayerSolo();
-      break;
-    case 'bringToFront':
-      store.bringToFront();
-      break;
-    case 'sendToBack':
-      store.sendToBack();
-      break;
-    case 'bringForward':
-      store.bringForward();
-      break;
-    case 'sendBackward':
-      store.sendBackward();
-      break;
-
-    // View menu
-    case 'zoomIn':
-      handleZoomIn();
-      break;
-    case 'zoomOut':
-      handleZoomOut();
-      break;
-    case 'zoomFit':
-      viewZoom.value = 'fit';
-      handleZoomChange();
-      break;
-    case 'zoom100':
-      viewZoom.value = '100';
-      handleZoomChange();
-      break;
-    case 'toggleCurveEditor':
-      showCurveEditor.value = !showCurveEditor.value;
-      break;
-
-    // Window menu - panel visibility
-    case 'showProperties':
-      expandedPanels.value.properties = true;
-      break;
-    case 'showEffects':
-      leftTab.value = 'effects';
-      break;
-    case 'showCamera':
-      expandedPanels.value.camera = true;
-      break;
-    case 'showAudio':
-      expandedPanels.value.audio = true;
-      break;
-    case 'showAlign':
-      expandedPanels.value.align = true;
-      break;
-    case 'showAIChat':
-      aiTab.value = 'chat';
-      break;
-    case 'showAIGenerate':
-      aiTab.value = 'generate';
-      break;
-    case 'showExport':
-      showExportDialog.value = true;
-      break;
-    case 'showPreview':
-      showHDPreview.value = true;
-      break;
-
-    // Help menu
-    case 'showKeyboardShortcuts':
-      showPreferencesDialog.value = true;
-      // Switch to shortcuts tab after dialog opens
-      break;
-    case 'showDocumentation':
-      window.open('https://github.com/justinfleek/lattice-compositor', '_blank');
-      break;
-    case 'showAbout':
-      alert('Lattice Compositor v7.6\n\nProfessional motion graphics compositor for ComfyUI.\n\nBuilt with Vue 3, Three.js, and Pinia.');
-      break;
-
-    default:
-      console.warn('Unhandled menu action:', action);
-  }
-}
-
-function handleZoomIn() {
-  const levels = ['25', '50', '75', '100', '150', '200'];
-  const currentIndex = levels.indexOf(viewZoom.value);
-  if (currentIndex < levels.length - 1 && currentIndex >= 0) {
-    viewZoom.value = levels[currentIndex + 1];
-    handleZoomChange();
-  } else if (viewZoom.value === 'fit') {
-    viewZoom.value = '100';
-    handleZoomChange();
-  }
-}
-
-function handleZoomOut() {
-  const levels = ['25', '50', '75', '100', '150', '200'];
-  const currentIndex = levels.indexOf(viewZoom.value);
-  if (currentIndex > 0) {
-    viewZoom.value = levels[currentIndex - 1];
-    handleZoomChange();
-  }
-}
+const { handleMenuAction } = useMenuActions({
+  showExportDialog,
+  showPrecomposeDialog,
+  showTimeStretchDialog,
+  showPreferencesDialog,
+  showHDPreview,
+  leftTab,
+  aiTab,
+  viewZoom,
+  showCurveEditor,
+  expandedPanels,
+  triggerAssetImport,
+  triggerProjectOpen,
+  handleZoomChange,
+});
 
 function triggerProjectOpen() {
   const input = document.createElement('input');
@@ -1440,128 +988,6 @@ function handlePreferencesSave(preferences: any) {
   if (preferences.theme) {
     // Theme would be applied via themeStore
   }
-}
-
-// ========================================================================
-// ASSETS PANEL HANDLERS
-// ========================================================================
-
-/**
- * Create layers from imported SVG paths
- */
-function onCreateLayersFromSvg(svgId: string) {
-  const storedSvg = assetStore.svgDocuments.get(svgId);
-  if (!storedSvg) return;
-
-  // Create a model layer for each path in the SVG
-  storedSvg.document.paths.forEach((path, index) => {
-    const config = storedSvg.layerConfigs[index];
-
-    // Create a 3D model layer
-    // Note: This would ideally create a proper ModelLayer with the extruded geometry
-    // For now, we'll create a shape layer with the path data
-    const layer = store.createShapeLayer();
-    store.renameLayer(layer.id, `${storedSvg.name}_${path.id}`);
-
-    // Store the SVG path reference in the layer data
-    store.updateLayerData(layer.id, {
-      svgDocumentId: svgId,
-      svgPathId: path.id,
-      svgPathIndex: index,
-      extrusionConfig: config,
-      // Set Z position based on layer depth
-      transform: {
-        ...layer.transform,
-        position: {
-          ...layer.transform.position,
-          value: {
-            ...layer.transform.position.value,
-            z: config?.depth || 0
-          }
-        }
-      }
-    });
-  });
-
-  console.log(`[Lattice] Created ${storedSvg.document.paths.length} layers from SVG: ${storedSvg.name}`);
-}
-
-/**
- * Configure a particle emitter to use a mesh shape
- */
-function onUseMeshAsEmitter(meshId: string) {
-  const emitterConfig = assetStore.getMeshEmitterConfig(meshId);
-  if (!emitterConfig) return;
-
-  // Get the selected layer if it's a particle layer
-  const selectedLayerIds = store.selectedLayerIds;
-  if (selectedLayerIds.length === 0) {
-    console.warn('[Lattice] No layer selected for mesh emitter');
-    return;
-  }
-
-  const layer = store.layers.find(l => l.id === selectedLayerIds[0]);
-  if (!layer || layer.type !== 'particle') {
-    console.warn('[Lattice] Selected layer is not a particle layer');
-    return;
-  }
-
-  // Update the particle layer's emitter config with mesh vertices
-  store.updateLayerData(layer.id, {
-    emitter: {
-      ...(layer.data as any).emitter,
-      shape: 'mesh',
-      meshVertices: emitterConfig.meshVertices,
-      meshNormals: emitterConfig.meshNormals,
-    }
-  });
-
-  console.log(`[Lattice] Set mesh emitter for layer: ${layer.name}`);
-}
-
-/**
- * Update environment settings in the engine
- */
-function onEnvironmentUpdate(settings: any) {
-  if (!threeCanvasRef.value) return;
-  const engine = threeCanvasRef.value.getEngine?.();
-  if (!engine) return;
-
-  engine.setEnvironmentConfig(settings);
-}
-
-/**
- * Load environment map into the engine
- */
-async function onEnvironmentLoad(settings: any) {
-  if (!threeCanvasRef.value) return;
-  const engine = threeCanvasRef.value.getEngine?.();
-  if (!engine) return;
-
-  if (settings.url) {
-    try {
-      await engine.loadEnvironmentMap(settings.url, {
-        intensity: settings.intensity,
-        rotation: settings.rotation,
-        backgroundBlur: settings.backgroundBlur,
-        useAsBackground: settings.useAsBackground,
-      });
-      console.log('[Lattice] Environment map loaded');
-    } catch (error) {
-      console.error('[Lattice] Failed to load environment map:', error);
-    }
-  }
-}
-
-/**
- * Clear environment map from the engine
- */
-function onEnvironmentClear() {
-  if (!threeCanvasRef.value) return;
-  const engine = threeCanvasRef.value.getEngine?.();
-  if (!engine) return;
-
-  engine.setEnvironmentEnabled(false);
 }
 
 // Freeze frame at playhead (available via Layer menu)

@@ -65,3 +65,18 @@ export { useCurveEditorDraw, PROPERTY_COLORS, getPropertyColor, drawGrid, drawPr
 
 export { useCurveEditorKeyboard, createKeyboardHandler, goToPreviousKeyframe, goToNextKeyframe, applyEasyEase } from './useCurveEditorKeyboard';
 export type { EasyEaseParams, CurveEditorKeyboardOptions } from './useCurveEditorKeyboard';
+
+export { useCurveEditorInteraction } from './useCurveEditorInteraction';
+export type { DragTarget as CurveDragTarget, SelectedKeyframe as CurveSelectedKeyframe, SelectionBox, CurveEditorInteractionOptions } from './useCurveEditorInteraction';
+
+export { useMenuActions } from './useMenuActions';
+export type { MenuActionsOptions } from './useMenuActions';
+
+export { useAssetHandlers } from './useAssetHandlers';
+export type { AssetHandlersOptions } from './useAssetHandlers';
+
+export { useSplineInteraction } from './useSplineInteraction';
+export type { DragTarget, PenSubMode, SplineInteractionOptions } from './useSplineInteraction';
+
+export { useViewportControls } from './useViewportControls';
+export type { ViewportControlsOptions, ViewportControlsReturn } from './useViewportControls';

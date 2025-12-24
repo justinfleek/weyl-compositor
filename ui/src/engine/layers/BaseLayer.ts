@@ -19,6 +19,7 @@ import { processEffectStack, hasEnabledEffects } from '@/services/effectProcesso
 import { applyMasksToLayer, applyTrackMatte } from '@/services/effects/maskRenderer';
 import { MotionBlurProcessor, createDefaultMotionBlurSettings, type VelocityData } from '@/services/motionBlur';
 import { layerLogger } from '@/utils/logger';
+import { setMaterialBlendMode, applyBlendModeToGroup } from './blendModeUtils';
 
 export abstract class BaseLayer implements LayerInstance {
   /** Unique layer identifier */
@@ -1429,122 +1430,10 @@ export abstract class BaseLayer implements LayerInstance {
 
   /**
    * Apply blend mode to layer materials
-   * Supports: normal, add, multiply, screen, overlay, soft-light, hard-light,
-   * color-dodge, color-burn, difference, exclusion, darken, lighten
+   * Delegates to blendModeUtils for actual blend configuration
    */
   protected applyBlendMode(mode: string): void {
-    this.group.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.material) {
-        const material = child.material as THREE.Material;
-        this.setMaterialBlendMode(material, mode);
-        material.needsUpdate = true;
-      }
-    });
-  }
-
-  /**
-   * Configure a material's blend mode
-   */
-  private setMaterialBlendMode(material: THREE.Material, mode: string): void {
-    // Reset to defaults first
-    material.blending = THREE.NormalBlending;
-    material.blendEquation = THREE.AddEquation;
-    material.blendSrc = THREE.SrcAlphaFactor;
-    material.blendDst = THREE.OneMinusSrcAlphaFactor;
-    material.blendEquationAlpha = THREE.AddEquation;
-    material.blendSrcAlpha = THREE.OneFactor;
-    material.blendDstAlpha = THREE.OneMinusSrcAlphaFactor;
-
-    switch (mode) {
-      case 'normal':
-        material.blending = THREE.NormalBlending;
-        break;
-
-      case 'add':
-        material.blending = THREE.AdditiveBlending;
-        break;
-
-      case 'multiply':
-        material.blending = THREE.MultiplyBlending;
-        break;
-
-      case 'screen':
-        // Screen: 1 - (1-a)(1-b) = a + b - ab
-        // In GL terms: src * 1 + dst * (1 - src)
-        material.blending = THREE.CustomBlending;
-        material.blendEquation = THREE.AddEquation;
-        material.blendSrc = THREE.OneFactor;
-        material.blendDst = THREE.OneMinusSrcColorFactor;
-        break;
-
-      case 'overlay':
-        // Overlay is a combination of multiply and screen
-        // Can't be done with simple blend factors - needs shader
-        // Fallback to multiply for dark, screen for light
-        material.blending = THREE.MultiplyBlending;
-        break;
-
-      case 'soft-light':
-        // Soft light is complex - needs shader
-        // Approximate with normal blending at reduced opacity
-        material.blending = THREE.NormalBlending;
-        break;
-
-      case 'hard-light':
-        // Hard light is overlay with layers swapped
-        material.blending = THREE.MultiplyBlending;
-        break;
-
-      case 'color-dodge':
-        // Color dodge: a / (1 - b)
-        // Approximation using additive with boost
-        material.blending = THREE.AdditiveBlending;
-        break;
-
-      case 'color-burn':
-        // Color burn: 1 - (1-a) / b
-        // Approximation using subtractive
-        material.blending = THREE.SubtractiveBlending;
-        break;
-
-      case 'difference':
-        // Difference: |a - b|
-        // Use subtractive blending as approximation
-        material.blending = THREE.CustomBlending;
-        material.blendEquation = THREE.SubtractEquation;
-        material.blendSrc = THREE.OneFactor;
-        material.blendDst = THREE.OneFactor;
-        break;
-
-      case 'exclusion':
-        // Exclusion: a + b - 2ab
-        // Similar to difference but softer
-        material.blending = THREE.CustomBlending;
-        material.blendEquation = THREE.AddEquation;
-        material.blendSrc = THREE.OneMinusDstColorFactor;
-        material.blendDst = THREE.OneMinusSrcColorFactor;
-        break;
-
-      case 'darken':
-        // Darken: min(a, b)
-        material.blending = THREE.CustomBlending;
-        material.blendEquation = THREE.MinEquation;
-        material.blendSrc = THREE.OneFactor;
-        material.blendDst = THREE.OneFactor;
-        break;
-
-      case 'lighten':
-        // Lighten: max(a, b)
-        material.blending = THREE.CustomBlending;
-        material.blendEquation = THREE.MaxEquation;
-        material.blendSrc = THREE.OneFactor;
-        material.blendDst = THREE.OneFactor;
-        break;
-
-      default:
-        material.blending = THREE.NormalBlending;
-        break;
-    }
+    applyBlendModeToGroup(this.group, mode);
   }
 
   // ============================================================================

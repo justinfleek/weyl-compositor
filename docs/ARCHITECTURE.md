@@ -81,7 +81,7 @@
               │
               ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           SERVICE LAYER (42 Services)                        │
+│                          SERVICE LAYER (160 Services)                        │
 │  ┌──────────────────────┐  ┌──────────────────────┐  ┌────────────────────┐ │
 │  │     ANIMATION        │  │       AUDIO          │  │      EFFECTS       │ │
 │  │  • interpolation.ts  │  │  • audioFeatures.ts  │  │  • blurRenderer    │ │
@@ -1151,7 +1151,7 @@ ui/
 │   ├── main.ts                           # Application entry point
 │   ├── App.vue                           # Root Vue component
 │   │
-│   ├── components/                       # Vue components (57 files)
+│   ├── components/                       # Vue components (146 files)
 │   │   ├── canvas/
 │   │   │   ├── ThreeCanvas.vue           # Main Three.js viewport
 │   │   │   ├── SplineEditor.vue          # Path editing overlay

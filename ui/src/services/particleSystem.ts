@@ -25,136 +25,53 @@
 import { EASING_PRESETS, applyEasing } from './interpolation';
 import { createNoise2D } from 'simplex-noise';
 
-// ============================================================================
-// IMPORTS FROM SUBMODULES
-// ============================================================================
-
-// Import types for local use (with underscore prefix for internal use)
+// Import types
 import type {
-  Particle as _Particle,
-  TurbulenceConfig as _TurbulenceConfig,
-  ConnectionConfig as _ConnectionConfig,
-  SubEmitterConfig as _SubEmitterConfig,
-  EmitterShape as _EmitterShape,
-  SplinePathEmission as _SplinePathEmission,
-  SplineQueryResult as _SplineQueryResult,
-  SplinePathProvider as _SplinePathProvider,
-  SpriteConfig as _SpriteConfig,
-  EmitterConfig as _EmitterConfig,
-  GravityWellConfig as _GravityWellConfig,
-  VortexConfig as _VortexConfig,
-  LorenzAttractorConfig as _LorenzAttractorConfig,
-  ParticleModulation as _ParticleModulation,
-  CollisionConfig as _CollisionConfig,
-  ParticleSystemConfig as _ParticleSystemConfig,
-  RenderOptions as _RenderOptions,
-  SpatialGrid as _SpatialGrid,
+  Particle, TurbulenceConfig, ConnectionConfig, SubEmitterConfig,
+  EmitterShape, SplinePathEmission, SplineQueryResult, SplinePathProvider,
+  SpriteConfig, EmitterConfig, GravityWellConfig, VortexConfig,
+  LorenzAttractorConfig, ParticleModulation, CollisionConfig,
+  ParticleSystemConfig, RenderOptions, SpatialGrid,
 } from './particles/particleTypes';
 
-// Import factory functions for local use
+// Import factory functions
 import {
-  resetIdCounter as _resetIdCounter,
-  createDefaultSpriteConfig as _createDefaultSpriteConfig,
-  createDefaultSplinePathEmission as _createDefaultSplinePathEmission,
-  createDefaultCollisionConfig as _createDefaultCollisionConfig,
-  createDefaultEmitterConfig as _createDefaultEmitterConfig,
-  createDefaultTurbulenceConfig as _createDefaultTurbulenceConfig,
-  createDefaultConnectionConfig as _createDefaultConnectionConfig,
-  createDefaultSubEmitterConfig as _createDefaultSubEmitterConfig,
-  createDefaultGravityWellConfig as _createDefaultGravityWellConfig,
-  createDefaultVortexConfig as _createDefaultVortexConfig,
-  createDefaultSystemConfig as _createDefaultSystemConfig,
-  createDefaultRenderOptions as _createDefaultRenderOptions,
+  resetIdCounter, createDefaultSpriteConfig, createDefaultSplinePathEmission,
+  createDefaultCollisionConfig, createDefaultEmitterConfig, createDefaultTurbulenceConfig,
+  createDefaultConnectionConfig, createDefaultSubEmitterConfig, createDefaultGravityWellConfig,
+  createDefaultVortexConfig, createDefaultSystemConfig, createDefaultRenderOptions,
 } from './particles/particleDefaults';
 
 // Import SeededRandom class
-import { SeededRandom as _SeededRandom } from './particles/SeededRandom';
+import { SeededRandom } from './particles/SeededRandom';
 
-// ============================================================================
-// RE-EXPORTS FOR BACKWARDS COMPATIBILITY
-// ============================================================================
+// Import renderer functions
+import {
+  renderParticlesToCanvas,
+  renderParticlesToMask,
+  renderConnections,
+  type ParticleRenderContext,
+} from './particles/particleRenderer';
 
-// Re-export all types
+// Re-export all types for backwards compatibility
 export type {
-  Particle,
-  TurbulenceConfig,
-  ConnectionConfig,
-  SubEmitterConfig,
-  EmitterShape,
-  SplinePathEmission,
-  SplineQueryResult,
-  SplinePathProvider,
-  SpriteConfig,
-  EmitterConfig,
-  GravityWellConfig,
-  VortexConfig,
-  LorenzAttractorConfig,
-  ParticleModulation,
-  CollisionConfig,
-  ParticleSystemConfig,
-  RenderOptions,
-  SpatialGrid,
+  Particle, TurbulenceConfig, ConnectionConfig, SubEmitterConfig,
+  EmitterShape, SplinePathEmission, SplineQueryResult, SplinePathProvider,
+  SpriteConfig, EmitterConfig, GravityWellConfig, VortexConfig,
+  LorenzAttractorConfig, ParticleModulation, CollisionConfig,
+  ParticleSystemConfig, RenderOptions, SpatialGrid,
 } from './particles/particleTypes';
 
 // Re-export factory functions
 export {
-  resetIdCounter,
-  createDefaultSpriteConfig,
-  createDefaultSplinePathEmission,
-  createDefaultCollisionConfig,
-  createDefaultEmitterConfig,
-  createDefaultTurbulenceConfig,
-  createDefaultConnectionConfig,
-  createDefaultSubEmitterConfig,
-  createDefaultGravityWellConfig,
-  createDefaultVortexConfig,
-  createDefaultSystemConfig,
-  createDefaultRenderOptions,
+  resetIdCounter, createDefaultSpriteConfig, createDefaultSplinePathEmission,
+  createDefaultCollisionConfig, createDefaultEmitterConfig, createDefaultTurbulenceConfig,
+  createDefaultConnectionConfig, createDefaultSubEmitterConfig, createDefaultGravityWellConfig,
+  createDefaultVortexConfig, createDefaultSystemConfig, createDefaultRenderOptions,
 } from './particles/particleDefaults';
 
 // Re-export SeededRandom
 export { SeededRandom } from './particles/SeededRandom';
-
-// ============================================================================
-// LOCAL ALIASES FOR INTERNAL USE
-// ============================================================================
-
-// Type aliases for internal use
-type Particle = _Particle;
-type TurbulenceConfig = _TurbulenceConfig;
-type ConnectionConfig = _ConnectionConfig;
-type SubEmitterConfig = _SubEmitterConfig;
-type EmitterShape = _EmitterShape;
-type SplinePathEmission = _SplinePathEmission;
-type SplineQueryResult = _SplineQueryResult;
-type SplinePathProvider = _SplinePathProvider;
-type SpriteConfig = _SpriteConfig;
-type EmitterConfig = _EmitterConfig;
-type GravityWellConfig = _GravityWellConfig;
-type VortexConfig = _VortexConfig;
-type LorenzAttractorConfig = _LorenzAttractorConfig;
-type ParticleModulation = _ParticleModulation;
-type CollisionConfig = _CollisionConfig;
-type ParticleSystemConfig = _ParticleSystemConfig;
-type RenderOptions = _RenderOptions;
-type SpatialGrid = _SpatialGrid;
-
-// Function aliases for internal use
-const resetIdCounter = _resetIdCounter;
-const createDefaultSpriteConfig = _createDefaultSpriteConfig;
-const createDefaultSplinePathEmission = _createDefaultSplinePathEmission;
-const createDefaultCollisionConfig = _createDefaultCollisionConfig;
-const createDefaultEmitterConfig = _createDefaultEmitterConfig;
-const createDefaultTurbulenceConfig = _createDefaultTurbulenceConfig;
-const createDefaultConnectionConfig = _createDefaultConnectionConfig;
-const createDefaultSubEmitterConfig = _createDefaultSubEmitterConfig;
-const createDefaultGravityWellConfig = _createDefaultGravityWellConfig;
-const createDefaultVortexConfig = _createDefaultVortexConfig;
-const createDefaultSystemConfig = _createDefaultSystemConfig;
-const createDefaultRenderOptions = _createDefaultRenderOptions;
-
-// SeededRandom alias
-const SeededRandom = _SeededRandom;
 
 // ============================================================================
 // Particle System Class
@@ -1684,55 +1601,6 @@ export class ParticleSystem {
     return neighbors;
   }
 
-  private renderConnections(
-    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-    width: number,
-    height: number
-  ): void {
-    const config = this.renderOptions.connections;
-    if (!config?.enabled || this.particles.length < 2) return;
-
-    const grid = this.buildSpatialGrid();
-    const maxDist = config.maxDistance / 1000;  // Normalize to 0-1
-    const maxDistSq = maxDist * maxDist;
-
-    ctx.lineWidth = config.lineWidth;
-
-    for (const p of this.particles) {
-      const neighbors = this.getNeighborParticles(p, grid);
-      let connectionCount = 0;
-
-      for (const other of neighbors) {
-        if (other.id <= p.id) continue;  // Only draw each connection once
-        if (connectionCount >= config.maxConnections) break;
-
-        const dx = other.x - p.x;
-        const dy = other.y - p.y;
-        const distSq = dx * dx + dy * dy;
-
-        if (distSq < maxDistSq) {
-          const dist = Math.sqrt(distSq);
-          let opacity = config.lineOpacity;
-          if (config.fadeByDistance) {
-            opacity *= 1 - (dist / maxDist);
-          }
-
-          const r = Math.round((p.color[0] + other.color[0]) / 2);
-          const g = Math.round((p.color[1] + other.color[1]) / 2);
-          const b = Math.round((p.color[2] + other.color[2]) / 2);
-
-          ctx.strokeStyle = `rgba(${r},${g},${b},${opacity})`;
-          ctx.beginPath();
-          ctx.moveTo(p.x * width, p.y * height);
-          ctx.lineTo(other.x * width, other.y * height);
-          ctx.stroke();
-
-          connectionCount++;
-        }
-      }
-    }
-  }
-
   reset(): void {
     this.particles = [];
     this.particlePool = []; // Clear pool to free memory
@@ -1851,7 +1719,7 @@ export class ParticleSystem {
   }
 
   // ============================================================================
-  // Rendering
+  // Rendering (delegated to particleRenderer.ts)
   // ============================================================================
 
   renderToCanvas(
@@ -1862,371 +1730,25 @@ export class ParticleSystem {
   ): void {
     // Cache render options for spatial grid
     this.renderOptions = options;
-    ctx.save();
 
-    // Set blend mode
-    switch (options.blendMode) {
-      case 'additive':
-        ctx.globalCompositeOperation = 'lighter';
-        break;
-      case 'multiply':
-        ctx.globalCompositeOperation = 'multiply';
-        break;
-      case 'screen':
-        ctx.globalCompositeOperation = 'screen';
-        break;
-      default:
-        ctx.globalCompositeOperation = 'source-over';
-    }
+    // Build render context for the external renderer
+    const context: ParticleRenderContext = {
+      particles: this.particles,
+      emitters: this.emitters,
+      trailHistory: this.trailHistory,
+      spriteCache: this.spriteCache,
+      renderOptions: options,
+    };
 
-    // Render particle connections first, before particles
-    this.renderConnections(ctx, width, height);
+    // Build spatial grid for connections
+    const spatialGrid = options.connections?.enabled ? this.buildSpatialGrid() : undefined;
 
-    for (const p of this.particles) {
-      const x = p.x * width;
-      const y = p.y * height;
-      const size = p.size;
-
-      // Render trails first
-      if (options.renderTrails) {
-        const trail = this.trailHistory.get(p.id);
-        if (trail && trail.length > 1) {
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-
-          const trailLen = Math.min(trail.length, options.trailLength);
-          for (let i = 0; i < trailLen; i++) {
-            const tp = trail[i];
-            const opacity = p.color[3] * Math.pow(options.trailOpacityFalloff, i + 1);
-            ctx.strokeStyle = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, ${opacity / 255})`;
-            ctx.lineWidth = size * Math.pow(options.trailOpacityFalloff, i);
-            ctx.lineTo(tp.x * width, tp.y * height);
-          }
-          ctx.stroke();
-        }
-      }
-
-      // Apply glow
-      if (options.glowEnabled) {
-        ctx.shadowBlur = options.glowRadius;
-        ctx.shadowColor = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, ${options.glowIntensity})`;
-      } else {
-        ctx.shadowBlur = 0;
-      }
-
-      // Motion blur rendering
-      if (options.motionBlur && (p.vx !== 0 || p.vy !== 0)) {
-        this.renderParticleWithMotionBlur(ctx, p, x, y, size, width, height, options);
-      } else {
-        // Standard particle rendering (pass particle for sprite rendering)
-        this.renderParticleShape(ctx, x, y, size, p.color, options.particleShape, p, options);
-      }
-    }
-
-    ctx.restore();
-  }
-
-  /**
-   * Render a single particle with motion blur effect
-   */
-  private renderParticleWithMotionBlur(
-    ctx: CanvasRenderingContext2D,
-    p: Particle,
-    x: number,
-    y: number,
-    size: number,
-    _width: number,
-    _height: number,
-    options: RenderOptions
-  ): void {
-    // Calculate velocity magnitude
-    const velocityMag = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-
-    // If velocity is too small, render normally
-    if (velocityMag < 0.0001) {
-      this.renderParticleShape(ctx, x, y, size, p.color, options.particleShape);
-      return;
-    }
-
-    // Calculate blur stretch based on velocity
-    const stretchFactor = options.motionBlurStrength * velocityMag * 500;
-    const samples = Math.min(options.motionBlurSamples, 16);
-
-    // Direction of motion
-    const dirX = p.vx / velocityMag;
-    const dirY = p.vy / velocityMag;
-
-    // Calculate stretch distance in pixels
-    const stretchDistance = Math.min(stretchFactor * size, size * 10);
-
-    // Render multiple samples along the motion vector
-    for (let i = 0; i < samples; i++) {
-      const t = i / (samples - 1); // 0 to 1
-      const sampleOpacity = (1 - t * 0.8) / samples; // Fade towards the back
-
-      // Position along the blur streak (from current position to where we were)
-      const sampleX = x - dirX * stretchDistance * t;
-      const sampleY = y - dirY * stretchDistance * t;
-
-      // Size reduces towards back of blur
-      const sampleSize = size * (1 - t * 0.3);
-
-      // Set color with adjusted opacity
-      const alpha = (p.color[3] / 255) * sampleOpacity * samples;
-      ctx.fillStyle = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, ${Math.min(1, alpha)})`;
-
-      // Draw sample
-      this.renderParticleShape(ctx, sampleX, sampleY, sampleSize, null, options.particleShape, p, options);
-    }
-
-    // Draw the main particle at full opacity
-    ctx.fillStyle = `rgba(${p.color[0]}, ${p.color[1]}, ${p.color[2]}, ${p.color[3] / 255})`;
-    this.renderParticleShape(ctx, x, y, size, p.color, options.particleShape, p, options);
-  }
-
-  /**
-   * Render a particle shape at given position
-   */
-  private renderParticleShape(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    size: number,
-    color: [number, number, number, number] | null,
-    shape: RenderOptions['particleShape'],
-    particle?: Particle,
-    options?: RenderOptions
-  ): void {
-    // Set fill color if provided
-    if (color) {
-      ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3] / 255})`;
-    }
-
-    // Handle sprite rendering
-    if (shape === 'sprite' && particle) {
-      this.renderSprite(ctx, x, y, size, particle, options);
-      return;
-    }
-
-    // Check if this particle has rotation (for non-sprite shapes)
-    const hasRotation = particle && particle.rotation !== 0;
-
-    if (hasRotation && particle) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(particle.rotation);
-      // Draw at origin since we've translated
-      this.drawShapeAtOrigin(ctx, size, shape);
-      ctx.restore();
-    } else {
-      // Draw particle shape without rotation
-      switch (shape) {
-        case 'circle':
-          ctx.beginPath();
-          ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-          ctx.fill();
-          break;
-
-        case 'square':
-          ctx.fillRect(x - size / 2, y - size / 2, size, size);
-          break;
-
-        case 'triangle':
-          ctx.beginPath();
-          ctx.moveTo(x, y - size / 2);
-          ctx.lineTo(x - size / 2, y + size / 2);
-          ctx.lineTo(x + size / 2, y + size / 2);
-          ctx.closePath();
-          ctx.fill();
-          break;
-
-        case 'star':
-          this.drawStar(ctx, x, y, 5, size / 2, size / 4);
-          ctx.fill();
-          break;
-      }
-    }
-  }
-
-  /**
-   * Draw shape at origin (for rotated shapes)
-   */
-  private drawShapeAtOrigin(
-    ctx: CanvasRenderingContext2D,
-    size: number,
-    shape: RenderOptions['particleShape']
-  ): void {
-    switch (shape) {
-      case 'circle':
-        ctx.beginPath();
-        ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
-        ctx.fill();
-        break;
-
-      case 'square':
-        ctx.fillRect(-size / 2, -size / 2, size, size);
-        break;
-
-      case 'triangle':
-        ctx.beginPath();
-        ctx.moveTo(0, -size / 2);
-        ctx.lineTo(-size / 2, size / 2);
-        ctx.lineTo(size / 2, size / 2);
-        ctx.closePath();
-        ctx.fill();
-        break;
-
-      case 'star':
-        this.drawStar(ctx, 0, 0, 5, size / 2, size / 4);
-        ctx.fill();
-        break;
-    }
-  }
-
-  /**
-   * Render a sprite/texture particle
-   */
-  private renderSprite(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    size: number,
-    particle: Particle,
-    options?: RenderOptions
-  ): void {
-    const emitter = this.emitters.get(particle.emitterId);
-    if (!emitter?.sprite?.enabled) {
-      // Fallback to circle if no sprite
-      ctx.beginPath();
-      ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-
-    const sprite = emitter.sprite;
-    const image = sprite.imageData || this.spriteCache.get(particle.emitterId);
-    if (!image) {
-      // Fallback to circle if no image loaded
-      ctx.beginPath();
-      ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-
-    ctx.save();
-
-    // Set image smoothing
-    ctx.imageSmoothingEnabled = options?.spriteSmoothing ?? true;
-
-    // Apply opacity based on particle age if enabled
-    let alpha = particle.color[3] / 255;
-    if (options?.spriteOpacityByAge) {
-      const lifeRatio = particle.age / particle.lifetime;
-      // Fade out in the last 20% of life
-      if (lifeRatio > 0.8) {
-        alpha *= 1 - (lifeRatio - 0.8) / 0.2;
-      }
-    }
-    ctx.globalAlpha = alpha;
-
-    // Calculate sprite sheet frame coordinates
-    let sx = 0;
-    let sy = 0;
-    let sw = image.width;
-    let sh = image.height;
-
-    if (sprite.isSheet && sprite.columns > 1 || sprite.rows > 1) {
-      const frameWidth = image.width / sprite.columns;
-      const frameHeight = image.height / sprite.rows;
-      const col = particle.spriteIndex % sprite.columns;
-      const row = Math.floor(particle.spriteIndex / sprite.columns) % sprite.rows;
-      sx = col * frameWidth;
-      sy = row * frameHeight;
-      sw = frameWidth;
-      sh = frameHeight;
-    }
-
-    // Translate to particle position
-    ctx.translate(x, y);
-
-    // Apply rotation
-    if (particle.rotation !== 0) {
-      ctx.rotate(particle.rotation);
-    }
-
-    // Draw the sprite centered at the particle position
-    const halfSize = size / 2;
-    ctx.drawImage(
-      image,
-      sx, sy, sw, sh,      // Source rectangle
-      -halfSize, -halfSize, size, size  // Destination rectangle
-    );
-
-    ctx.restore();
-  }
-
-  private drawStar(
-    ctx: CanvasRenderingContext2D,
-    cx: number,
-    cy: number,
-    spikes: number,
-    outerRadius: number,
-    innerRadius: number
-  ): void {
-    ctx.beginPath();
-    let rotation = -Math.PI / 2;
-
-    for (let i = 0; i < spikes; i++) {
-      const outerX = cx + Math.cos(rotation) * outerRadius;
-      const outerY = cy + Math.sin(rotation) * outerRadius;
-
-      if (i === 0) {
-        ctx.moveTo(outerX, outerY);
-      } else {
-        ctx.lineTo(outerX, outerY);
-      }
-
-      rotation += Math.PI / spikes;
-
-      const innerX = cx + Math.cos(rotation) * innerRadius;
-      const innerY = cy + Math.sin(rotation) * innerRadius;
-      ctx.lineTo(innerX, innerY);
-
-      rotation += Math.PI / spikes;
-    }
-
-    ctx.closePath();
+    // Delegate to the extracted renderer
+    renderParticlesToCanvas(ctx, width, height, context, spatialGrid);
   }
 
   renderToMask(width: number, height: number): ImageData {
-    const canvas = new OffscreenCanvas(width, height);
-    const ctx = canvas.getContext('2d')!;
-
-    // Start with white (include all)
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, width, height);
-
-    // Draw connections as black (exclude) if enabled
-    const connConfig = this.renderOptions.connections;
-    if (connConfig?.enabled && this.particles.length >= 2) {
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = connConfig.lineWidth * 2;  // Slightly thicker for matte
-      this.renderConnections(ctx, width, height);
-    }
-
-    // Draw particles as black (exclude)
-    ctx.fillStyle = '#000000';
-    for (const p of this.particles) {
-      const x = p.x * width;
-      const y = p.y * height;
-      const size = p.size * 1.5; // Slightly larger for matte
-
-      ctx.beginPath();
-      ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    return ctx.getImageData(0, 0, width, height);
+    return renderParticlesToMask(width, height, this.particles, this.renderOptions);
   }
 
   // ============================================================================

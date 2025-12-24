@@ -2078,10 +2078,9 @@ export const useCompositorStore = defineStore('compositor', {
         layer.transform.rotation.value = updates.rotation;
       }
       if (updates.opacity !== undefined) {
-        // Opacity might be at layer level or transform level
-        const opacityProp = (layer.transform as unknown as Record<string, unknown>).opacity;
-        if (opacityProp && typeof opacityProp === 'object' && 'value' in opacityProp) {
-          (opacityProp as { value: number }).value = updates.opacity;
+        // Opacity is at layer level (layer.opacity), not transform level
+        if (layer.opacity && typeof layer.opacity === 'object' && 'value' in layer.opacity) {
+          layer.opacity.value = updates.opacity;
         }
       }
       // Handle origin/anchor (anchor is alias for origin)

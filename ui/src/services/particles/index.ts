@@ -5,6 +5,7 @@
  * - particleTypes: All interfaces and type definitions
  * - particleDefaults: Factory functions for default configs
  * - SeededRandom: Deterministic RNG for reproducible simulation
+ * - particleRenderer: Canvas rendering functions
  *
  * Import from '@/services/particles' for all particle utilities.
  */
@@ -17,3 +18,6 @@ export * from './particleDefaults';
 
 // Seeded random number generator
 export { SeededRandom } from './SeededRandom';
+
+// Rendering functions
+export * from './particleRenderer';

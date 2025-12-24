@@ -375,19 +375,19 @@ Understands motion graphics terminology and executes complex multi-step tasks:
 
 ---
 
-## File Structure
+## File Structure (Verified December 24, 2025)
 
 ```
 ui/src/
-├── components/     112 Vue components
+├── components/     146 Vue components
 ├── engine/          42 TypeScript files
-├── services/       165 service modules
-├── stores/          20 Pinia stores
-├── types/           11 type definitions
-└── __tests__/       48 test files
+├── services/       160 service modules
+├── stores/          10 stores + 17 action modules
+├── types/           23 type definitions
+└── __tests__/       49 test files
 ```
 
-**Total:** 398 source files | 236,000 lines of code | 2,788 exports
+**Total:** 493 source files | 267,121 lines of code | 1,777 tests passing
 
 ---
 

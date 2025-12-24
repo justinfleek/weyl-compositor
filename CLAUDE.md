@@ -1,6 +1,6 @@
 # CLAUDE.md - Lattice Compositor Development Guide
 
-**Version:** 8.5 | **Last Updated:** December 23, 2025
+**Version:** 8.6 | **Last Updated:** December 24, 2025
 
 ---
 
@@ -13,9 +13,6 @@
 | API Reference | [docs/SERVICE_API_REFERENCE.md](docs/SERVICE_API_REFERENCE.md) |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
 | Debug Guide | [docs/DEBUG_TROUBLESHOOTING.md](docs/DEBUG_TROUBLESHOOTING.md) |
-| **File Splitting Plan** | [FILE_SPLITTING_PLAN.md](FILE_SPLITTING_PLAN.md) |
-| Integration Audit | [COMPREHENSIVE_INTEGRATION_AUDIT.md](COMPREHENSIVE_INTEGRATION_AUDIT.md) |
-| Production Readiness | [PRODUCTION_READINESS_AUDIT.md](PRODUCTION_READINESS_AUDIT.md) |
 
 ---
 
@@ -744,15 +741,17 @@ Use `offset` and `limit` parameters when reading:
 
 ---
 
-## Project Metrics
+## Project Metrics (Verified December 24, 2025)
 
 | Metric | Value |
 |--------|-------|
-| Lines of Code | 236,000 |
-| TypeScript Files | 286 |
-| Vue Components | 112 |
-| Services | 165 |
-| Layer Types | 26 |
+| Lines of Code | 267,121 |
+| TypeScript/Vue Files | 493 |
+| Vue Components | 146 |
+| Service Files | 160 |
+| Layer Types | 24 (+2 deprecated aliases +1 legacy) |
+| Store Actions | 251+ |
+| Type Definition Files | 23 |
 | Effects | 69 |
 | Easing Functions | 45 |
 | Blend Modes | 24 |
@@ -760,7 +759,52 @@ Use `offset` and `limit` parameters when reading:
 | Particle Presets | 24 |
 | AI Agent Tools | 39 |
 | Keyboard Shortcuts | 86+ |
-| Total Exports | 2,788 |
+| Test Files | 49 |
+| Tests Passing | 1,777 |
+| Tests Skipped | 9 |
+
+---
+
+## Large Files Requiring Splitting (>1500 lines)
+
+These files exceed the maintainability threshold and should be split:
+
+| File | Lines | Priority |
+|------|-------|----------|
+| `services/expressions.ts` | 2,538 | HIGH |
+| `services/particleSystem.ts` | 2,278 | HIGH |
+| `services/export/wanMoveExport.ts` | 2,233 | HIGH |
+| `components/layout/WorkspaceLayout.vue` | 2,189 | HIGH |
+| `components/canvas/SplineEditor.vue` | 2,172 | HIGH |
+| `components/curve-editor/CurveEditor.vue` | 2,112 | HIGH |
+| `stores/compositorStore.ts` | 2,097 | MEDIUM |
+| `components/canvas/ThreeCanvas.vue` | 2,050 | MEDIUM |
+| `engine/LatticeEngine.ts` | 2,034 | MEDIUM |
+| `stores/actions/layerActions.ts` | 1,976 | MEDIUM |
+| `engine/layers/BaseLayer.ts` | 1,932 | MEDIUM |
+| `components/properties/ParticleProperties.vue` | 1,847 | MEDIUM |
+| `services/index.ts` | 1,763 | LOW |
+| `services/physics/PhysicsEngine.ts` | 1,721 | LOW |
+| `services/ai/actionExecutor.ts` | 1,693 | LOW |
+| `services/depthflow.ts` | 1,650 | LOW |
+| `services/shapeOperations.ts` | 1,643 | LOW |
+| `services/effects/colorRenderer.ts` | 1,582 | LOW |
+| `dialogs/TemplateBuilderDialog.vue` | 1,583 | LOW |
+
+---
+
+## Recent Changes (December 24, 2025 - Full Codebase Audit)
+
+### Documentation Corrections
+- Removed 3 non-existent file references (FILE_SPLITTING_PLAN.md, COMPREHENSIVE_INTEGRATION_AUDIT.md, PRODUCTION_READINESS_AUDIT.md)
+- Updated Project Metrics with verified accurate values
+- Added Large Files section listing 19 files needing splitting
+
+### Verified Integration Status
+- All 24 layer types properly registered in LayerManager
+- All 160 services properly exported from index.ts
+- All 146 Vue components functional
+- 1,777 tests passing, 0 failures
 
 ---
 

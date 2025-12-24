@@ -1,120 +1,33 @@
 <template>
   <div class="curve-editor">
-    <div class="curve-header">
-      <span class="curve-title">Curve Editor</span>
-
-      <!-- Mode toggle -->
-      <div class="mode-toggle">
-        <button
-          :class="{ active: mode === 'value' }"
-          @click="mode = 'value'"
-          title="Value Graph"
-        >
-          Value
-        </button>
-        <button
-          :class="{ active: mode === 'speed' }"
-          @click="mode = 'speed'"
-          title="Speed Graph"
-        >
-          Speed
-        </button>
-      </div>
-
-      <!-- Easing presets -->
-      <div class="preset-buttons">
-        <button
-          v-for="preset in presetList"
-          :key="preset.key"
-          class="preset-btn"
-          :class="{ active: isPresetActive(preset.key) }"
-          @click="applyPreset(preset.key)"
-          :title="preset.label"
-        >
-          {{ preset.shortLabel }}
-        </button>
-      </div>
-
-      <!-- Tools -->
-      <div class="toolbar">
-        <button @click="fitToView" title="Fit to View">
-          <span class="icon">[ ]</span>
-        </button>
-        <button @click="toggleAutoSelect" :class="{ active: autoSelectNearby }" title="Auto-select Nearby Keyframes">
-          <span class="icon">A</span>
-        </button>
-        <button @click="snapEnabled = !snapEnabled" :class="{ active: snapEnabled }" title="Snap to Grid">
-          <span class="icon">#</span>
-        </button>
-      </div>
-
-      <button class="close-btn" @click="emit('close')">
-        <span class="icon">X</span>
-      </button>
-    </div>
+    <CurveEditorHeader
+      :mode="mode"
+      :preset-list="presetList"
+      :auto-select-nearby="autoSelectNearby"
+      :snap-enabled="snapEnabled"
+      :is-preset-active="isPresetActive"
+      @update:mode="mode = $event"
+      @update:auto-select-nearby="autoSelectNearby = $event"
+      @update:snap-enabled="snapEnabled = $event"
+      @apply-preset="applyPreset"
+      @fit-to-view="fitToView"
+      @close="emit('close')"
+    />
 
     <div class="curve-content">
-      <!-- Property selector -->
-      <div class="property-list">
-        <div class="property-list-header">
-          Properties
-          <button
-            class="toggle-all-btn"
-            @click="toggleAllProperties"
-            :title="allPropertiesVisible ? 'Hide All' : 'Show All'"
-          >
-            {{ allPropertiesVisible ? 'Hide' : 'Show' }}
-          </button>
-        </div>
-
-        <div
-          v-for="prop in animatableProperties"
-          :key="prop.id"
-          class="property-item"
-          :class="{
-            selected: selectedPropertyIds.includes(prop.id),
-            animated: prop.animated
-          }"
-        >
-          <div class="property-row" @click="toggleProperty(prop.id)">
-            <span
-              class="visibility-toggle"
-              :class="{ visible: visiblePropertyIds.includes(prop.id) }"
-              @click.stop="togglePropertyVisibility(prop.id)"
-            />
-            <span
-              class="property-color"
-              :style="{ background: getPropertyColor(prop.id) }"
-            />
-            <span class="property-name">{{ prop.name }}</span>
-            <span class="keyframe-count" v-if="prop.animated">
-              {{ prop.keyframes.length }}
-            </span>
-          </div>
-
-          <!-- Separate dimensions toggle for position/scale -->
-          <div
-            v-if="prop.name === 'Position' || prop.name === 'Scale'"
-            class="dimension-toggles"
-          >
-            <button
-              v-for="dim in ['x', 'y', 'z']"
-              :key="dim"
-              :class="{
-                active: visibleDimensions[prop.id]?.includes(dim),
-                hasValue: hasDimension(prop, dim)
-              }"
-              @click="toggleDimension(prop.id, dim)"
-            >
-              {{ dim.toUpperCase() }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="animatableProperties.length === 0" class="no-properties">
-          No animated properties
-        </div>
-      </div>
+      <CurveEditorPropertyList
+        :animatable-properties="animatableProperties"
+        :selected-property-ids="selectedPropertyIds"
+        :visible-property-ids="visiblePropertyIds"
+        :visible-dimensions="visibleDimensions"
+        :all-properties-visible="allPropertiesVisible"
+        :get-property-color="getPropertyColor"
+        :has-dimension="hasDimension"
+        @toggle-all-properties="toggleAllProperties"
+        @toggle-property="toggleProperty"
+        @toggle-property-visibility="togglePropertyVisibility"
+        @toggle-dimension="toggleDimension"
+      />
 
       <!-- Main graph area -->
       <div class="curve-main">
@@ -310,6 +223,10 @@ import { useCompositorStore } from '@/stores/compositorStore';
 import { EASING_PRESETS, getBezierCurvePoint } from '@/services/interpolation';
 import { findNearestSnap } from '@/services/timelineSnap';
 import type { AnimatableProperty, Keyframe, BezierHandle } from '@/types/project';
+import CurveEditorHeader from './CurveEditorHeader.vue';
+import CurveEditorPropertyList from './CurveEditorPropertyList.vue';
+import type { CurveMode, EasingPreset } from './CurveEditorHeader.vue';
+import { useCurveEditorInteraction } from '@/composables/useCurveEditorInteraction';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -329,7 +246,7 @@ const canvasWidth = ref(400);
 const canvasHeight = ref(200);
 
 // Mode: value graph or speed graph
-const mode = ref<'value' | 'speed'>('value');
+const mode = ref<CurveMode>('value');
 
 // View state
 const viewState = reactive({
@@ -382,16 +299,16 @@ const propertyColors: Record<string, string> = {
 };
 
 // Presets list
-const presetList = [
-  { key: 'linear' as const, label: 'Linear', shortLabel: 'Lin' },
-  { key: 'easeIn' as const, label: 'Ease In', shortLabel: 'In' },
-  { key: 'easeOut' as const, label: 'Ease Out', shortLabel: 'Out' },
-  { key: 'easeInOut' as const, label: 'Ease In/Out', shortLabel: 'I/O' },
-  { key: 'easeInCubic' as const, label: 'Ease In Cubic', shortLabel: 'In3' },
-  { key: 'easeOutCubic' as const, label: 'Ease Out Cubic', shortLabel: 'Ou3' },
-  { key: 'easeInOutCubic' as const, label: 'Ease In/Out Cubic', shortLabel: 'IO3' },
-  { key: 'easeInBack' as const, label: 'Ease In Back', shortLabel: 'InB' },
-  { key: 'easeOutBack' as const, label: 'Ease Out Back', shortLabel: 'OuB' }
+const presetList: EasingPreset[] = [
+  { key: 'linear', label: 'Linear', shortLabel: 'Lin' },
+  { key: 'easeIn', label: 'Ease In', shortLabel: 'In' },
+  { key: 'easeOut', label: 'Ease Out', shortLabel: 'Out' },
+  { key: 'easeInOut', label: 'Ease In/Out', shortLabel: 'I/O' },
+  { key: 'easeInCubic', label: 'Ease In Cubic', shortLabel: 'In3' },
+  { key: 'easeOutCubic', label: 'Ease Out Cubic', shortLabel: 'Ou3' },
+  { key: 'easeInOutCubic', label: 'Ease In/Out Cubic', shortLabel: 'IO3' },
+  { key: 'easeInBack', label: 'Ease In Back', shortLabel: 'InB' },
+  { key: 'easeOutBack', label: 'Ease Out Back', shortLabel: 'OuB' }
 ];
 
 // Get all animatable properties from selected layer
@@ -1686,233 +1603,10 @@ watch(animatableProperties, () => {
   font-size: 12px;
 }
 
-.curve-header {
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  background: #252525;
-  border-bottom: 1px solid #333;
-  gap: 12px;
-}
-
-.curve-title {
-  font-weight: 500;
-}
-
-.mode-toggle {
-  display: flex;
-  border: 1px solid #444;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.mode-toggle button {
-  padding: 3px 8px;
-  border: none;
-  background: transparent;
-  color: #888;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.mode-toggle button.active {
-  background: #7c9cff;
-  color: #fff;
-}
-
-.preset-buttons {
-  display: flex;
-  gap: 2px;
-  flex: 1;
-  overflow-x: auto;
-}
-
-.preset-btn {
-  padding: 3px 6px;
-  border: 1px solid #444;
-  background: transparent;
-  color: #888;
-  border-radius: 3px;
-  font-size: 11px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.preset-btn:hover {
-  background: #333;
-  color: #fff;
-}
-
-.preset-btn.active {
-  background: #7c9cff;
-  border-color: #7c9cff;
-  color: #fff;
-}
-
-.toolbar {
-  display: flex;
-  gap: 4px;
-}
-
-.toolbar button {
-  width: 24px;
-  height: 24px;
-  border: 1px solid #444;
-  background: transparent;
-  color: #888;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.toolbar button:hover {
-  background: #333;
-  color: #fff;
-}
-
-.toolbar button.active {
-  background: #7c9cff;
-  border-color: #7c9cff;
-  color: #fff;
-}
-
-.close-btn {
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  color: #888;
-  cursor: pointer;
-}
-
-.close-btn:hover {
-  color: #fff;
-}
-
 .curve-content {
   display: flex;
   flex: 1;
   min-height: 0;
-}
-
-.property-list {
-  width: 140px;
-  min-width: 140px;
-  background: #222;
-  border-right: 1px solid #333;
-  overflow-y: auto;
-}
-
-.property-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  background: #2a2a2a;
-  border-bottom: 1px solid #333;
-  font-size: 12px;
-  color: #888;
-}
-
-.toggle-all-btn {
-  padding: 2px 6px;
-  border: 1px solid #444;
-  background: transparent;
-  color: #888;
-  border-radius: 2px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.property-item {
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.property-item.animated {
-  border-left: 2px solid #7c9cff;
-}
-
-.property-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  cursor: pointer;
-}
-
-.property-row:hover {
-  background: #2a2a2a;
-}
-
-.property-item.selected .property-row {
-  background: rgba(124, 156, 255, 0.15);
-}
-
-.visibility-toggle {
-  width: 12px;
-  height: 12px;
-  border: 1px solid #555;
-  border-radius: 2px;
-  cursor: pointer;
-}
-
-.visibility-toggle.visible {
-  background: #7c9cff;
-  border-color: #7c9cff;
-}
-
-.property-color {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.property-name {
-  flex: 1;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.keyframe-count {
-  font-size: 11px;
-  color: #666;
-  background: #333;
-  padding: 1px 4px;
-  border-radius: 2px;
-}
-
-.dimension-toggles {
-  display: flex;
-  gap: 2px;
-  padding: 2px 8px 6px 26px;
-}
-
-.dimension-toggles button {
-  padding: 2px 6px;
-  border: 1px solid #444;
-  background: transparent;
-  color: #666;
-  border-radius: 2px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.dimension-toggles button.active {
-  background: #444;
-  color: #fff;
-}
-
-.dimension-toggles button:not(.hasValue) {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.no-properties {
-  padding: 12px 8px;
-  color: #555;
-  font-size: 13px;
-  text-align: center;
 }
 
 .curve-main {

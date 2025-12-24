@@ -12,6 +12,11 @@
  * - coordinateConversion: toComp, fromComp, toWorld, fromWorld, lookAt
  * - audioExpressions: valueAtTime, posterizeTime, audio reactivity
  * - textAnimator: Per-character text animation
+ * - expressionEvaluator: Core expression evaluation
+ * - layerContentExpressions: sourceRectAtTime, textSource, effectValue
+ * - expressionPresets: Pre-configured expression presets
+ * - expressionValidation: Expression syntax validation
+ * - expressionNamespaces: Convenience namespace objects
  *
  * Import from '@/services/expressions' for all expression functions.
  */
@@ -45,3 +50,18 @@ export * from './audioExpressions';
 
 // Text animator (per-character animation)
 export * from './textAnimator';
+
+// Expression evaluator (evaluateExpression, evaluateCustomExpression)
+export * from './expressionEvaluator';
+
+// Layer content expressions (sourceRectAtTime, textSource, effectValue)
+export * from './layerContentExpressions';
+
+// Expression presets
+export * from './expressionPresets';
+
+// Expression validation
+export * from './expressionValidation';
+
+// Expression namespaces (convenience groupings)
+export * from './expressionNamespaces';

@@ -40,37 +40,7 @@ import { markLayerDirty, clearLayerCache } from '@/services/layerEvaluationCache
 import { interpolateProperty } from '@/services/interpolation';
 import { textToVectorFromUrl, type TextToVectorResult, type CharacterVectorGroup } from '@/services/textToVector';
 import type { BezierPath, BezierVertex } from '@/types/shapes';
-import { createDefaultShapeLayerData, createDefaultGroup, createDefaultRectangle, createDefaultFill, createDefaultStroke } from '@/types/shapes';
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-/**
- * Create default T-pose keypoints for COCO 18-point format (normalized 0-1)
- */
-function createDefaultTPoseKeypoints(): Array<{ x: number; y: number; confidence: number }> {
-  return [
-    { x: 0.5, y: 0.1, confidence: 1 },    // 0: nose
-    { x: 0.5, y: 0.2, confidence: 1 },    // 1: neck
-    { x: 0.35, y: 0.2, confidence: 1 },   // 2: right_shoulder
-    { x: 0.2, y: 0.2, confidence: 1 },    // 3: right_elbow
-    { x: 0.1, y: 0.2, confidence: 1 },    // 4: right_wrist
-    { x: 0.65, y: 0.2, confidence: 1 },   // 5: left_shoulder
-    { x: 0.8, y: 0.2, confidence: 1 },    // 6: left_elbow
-    { x: 0.9, y: 0.2, confidence: 1 },    // 7: left_wrist
-    { x: 0.4, y: 0.45, confidence: 1 },   // 8: right_hip
-    { x: 0.4, y: 0.65, confidence: 1 },   // 9: right_knee
-    { x: 0.4, y: 0.85, confidence: 1 },   // 10: right_ankle
-    { x: 0.6, y: 0.45, confidence: 1 },   // 11: left_hip
-    { x: 0.6, y: 0.65, confidence: 1 },   // 12: left_knee
-    { x: 0.6, y: 0.85, confidence: 1 },   // 13: left_ankle
-    { x: 0.45, y: 0.08, confidence: 1 },  // 14: right_eye
-    { x: 0.55, y: 0.08, confidence: 1 },  // 15: left_eye
-    { x: 0.4, y: 0.1, confidence: 1 },    // 16: right_ear
-    { x: 0.6, y: 0.1, confidence: 1 },    // 17: left_ear
-  ];
-}
+import { getDefaultLayerData } from './layer/layerDefaults';
 
 // ============================================================================
 // STORE INTERFACE
@@ -104,445 +74,11 @@ export function createLayer(
 ): Layer {
   const id = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
-  // Initialize type-specific data
-  // Using type assertions since runtime data may include additional/fewer properties than strict types
-  let layerData: AnyLayerData | null = null;
-
-  switch (type) {
-    case 'text':
-      layerData = {
-        text: 'Text',
-        fontFamily: 'Arial',
-        fontSize: 72,
-        fontWeight: '400',
-        fontStyle: 'normal',
-        fill: '#ffffff',
-        stroke: '',
-        strokeWidth: 0,
-        tracking: 0,
-        letterSpacing: 0,
-        lineSpacing: 1.2,
-        lineAnchor: 50,
-        characterOffset: 0,
-        characterValue: 0,
-        blur: { x: 0, y: 0 },
-        lineHeight: 1.2,
-        textAlign: 'left',
-        pathLayerId: null,
-        pathReversed: false,
-        pathPerpendicularToPath: true,
-        pathForceAlignment: false,
-        pathFirstMargin: 0,
-        pathLastMargin: 0,
-        pathOffset: 0,
-        pathAlign: 'left'
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'solid':
-      layerData = {
-        color: '#808080',
-        width: store.project.composition.width,
-        height: store.project.composition.height
-      };
-      break;
-
-    case 'null':
-      layerData = {
-        size: 40
-      };
-      break;
-
-    case 'spline':
-      layerData = {
-        pathData: '',
-        controlPoints: [],
-        closed: false,
-        stroke: '#00ff00',
-        strokeWidth: 2,
-        // Stroke options (shown in More Options group)
-        lineCap: 'round',    // butt, round, square
-        lineJoin: 'round',   // miter, round, bevel
-        dashArray: '',       // e.g., "10, 5" for dashed lines
-        dashOffset: 0
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'path':
-      // Path layer - invisible motion guide for text-on-path, camera paths, etc.
-      layerData = {
-        pathData: '',
-        controlPoints: [],
-        closed: false,
-        showGuide: true,           // Show dashed guide line in editor
-        guideColor: '#00FFFF',     // Cyan guide line
-        guideDashPattern: [10, 5]  // [dash, gap]
-      };
-      break;
-
-    case 'particles':
-      layerData = {
-        systemConfig: {
-          maxParticles: 1000,
-          gravity: 0,
-          windStrength: 0,
-          windDirection: 0,
-          warmupPeriod: 0,
-          respectMaskBoundary: false,
-          boundaryBehavior: 'kill',
-          friction: 0.01
-        },
-        emitters: [{
-          id: 'emitter_1',
-          name: 'Emitter 1',
-          x: store.project.composition.width / 2,
-          y: store.project.composition.height / 2,
-          direction: -90,
-          spread: 30,
-          speed: 5,
-          speedVariance: 0.2,
-          size: 10,
-          sizeVariance: 0.3,
-          color: [255, 255, 255],
-          emissionRate: 10,
-          initialBurst: 0,
-          particleLifetime: 60,
-          lifetimeVariance: 0.2,
-          enabled: true,
-          burstOnBeat: false,
-          burstCount: 20
-        }],
-        gravityWells: [],
-        vortices: [],
-        turbulenceFields: [],
-        subEmitters: [],
-        collision: {
-          enabled: false,
-          particleCollision: false,
-          particleRadius: 5,
-          bounciness: 0.8,
-          friction: 0.1,
-          boundaryEnabled: true,
-          boundaryBehavior: 'bounce',
-          boundaryPadding: 0
-        },
-        flocking: {
-          enabled: false,
-          separationWeight: 50,
-          separationRadius: 30,
-          alignmentWeight: 50,
-          alignmentRadius: 50,
-          cohesionWeight: 50,
-          cohesionRadius: 50,
-          maxSpeed: 10,
-          maxForce: 0.5,
-          perceptionAngle: 270
-        },
-        modulations: [],
-        renderOptions: {
-          blendMode: 'additive',
-          renderTrails: false,
-          trailLength: 10,
-          trailOpacityFalloff: 0.9,
-          particleShape: 'circle',
-          glowEnabled: false,
-          glowRadius: 5,
-          glowIntensity: 0.5,
-          motionBlur: false,
-          motionBlurStrength: 0.5,
-          motionBlurSamples: 4,
-          connections: {
-            enabled: false,
-            maxDistance: 100,
-            maxConnections: 3,
-            lineWidth: 1,
-            lineOpacity: 0.5,
-            fadeByDistance: true
-          },
-          // Sprite sheet defaults
-          spriteEnabled: false,
-          spriteImageUrl: '',
-          spriteColumns: 1,
-          spriteRows: 1,
-          spriteAnimate: false,
-          spriteFrameRate: 10,
-          spriteRandomStart: false
-        }
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'depthflow':
-      layerData = {
-        sourceLayerId: null,
-        depthLayerId: null,
-        config: {
-          preset: 'static',
-          zoom: 1,
-          offsetX: 0,
-          offsetY: 0,
-          rotation: 0,
-          depthScale: 1,
-          focusDepth: 0.5,
-          dollyZoom: 0,
-          orbitRadius: 0,
-          orbitSpeed: 1,
-          swingAmplitude: 0,
-          swingFrequency: 1,
-          edgeDilation: 0,
-          inpaintEdges: false
-        }
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'light':
-      layerData = {
-        lightType: 'point',
-        color: '#ffffff',
-        intensity: 100,
-        radius: 500,
-        falloff: 'none',
-        falloffDistance: 500,
-        castShadows: false,
-        shadowDarkness: 100,
-        shadowDiffusion: 0
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'camera':
-      // Camera layers are created via createCameraLayer(), but handle here too
-      layerData = {
-        cameraId: null,
-        isActiveCamera: false
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'image':
-      layerData = {
-        assetId: null,
-        fit: 'contain'
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'video':
-      layerData = {
-        assetId: null,
-        loop: false,
-        startTime: 0,
-        speed: 1.0
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'shape':
-      // Use proper ShapeLayerData structure with contents array
-      // Shape layers contain groups which contain generators (rect, ellipse) + modifiers (fill, stroke)
-      layerData = createDefaultShapeLayerData();
-      // Add a default group with rectangle + fill + stroke as starter content
-      const defaultGroup = createDefaultGroup();
-      defaultGroup.name = 'Group 1';
-      defaultGroup.contents = [
-        createDefaultRectangle(),
-        createDefaultFill(),
-        createDefaultStroke()
-      ];
-      layerData.contents = [defaultGroup];
-      break;
-
-    case 'nestedComp':
-      layerData = {
-        compositionId: null,
-        // Speed map (new naming)
-        speedMap: null,
-        speedMapEnabled: false,
-        // Backwards compatibility
-        timeRemap: null,
-        timeRemapEnabled: false
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'matte':
-      layerData = {
-        matteType: 'luminance' as const,
-        invert: false,
-        threshold: 0.5,
-        feather: 0,
-        expansion: 0,
-        sourceLayerId: null,
-        previewMode: 'matte' as const
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'model':
-      // 3D Model layer - GLTF, OBJ, FBX, USD
-      layerData = {
-        assetId: '',
-        format: 'gltf' as const,
-        scale: createAnimatableProperty('Scale', 1, 'number'),
-        uniformScale: true,
-        castShadow: true,
-        receiveShadow: true,
-        frustumCulled: true,
-        renderOrder: 0,
-        showBoundingBox: false,
-        showSkeleton: false,
-        envMapIntensity: 1.0
-      };
-      break;
-
-    case 'pointcloud':
-      // Point Cloud layer - PLY, PCD, LAS
-      layerData = {
-        assetId: '',
-        format: 'ply' as const,
-        pointCount: 0,
-        pointSize: createAnimatableProperty('Point Size', 2, 'number'),
-        sizeAttenuation: true,
-        minPointSize: 1,
-        maxPointSize: 64,
-        colorMode: 'rgb' as const,
-        uniformColor: '#ffffff',
-        renderMode: 'points' as const,
-        opacity: createAnimatableProperty('Opacity', 1, 'number'),
-        depthTest: true,
-        depthWrite: true,
-        showBoundingBox: false,
-        pointBudget: 1000000
-      };
-      break;
-
-    case 'control':
-      // Control layer (null object replacement) - transform-only parent
-      layerData = {
-        size: 50,
-        showAxes: true,
-        showIcon: true,
-        iconShape: 'crosshair' as const,
-        iconColor: '#ffcc00'
-      };
-      break;
-
-    case 'pose':
-      // OpenPose skeleton layer for ControlNet conditioning
-      layerData = {
-        poses: [{
-          id: `pose-${Date.now()}`,
-          format: 'coco18' as const,
-          keypoints: createDefaultTPoseKeypoints(),
-        }],
-        format: 'coco18' as const,
-        normalized: true,
-        boneWidth: 4,
-        keypointRadius: 4,
-        showKeypoints: true,
-        showBones: true,
-        showLabels: false,
-        useDefaultColors: true,
-        customBoneColor: '#FFFFFF',
-        customKeypointColor: '#FF0000',
-        selectedKeypoint: -1,
-        selectedPose: 0,
-      };
-      break;
-
-    case 'depth':
-      // Depth map visualization layer
-      layerData = {
-        assetId: null,
-        visualizationMode: 'colormap' as const,
-        colorMap: 'turbo' as const,
-        invert: false,
-        minDepth: 0,
-        maxDepth: 1,
-        autoNormalize: true,
-        contourLevels: 10,
-        contourColor: '#ffffff',
-        contourWidth: 1,
-        meshDisplacement: createAnimatableProperty('Displacement', 50, 'number'),
-        meshResolution: 128,
-        wireframe: false
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'normal':
-      // Normal map visualization layer
-      layerData = {
-        assetId: null,
-        visualizationMode: 'rgb' as const,
-        format: 'opengl' as const,
-        flipX: false,
-        flipY: false,
-        flipZ: false,
-        arrowDensity: 20,
-        arrowScale: 10,
-        arrowColor: '#00ff00',
-        lightDirection: { x: 0.5, y: 0.5, z: 1.0 },
-        lightIntensity: 1.0,
-        ambientIntensity: 0.2
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'audio':
-      // Audio-only layer
-      layerData = {
-        assetId: null,
-        level: createAnimatableProperty('Level', 0, 'number'),
-        muted: false,
-        solo: false,
-        pan: createAnimatableProperty('Pan', 0, 'number'),
-        startTime: 0,
-        loop: false,
-        speed: 1.0,
-        showWaveform: true,
-        waveformColor: '#4a90d9',
-        exposeFeatures: true
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'generated':
-      // AI-generated content layer
-      layerData = {
-        generationType: 'depth' as const,
-        sourceLayerId: null,
-        model: 'depth-anything-v2',
-        parameters: {},
-        generatedAssetId: null,
-        status: 'pending' as const,
-        autoRegenerate: false
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'group':
-      // Layer group/folder
-      layerData = {
-        collapsed: false,
-        color: null,
-        passThrough: true,
-        isolate: false
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'particle':
-      // Legacy particle layer (backwards compatibility)
-      layerData = {
-        emitterType: 'point' as const,
-        particleCount: 100,
-        lifetime: 2.0,
-        speed: 50,
-        spread: 45,
-        gravity: -9.8,
-        color: '#ffffff',
-        size: 5
-      } as unknown as AnyLayerData;
-      break;
-
-    case 'adjustment':
-      // Adjustment/Effect layer - applies effects to layers below
-      layerData = {
-        color: '#808080',
-        effectLayer: true,
-        adjustmentLayer: true  // Backwards compatibility
-      } as unknown as AnyLayerData;
-      break;
-  }
+  // Get type-specific data from layer defaults module
+  const layerData = getDefaultLayerData(type, {
+    width: store.project.composition.width,
+    height: store.project.composition.height
+  });
 
   // Initialize audio props for video/audio layers
   let audioProps = undefined;
@@ -638,18 +174,47 @@ export function createLayer(
 // ============================================================================
 
 /**
- * Delete a layer by ID
+ * Options for deleteLayer to allow dependency injection for testing
  */
-export function deleteLayer(store: LayerStore, layerId: string): void {
+export interface DeleteLayerOptions {
+  /** Callback to remove layer from selection. If not provided, uses useSelectionStore() */
+  onRemoveFromSelection?: (layerId: string) => void;
+  /** Skip history push (useful for batch operations) */
+  skipHistory?: boolean;
+}
+
+/**
+ * Delete a layer by ID
+ *
+ * @param store - The layer store
+ * @param layerId - ID of the layer to delete
+ * @param options - Optional callbacks for dependency injection (enables testing without Pinia)
+ */
+export function deleteLayer(
+  store: LayerStore,
+  layerId: string,
+  options?: DeleteLayerOptions
+): void {
   const layers = store.getActiveCompLayers();
   const index = layers.findIndex(l => l.id === layerId);
   if (index === -1) return;
 
   layers.splice(index, 1);
-  useSelectionStore().removeFromSelection(layerId);
+
+  // Use injected callback if provided, otherwise fall back to Pinia store
+  if (options?.onRemoveFromSelection) {
+    options.onRemoveFromSelection(layerId);
+  } else {
+    // Default behavior - requires Pinia context
+    useSelectionStore().removeFromSelection(layerId);
+  }
+
   clearLayerCache(layerId); // Clear evaluation cache for deleted layer
   store.project.meta.modified = new Date().toISOString();
-  store.pushHistory();
+
+  if (!options?.skipHistory) {
+    store.pushHistory();
+  }
 }
 
 // ============================================================================

@@ -47,6 +47,9 @@ export function findPropertyByPath(layer: Layer, propertyPath: string): Animatab
   if (normalizedPath === 'anchorPoint') {
     return layer.transform.anchorPoint;
   }
+  if (normalizedPath === 'origin') {
+    return layer.transform.origin;
+  }
   if (propertyPath === 'opacity') {
     return layer.opacity;
   }
@@ -665,8 +668,8 @@ export function scaleKeyframeTiming(
   let scaledCount = 0;
 
   for (const propPath of propertiesToScale) {
-    const fullPath = propPath.startsWith('transform.') ? propPath : `transform.${propPath}`;
-    const property = findPropertyByPath(layer, fullPath);
+    // findPropertyByPath already handles path normalization (opacity is at layer.opacity, not transform.opacity)
+    const property = findPropertyByPath(layer, propPath);
 
     if (property?.keyframes && property.keyframes.length > 0) {
       // Scale each keyframe's frame number relative to anchor
@@ -707,8 +710,8 @@ export function timeReverseKeyframes(
   let reversedCount = 0;
 
   for (const propPath of propertiesToReverse) {
-    const fullPath = propPath.startsWith('transform.') ? propPath : `transform.${propPath}`;
-    const property = findPropertyByPath(layer, fullPath);
+    // findPropertyByPath already handles path normalization (opacity is at layer.opacity, not transform.opacity)
+    const property = findPropertyByPath(layer, propPath);
 
     if (property?.keyframes && property.keyframes.length >= 2) {
       // Collect values in order

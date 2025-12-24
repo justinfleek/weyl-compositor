@@ -1000,41 +1000,38 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions) {
           const url = URL.createObjectURL(file);
           const img = new Image();
           img.onload = () => {
-            store.addLayer({
-              name: file.name.replace(/\.[^/.]+$/, ''),
-              type: 'image',
-              data: {
-                src: url,
-                width: img.width,
-                height: img.height,
-                originalFilename: file.name
-              }
-            });
+            const layerName = file.name.replace(/\.[^/.]+$/, '');
+            const layer = store.addLayer('image', layerName);
+            if (layer && layer.data) {
+              const data = layer.data as unknown as Record<string, unknown>;
+              data.src = url;
+              data.width = img.width;
+              data.height = img.height;
+              data.originalFilename = file.name;
+            }
           };
           img.src = url;
         } else if (['mp4', 'webm', 'mov'].includes(ext || '')) {
           // Import video as layer
           const url = URL.createObjectURL(file);
-          store.addLayer({
-            name: file.name.replace(/\.[^/.]+$/, ''),
-            type: 'video',
-            data: {
-              src: url,
-              originalFilename: file.name
-            }
-          });
+          const layerName = file.name.replace(/\.[^/.]+$/, '');
+          const layer = store.addLayer('video', layerName);
+          if (layer && layer.data) {
+            const data = layer.data as unknown as Record<string, unknown>;
+            data.src = url;
+            data.originalFilename = file.name;
+          }
         } else if (['gltf', 'glb', 'obj', 'fbx'].includes(ext || '')) {
           // Import 3D model
           const url = URL.createObjectURL(file);
-          store.addLayer({
-            name: file.name.replace(/\.[^/.]+$/, ''),
-            type: 'model',
-            data: {
-              src: url,
-              format: ext,
-              originalFilename: file.name
-            }
-          });
+          const layerName = file.name.replace(/\.[^/.]+$/, '');
+          const layer = store.addLayer('model', layerName);
+          if (layer && layer.data) {
+            const data = layer.data as unknown as Record<string, unknown>;
+            data.src = url;
+            data.format = ext;
+            data.originalFilename = file.name;
+          }
         }
       }
 

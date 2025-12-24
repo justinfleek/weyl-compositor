@@ -227,17 +227,23 @@ export interface GeneratedLayerData {
   /** Source layer ID (input to generation) */
   sourceLayerId: string | null;
 
-  /** Model identifier */
-  modelId: string;
+  /** Model used for generation */
+  model: string;
 
-  /** Generation parameters */
-  parameters: Record<string, any>;
+  /** Generation parameters (model-specific) */
+  parameters: Record<string, unknown>;
+
+  /** Generated asset ID (output) */
+  generatedAssetId: string | null;
+
+  /** Generation status */
+  status: 'pending' | 'generating' | 'complete' | 'error';
+  errorMessage?: string;
 
   /** Auto-regenerate when source changes */
   autoRegenerate: boolean;
 
-  /** Cached result */
-  cachedResult?: string;
+  /** Last generation timestamp */
   lastGenerated?: string;
 }
 
@@ -273,17 +279,20 @@ export interface MatteLayerData {
 // ============================================================
 
 export interface ControlLayerData {
-  /** Icon size for display */
-  iconSize: number;
+  /** Visual size of control icon in editor */
+  size: number;
+
+  /** Show XYZ axis indicators */
+  showAxes: boolean;
+
+  /** Show control layer icon/gizmo */
+  showIcon: boolean;
 
   /** Icon shape */
-  iconShape: 'cross' | 'square' | 'circle' | 'diamond' | 'axis';
+  iconShape: 'crosshair' | 'diamond' | 'circle' | 'square';
 
   /** Icon color */
   iconColor: string;
-
-  /** Show axis arrows */
-  showAxis: boolean;
 }
 
 // ============================================================
@@ -313,8 +322,8 @@ export interface SolidLayerData {
 
 /** @deprecated Use ControlLayerData instead */
 export interface NullLayerData {
-  /** Display size for the null indicator */
-  displaySize: number;
+  /** Visual size of null icon in editor */
+  size: number;
 }
 
 // ============================================================
@@ -322,16 +331,16 @@ export interface NullLayerData {
 // ============================================================
 
 export interface GroupLayerData {
-  /** Group color for organization */
-  groupColor: string;
-
   /** Collapsed state in timeline */
   collapsed: boolean;
 
-  /** Pass-through mode (group doesn't create its own composite) */
+  /** Group color label */
+  color: string | null;
+
+  /** Pass-through mode (group doesn't create intermediate composite) */
   passThrough: boolean;
 
-  /** Isolate group (only show group contents) */
+  /** Isolate group (only show group contents when selected) */
   isolate: boolean;
 }
 
@@ -340,11 +349,14 @@ export interface GroupLayerData {
 // ============================================================
 
 export interface EffectLayerData {
-  /** Affect all layers below or only specific layers */
-  affectMode: 'all-below' | 'selected';
+  /** Effect layer flag (always true for effect layers) */
+  effectLayer: boolean;
 
-  /** List of layer IDs to affect (when affectMode = 'selected') */
-  affectedLayerIds?: string[];
+  /** @deprecated Use effectLayer - backwards compatibility */
+  adjustmentLayer: boolean;
+
+  /** Layer label color for organization */
+  color: string;
 }
 
 // ============================================================

@@ -19,7 +19,6 @@
  */
 
 import * as THREE from 'three';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { SceneManager } from './core/SceneManager';
 import { RenderPipeline } from './core/RenderPipeline';
 import { LayerManager } from './core/LayerManager';
@@ -48,21 +47,19 @@ import { svgExtrusionService } from '@/services/svgExtrusion';
 import { meshParticleManager } from '@/services/meshParticleManager';
 import { spriteSheetService } from '@/services/spriteSheet';
 
+// Extracted utilities and managers
+import { NestedCompRenderer } from './NestedCompRenderer';
+import { TransformControlsManager, type LayerTransformUpdate } from './TransformControlsManager';
+import { BackgroundManager } from './BackgroundManager';
+
 /** Callback to get audio reactive values at a frame */
 export type AudioReactiveGetter = (frame: number) => Map<TargetParameter, number>;
 
 /** Callback to get audio reactive values for a specific layer */
 export type LayerAudioReactiveGetter = (layerId: string, frame: number) => Map<TargetParameter, number>;
 
-/** Layer transform update from TransformControls manipulation */
-export interface LayerTransformUpdate {
-  position?: { x: number; y: number; z?: number };
-  rotation?: number;  // Z rotation in degrees
-  rotationX?: number;
-  rotationY?: number;
-  rotationZ?: number;
-  scale?: { x: number; y: number; z?: number };
-}
+// LayerTransformUpdate is now imported from TransformControlsManager
+export type { LayerTransformUpdate } from './TransformControlsManager';
 
 export class LatticeEngine {
   // Core subsystems
@@ -77,14 +74,11 @@ export class LatticeEngine {
   private state: RenderState;
   private animationFrameId: number | null = null;
 
-  // Background and overlay images
-  private backgroundImage: THREE.Mesh | null = null;
-  private depthMapMesh: THREE.Mesh | null = null;
-  private depthMapSettings: {
-    colormap: 'viridis' | 'plasma' | 'grayscale';
-    opacity: number;
-    visible: boolean;
-  } = { colormap: 'viridis', opacity: 0.5, visible: false };
+  // Background manager (extracted)
+  private backgroundManager: BackgroundManager | null = null;
+
+  // Transform controls manager (extracted)
+  private transformControlsManager: TransformControlsManager | null = null;
 
   // Viewport transform for pan/zoom
   private viewportTransform: number[] = [1, 0, 0, 1, 0, 0];
@@ -95,14 +89,6 @@ export class LatticeEngine {
   // Audio reactivity
   private audioReactiveGetter: LayerAudioReactiveGetter | null = null;
 
-  // Transform controls for layer manipulation
-  private transformControls: TransformControls | null = null;
-  private selectedLayerId: string | null = null;
-  private transformMode: 'translate' | 'rotate' | 'scale' = 'translate';
-
-  // Transform change callback
-  private onTransformChange: ((layerId: string, transform: LayerTransformUpdate) => void) | null = null;
-
   // Event system
   private readonly eventHandlers: Map<EngineEventType, Set<EngineEventHandler>>;
 
@@ -112,6 +98,9 @@ export class LatticeEngine {
 
   // Configuration
   private readonly config: Required<LatticeEngineConfig>;
+
+  // Nested composition renderer (extracted)
+  private nestedCompRenderer: NestedCompRenderer | null = null;
 
   constructor(config: LatticeEngineConfig) {
     // Validate input
@@ -1039,32 +1028,8 @@ export class LatticeEngine {
    */
   setBackgroundImage(image: HTMLImageElement): void {
     this.assertNotDisposed();
-
-    // Remove existing background
-    if (this.backgroundImage) {
-      this.scene.removeFromComposition(this.backgroundImage);
-      this.backgroundImage.geometry.dispose();
-      (this.backgroundImage.material as THREE.Material).dispose();
-    }
-
-    // Create texture from image
-    const texture = new THREE.Texture(image);
-    texture.needsUpdate = true;
-    texture.colorSpace = THREE.SRGBColorSpace;
-
-    // Create plane geometry matching image dimensions
-    const geometry = new THREE.PlaneGeometry(image.width, image.height);
-    const material = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      depthWrite: false,
-    });
-
-    this.backgroundImage = new THREE.Mesh(geometry, material);
-    this.backgroundImage.position.set(image.width / 2, image.height / 2, -1000);
-    this.backgroundImage.userData.isBackground = true;
-
-    this.scene.addToComposition(this.backgroundImage);
+    this.ensureBackgroundManager();
+    this.backgroundManager!.setBackgroundImage(image);
   }
 
   /**
@@ -1077,166 +1042,48 @@ export class LatticeEngine {
     options: { colormap?: 'viridis' | 'plasma' | 'grayscale'; opacity?: number; visible?: boolean }
   ): void {
     this.assertNotDisposed();
-
-    this.depthMapSettings = {
-      colormap: options.colormap ?? this.depthMapSettings.colormap,
-      opacity: options.opacity ?? this.depthMapSettings.opacity,
-      visible: options.visible ?? this.depthMapSettings.visible,
-    };
-
-    // Remove existing depth map mesh
-    if (this.depthMapMesh) {
-      this.scene.removeFromComposition(this.depthMapMesh);
-      this.depthMapMesh.geometry.dispose();
-      (this.depthMapMesh.material as THREE.Material).dispose();
-    }
-
-    // Create texture from image
-    const texture = new THREE.Texture(image);
-    texture.needsUpdate = true;
-
-    // Create colormap shader material
-    const material = this.createColormapMaterial(texture, this.depthMapSettings);
-
-    const geometry = new THREE.PlaneGeometry(image.width, image.height);
-    this.depthMapMesh = new THREE.Mesh(geometry, material);
-    this.depthMapMesh.position.set(image.width / 2, image.height / 2, -999);
-    this.depthMapMesh.visible = this.depthMapSettings.visible;
-    this.depthMapMesh.userData.isDepthOverlay = true;
-
-    this.scene.addToComposition(this.depthMapMesh);
-  }
-
-  /**
-   * Create a colormap shader material for depth visualization
-   */
-  private createColormapMaterial(
-    texture: THREE.Texture,
-    settings: { colormap: string; opacity: number }
-  ): THREE.ShaderMaterial {
-    const vertexShader = `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `;
-
-    const fragmentShader = `
-      uniform sampler2D depthMap;
-      uniform float opacity;
-      uniform int colormap;
-      varying vec2 vUv;
-
-      vec3 viridis(float t) {
-        const vec3 c0 = vec3(0.267, 0.004, 0.329);
-        const vec3 c1 = vec3(0.282, 0.140, 0.458);
-        const vec3 c2 = vec3(0.253, 0.265, 0.529);
-        const vec3 c3 = vec3(0.191, 0.407, 0.556);
-        const vec3 c4 = vec3(0.127, 0.566, 0.551);
-        const vec3 c5 = vec3(0.208, 0.718, 0.472);
-        const vec3 c6 = vec3(0.565, 0.843, 0.262);
-        const vec3 c7 = vec3(0.993, 0.906, 0.144);
-
-        t = clamp(t, 0.0, 1.0);
-        float i = t * 7.0;
-        int idx = int(floor(i));
-        float f = fract(i);
-
-        if (idx < 1) return mix(c0, c1, f);
-        if (idx < 2) return mix(c1, c2, f);
-        if (idx < 3) return mix(c2, c3, f);
-        if (idx < 4) return mix(c3, c4, f);
-        if (idx < 5) return mix(c4, c5, f);
-        if (idx < 6) return mix(c5, c6, f);
-        return mix(c6, c7, f);
-      }
-
-      vec3 plasma(float t) {
-        const vec3 c0 = vec3(0.050, 0.030, 0.528);
-        const vec3 c1 = vec3(0.327, 0.012, 0.615);
-        const vec3 c2 = vec3(0.534, 0.054, 0.553);
-        const vec3 c3 = vec3(0.716, 0.215, 0.475);
-        const vec3 c4 = vec3(0.863, 0.395, 0.362);
-        const vec3 c5 = vec3(0.958, 0.590, 0.233);
-        const vec3 c6 = vec3(0.995, 0.812, 0.166);
-        const vec3 c7 = vec3(0.940, 0.975, 0.131);
-
-        t = clamp(t, 0.0, 1.0);
-        float i = t * 7.0;
-        int idx = int(floor(i));
-        float f = fract(i);
-
-        if (idx < 1) return mix(c0, c1, f);
-        if (idx < 2) return mix(c1, c2, f);
-        if (idx < 3) return mix(c2, c3, f);
-        if (idx < 4) return mix(c3, c4, f);
-        if (idx < 5) return mix(c4, c5, f);
-        if (idx < 6) return mix(c5, c6, f);
-        return mix(c6, c7, f);
-      }
-
-      void main() {
-        float depth = texture2D(depthMap, vUv).r;
-        vec3 color;
-
-        if (colormap == 0) {
-          color = viridis(depth);
-        } else if (colormap == 1) {
-          color = plasma(depth);
-        } else {
-          color = vec3(depth);
-        }
-
-        gl_FragColor = vec4(color, opacity);
-      }
-    `;
-
-    const colormapIndex = settings.colormap === 'viridis' ? 0 : settings.colormap === 'plasma' ? 1 : 2;
-
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        depthMap: { value: texture },
-        opacity: { value: settings.opacity },
-        colormap: { value: colormapIndex },
-      },
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-      depthWrite: false,
-    });
+    this.ensureBackgroundManager();
+    this.backgroundManager!.setDepthMap(image, options);
   }
 
   /**
    * Set depth overlay visibility
    */
   setDepthOverlayVisible(visible: boolean): void {
-    this.depthMapSettings.visible = visible;
-    if (this.depthMapMesh) {
-      this.depthMapMesh.visible = visible;
-    }
+    this.ensureBackgroundManager();
+    this.backgroundManager!.setDepthOverlayVisible(visible);
   }
 
   /**
    * Set depth colormap
    */
   setDepthColormap(colormap: 'viridis' | 'plasma' | 'grayscale'): void {
-    this.depthMapSettings.colormap = colormap;
-    if (this.depthMapMesh) {
-      const material = this.depthMapMesh.material as THREE.ShaderMaterial;
-      const colormapIndex = colormap === 'viridis' ? 0 : colormap === 'plasma' ? 1 : 2;
-      material.uniforms.colormap.value = colormapIndex;
-    }
+    this.ensureBackgroundManager();
+    this.backgroundManager!.setDepthColormap(colormap);
   }
 
   /**
    * Set depth overlay opacity
    */
   setDepthOpacity(opacity: number): void {
-    this.depthMapSettings.opacity = opacity;
-    if (this.depthMapMesh) {
-      const material = this.depthMapMesh.material as THREE.ShaderMaterial;
-      material.uniforms.opacity.value = opacity;
+    this.ensureBackgroundManager();
+    this.backgroundManager!.setDepthOpacity(opacity);
+  }
+
+  /**
+   * Get current depth map settings
+   */
+  getDepthMapSettings(): { colormap: 'viridis' | 'plasma' | 'grayscale'; opacity: number; visible: boolean } {
+    this.ensureBackgroundManager();
+    return this.backgroundManager!.getDepthMapSettings();
+  }
+
+  /**
+   * Ensure BackgroundManager is initialized
+   */
+  private ensureBackgroundManager(): void {
+    if (!this.backgroundManager) {
+      this.backgroundManager = new BackgroundManager(this.scene);
     }
   }
 
@@ -1411,129 +1258,35 @@ export class LatticeEngine {
   // MULTI-THREE.JS COMPATIBILITY HELPERS
   // ============================================================================
 
-  /**
-   * Recursively ensure all objects in the hierarchy have proper children arrays
-   * This is needed to prevent crashes when TransformControls or other objects
-   * from different Three.js instances are added to the scene.
-   */
-  private ensureObjectChildren(obj: THREE.Object3D, depth = 0): void {
-    if (!obj || depth > 50) return;
-
-    // Ensure children is an array
-    if ((obj as any).children === undefined || (obj as any).children === null) {
-      (obj as any).children = [];
-    }
-
-    // Ensure matrix properties exist
-    if (!(obj as any).matrix) {
-      (obj as any).matrix = new THREE.Matrix4();
-    }
-    if (!(obj as any).matrixWorld) {
-      (obj as any).matrixWorld = new THREE.Matrix4();
-    }
-
-    // Recursively process children
-    const children = (obj as any).children;
-    if (Array.isArray(children)) {
-      for (const child of children) {
-        this.ensureObjectChildren(child, depth + 1);
-      }
-    }
-  }
-
   // ============================================================================
   // TRANSFORM CONTROLS
   // ============================================================================
 
   /**
+   * Ensure TransformControlsManager is initialized
+   */
+  private ensureTransformControlsManager(): void {
+    if (!this.transformControlsManager) {
+      this.transformControlsManager = new TransformControlsManager({
+        scene: this.scene,
+        layers: this.layers,
+        camera: this.camera,
+        renderer: this.renderer,
+        emit: (type, data) => this.emit(type as EngineEventType, data),
+        getLayerObject: (layerId) => this.getLayerObject(layerId),
+        resetOrbitTargetToCenter: () => this.resetOrbitTargetToCenter(),
+        setOrbitTarget: (x, y, z) => this.setOrbitTarget(x, y, z),
+      });
+    }
+  }
+
+  /**
    * Initialize transform controls for layer manipulation
-   * Wrapped in try-catch for multi-Three.js instance compatibility
    */
   initializeTransformControls(): void {
     this.assertNotDisposed();
-
-    if (this.transformControls) {
-      return; // Already initialized
-    }
-
-    try {
-      const camera = this.camera.getCamera();
-      const domElement = this.renderer.getDomElement();
-
-      this.transformControls = new TransformControls(camera, domElement);
-      this.transformControls.setMode(this.transformMode);
-      this.transformControls.setSpace('world');
-
-      // Style the controls
-      this.transformControls.setSize(1.0);
-
-      // Ensure all gizmo objects have proper children arrays
-      // (fixes multi-Three.js instance issues)
-      this.ensureObjectChildren(this.transformControls as unknown as THREE.Object3D);
-
-      // Add to scene (TransformControls extends Object3D internally)
-      this.scene.addUIElement(this.transformControls as unknown as THREE.Object3D);
-    } catch (e) {
-      console.error('[LatticeEngine] Failed to initialize TransformControls:', e);
-      this.transformControls = null;
-      return;
-    }
-
-    // Track if we're actively dragging (to avoid spurious updates on selection)
-    let isDragging = false;
-
-    // Disable orbit/pan during transform and track dragging state
-    this.transformControls.addEventListener('dragging-changed', (event: any) => {
-      isDragging = event.value;
-      this.emit('transform-dragging', { dragging: event.value });
-    });
-
-    // Handle transform changes - ONLY when actually dragging
-    this.transformControls.addEventListener('change', () => {
-      // Only fire callback during actual drag operations, not on selection/attach
-      if (!isDragging) return;
-      if (!this.transformControls || !this.selectedLayerId) return;
-
-      const object = this.transformControls.object;
-      if (!object) return;
-
-      // Get the layer to access anchor point
-      const layer = this.layers.getLayer(this.selectedLayerId);
-      const layerData = layer?.getLayerData?.();
-      const anchorX = layerData?.transform?.anchorPoint?.value?.x ?? 0;
-      const anchorY = layerData?.transform?.anchorPoint?.value?.y ?? 0;
-      const anchorZ = (layerData?.transform?.anchorPoint?.value as any)?.z ?? 0;
-
-      // Convert 3D position back to layer position by adding anchor point back
-      // The 3D object position is offset by anchor point in applyTransform()
-      const transform: LayerTransformUpdate = {
-        position: {
-          x: object.position.x + anchorX,
-          y: -object.position.y + anchorY,  // Y is negated in 3D space
-          z: object.position.z + anchorZ
-        },
-        rotationX: THREE.MathUtils.radToDeg(object.rotation.x),
-        rotationY: THREE.MathUtils.radToDeg(object.rotation.y),
-        rotationZ: THREE.MathUtils.radToDeg(object.rotation.z),
-        scale: {
-          x: object.scale.x * 100, // Convert back to percentage
-          y: object.scale.y * 100,
-          z: object.scale.z * 100
-        }
-      };
-
-      // Also set rotation for 2D layers
-      transform.rotation = transform.rotationZ;
-
-      if (this.onTransformChange) {
-        this.onTransformChange(this.selectedLayerId, transform);
-      }
-    });
-
-    // Handle mouseup to finalize transform
-    this.transformControls.addEventListener('mouseUp', () => {
-      this.emit('transform-end', { layerId: this.selectedLayerId });
-    });
+    this.ensureTransformControlsManager();
+    this.transformControlsManager!.initialize();
   }
 
   /**
@@ -1543,72 +1296,33 @@ export class LatticeEngine {
   setTransformChangeCallback(
     callback: ((layerId: string, transform: LayerTransformUpdate) => void) | null
   ): void {
-    this.onTransformChange = callback;
+    this.ensureTransformControlsManager();
+    this.transformControlsManager!.setTransformChangeCallback(callback);
   }
 
   /**
    * Select a layer and attach transform controls
-   * Also updates orbit target to the selected layer's position for right-click orbiting
    * @param layerId - Layer ID to select, or null to deselect
    */
   selectLayer(layerId: string | null): void {
     this.assertNotDisposed();
-
-    // Initialize transform controls if not already done
-    if (!this.transformControls) {
-      this.initializeTransformControls();
-    }
-
-    // Deselect current layer - wrap in try-catch for multi-Three.js compatibility
-    if (this.selectedLayerId && this.transformControls) {
-      try {
-        this.transformControls.detach();
-      } catch (e) {
-        console.warn('[LatticeEngine] TransformControls detach error:', e);
-      }
-    }
-
-    this.selectedLayerId = layerId;
-
-    if (!layerId || !this.transformControls) {
-      // No layer selected - reset orbit target to composition center
-      this.resetOrbitTargetToCenter();
-      return;
-    }
-
-    // Get the layer object and attach - wrap in try-catch for multi-Three.js compatibility
-    const layerObject = this.getLayerObject(layerId);
-    if (layerObject) {
-      try {
-        this.transformControls.attach(layerObject);
-      } catch (e) {
-        console.warn('[LatticeEngine] TransformControls attach error:', e);
-      }
-      // Note: We intentionally do NOT change the orbit target when selecting a layer
-      // The user can use "Focus Selected" to explicitly center on a layer
-      // Automatically changing the view on selection is disorienting
-    }
+    this.ensureTransformControlsManager();
+    this.transformControlsManager!.selectLayer(layerId);
   }
 
   /**
-   * Focus the camera on the selected layer's position
-   * This moves the orbit target to the layer without changing camera rotation
+   * Focus the camera on a layer's position
    */
   focusOnLayer(layerId: string): void {
-    const layerObject = this.getLayerObject(layerId);
-    if (layerObject) {
-      const worldPos = new THREE.Vector3();
-      layerObject.getWorldPosition(worldPos);
-      // Convert back to screen coordinates (negate Y)
-      this.setOrbitTarget(worldPos.x, -worldPos.y, worldPos.z);
-    }
+    this.ensureTransformControlsManager();
+    this.transformControlsManager!.focusOnLayer(layerId);
   }
 
   /**
    * Get the currently selected layer ID
    */
   getSelectedLayerId(): string | null {
-    return this.selectedLayerId;
+    return this.transformControlsManager?.getSelectedLayerId() ?? null;
   }
 
   /**
@@ -1616,34 +1330,29 @@ export class LatticeEngine {
    * @param mode - 'translate' | 'rotate' | 'scale'
    */
   setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
-    this.transformMode = mode;
-    if (this.transformControls) {
-      this.transformControls.setMode(mode);
-    }
+    this.ensureTransformControlsManager();
+    this.transformControlsManager!.setMode(mode);
   }
 
   /**
    * Get the current transform mode
    */
   getTransformMode(): 'translate' | 'rotate' | 'scale' {
-    return this.transformMode;
+    return this.transformControlsManager?.getMode() ?? 'translate';
   }
 
   /**
    * Set transform controls visibility
    */
   setTransformControlsVisible(visible: boolean): void {
-    if (this.transformControls) {
-      (this.transformControls as any).visible = visible;
-      this.transformControls.enabled = visible;
-    }
+    this.transformControlsManager?.setVisible(visible);
   }
 
   /**
    * Check if transform controls are dragging
    */
   isTransformDragging(): boolean {
-    return this.transformControls?.dragging ?? false;
+    return this.transformControlsManager?.isDragging() ?? false;
   }
 
   // ============================================================================
@@ -1834,16 +1543,22 @@ export class LatticeEngine {
 
   // ============================================================================
   // NESTED COMP RENDER-TO-TEXTURE
+  // (Implementation extracted to NestedCompRenderer.ts)
   // ============================================================================
 
-  /** Cache of layer managers for nested compositions */
-  private nestedCompLayerManagers: Map<string, LayerManager> = new Map();
-
-  /** Cache of scenes for nested compositions */
-  private nestedCompScenes: Map<string, SceneManager> = new Map();
-
-  /** Cache of last rendered frame per composition (for texture caching) */
-  private nestedCompLastFrame: Map<string, number> = new Map();
+  /**
+   * Get or create the nested comp renderer (lazy initialization)
+   */
+  private getNestedCompRenderer(): NestedCompRenderer {
+    if (!this.nestedCompRenderer) {
+      this.nestedCompRenderer = new NestedCompRenderer(
+        this.resources,
+        this.renderer,
+        this.camera.camera
+      );
+    }
+    return this.nestedCompRenderer;
+  }
 
   /**
    * Render a composition to a texture
@@ -1862,89 +1577,13 @@ export class LatticeEngine {
     frame: number
   ): THREE.Texture | null {
     this.assertNotDisposed();
-
-    try {
-      // Check if we already rendered this frame (texture caching)
-      const lastFrame = this.nestedCompLastFrame.get(compositionId);
-      const target = this.renderer.getNestedCompRenderTarget(
-        compositionId,
-        settings.width,
-        settings.height
-      );
-
-      // If same frame, return cached texture
-      if (lastFrame === frame) {
-        return target.texture;
-      }
-
-      // Get or create scene for this composition
-      let nestedCompScene = this.nestedCompScenes.get(compositionId);
-      if (!nestedCompScene) {
-        nestedCompScene = new SceneManager(null);
-        nestedCompScene.setCompositionSize(settings.width, settings.height);
-        this.nestedCompScenes.set(compositionId, nestedCompScene);
-      }
-
-      // Get or create layer manager for this composition
-      let nestedCompLayers = this.nestedCompLayerManagers.get(compositionId);
-      if (!nestedCompLayers) {
-        nestedCompLayers = new LayerManager(nestedCompScene, this.resources);
-        nestedCompLayers.setRenderer(this.renderer.getWebGLRenderer());
-        nestedCompLayers.setCompositionFPS(settings.fps);
-        nestedCompLayers.setCamera(this.camera.camera);
-        this.nestedCompLayerManagers.set(compositionId, nestedCompLayers);
-      }
-
-      // Sync layers - add new, update existing, remove deleted
-      const currentLayerIds = new Set(nestedCompLayers.getLayerIds());
-      const targetLayerIds = new Set(layers.map(l => l.id));
-
-      // Remove layers that are no longer in the composition
-      for (const id of currentLayerIds) {
-        if (!targetLayerIds.has(id)) {
-          nestedCompLayers.remove(id);
-        }
-      }
-
-      // Add or update layers
-      for (const layerData of layers) {
-        if (currentLayerIds.has(layerData.id)) {
-          nestedCompLayers.update(layerData.id, layerData);
-        } else {
-          nestedCompLayers.create(layerData);
-        }
-      }
-
-      // Evaluate layers at the given frame
-      nestedCompLayers.evaluateFrame(frame, this.audioReactiveGetter);
-
-      // Create a camera for this composition size
-      const nestedCompCamera = new THREE.OrthographicCamera(
-        -settings.width / 2,
-        settings.width / 2,
-        settings.height / 2,
-        -settings.height / 2,
-        0.1,
-        10000
-      );
-      nestedCompCamera.position.set(0, 0, 1000);
-      nestedCompCamera.lookAt(0, 0, 0);
-
-      // Render to texture
-      const texture = this.renderer.renderSceneToTexture(
-        nestedCompScene.scene,
-        nestedCompCamera,
-        target
-      );
-
-      // Cache the frame number
-      this.nestedCompLastFrame.set(compositionId, frame);
-
-      return texture;
-    } catch (error) {
-      engineLogger.error('Failed to render composition to texture:', compositionId, error);
-      return null;
-    }
+    return this.getNestedCompRenderer().renderToTexture(
+      compositionId,
+      layers,
+      settings,
+      frame,
+      this.audioReactiveGetter
+    );
   }
 
   /**
@@ -1952,30 +1591,14 @@ export class LatticeEngine {
    * Call when a composition is deleted or significantly changed
    */
   clearNestedCompCache(compositionId: string): void {
-    const nestedCompLayers = this.nestedCompLayerManagers.get(compositionId);
-    if (nestedCompLayers) {
-      nestedCompLayers.dispose();
-      this.nestedCompLayerManagers.delete(compositionId);
-    }
-
-    const nestedCompScene = this.nestedCompScenes.get(compositionId);
-    if (nestedCompScene) {
-      nestedCompScene.dispose();
-      this.nestedCompScenes.delete(compositionId);
-    }
-
-    this.nestedCompLastFrame.delete(compositionId);
-    this.renderer.disposeNestedCompTarget(compositionId);
+    this.nestedCompRenderer?.clearCache(compositionId);
   }
 
   /**
    * Clear all nested composition caches
    */
   clearAllNestedCompCaches(): void {
-    for (const [id] of this.nestedCompLayerManagers) {
-      this.clearNestedCompCache(id);
-    }
-    this.renderer.disposeAllNestedCompTargets();
+    this.nestedCompRenderer?.clearAllCaches();
   }
 
   // ============================================================================
@@ -1993,8 +1616,11 @@ export class LatticeEngine {
 
     this.stopRenderLoop();
 
-    // Clear nested composition caches
-    this.clearAllNestedCompCaches();
+    // Dispose nested composition renderer
+    if (this.nestedCompRenderer) {
+      this.nestedCompRenderer.dispose();
+      this.nestedCompRenderer = null;
+    }
 
     // Remove WebGL context event listeners
     const canvas = this.config.canvas;
@@ -2007,10 +1633,16 @@ export class LatticeEngine {
       this.contextRestoredHandler = null;
     }
 
-    // Dispose transform controls
-    if (this.transformControls) {
-      this.transformControls.dispose();
-      this.transformControls = null;
+    // Dispose transform controls manager
+    if (this.transformControlsManager) {
+      this.transformControlsManager.dispose();
+      this.transformControlsManager = null;
+    }
+
+    // Dispose background manager
+    if (this.backgroundManager) {
+      this.backgroundManager.dispose();
+      this.backgroundManager = null;
     }
 
     // Dispose in reverse order of initialization

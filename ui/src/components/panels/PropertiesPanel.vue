@@ -619,7 +619,7 @@ function updateTransform() {
 
 function updateBlendMode() {
   if (selectedLayer.value) {
-    selectedLayer.value.blendMode = blendMode.value as BlendMode;
+    store.updateLayer(selectedLayer.value.id, { blendMode: blendMode.value as BlendMode });
   }
 }
 
