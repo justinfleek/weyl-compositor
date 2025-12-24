@@ -227,9 +227,23 @@ const hasSelectedSplineLayer = computed(() => {
   return selectedLayer?.type === 'spline';
 });
 
-// Reactive storage for footage and solids items (persists across re-renders)
+// Reactive storage for footage items (persists across re-renders)
 const footageItems = ref<ProjectItem[]>([]);
-const solidItems = ref<ProjectItem[]>([]);
+
+// Solid items derived from layers in active composition
+const solidItems = computed<ProjectItem[]>(() => {
+  const layers = store.layers || [];
+  return layers
+    .filter(l => l.type === 'solid')
+    .map(l => ({
+      id: l.id,
+      name: l.name,
+      type: 'solid' as const,
+      width: (l.data as { width?: number })?.width || store.width,
+      height: (l.data as { height?: number })?.height || store.height,
+      color: (l.data as { color?: string })?.color || '#808080'
+    }));
+});
 
 // Folders computed from store - reactively updates when compositions change
 const folders = computed<Folder[]>(() => {
@@ -266,7 +280,7 @@ const folders = computed<Folder[]>(() => {
     {
       id: 'solids',
       name: 'Solids',
-      items: solidItems.value
+      items: solidItems.value  // Now computed from store.layers
     }
   ];
 

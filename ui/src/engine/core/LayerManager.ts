@@ -230,6 +230,12 @@ export class LayerManager {
       return this.layers.get(layerData.id)!;
     }
 
+    console.log('[LayerManager] Creating layer:', {
+      id: layerData.id,
+      type: layerData.type,
+      name: layerData.name
+    });
+
     // Create layer instance
     const layer = this.createLayerInstance(layerData);
 
@@ -250,6 +256,11 @@ export class LayerManager {
     // Add to scene (only if not parented - parented layers are children of their parent's group)
     if (!layer.hasParent()) {
       this.scene.addToComposition(layer.getObject());
+      console.log('[LayerManager] Added to scene:', {
+        id: layerData.id,
+        objectName: layer.getObject().name,
+        sceneChildCount: this.scene.compositionGroup.children.length
+      });
     }
 
     return layer;

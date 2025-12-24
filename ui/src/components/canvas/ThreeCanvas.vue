@@ -876,9 +876,16 @@ function syncLayersToEngine() {
   const engineLayerIds = new Set(engine.value.getLayerIds());
   const storeLayerIds = new Set(store.layers.map(l => l.id));
 
+  console.log('[ThreeCanvas] syncLayersToEngine:', {
+    engineLayers: Array.from(engineLayerIds),
+    storeLayers: Array.from(storeLayerIds),
+    storeLayerDetails: store.layers.map(l => ({ id: l.id, type: l.type, name: l.name }))
+  });
+
   // Remove layers no longer in store
   for (const id of engineLayerIds) {
     if (!storeLayerIds.has(id)) {
+      console.log('[ThreeCanvas] Removing layer:', id);
       engine.value.removeLayer(id);
     }
   }
@@ -888,6 +895,7 @@ function syncLayersToEngine() {
     if (engineLayerIds.has(layer.id)) {
       engine.value.updateLayer(layer.id, layer);
     } else {
+      console.log('[ThreeCanvas] Adding layer:', layer.id, layer.type, layer.name);
       engine.value.addLayer(layer);
     }
   }

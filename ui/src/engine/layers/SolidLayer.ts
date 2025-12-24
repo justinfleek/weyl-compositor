@@ -64,6 +64,15 @@ export class SolidLayer extends BaseLayer {
     this.shadowColor = solidData.shadowColor ?? '#000000';
     this.receiveShadow = solidData.receiveShadow ?? false;
 
+    console.log('[SolidLayer] Creating solid:', {
+      id: this.id,
+      color: this.color,
+      width: this.width,
+      height: this.height,
+      position: layerData.transform?.position?.value,
+      visible: layerData.visible
+    });
+
     // Create geometry
     this.geometry = new THREE.PlaneGeometry(this.width, this.height);
 
@@ -77,6 +86,12 @@ export class SolidLayer extends BaseLayer {
 
     // Add to group
     this.group.add(this.mesh);
+
+    console.log('[SolidLayer] Created mesh:', {
+      meshName: this.mesh.name,
+      geometrySize: { w: this.width, h: this.height },
+      groupChildren: this.group.children.length
+    });
 
     // Apply initial blend mode
     this.initializeBlendMode();

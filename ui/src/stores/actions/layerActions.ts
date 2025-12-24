@@ -611,7 +611,22 @@ export function createLayer(
     storeLogger.warn('Use createCameraLayer() for camera layers');
   }
 
+  console.log('[layerActions] Creating layer:', {
+    id: layer.id,
+    type: layer.type,
+    name: layer.name,
+    position: layer.transform?.position?.value,
+    data: layer.data,
+    layersCountBefore: layers.length
+  });
+
   layers.unshift(layer);
+
+  console.log('[layerActions] Layer added:', {
+    layersCountAfter: layers.length,
+    allLayerIds: layers.map(l => l.id)
+  });
+
   store.project.meta.modified = new Date().toISOString();
   store.pushHistory();
 
