@@ -1408,11 +1408,46 @@ export class LatticeEngine {
   }
 
   // ============================================================================
+  // MULTI-THREE.JS COMPATIBILITY HELPERS
+  // ============================================================================
+
+  /**
+   * Recursively ensure all objects in the hierarchy have proper children arrays
+   * This is needed to prevent crashes when TransformControls or other objects
+   * from different Three.js instances are added to the scene.
+   */
+  private ensureObjectChildren(obj: THREE.Object3D, depth = 0): void {
+    if (!obj || depth > 50) return;
+
+    // Ensure children is an array
+    if ((obj as any).children === undefined || (obj as any).children === null) {
+      (obj as any).children = [];
+    }
+
+    // Ensure matrix properties exist
+    if (!(obj as any).matrix) {
+      (obj as any).matrix = new THREE.Matrix4();
+    }
+    if (!(obj as any).matrixWorld) {
+      (obj as any).matrixWorld = new THREE.Matrix4();
+    }
+
+    // Recursively process children
+    const children = (obj as any).children;
+    if (Array.isArray(children)) {
+      for (const child of children) {
+        this.ensureObjectChildren(child, depth + 1);
+      }
+    }
+  }
+
+  // ============================================================================
   // TRANSFORM CONTROLS
   // ============================================================================
 
   /**
    * Initialize transform controls for layer manipulation
+   * Wrapped in try-catch for multi-Three.js instance compatibility
    */
   initializeTransformControls(): void {
     this.assertNotDisposed();
@@ -1421,18 +1456,28 @@ export class LatticeEngine {
       return; // Already initialized
     }
 
-    const camera = this.camera.getCamera();
-    const domElement = this.renderer.getDomElement();
+    try {
+      const camera = this.camera.getCamera();
+      const domElement = this.renderer.getDomElement();
 
-    this.transformControls = new TransformControls(camera, domElement);
-    this.transformControls.setMode(this.transformMode);
-    this.transformControls.setSpace('world');
+      this.transformControls = new TransformControls(camera, domElement);
+      this.transformControls.setMode(this.transformMode);
+      this.transformControls.setSpace('world');
 
-    // Style the controls
-    this.transformControls.setSize(1.0);
+      // Style the controls
+      this.transformControls.setSize(1.0);
 
-    // Add to scene (TransformControls extends Object3D internally)
-    this.scene.addUIElement(this.transformControls as unknown as THREE.Object3D);
+      // Ensure all gizmo objects have proper children arrays
+      // (fixes multi-Three.js instance issues)
+      this.ensureObjectChildren(this.transformControls as unknown as THREE.Object3D);
+
+      // Add to scene (TransformControls extends Object3D internally)
+      this.scene.addUIElement(this.transformControls as unknown as THREE.Object3D);
+    } catch (e) {
+      console.error('[LatticeEngine] Failed to initialize TransformControls:', e);
+      this.transformControls = null;
+      return;
+    }
 
     // Track if we're actively dragging (to avoid spurious updates on selection)
     let isDragging = false;
@@ -1514,9 +1559,13 @@ export class LatticeEngine {
       this.initializeTransformControls();
     }
 
-    // Deselect current layer
+    // Deselect current layer - wrap in try-catch for multi-Three.js compatibility
     if (this.selectedLayerId && this.transformControls) {
-      this.transformControls.detach();
+      try {
+        this.transformControls.detach();
+      } catch (e) {
+        console.warn('[LatticeEngine] TransformControls detach error:', e);
+      }
     }
 
     this.selectedLayerId = layerId;
@@ -1527,10 +1576,14 @@ export class LatticeEngine {
       return;
     }
 
-    // Get the layer object
+    // Get the layer object and attach - wrap in try-catch for multi-Three.js compatibility
     const layerObject = this.getLayerObject(layerId);
     if (layerObject) {
-      this.transformControls.attach(layerObject);
+      try {
+        this.transformControls.attach(layerObject);
+      } catch (e) {
+        console.warn('[LatticeEngine] TransformControls attach error:', e);
+      }
       // Note: We intentionally do NOT change the orbit target when selecting a layer
       // The user can use "Focus Selected" to explicitly center on a layer
       // Automatically changing the view on selection is disorienting

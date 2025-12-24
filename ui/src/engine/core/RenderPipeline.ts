@@ -711,14 +711,21 @@ export class RenderPipeline {
    * Render the current frame
    */
   render(): void {
-    // Ensure layers are sorted by Z
-    this.scene.sortByZ();
+    try {
+      // Ensure layers are sorted by Z
+      this.scene.sortByZ();
 
-    // Ensure all scene objects have required methods (multi-Three.js compatibility)
-    this.scene.prepareForRender();
+      // Ensure all scene objects have required methods (multi-Three.js compatibility)
+      // This is CRITICAL for handling TransformControls when other ComfyUI extensions
+      // load their own Three.js instance
+      this.scene.prepareForRender();
 
-    // Render through effect composer
-    this.composer.render();
+      // Render through effect composer
+      this.composer.render();
+    } catch (e) {
+      // Log but don't crash - the render loop must continue
+      console.warn('[RenderPipeline] Render error (continuing):', e);
+    }
   }
 
   /**

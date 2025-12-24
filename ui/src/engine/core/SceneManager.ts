@@ -334,53 +334,84 @@ export class SceneManager {
    * Prepare scene for render by ensuring all objects have required methods.
    * This handles cases where TransformControls or other UI elements from
    * different Three.js instances create new children dynamically.
+   *
+   * The Multiple Three.js instances issue occurs because ComfyUI extensions
+   * may load their own Three.js, causing instanceof checks to fail and
+   * internal structures (like children arrays) to be incompatible.
    */
   prepareForRender(): void {
-    const proto = THREE.Object3D.prototype;
+    const ensureMethods = (obj: any, depth = 0) => {
+      // Safety check
+      if (!obj || depth > 50) return;
 
-    const ensureMethods = (obj: any) => {
-      if (!obj) return;
+      // CRITICAL: Ensure children is always an array
+      // This fixes "Cannot read properties of undefined (reading 'length')"
+      // when TransformControls from another Three.js instance creates gizmo parts
+      if (obj.children === undefined || obj.children === null) {
+        obj.children = [];
+      } else if (!Array.isArray(obj.children)) {
+        // If children exists but isn't an array, wrap it
+        obj.children = Array.isArray(obj.children) ? obj.children : [];
+      }
 
-      // Skip if already a proper THREE.Object3D from our instance
-      if (obj instanceof THREE.Object3D) return;
+      // Ensure matrix properties exist
+      if (!obj.matrix) {
+        obj.matrix = new THREE.Matrix4();
+      }
+      if (!obj.matrixWorld) {
+        obj.matrixWorld = new THREE.Matrix4();
+      }
 
-      // Patch required methods
+      // Only patch updateMatrixWorld if it's missing
+      // (TransformControls from our bundle should have it)
       if (typeof obj.updateMatrixWorld !== 'function') {
         obj.updateMatrixWorld = function(force?: boolean) {
-          if (this.matrixAutoUpdate) this.updateMatrix?.();
-          if (this.matrixWorldNeedsUpdate || force) {
-            if (this.matrixWorldAutoUpdate) {
-              if (this.parent === null) {
-                this.matrixWorld?.copy?.(this.matrix);
-              } else {
-                this.matrixWorld?.multiplyMatrices?.(this.parent.matrixWorld, this.matrix);
+          try {
+            if (this.matrixAutoUpdate) this.updateMatrix?.();
+            if (this.matrixWorldNeedsUpdate || force) {
+              if (this.matrixWorldAutoUpdate !== false) {
+                if (this.parent === null) {
+                  this.matrixWorld?.copy?.(this.matrix);
+                } else if (this.parent?.matrixWorld) {
+                  this.matrixWorld?.multiplyMatrices?.(this.parent.matrixWorld, this.matrix);
+                }
+              }
+              this.matrixWorldNeedsUpdate = false;
+              force = true;
+            }
+            // Safe children iteration
+            const children = this.children;
+            if (children && Array.isArray(children)) {
+              for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                if (child && (child.matrixWorldAutoUpdate === true || force === true)) {
+                  child.updateMatrixWorld?.(force);
+                }
               }
             }
-            this.matrixWorldNeedsUpdate = false;
-            force = true;
-          }
-          if (this.children) {
-            for (let i = 0; i < this.children.length; i++) {
-              const child = this.children[i];
-              if (child.matrixWorldAutoUpdate === true || force === true) {
-                child.updateMatrixWorld?.(force);
-              }
-            }
+          } catch (e) {
+            // Silently ignore errors in cross-instance objects
           }
         };
       }
 
-      // Recursively check children
-      if (obj.children && Array.isArray(obj.children)) {
-        for (const child of obj.children) {
-          ensureMethods(child);
+      // Recursively check children - process ALL objects, even if instanceof passes
+      // because TransformControls creates children dynamically
+      const children = obj.children;
+      if (children && Array.isArray(children)) {
+        for (let i = 0; i < children.length; i++) {
+          ensureMethods(children[i], depth + 1);
         }
       }
     };
 
     // Check all scene children
-    for (const child of this.scene.children) {
-      ensureMethods(child);
+    try {
+      for (const child of this.scene.children) {
+        ensureMethods(child, 0);
+      }
+    } catch (e) {
+      console.warn('[SceneManager] Error in prepareForRender:', e);
     }
   }
 
