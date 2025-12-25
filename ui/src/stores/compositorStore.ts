@@ -98,6 +98,8 @@ import * as compositionActions from './actions/compositionActions';
 import * as particleLayerActions from './actions/particleLayerActions';
 import * as depthflowActions from './actions/depthflowActions';
 import * as videoActions from './actions/videoActions';
+import type { VideoImportResult } from './actions/videoActions';
+import * as textAnimatorActions from './actions/textAnimatorActions';
 
 // Domain-specific stores (for delegation)
 import { usePlaybackStore } from './playbackStore';
@@ -497,6 +499,18 @@ export const useCompositorStore = defineStore('compositor', {
       return compositionActions.getComposition(this, compId);
     },
 
+    enableFrameBlending(compId: string): void {
+      compositionActions.enableFrameBlending(this, compId);
+    },
+
+    disableFrameBlending(compId: string): void {
+      compositionActions.disableFrameBlending(this, compId);
+    },
+
+    toggleFrameBlending(compId: string): void {
+      compositionActions.toggleFrameBlending(this, compId);
+    },
+
     nestSelectedLayers(name?: string): Composition | null {
       return compositionActions.nestSelectedLayers(this, name);
     },
@@ -893,7 +907,9 @@ export const useCompositorStore = defineStore('compositor', {
       const storeWithFrame = {
         ...this,
         currentFrame: comp?.currentFrame ?? 0,
-        fps: comp?.settings.fps ?? 30
+        fps: comp?.settings.fps ?? 30,
+        // Explicitly bind pushHistory to preserve 'this' context
+        pushHistory: this.pushHistory.bind(this)
       };
       layerActions.freezeFrameAtPlayhead(storeWithFrame, layerId);
     },
@@ -908,7 +924,9 @@ export const useCompositorStore = defineStore('compositor', {
       const comp = this.getActiveComp();
       const storeWithFrame = {
         ...this,
-        currentFrame: comp?.currentFrame ?? 0
+        currentFrame: comp?.currentFrame ?? 0,
+        // Explicitly bind pushHistory to preserve 'this' context
+        pushHistory: this.pushHistory.bind(this)
       };
       return layerActions.splitLayerAtPlayhead(storeWithFrame, layerId);
     },
@@ -1061,6 +1079,17 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Jump forward or backward by N frames (Shift+Page Down/Up behavior)
+     * @param n Number of frames to jump (positive = forward, negative = backward)
+     */
+    jumpFrames(n: number): void {
+      const comp = this.getActiveComp();
+      if (!comp) return;
+      const newFrame = comp.currentFrame + n;
+      comp.currentFrame = Math.max(0, Math.min(newFrame, comp.settings.frameCount - 1));
+    },
+
+    /**
      * Tool selection
      */
     setTool(tool: 'select' | 'pen' | 'text' | 'hand' | 'zoom' | 'segment'): void {
@@ -1163,8 +1192,8 @@ export const useCompositorStore = defineStore('compositor', {
       return projectActions.exportProject(this);
     },
 
-    importProject(json: string): void {
-      projectActions.importProject(this, json, () => this.pushHistory());
+    importProject(json: string): boolean {
+      return projectActions.importProject(this, json, () => this.pushHistory());
     },
 
     /**
@@ -1223,6 +1252,13 @@ export const useCompositorStore = defineStore('compositor', {
      */
     toggleCurveEditor(): void {
       this.curveEditorVisible = !this.curveEditorVisible;
+    },
+
+    /**
+     * Set curve editor visibility directly
+     */
+    setCurveEditorVisible(visible: boolean): void {
+      this.curveEditorVisible = visible;
     },
 
     /**
@@ -1321,6 +1357,24 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Apply easing preset to multiple keyframes at once
+     * @param keyframeSelections Array of keyframe selections with layerId, propertyPath, keyframeId
+     * @param interpolation The interpolation type to apply
+     * @returns Number of keyframes updated
+     */
+    applyEasingPresetToKeyframes(
+      keyframeSelections: Array<{ layerId: string; propertyPath: string; keyframeId: string }>,
+      interpolation: InterpolationType
+    ): number {
+      let count = 0;
+      for (const sel of keyframeSelections) {
+        keyframeActions.setKeyframeInterpolation(this, sel.layerId, sel.propertyPath, sel.keyframeId, interpolation);
+        count++;
+      }
+      return count;
+    },
+
+    /**
      * Update keyframe frame position and/or value
      */
     updateKeyframe(
@@ -1368,6 +1422,113 @@ export const useCompositorStore = defineStore('compositor', {
           enabled: true
         });
       }
+    },
+
+    /**
+     * Set keyframe control mode (smooth, corner, symmetric)
+     */
+    setKeyframeControlMode(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string,
+      controlMode: 'smooth' | 'corner' | 'symmetric'
+    ): void {
+      keyframeActions.setKeyframeControlMode(this, layerId, propertyPath, keyframeId, controlMode);
+    },
+
+    /**
+     * Set keyframe handle with control mode awareness (supports breaking handles)
+     * @param breakHandle - If true, sets controlMode to 'corner' (Ctrl+drag behavior)
+     */
+    setKeyframeHandleWithMode(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string,
+      handleType: 'in' | 'out',
+      handle: BezierHandle,
+      breakHandle: boolean = false
+    ): void {
+      keyframeActions.setKeyframeHandleWithMode(this, layerId, propertyPath, keyframeId, handleType, handle, breakHandle);
+    },
+
+    /**
+     * Auto-calculate bezier tangents for a single keyframe
+     */
+    autoCalculateBezierTangents(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string
+    ): boolean {
+      return keyframeActions.autoCalculateBezierTangents(this, layerId, propertyPath, keyframeId);
+    },
+
+    /**
+     * Auto-calculate bezier tangents for ALL keyframes on a property
+     */
+    autoCalculateAllBezierTangents(
+      layerId: string,
+      propertyPath: string
+    ): number {
+      return keyframeActions.autoCalculateAllBezierTangents(this, layerId, propertyPath);
+    },
+
+    /**
+     * Separate position into individual X, Y, Z properties for independent keyframing.
+     */
+    separatePositionDimensions(layerId: string): boolean {
+      return keyframeActions.separatePositionDimensionsAction(this, layerId);
+    },
+
+    /**
+     * Link position dimensions back into a combined property.
+     */
+    linkPositionDimensions(layerId: string): boolean {
+      return keyframeActions.linkPositionDimensionsAction(this, layerId);
+    },
+
+    /**
+     * Separate scale into individual X, Y, Z properties.
+     */
+    separateScaleDimensions(layerId: string): boolean {
+      return keyframeActions.separateScaleDimensionsAction(this, layerId);
+    },
+
+    /**
+     * Link scale dimensions back into a combined property.
+     */
+    linkScaleDimensions(layerId: string): boolean {
+      return keyframeActions.linkScaleDimensionsAction(this, layerId);
+    },
+
+    /**
+     * Check if position dimensions are separated.
+     */
+    hasPositionSeparated(layerId: string): boolean {
+      return keyframeActions.hasPositionSeparated(this, layerId);
+    },
+
+    /**
+     * Check if scale dimensions are separated.
+     */
+    hasScaleSeparated(layerId: string): boolean {
+      return keyframeActions.hasScaleSeparated(this, layerId);
+    },
+
+    /**
+     * Sequence layers - arrange selected layers one after another.
+     * @param layerIds - Array of layer IDs to sequence (in order)
+     * @param options - Sequence options (gap, startFrame, reverse)
+     */
+    sequenceLayers(layerIds: string[], options?: layerActions.SequenceLayersOptions): number {
+      return layerActions.sequenceLayers(this, layerIds, options);
+    },
+
+    /**
+     * Apply exponential scale animation to a layer.
+     * Creates keyframes with exponential curve for natural zoom effect.
+     */
+    applyExponentialScale(layerId: string, options?: layerActions.ExponentialScaleOptions): number {
+      return layerActions.applyExponentialScale(this, layerId, options);
     },
 
     /**
@@ -1533,7 +1694,7 @@ export const useCompositorStore = defineStore('compositor', {
     // VIDEO LAYER ACTIONS (delegated to videoActions)
     // ============================================================
 
-    async createVideoLayer(file: File, autoResizeComposition: boolean = true): Promise<Layer> {
+    async createVideoLayer(file: File, autoResizeComposition: boolean = true): Promise<VideoImportResult> {
       return videoActions.createVideoLayer(this, file, autoResizeComposition);
     },
 
@@ -1644,6 +1805,85 @@ export const useCompositorStore = defineStore('compositor', {
     },
     getEffectParameterValue(layerId: string, effectId: string, paramKey: string, frame?: number): PropertyValue | undefined {
       return effectActions.getEffectParameterValue(this, layerId, effectId, paramKey, frame);
+    },
+
+    // ============================================================
+    // TEXT ANIMATOR ACTIONS (Tutorial 06)
+    // ============================================================
+
+    addTextAnimator(layerId: string, config: textAnimatorActions.AddTextAnimatorConfig = {}) {
+      return textAnimatorActions.addTextAnimator(this, layerId, config);
+    },
+    removeTextAnimator(layerId: string, animatorId: string): boolean {
+      return textAnimatorActions.removeTextAnimator(this, layerId, animatorId);
+    },
+    updateTextAnimator(layerId: string, animatorId: string, updates: Partial<import('@/types/text').TextAnimator>): boolean {
+      return textAnimatorActions.updateTextAnimator(this, layerId, animatorId, updates);
+    },
+    getTextAnimator(layerId: string, animatorId: string) {
+      return textAnimatorActions.getTextAnimator(this, layerId, animatorId);
+    },
+    getTextAnimators(layerId: string) {
+      return textAnimatorActions.getTextAnimators(this, layerId);
+    },
+    configureRangeSelector(layerId: string, animatorId: string, config: textAnimatorActions.RangeSelectorConfig): boolean {
+      return textAnimatorActions.configureRangeSelector(this, layerId, animatorId, config);
+    },
+    configureExpressionSelector(layerId: string, animatorId: string, config: textAnimatorActions.ExpressionSelectorConfig): boolean {
+      return textAnimatorActions.configureExpressionSelector(this, layerId, animatorId, config);
+    },
+    removeExpressionSelector(layerId: string, animatorId: string): boolean {
+      return textAnimatorActions.removeExpressionSelector(this, layerId, animatorId);
+    },
+    configureWigglySelector(layerId: string, animatorId: string, config: textAnimatorActions.WigglySelectorConfig): boolean {
+      return textAnimatorActions.configureWigglySelector(this, layerId, animatorId, config);
+    },
+    removeWigglySelector(layerId: string, animatorId: string): boolean {
+      return textAnimatorActions.removeWigglySelector(this, layerId, animatorId);
+    },
+    getCharacterTransforms(layerId: string, frame: number): textAnimatorActions.CharacterTransform[] {
+      return textAnimatorActions.getCharacterTransforms(this, layerId, frame);
+    },
+    getSelectionValues(layerId: string, animatorId: string, frame: number): number[] {
+      return textAnimatorActions.getSelectionValues(this, layerId, animatorId, frame);
+    },
+    getRangeSelectionValue(layerId: string, animatorId: string, charIndex: number, frame: number): number {
+      return textAnimatorActions.getRangeSelectionValue(this, layerId, animatorId, charIndex, frame);
+    },
+    setAnimatorPropertyValue(layerId: string, animatorId: string, propertyName: string, value: any): boolean {
+      return textAnimatorActions.setAnimatorPropertyValue(this, layerId, animatorId, propertyName as any, value);
+    },
+    hasTextAnimators(layerId: string): boolean {
+      return textAnimatorActions.hasTextAnimators(this, layerId);
+    },
+    getTextContent(layerId: string): string {
+      return textAnimatorActions.getTextContent(this, layerId);
+    },
+    setTextContent(layerId: string, text: string): boolean {
+      return textAnimatorActions.setTextContent(this, layerId, text);
+    },
+
+    // TEXT ON PATH ACTIONS (Tutorial 06: Section 7)
+    setTextPath(layerId: string, config: textAnimatorActions.TextPathConfig): boolean {
+      return textAnimatorActions.setTextPath(this, layerId, config);
+    },
+    getTextPathConfig(layerId: string) {
+      return textAnimatorActions.getTextPathConfig(this, layerId);
+    },
+    updateTextPath(layerId: string, updates: Partial<textAnimatorActions.TextPathConfig>): boolean {
+      return textAnimatorActions.updateTextPath(this, layerId, updates);
+    },
+    getCharacterPathPlacements(layerId: string, frame: number) {
+      return textAnimatorActions.getCharacterPathPlacements(this, layerId, frame);
+    },
+    getPathLength(layerId: string): number {
+      return textAnimatorActions.getPathLength(this, layerId);
+    },
+    hasTextPath(layerId: string): boolean {
+      return textAnimatorActions.hasTextPath(this, layerId);
+    },
+    clearTextPath(layerId: string): boolean {
+      return textAnimatorActions.clearTextPath(this, layerId);
     },
 
     // ============================================================
@@ -2049,6 +2289,242 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     /**
+     * Apply velocity settings to a keyframe
+     */
+    applyKeyframeVelocity(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string,
+      settings: keyframeActions.VelocitySettings
+    ): boolean {
+      return keyframeActions.applyKeyframeVelocity(this, layerId, propertyPath, keyframeId, settings);
+    },
+
+    /**
+     * Get velocity settings from a keyframe
+     */
+    getKeyframeVelocity(
+      layerId: string,
+      propertyPath: string,
+      keyframeId: string
+    ): keyframeActions.VelocitySettings | null {
+      return keyframeActions.getKeyframeVelocity(this, layerId, propertyPath, keyframeId);
+    },
+
+    /**
+     * Convert expression to keyframes (bake expression)
+     */
+    convertExpressionToKeyframes(
+      layerId: string,
+      propertyPath: string,
+      startFrame?: number,
+      endFrame?: number,
+      sampleRate?: number
+    ): number {
+      return keyframeActions.convertExpressionToKeyframes(
+        this as unknown as keyframeActions.BakeExpressionStore,
+        layerId,
+        propertyPath,
+        startFrame,
+        endFrame,
+        sampleRate
+      );
+    },
+
+    /**
+     * Check if a property has a bakeable expression
+     */
+    canBakeExpression(layerId: string, propertyPath: string): boolean {
+      return keyframeActions.canBakeExpression(this, layerId, propertyPath);
+    },
+
+    /**
+     * Get all keyframe frames for a layer across all animated properties
+     * @param layerId The layer ID
+     * @returns Sorted array of unique frame numbers where keyframes exist
+     */
+    getAllKeyframeFrames(layerId: string): number[] {
+      return keyframeActions.getAllKeyframeFrames(this, layerId);
+    },
+
+    /**
+     * Jump to the next keyframe (K key behavior)
+     * @param layerId Optional layer ID. If not provided, uses selected layers or all layers.
+     */
+    jumpToNextKeyframe(layerId?: string): void {
+      const currentFrame = this.currentFrame;
+      let allFrames: number[] = [];
+
+      if (layerId) {
+        // Single layer
+        allFrames = this.getAllKeyframeFrames(layerId);
+      } else {
+        // Use selected layers, or all layers if none selected
+        const selectionStore = useSelectionStore();
+        const layerIds = selectionStore.selectedLayerIds.length > 0
+          ? selectionStore.selectedLayerIds
+          : this.getActiveCompLayers().map(l => l.id);
+
+        // Collect all keyframe frames from all relevant layers
+        const frameSet = new Set<number>();
+        for (const lid of layerIds) {
+          for (const frame of this.getAllKeyframeFrames(lid)) {
+            frameSet.add(frame);
+          }
+        }
+        allFrames = Array.from(frameSet).sort((a, b) => a - b);
+      }
+
+      // Find the next frame after current
+      const nextFrame = allFrames.find(f => f > currentFrame);
+      if (nextFrame !== undefined) {
+        this.setFrame(nextFrame);
+      }
+    },
+
+    /**
+     * Jump to the previous keyframe (J key behavior)
+     * @param layerId Optional layer ID. If not provided, uses selected layers or all layers.
+     */
+    jumpToPrevKeyframe(layerId?: string): void {
+      const currentFrame = this.currentFrame;
+      let allFrames: number[] = [];
+
+      if (layerId) {
+        // Single layer
+        allFrames = this.getAllKeyframeFrames(layerId);
+      } else {
+        // Use selected layers, or all layers if none selected
+        const selectionStore = useSelectionStore();
+        const layerIds = selectionStore.selectedLayerIds.length > 0
+          ? selectionStore.selectedLayerIds
+          : this.getActiveCompLayers().map(l => l.id);
+
+        // Collect all keyframe frames from all relevant layers
+        const frameSet = new Set<number>();
+        for (const lid of layerIds) {
+          for (const frame of this.getAllKeyframeFrames(lid)) {
+            frameSet.add(frame);
+          }
+        }
+        allFrames = Array.from(frameSet).sort((a, b) => a - b);
+      }
+
+      // Find the previous frame before current
+      const prevFrames = allFrames.filter(f => f < currentFrame);
+      if (prevFrames.length > 0) {
+        this.setFrame(prevFrames[prevFrames.length - 1]);
+      }
+    },
+
+    /**
+     * Copy keyframes to clipboard
+     * @param keyframeSelections Array of keyframe selections with layerId, propertyPath, and keyframeId
+     * @returns Number of keyframes copied
+     */
+    copyKeyframes(
+      keyframeSelections: Array<{ layerId: string; propertyPath: string; keyframeId: string }>
+    ): number {
+      return keyframeActions.copyKeyframes(this, keyframeSelections);
+    },
+
+    /**
+     * Paste keyframes from clipboard to a target layer/property
+     * @param targetLayerId Target layer ID to paste to
+     * @param targetPropertyPath Optional target property path (uses original if not specified)
+     * @returns Array of newly created keyframes
+     */
+    pasteKeyframes(
+      targetLayerId: string,
+      targetPropertyPath?: string
+    ): Keyframe<any>[] {
+      return keyframeActions.pasteKeyframes(this, targetLayerId, targetPropertyPath);
+    },
+
+    /**
+     * Check if clipboard has keyframes
+     */
+    hasKeyframesInClipboard(): boolean {
+      return keyframeActions.hasKeyframesInClipboard(this);
+    },
+
+    // ============================================================
+    // EXPRESSION METHODS
+    // ============================================================
+
+    /**
+     * Set a property expression
+     */
+    setPropertyExpression(
+      layerId: string,
+      propertyPath: string,
+      expression: import('@/types/animation').PropertyExpression
+    ): boolean {
+      return keyframeActions.setPropertyExpression(this, layerId, propertyPath, expression);
+    },
+
+    /**
+     * Enable expression on a property
+     */
+    enablePropertyExpression(
+      layerId: string,
+      propertyPath: string,
+      expressionName: string = 'custom',
+      params: Record<string, number | string | boolean> = {}
+    ): boolean {
+      return keyframeActions.enablePropertyExpression(this, layerId, propertyPath, expressionName, params);
+    },
+
+    /**
+     * Disable expression on a property
+     */
+    disablePropertyExpression(layerId: string, propertyPath: string): boolean {
+      return keyframeActions.disablePropertyExpression(this, layerId, propertyPath);
+    },
+
+    /**
+     * Toggle expression enabled state
+     */
+    togglePropertyExpression(layerId: string, propertyPath: string): boolean {
+      return keyframeActions.togglePropertyExpression(this, layerId, propertyPath);
+    },
+
+    /**
+     * Remove expression from property
+     */
+    removePropertyExpression(layerId: string, propertyPath: string): boolean {
+      return keyframeActions.removePropertyExpression(this, layerId, propertyPath);
+    },
+
+    /**
+     * Get expression for a property
+     */
+    getPropertyExpression(
+      layerId: string,
+      propertyPath: string
+    ): import('@/types/animation').PropertyExpression | undefined {
+      return keyframeActions.getPropertyExpression(this, layerId, propertyPath);
+    },
+
+    /**
+     * Check if property has an expression
+     */
+    hasPropertyExpression(layerId: string, propertyPath: string): boolean {
+      return keyframeActions.hasPropertyExpression(this, layerId, propertyPath);
+    },
+
+    /**
+     * Update expression parameters
+     */
+    updateExpressionParams(
+      layerId: string,
+      propertyPath: string,
+      params: Record<string, number | string | boolean>
+    ): boolean {
+      return keyframeActions.updateExpressionParams(this, layerId, propertyPath, params);
+    },
+
+    /**
      * Update layer transform properties (convenience method)
      * Supports both single property updates and batch updates with an object
      * @param layerId The layer ID
@@ -2091,6 +2567,7 @@ export const useCompositorStore = defineStore('compositor', {
 
       markLayerDirty(layerId);
       this.project.meta.modified = new Date().toISOString();
+      this.pushHistory();
     }
   }
 });

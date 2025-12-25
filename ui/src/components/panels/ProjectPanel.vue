@@ -41,6 +41,18 @@
       @created="onVectorized"
     />
 
+    <!-- FPS Mismatch Dialog -->
+    <FpsMismatchDialog
+      :visible="showFpsMismatchDialog"
+      :file-name="pendingFpsMismatch?.fileName ?? ''"
+      :imported-fps="pendingFpsMismatch?.importedFps ?? 30"
+      :composition-fps="pendingFpsMismatch?.compositionFps ?? 16"
+      :video-duration="pendingFpsMismatch?.videoDuration ?? 0"
+      @match="handleFpsMismatchMatch"
+      @conform="handleFpsMismatchConform"
+      @cancel="handleFpsMismatchCancel"
+    />
+
     <!-- Hidden file input -->
     <input
       ref="fileInputRef"
@@ -166,6 +178,7 @@ import { useSelectionStore } from '@/stores/selectionStore';
 import { useAudioStore } from '@/stores/audioStore';
 import DecomposeDialog from '@/components/dialogs/DecomposeDialog.vue';
 import VectorizeDialog from '@/components/dialogs/VectorizeDialog.vue';
+import FpsMismatchDialog from '@/components/dialogs/FpsMismatchDialog.vue';
 import {
   PhFilmSlate, PhFolder, PhImage, PhSpeakerHigh, PhChartBar, PhFile, PhSparkle
 } from '@phosphor-icons/vue';
@@ -178,6 +191,12 @@ import {
   reloadDataAsset
 } from '@/services/dataImport';
 import { isCSVAsset, isJSONAsset, getDataFileType, isSupportedDataFile } from '@/types/dataAsset';
+import type { VideoImportFpsMismatch } from '@/stores/actions/videoActions';
+import {
+  completeVideoImportWithMatch,
+  completeVideoImportWithConform,
+  cancelVideoImport
+} from '@/stores/actions/videoActions';
 
 const emit = defineEmits<{
   (e: 'openCompositionSettings'): void;
@@ -212,6 +231,8 @@ const showSearch = ref(false);
 const showNewMenu = ref(false);
 const showDecomposeDialog = ref(false);
 const showVectorizeDialog = ref(false);
+const showFpsMismatchDialog = ref(false);
+const pendingFpsMismatch = ref<VideoImportFpsMismatch | null>(null);
 const searchQuery = ref('');
 const selectedItem = ref<string | null>(null);
 const expandedFolders = ref<string[]>(['compositions', 'footage']);
@@ -533,6 +554,86 @@ function onVectorized(layerIds: string[]) {
   console.log('[ProjectPanel] Created', layerIds.length, 'vectorized layers');
 }
 
+// ============================================================
+// FPS MISMATCH HANDLERS
+// ============================================================
+
+async function handleFpsMismatchMatch() {
+  if (!pendingFpsMismatch.value) return;
+
+  const result = pendingFpsMismatch.value;
+  console.log('[ProjectPanel] FPS mismatch: User chose MATCH -', result.importedFps, 'fps');
+
+  // Complete import with match (precomp existing, change comp fps)
+  const layer = await completeVideoImportWithMatch(
+    store,
+    result.pendingImport,
+    result.fileName
+  );
+
+  if (layer) {
+    // Add to footage items
+    footageItems.value.push({
+      id: layer.id,
+      name: result.fileName,
+      type: 'footage',
+      width: store.width,
+      height: store.height,
+      duration: store.frameCount,
+      fps: store.fps
+    });
+    console.log('[ProjectPanel] Video layer created after match:', layer.id);
+  }
+
+  // Close dialog and clear pending
+  showFpsMismatchDialog.value = false;
+  pendingFpsMismatch.value = null;
+}
+
+function handleFpsMismatchConform() {
+  if (!pendingFpsMismatch.value) return;
+
+  const result = pendingFpsMismatch.value;
+  console.log('[ProjectPanel] FPS mismatch: User chose CONFORM -', result.compositionFps, 'fps');
+
+  // Complete import with conform (time-stretch video)
+  const layer = completeVideoImportWithConform(
+    store,
+    result.pendingImport,
+    result.fileName,
+    result.compositionFps
+  );
+
+  // Add to footage items
+  footageItems.value.push({
+    id: layer.id,
+    name: result.fileName,
+    type: 'footage',
+    width: store.width,
+    height: store.height,
+    duration: store.frameCount,
+    fps: store.fps
+  });
+  console.log('[ProjectPanel] Video layer created after conform:', layer.id);
+
+  // Close dialog and clear pending
+  showFpsMismatchDialog.value = false;
+  pendingFpsMismatch.value = null;
+}
+
+function handleFpsMismatchCancel() {
+  if (!pendingFpsMismatch.value) return;
+
+  console.log('[ProjectPanel] FPS mismatch: User cancelled');
+
+  // Clean up the pending import
+  cancelVideoImport(store, pendingFpsMismatch.value.pendingImport);
+
+  // Close dialog and clear pending
+  showFpsMismatchDialog.value = false;
+  pendingFpsMismatch.value = null;
+}
+
 function cleanupUnusedAssets() {
   showNewMenu.value = false;
   const result = store.removeUnusedAssets();
@@ -721,17 +822,31 @@ async function handleFileImport(event: Event) {
       store.loadAudio(file);
     } else if (file.type.startsWith('video/')) {
       // Handle video import - creates video layer with auto-resize
-      try {
-        const layer = await store.createVideoLayer(file, true);
-        newItem.id = layer.id;
+      // May return fps_mismatch requiring user decision
+      const result = await store.createVideoLayer(file, true);
+
+      if (result.status === 'error') {
+        console.error('[ProjectPanel] Failed to import video:', result.error);
+        continue;
+      }
+
+      if (result.status === 'fps_mismatch') {
+        // Show fps mismatch dialog
+        pendingFpsMismatch.value = result;
+        showFpsMismatchDialog.value = true;
+        console.log('[ProjectPanel] FPS mismatch detected:', result.importedFps, 'vs', result.compositionFps);
+        // Don't add to footage items yet - wait for user decision
+        continue;
+      }
+
+      // Success - layer was created
+      if (result.status === 'success') {
+        newItem.id = result.layer.id;
         newItem.width = store.width;
         newItem.height = store.height;
         newItem.duration = store.frameCount;
         newItem.fps = store.fps;
-        console.log('[ProjectPanel] Video layer created:', layer.id, layer.name);
-      } catch (error) {
-        console.error('[ProjectPanel] Failed to import video:', error);
-        continue;
+        console.log('[ProjectPanel] Video layer created:', result.layer.id, result.layer.name);
       }
     } else if (file.type.startsWith('image/')) {
       // Handle image import - add to project assets only (no layer creation)

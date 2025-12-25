@@ -936,8 +936,108 @@ export class VideoLayer extends BaseLayer {
 // ============================================================================
 
 /**
+ * Detect video fps using requestVideoFrameCallback API
+ * Returns detected fps or null if detection fails/unsupported
+ */
+async function detectVideoFps(video: HTMLVideoElement, timeout: number = 2000): Promise<number | null> {
+  // Check if requestVideoFrameCallback is supported
+  if (!('requestVideoFrameCallback' in video)) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    let frameCount = 0;
+    let startTime: number | null = null;
+    let lastMediaTime = 0;
+    const frameTimes: number[] = [];
+    const timeoutId = setTimeout(() => resolve(null), timeout);
+
+    // Need to play video briefly to measure frame rate
+    video.muted = true;
+    video.currentTime = 0;
+
+    const onFrame = (_now: DOMHighResTimeStamp, metadata: VideoFrameCallbackMetadata) => {
+      if (startTime === null) {
+        startTime = metadata.mediaTime;
+        lastMediaTime = metadata.mediaTime;
+      }
+
+      frameCount++;
+
+      // Record time between frames
+      if (frameCount > 1) {
+        frameTimes.push(metadata.mediaTime - lastMediaTime);
+      }
+      lastMediaTime = metadata.mediaTime;
+
+      // Collect enough frames for accurate measurement (at least 10 frames or 0.5 seconds)
+      if (frameCount >= 15 || (metadata.mediaTime - startTime) >= 0.5) {
+        video.pause();
+        video.currentTime = 0;
+        clearTimeout(timeoutId);
+
+        if (frameTimes.length >= 5) {
+          // Calculate average frame duration, excluding outliers
+          const sorted = [...frameTimes].sort((a, b) => a - b);
+          const trimmed = sorted.slice(1, -1); // Remove min/max
+          const avgFrameDuration = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
+          const detectedFps = Math.round(1 / avgFrameDuration);
+
+          // Snap to common frame rates
+          const commonFps = [8, 12, 15, 16, 23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60];
+          const snapped = commonFps.reduce((prev, curr) =>
+            Math.abs(curr - detectedFps) < Math.abs(prev - detectedFps) ? curr : prev
+          );
+
+          resolve(Math.abs(snapped - detectedFps) <= 2 ? snapped : detectedFps);
+        } else {
+          resolve(null);
+        }
+        return;
+      }
+
+      (video as any).requestVideoFrameCallback(onFrame);
+    };
+
+    video.play().then(() => {
+      (video as any).requestVideoFrameCallback(onFrame);
+    }).catch(() => {
+      clearTimeout(timeoutId);
+      resolve(null);
+    });
+  });
+}
+
+/**
+ * Estimate fps from video duration and common patterns
+ * Used as fallback when requestVideoFrameCallback is not available
+ */
+function estimateFpsFromDuration(duration: number): number {
+  // AI video models typically use specific frame rates
+  // WAN models: 16fps (4n+1 pattern: 17, 33, 49, 65, 81 frames)
+  // AnimateDiff: 8fps
+  // Standard video: 24, 30, 60fps
+
+  // Check for WAN-style durations (81 frames at 16fps = 5.0625s)
+  const wan16Frames = Math.round(duration * 16);
+  if ([17, 33, 49, 65, 81, 97, 113, 129].includes(wan16Frames)) {
+    return 16;
+  }
+
+  // Check for AnimateDiff durations
+  const anim8Frames = Math.round(duration * 8);
+  if ([16, 24, 32].includes(anim8Frames)) {
+    return 8;
+  }
+
+  // Default to 30fps for standard video
+  return 30;
+}
+
+/**
  * Extract metadata from a video file
  * Can be used before creating a VideoLayer to determine composition size
+ * Attempts to detect actual fps using requestVideoFrameCallback API
  */
 export async function extractVideoMetadata(
   source: string | File | Blob
@@ -945,23 +1045,46 @@ export async function extractVideoMetadata(
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.crossOrigin = 'anonymous';
-    video.preload = 'metadata';
+    video.preload = 'auto'; // Need more than metadata for fps detection
+
+    let sourceUrl: string;
+    const isObjectUrl = typeof source !== 'string';
+
+    if (typeof source === 'string') {
+      sourceUrl = source;
+    } else {
+      sourceUrl = URL.createObjectURL(source);
+    }
 
     const cleanup = () => {
-      video.removeEventListener('loadedmetadata', onLoad);
+      video.removeEventListener('loadeddata', onLoad);
       video.removeEventListener('error', onError);
-      URL.revokeObjectURL(video.src);
+      if (isObjectUrl) {
+        URL.revokeObjectURL(sourceUrl);
+      }
     };
 
-    const onLoad = () => {
+    const onLoad = async () => {
+      // Try to detect actual fps
+      let fps = await detectVideoFps(video);
+
+      // If detection failed, estimate from duration
+      if (fps === null) {
+        fps = estimateFpsFromDuration(video.duration);
+      }
+
+      // Calculate frame count using detected/estimated fps
+      const frameCount = Math.ceil(video.duration * fps);
+
       const metadata: VideoMetadata = {
         duration: video.duration,
-        frameCount: Math.ceil(video.duration * 30), // Estimate at 30fps
-        fps: 30, // Browser doesn't expose this
+        frameCount,
+        fps,
         width: video.videoWidth,
         height: video.videoHeight,
-        hasAudio: true, // Assume true
+        hasAudio: true, // Assume true, will be updated on actual load
       };
+
       cleanup();
       resolve(metadata);
     };
@@ -971,31 +1094,26 @@ export async function extractVideoMetadata(
       reject(new Error('Failed to load video metadata'));
     };
 
-    video.addEventListener('loadedmetadata', onLoad);
+    video.addEventListener('loadeddata', onLoad);
     video.addEventListener('error', onError);
-
-    // Set source
-    if (typeof source === 'string') {
-      video.src = source;
-    } else {
-      video.src = URL.createObjectURL(source);
-    }
+    video.src = sourceUrl;
   });
 }
 
 /**
  * Calculate recommended composition settings from video metadata
+ * Uses video's native fps for frame count to preserve all frames
  */
 export function calculateCompositionFromVideo(
-  metadata: VideoMetadata,
-  targetFps: number = 16
-): { width: number; height: number; frameCount: number } {
+  metadata: VideoMetadata
+): { width: number; height: number; frameCount: number; fps: number } {
   // Round dimensions to nearest multiple of 8 (required for most AI models)
   const width = Math.round(metadata.width / 8) * 8;
   const height = Math.round(metadata.height / 8) * 8;
 
-  // Calculate frame count at target FPS
-  const frameCount = Math.ceil(metadata.duration * targetFps);
+  // Use video's native fps to preserve all frames
+  const fps = metadata.fps;
+  const frameCount = metadata.frameCount;
 
-  return { width, height, frameCount };
+  return { width, height, frameCount, fps };
 }
