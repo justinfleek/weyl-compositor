@@ -122,12 +122,12 @@ export class AudioLayer extends BaseLayer {
   protected onEvaluateFrame(frame: number): void {
     // Evaluate animated audio properties
     if (this.audioData.level) {
-      const level = interpolateProperty(this.audioData.level, frame);
+      const level = interpolateProperty(this.audioData.level, frame, this.compositionFps);
       // Level would be applied to audio playback engine
     }
 
     if (this.audioData.pan) {
-      const pan = interpolateProperty(this.audioData.pan, frame);
+      const pan = interpolateProperty(this.audioData.pan, frame, this.compositionFps);
       // Pan would be applied to audio playback engine
     }
 
@@ -393,13 +393,13 @@ export class AudioLayer extends BaseLayer {
 
     // Interpolate and apply level
     if (this.audioData.level) {
-      const level: number = interpolateProperty(this.audioData.level, frame);
+      const level: number = interpolateProperty(this.audioData.level, frame, this.compositionFps);
       this.updateGain(level);
     }
 
     // Interpolate and apply pan
     if (this.audioData.pan) {
-      const pan: number = interpolateProperty(this.audioData.pan, frame);
+      const pan: number = interpolateProperty(this.audioData.pan, frame, this.compositionFps);
       this.updatePan(pan);
     }
   }

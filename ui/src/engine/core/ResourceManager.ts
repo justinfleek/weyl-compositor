@@ -177,6 +177,8 @@ export class ResourceManager {
     // Check cache
     const cached = this.textures.get(id);
     if (cached instanceof THREE.CanvasTexture) {
+      // Update canvas reference before marking for upload (fixes stale texture bug)
+      cached.image = canvas as HTMLCanvasElement;
       cached.needsUpdate = true;
       return cached;
     }

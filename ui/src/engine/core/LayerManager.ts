@@ -135,7 +135,10 @@ export class LayerManager {
     for (const layer of this.layers.values()) {
       const layerData = (layer as any).layerData;
       if (layer.type === 'solid' && (layerData?.effectLayer || layerData?.adjustmentLayer)) {
-        (layer as unknown as EffectLayer).setRenderContext(context);
+        // Check if method exists before calling (SolidLayer doesn't have setRenderContext)
+        if ('setRenderContext' in layer) {
+          (layer as unknown as EffectLayer).setRenderContext(context);
+        }
       }
     }
   }
@@ -188,6 +191,10 @@ export class LayerManager {
 
     // Update existing layers that need FPS
     for (const layer of this.layers.values()) {
+      // Set FPS on all layers for time-based effects (Echo, Posterize Time, etc.)
+      layer.setCompositionFps(fps);
+
+      // Type-specific FPS handling
       if (layer.type === 'particles') {
         (layer as ParticleLayer).setFPS(fps);
       }
@@ -270,6 +277,9 @@ export class LayerManager {
    * Set up type-specific callbacks after layer creation
    */
   private setupLayerCallbacks(layer: BaseLayer, layerData: Layer): void {
+    // Set composition FPS on all layers for time-based effects (Echo, Posterize Time, etc.)
+    layer.setCompositionFps(this.compositionFPS);
+
     // Video layer: hook up metadata callback for auto-resize
     if (layer.type === 'video' && this.onVideoMetadataLoaded) {
       const videoLayer = layer as VideoLayer;
