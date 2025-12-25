@@ -309,6 +309,16 @@ function calculateWeights(
 // DEFORMATION
 // ============================================================================
 
+/** Evaluated pin state at a specific frame */
+interface EvaluatedPinState {
+  position: Point2D;
+  rotation: number;
+  scale: number;
+  delta: Point2D;
+  /** Overlap depth (only for overlap pins) */
+  inFront?: number;
+}
+
 /**
  * Evaluate a pin's animated properties at a specific frame
  */
@@ -316,7 +326,7 @@ function evaluatePinAtFrame(
   pin: WarpPin,
   restState: WarpPinRestState,
   frame: number
-): { position: Point2D; rotation: number; scale: number; delta: Point2D } {
+): EvaluatedPinState {
   const position = {
     x: interpolateProperty(pin.position, frame).x,
     y: interpolateProperty(pin.position, frame).y,
@@ -329,7 +339,10 @@ function evaluatePinAtFrame(
     y: position.y - restState.position.y,
   };
 
-  return { position, rotation, scale, delta };
+  // Evaluate inFront for overlap pins
+  const inFront = pin.inFront ? interpolateProperty(pin.inFront, frame) : undefined;
+
+  return { position, rotation, scale, delta, inFront };
 }
 
 /**
@@ -374,14 +387,19 @@ function deformMesh(
       // Calculate deformed position for this pin's influence
       let pinDeformed = { x: origX, y: origY };
 
-      // Apply translation
-      pinDeformed = {
-        x: pinDeformed.x + pinState.delta.x,
-        y: pinDeformed.y + pinState.delta.y,
-      };
+      // Apply translation (only for position and advanced pins)
+      // Other pin types (starch, overlap, bend, rotation) use fixed reference positions
+      if (pin.type === 'position' || pin.type === 'advanced') {
+        pinDeformed = {
+          x: pinDeformed.x + pinState.delta.x,
+          y: pinDeformed.y + pinState.delta.y,
+        };
+      }
 
       // Apply rotation (around pin's rest position)
-      if (pin.type === 'rotation' || Math.abs(pinState.rotation - restState.rotation) > 0.001) {
+      // For rotation/bend/advanced pins, or any pin with rotation change
+      if (pin.type === 'rotation' || pin.type === 'bend' || pin.type === 'advanced' ||
+          Math.abs(pinState.rotation - restState.rotation) > 0.001) {
         const rotationDelta = pinState.rotation - restState.rotation;
         pinDeformed = rotatePoint(
           pinDeformed,
@@ -391,7 +409,9 @@ function deformMesh(
       }
 
       // Apply scale (around pin's rest position)
-      if (Math.abs(pinState.scale - restState.scale) > 0.001) {
+      // For bend/advanced pins, or any pin with scale change
+      if (pin.type === 'bend' || pin.type === 'advanced' ||
+          Math.abs(pinState.scale - restState.scale) > 0.001) {
         const scaleDelta = pinState.scale / restState.scale;
         pinDeformed = scalePoint(
           pinDeformed,
@@ -449,6 +469,7 @@ export class MeshWarpDeformationService {
       position: { ...pin.position.value },
       rotation: pin.rotation.value,
       scale: pin.scale.value,
+      inFront: pin.inFront?.value,
     }));
 
     // Triangulate the mesh (control points + pins)

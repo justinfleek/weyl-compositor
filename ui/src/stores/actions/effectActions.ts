@@ -132,6 +132,7 @@ export function toggleEffect(
 
   effect.enabled = !effect.enabled;
   store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 }
 
 /**

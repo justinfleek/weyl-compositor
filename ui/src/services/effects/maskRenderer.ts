@@ -366,7 +366,8 @@ export function renderMask(
   mask: LayerMask,
   width: number,
   height: number,
-  frame: number
+  frame: number,
+  fps: number = 16
 ): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -380,10 +381,10 @@ export function renderMask(
   if (!mask.enabled) return canvas;
 
   // Interpolate animated properties at the given frame
-  const path = interpolateProperty(mask.path, frame);
-  const expansion = interpolateProperty(mask.expansion, frame);
-  const opacity = interpolateProperty(mask.opacity, frame);
-  const feather = interpolateProperty(mask.feather, frame);
+  const path = interpolateProperty(mask.path, frame, fps);
+  const expansion = interpolateProperty(mask.expansion, frame, fps);
+  const opacity = interpolateProperty(mask.opacity, frame, fps);
+  const feather = interpolateProperty(mask.feather, frame, fps);
 
   // Apply expansion
   const expandedPath = expandMaskPath(path, expansion);
@@ -444,7 +445,8 @@ export function combineMasks(
   masks: LayerMask[],
   width: number,
   height: number,
-  frame: number
+  frame: number,
+  fps: number = 16
 ): HTMLCanvasElement {
   const resultCanvas = document.createElement('canvas');
   resultCanvas.width = width;
@@ -469,7 +471,7 @@ export function combineMasks(
 
   // Process each mask
   for (const mask of enabledMasks) {
-    const maskCanvas = renderMask(mask, width, height, frame);
+    const maskCanvas = renderMask(mask, width, height, frame, fps);
     const maskCtx = maskCanvas.getContext('2d')!;
     const maskData = maskCtx.getImageData(0, 0, width, height);
     const maskPixels = maskData.data;
@@ -611,7 +613,8 @@ export function applyTrackMatte(
 export function applyMasksToLayer(
   layerCanvas: HTMLCanvasElement,
   masks: LayerMask[] | undefined,
-  frame: number
+  frame: number,
+  fps: number = 16
 ): HTMLCanvasElement {
   if (!masks || masks.length === 0) return layerCanvas;
 
@@ -619,7 +622,7 @@ export function applyMasksToLayer(
   const height = layerCanvas.height;
 
   // Combine all masks into a single mask
-  const combinedMask = combineMasks(masks, width, height, frame);
+  const combinedMask = combineMasks(masks, width, height, frame, fps);
 
   // Apply combined mask to layer
   const resultCanvas = document.createElement('canvas');

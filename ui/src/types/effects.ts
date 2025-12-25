@@ -4,6 +4,7 @@
  */
 
 import type { AnimatableProperty, Keyframe, BezierHandle } from './project';
+import type { WarpPin, WarpMesh } from './meshWarp';
 
 export type EffectCategory =
   | 'blur-sharpen'
@@ -56,6 +57,20 @@ export interface EffectInstance {
   expanded: boolean;
   // Parameters as AnimatableProperty for keyframe support
   parameters: Record<string, AnimatableProperty<any>>;
+}
+
+/**
+ * Mesh Deform effect instance with puppet pins
+ * Extends base EffectInstance with pin storage and cached mesh
+ */
+export interface MeshDeformEffectInstance extends EffectInstance {
+  effectKey: 'mesh-deform';
+  /** Control pins for deformation (position, bend, starch, overlap, advanced) */
+  pins: WarpPin[];
+  /** Cached mesh (rebuilt when pins or source changes) */
+  cachedMesh?: WarpMesh;
+  /** Whether mesh needs rebuild (set to true when pins or source changes) */
+  meshDirty: boolean;
 }
 
 /**
@@ -585,6 +600,15 @@ export const EFFECT_DEFINITIONS: Record<string, EffectDefinition> = {
     ]
   },
 
+  'freeze-frame': {
+    name: 'Freeze Frame',
+    category: 'time',
+    description: 'Freezes the layer at a specific source frame',
+    parameters: [
+      { name: 'Freeze At Frame', type: 'number', defaultValue: 0, min: 0, animatable: true }
+    ]
+  },
+
   'time-displacement': {
     name: 'Time Displacement',
     category: 'time',
@@ -1065,6 +1089,29 @@ export const EFFECT_DEFINITIONS: Record<string, EffectDefinition> = {
     ]
   },
 
+  'mesh-deform': {
+    name: 'Mesh Deform',
+    category: 'distort',
+    description: 'Puppet pin-style deformation using control pins. Add pins to deform the image organically.',
+    parameters: [
+      // Mesh generation
+      { name: 'Triangle Count', type: 'number', defaultValue: 200, min: 50, max: 1000, step: 10, animatable: false, group: 'Mesh' },
+      { name: 'Expansion', type: 'number', defaultValue: 3, min: 0, max: 50, animatable: false, group: 'Mesh' },
+      { name: 'Alpha Threshold', type: 'number', defaultValue: 128, min: 0, max: 255, animatable: false, group: 'Mesh' },
+      // Debug/display
+      { name: 'Show Mesh', type: 'checkbox', defaultValue: false, animatable: false, group: 'Display' },
+      { name: 'Show Pins', type: 'checkbox', defaultValue: true, animatable: false, group: 'Display' },
+      // Pin behavior
+      { name: 'Pin Falloff', type: 'dropdown', defaultValue: 'inverse-distance', options: [
+        { label: 'Inverse Distance', value: 'inverse-distance' },
+        { label: 'Radial Basis', value: 'radial-basis' }
+      ], animatable: false, group: 'Pins' },
+      { name: 'Falloff Power', type: 'number', defaultValue: 2, min: 1, max: 5, step: 0.1, animatable: false, group: 'Pins' },
+      // Overlap rendering
+      { name: 'Enable Overlap', type: 'checkbox', defaultValue: false, animatable: false, group: 'Overlap' }
+    ]
+  },
+
   // ============================================================================
   // PERSPECTIVE / 3D EFFECTS
   // ============================================================================
@@ -1181,6 +1228,15 @@ export const EFFECT_DEFINITIONS: Record<string, EffectDefinition> = {
     ]
   },
 
+  '3d-point-control': {
+    name: '3D Point Control',
+    category: 'utility',
+    description: 'Provides an animatable 3D point for expressions.',
+    parameters: [
+      { name: '3D Point', type: 'point3D', defaultValue: { x: 0, y: 0, z: 0 }, animatable: true }
+    ]
+  },
+
   'angle-control': {
     name: 'Angle Control',
     category: 'utility',
@@ -1275,6 +1331,29 @@ export function createEffectInstance(definitionKey: string): EffectInstance | nu
     expanded: true,
     parameters
   };
+}
+
+/**
+ * Create a mesh-deform effect instance with empty pins array
+ * Use this instead of createEffectInstance for mesh-deform effects
+ */
+export function createMeshDeformEffectInstance(): MeshDeformEffectInstance | null {
+  const baseInstance = createEffectInstance('mesh-deform');
+  if (!baseInstance) return null;
+
+  return {
+    ...baseInstance,
+    effectKey: 'mesh-deform',
+    pins: [],
+    meshDirty: true
+  };
+}
+
+/**
+ * Type guard to check if an effect instance is a MeshDeformEffectInstance
+ */
+export function isMeshDeformEffect(effect: EffectInstance): effect is MeshDeformEffectInstance {
+  return effect.effectKey === 'mesh-deform' && 'pins' in effect;
 }
 
 // Animation presets

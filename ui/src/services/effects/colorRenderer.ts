@@ -620,7 +620,8 @@ export function glowRenderer(
   // Calculate color looping blend factor
   let colorBlend = 0; // 0 = Color A, 1 = Color B
   if (colorLooping !== 'none' && frame !== undefined) {
-    const fps = 16; // Default Lattice fps
+    // Use injected FPS from context, fallback to 30
+    const fps = params._fps ?? 30;
     const time = frame / fps;
     const cycle = (time * colorLoopingSpeed) % 1;
 
@@ -651,12 +652,19 @@ export function glowRenderer(
   } : null;
 
   // Step 1: Extract bright areas above threshold
+  // Use _sourceCanvas if provided (for additive stacking), otherwise use input
+  // This ensures stacked glows extract from original layer, not from previous glow output
+  const sourceCanvas = params._sourceCanvas as HTMLCanvasElement | undefined;
   const thresholdCanvas = document.createElement('canvas');
   thresholdCanvas.width = width;
   thresholdCanvas.height = height;
   const thresholdCtx = thresholdCanvas.getContext('2d')!;
 
-  const inputData = input.ctx.getImageData(0, 0, width, height);
+  // Get image data from source canvas (original) or input canvas (chain)
+  const sourceCtx = sourceCanvas?.getContext('2d');
+  const inputData = sourceCtx
+    ? sourceCtx.getImageData(0, 0, width, height)
+    : input.ctx.getImageData(0, 0, width, height);
   const thresholdData = thresholdCtx.createImageData(width, height);
 
   for (let i = 0; i < inputData.data.length; i += 4) {

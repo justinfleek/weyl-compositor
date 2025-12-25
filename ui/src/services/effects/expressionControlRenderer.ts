@@ -71,6 +71,17 @@ function pointControlRenderer(
 }
 
 /**
+ * Passthrough renderer for 3D Point Control
+ */
+function point3DControlRenderer(
+  input: EffectStackResult,
+  params: EvaluatedEffectParams
+): EffectStackResult {
+  // Value: { x, y, z } 3D point object
+  return input;
+}
+
+/**
  * Passthrough renderer for Angle Control
  */
 function angleControlRenderer(
@@ -101,6 +112,7 @@ export function registerExpressionControlRenderers(): void {
   registerEffectRenderer('dropdown-menu-control', dropdownMenuControlRenderer);
   registerEffectRenderer('color-control', colorControlRenderer);
   registerEffectRenderer('point-control', pointControlRenderer);
+  registerEffectRenderer('3d-point-control', point3DControlRenderer);
   registerEffectRenderer('angle-control', angleControlRenderer);
   registerEffectRenderer('layer-control', layerControlRenderer);
 }
@@ -115,6 +127,7 @@ export function isExpressionControl(effectKey: string): boolean {
     'dropdown-menu-control',
     'color-control',
     'point-control',
+    '3d-point-control',
     'angle-control',
     'layer-control'
   ].includes(effectKey);
@@ -131,6 +144,7 @@ export function getControlParameterName(effectKey: string): string {
     case 'dropdown-menu-control': return 'menu';
     case 'color-control': return 'color';
     case 'point-control': return 'point';
+    case '3d-point-control': return 'point3D';
     case 'angle-control': return 'angle';
     case 'layer-control': return 'layer';
     default: return 'value';

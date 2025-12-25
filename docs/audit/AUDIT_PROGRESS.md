@@ -11,7 +11,7 @@ Current Phase: FULL RE-AUDIT - STARTING FROM TIER 1
 | Tier | Total | Complete | Bugs Found |
 |------|-------|----------|------------|
 | 1. Foundation | 7 | 7 | 3 |
-| 2. Layer Types | 23 | 0 | 0 |
+| 2. Layer Types | 23 | **23** | 3 |
 | 3. Animation | 10 | 0 | 0 |
 | 4. Effects | 12 | 0 | 0 |
 | 5. Particles | 12 | 0 | 0 |
@@ -22,7 +22,7 @@ Current Phase: FULL RE-AUDIT - STARTING FROM TIER 1
 | 10. Export | 6 | 0 | 0 |
 | 11. AI | 5 | 0 | 0 |
 | 12. Data/Templates | 4 | 0 | 0 |
-| **TOTAL** | **127** | **7** | **3** |
+| **TOTAL** | **127** | **30** | **6** |
 
 ---
 
@@ -42,31 +42,33 @@ Current Phase: FULL RE-AUDIT - STARTING FROM TIER 1
 
 ## TIER 2: LAYER TYPES
 
-| ID | Layer | Status | Bugs | Time | Session |
-|----|-------|--------|------|------|---------|
-| 2.1 | SolidLayer | [ ] | 0 | - | - |
-| 2.2 | ImageLayer | [ ] | 0 | - | - |
-| 2.3 | VideoLayer | [ ] | 0 | - | - |
-| 2.4 | TextLayer | [ ] | 0 | - | - |
-| 2.5 | ShapeLayer | [ ] | 0 | - | - |
-| 2.6 | AudioLayer | [ ] | 0 | - | - |
-| 2.7 | CameraLayer | [ ] | 0 | - | - |
-| 2.8 | LightLayer | [ ] | 0 | - | - |
-| 2.9 | ControlLayer | [ ] | 0 | - | - |
-| 2.10 | GroupLayer | [ ] | 0 | - | - |
-| 2.11 | NestedCompLayer | [ ] | 0 | - | - |
-| 2.12 | EffectLayer | [ ] | 0 | - | - |
-| 2.13 | ParticleLayer | [ ] | 0 | - | - |
-| 2.14 | PathLayer | [ ] | 0 | - | - |
-| 2.15 | SplineLayer | [ ] | 0 | - | - |
-| 2.16 | ModelLayer | [ ] | 0 | - | - |
-| 2.17 | PointCloudLayer | [ ] | 0 | - | - |
-| 2.18 | DepthLayer | [ ] | 0 | - | - |
-| 2.19 | DepthflowLayer | [ ] | 0 | - | - |
-| 2.20 | NormalLayer | [ ] | 0 | - | - |
-| 2.21 | PoseLayer | [ ] | 0 | - | - |
-| 2.22 | GeneratedLayer | [ ] | 0 | - | - |
-| 2.23 | ProceduralMatteLayer | [ ] | 0 | - | - |
+**Re-audit session 2025-12-25:** Full file reads with dependencies.
+
+| ID | Layer | Status | Bugs | Lines Read | Session |
+|----|-------|--------|------|------------|---------|
+| 2.1 | SolidLayer | [x] | 1 | ~500 | 2 |
+| 2.2 | ImageLayer | [x] | 1 | 806 (ImageLayer: 336, ResourceManager: 470) | 2 |
+| 2.3 | VideoLayer | [x] | 0 | ~400 | 2 |
+| 2.4 | TextLayer | [x] | 0 | 3577 (TextLayer: 1424, textAnimator: 975, textOnPath: 453, textShaper: 725) | 2 |
+| 2.5 | ShapeLayer | [x] | 0 | 3819 (ShapeLayer: 916, shapeOps: 1644, pathMods: 698, bezierBool: 561) | 2 |
+| 2.6 | AudioLayer | [x] | 1 | 421 | 2 |
+| 2.7 | CameraLayer | [x] | 0 | 694 | 2 |
+| 2.8 | LightLayer | [x] | 0 | 1076 | 2 |
+| 2.9 | ControlLayer | [x] | 0 | 181 | 2 |
+| 2.10 | GroupLayer | [x] | 0 | 196 | 2 |
+| 2.11 | NestedCompLayer | [x] | 0 | 550 | 2 |
+| 2.12 | EffectLayer | [x] | 0 | 342 | 2 |
+| 2.13 | ParticleLayer | [x] | 0 | 1796 | 2 |
+| 2.14 | PathLayer | [x] | 0 | 610 | 2 |
+| 2.15 | SplineLayer | [x] | 0 | 1546 | 2 |
+| 2.16 | ModelLayer | [x] | 0 | 899 | 2 |
+| 2.17 | PointCloudLayer | [x] | 0 | 1120 | 2 |
+| 2.18 | DepthLayer | [x] | 0 | 331 | 2 |
+| 2.19 | DepthflowLayer | [x] | 0 | 520 | 2 |
+| 2.20 | NormalLayer | [x] | 0 | 199 | 2 |
+| 2.21 | PoseLayer | [x] | 0 | 727 | 2 |
+| 2.22 | GeneratedLayer | [x] | 0 | 171 | 2 |
+| 2.23 | ProceduralMatteLayer | [x] | 0 | 755 | 2 |
 
 ---
 

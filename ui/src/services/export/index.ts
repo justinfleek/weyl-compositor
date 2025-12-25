@@ -214,3 +214,22 @@ export {
   type OpenPoseJSON,
   type PoseExportResult,
 } from './poseExport';
+
+// Mesh Deform Export (Pin trajectories, overlap depth, motion masks)
+export {
+  // Pin trajectory export (Wan-Move/ATI)
+  exportPinsAsTrajectory,
+  exportPinsAsTrajectoryWithMetadata,
+  exportPinPositionsPerFrame,
+  // Overlap depth export (ControlNet)
+  exportOverlapAsDepth,
+  depthBufferToImageData,
+  exportOverlapDepthSequence,
+  // Motion mask export (TTM)
+  exportDeformedMeshMask,
+  exportDeformedMeshMaskBinary,
+  exportMeshMaskSequence,
+  // Types
+  type DepthFormat,
+  type CompositionInfo,
+} from './meshDeformExport';

@@ -54,8 +54,8 @@ export class ProceduralMatteLayer extends BaseLayer {
     // Extract matte data
     this.matteData = this.extractMatteData(layerData);
 
-    // Initialize random seed
-    this.noiseSeed = this.matteData.parameters.seed ?? Math.random() * 65536;
+    // Initialize random seed - use deterministic seed based on layer ID
+    this.noiseSeed = this.matteData.parameters.seed ?? this.hashLayerId(layerData.id);
 
     // Create render canvas
     this.renderCanvas = document.createElement('canvas');
@@ -688,6 +688,19 @@ export class ProceduralMatteLayer extends BaseLayer {
   private hash(n: number): number {
     const x = Math.sin(n) * 43758.5453123;
     return x - Math.floor(x);
+  }
+
+  /**
+   * Hash a layer ID string to a number for deterministic seeding
+   */
+  private hashLayerId(id: string): number {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash) % 65536;
   }
 
   /**

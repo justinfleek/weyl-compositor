@@ -276,6 +276,10 @@ export interface CompositionSettings {
   // Auto-adjustment behavior
   autoResizeToContent: boolean;  // Resize when video imported
 
+  // Frame blending for time-remapped layers (Tutorial 04)
+  // When enabled, layers with timeStretch or speedMap interpolate between frames
+  frameBlendingEnabled: boolean;
+
   // Color management (Phase 6)
   colorSettings?: ColorSettings;
 }
@@ -473,6 +477,17 @@ export interface Layer {
   inPoint?: number;
   /** @deprecated Use 'endFrame' instead. Kept for backwards compatibility. */
   outPoint?: number;
+
+  // Time Stretch (percentage-based speed control)
+  // 100 = normal, 200 = half speed (2x duration), 50 = double speed (0.5x duration)
+  // Negative values = reversed playback (-100 = normal reversed)
+  timeStretch?: number;
+
+  // Anchor point for time stretch operations
+  // 'startFrame' = layer start stays fixed, end moves
+  // 'endFrame' = layer end stays fixed, start moves
+  // 'currentFrame' = stretch around current playhead position
+  stretchAnchor?: 'startFrame' | 'endFrame' | 'currentFrame';
 
   parentId: string | null;
   blendMode: BlendMode;
@@ -1962,6 +1977,7 @@ export function createEmptyProject(width: number, height: number): LatticeProjec
 
   return {
     version: "1.0.0",
+    schemaVersion: 2, // Current schema version - prevents migration on import
     meta: {
       name: "Untitled",
       created: new Date().toISOString(),

@@ -183,6 +183,66 @@ export const useSelectionStore = defineStore('selection', {
       return this.selectedLayerIds.includes(layerId);
     },
 
+    /**
+     * Select layer above current selection (Ctrl+Up Arrow behavior)
+     * @param orderedLayerIds All layer IDs in display order (top to bottom)
+     */
+    selectLayerAbove(orderedLayerIds: string[]): void {
+      if (orderedLayerIds.length === 0) return;
+
+      // If no selection, select the first (topmost) layer
+      if (this.selectedLayerIds.length === 0) {
+        this.selectLayer(orderedLayerIds[0]);
+        return;
+      }
+
+      // Find the topmost selected layer's index
+      let minIndex = orderedLayerIds.length;
+      for (const selectedId of this.selectedLayerIds) {
+        const idx = orderedLayerIds.indexOf(selectedId);
+        if (idx !== -1 && idx < minIndex) {
+          minIndex = idx;
+        }
+      }
+
+      // Select the layer above (lower index = higher in stack)
+      const aboveIndex = minIndex - 1;
+      if (aboveIndex >= 0) {
+        this.selectLayer(orderedLayerIds[aboveIndex]);
+        storeLogger.debug('Selected layer above:', orderedLayerIds[aboveIndex]);
+      }
+    },
+
+    /**
+     * Select layer below current selection (Ctrl+Down Arrow behavior)
+     * @param orderedLayerIds All layer IDs in display order (top to bottom)
+     */
+    selectLayerBelow(orderedLayerIds: string[]): void {
+      if (orderedLayerIds.length === 0) return;
+
+      // If no selection, select the last (bottommost) layer
+      if (this.selectedLayerIds.length === 0) {
+        this.selectLayer(orderedLayerIds[orderedLayerIds.length - 1]);
+        return;
+      }
+
+      // Find the bottommost selected layer's index
+      let maxIndex = -1;
+      for (const selectedId of this.selectedLayerIds) {
+        const idx = orderedLayerIds.indexOf(selectedId);
+        if (idx !== -1 && idx > maxIndex) {
+          maxIndex = idx;
+        }
+      }
+
+      // Select the layer below (higher index = lower in stack)
+      const belowIndex = maxIndex + 1;
+      if (belowIndex < orderedLayerIds.length) {
+        this.selectLayer(orderedLayerIds[belowIndex]);
+        storeLogger.debug('Selected layer below:', orderedLayerIds[belowIndex]);
+      }
+    },
+
     // ============================================================
     // KEYFRAME SELECTION
     // ============================================================

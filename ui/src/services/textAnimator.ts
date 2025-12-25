@@ -41,6 +41,66 @@ function createAnimatableProp<T>(value: T, name: string): AnimatableProperty<T> 
   } as AnimatableProperty<T>;
 }
 
+/**
+ * Get the interpolated value of an animatable property at a given frame.
+ * Handles both static values and keyframe interpolation.
+ *
+ * @param prop - The animatable property
+ * @param frame - The frame number to evaluate at
+ * @returns The interpolated value
+ */
+export function getAnimatableValue<T>(prop: AnimatableProperty<T>, frame: number): T {
+  if (!prop.animated || !prop.keyframes || prop.keyframes.length === 0) {
+    return prop.value;
+  }
+
+  const keyframes = [...prop.keyframes].sort((a, b) => a.frame - b.frame);
+
+  // Before first keyframe
+  if (frame <= keyframes[0].frame) {
+    return keyframes[0].value as T;
+  }
+
+  // After last keyframe
+  if (frame >= keyframes[keyframes.length - 1].frame) {
+    return keyframes[keyframes.length - 1].value as T;
+  }
+
+  // Find surrounding keyframes and interpolate
+  for (let i = 0; i < keyframes.length - 1; i++) {
+    if (frame >= keyframes[i].frame && frame <= keyframes[i + 1].frame) {
+      const t = (frame - keyframes[i].frame) / (keyframes[i + 1].frame - keyframes[i].frame);
+      const v1 = keyframes[i].value;
+      const v2 = keyframes[i + 1].value;
+
+      // Handle different value types
+      if (typeof v1 === 'number' && typeof v2 === 'number') {
+        return (v1 + (v2 - v1) * t) as T;
+      }
+
+      // Handle object types (position, scale, etc.)
+      if (typeof v1 === 'object' && v1 !== null && typeof v2 === 'object' && v2 !== null) {
+        const result: Record<string, number> = {};
+        for (const key of Object.keys(v1 as object)) {
+          const val1 = (v1 as Record<string, number>)[key];
+          const val2 = (v2 as Record<string, number>)[key];
+          if (typeof val1 === 'number' && typeof val2 === 'number') {
+            result[key] = val1 + (val2 - val1) * t;
+          } else {
+            result[key] = val1;
+          }
+        }
+        return result as T;
+      }
+
+      // For non-interpolatable types, return v1
+      return v1 as T;
+    }
+  }
+
+  return prop.value;
+}
+
 // ============================================================================
 // DEFAULT VALUES
 // ============================================================================
@@ -88,11 +148,25 @@ export const DEFAULT_ANIMATOR_PROPERTIES: TextAnimatorProperties = {};
 // ============================================================================
 
 export function createTextAnimator(name?: string): TextAnimator {
+  // Deep copy range selector to avoid shared references
   return {
     id: generateId(),
     name: name || 'Animator 1',
     enabled: true,
-    rangeSelector: { ...DEFAULT_RANGE_SELECTOR },
+    rangeSelector: {
+      mode: DEFAULT_RANGE_SELECTOR.mode,
+      start: createAnimatableProp(0, 'Start'),
+      end: createAnimatableProp(100, 'End'),
+      offset: createAnimatableProp(0, 'Offset'),
+      basedOn: DEFAULT_RANGE_SELECTOR.basedOn,
+      shape: DEFAULT_RANGE_SELECTOR.shape,
+      selectorMode: DEFAULT_RANGE_SELECTOR.selectorMode,
+      amount: DEFAULT_RANGE_SELECTOR.amount,
+      smoothness: DEFAULT_RANGE_SELECTOR.smoothness,
+      randomizeOrder: DEFAULT_RANGE_SELECTOR.randomizeOrder,
+      randomSeed: DEFAULT_RANGE_SELECTOR.randomSeed,
+      ease: { ...DEFAULT_RANGE_SELECTOR.ease },
+    },
     properties: { ...DEFAULT_ANIMATOR_PROPERTIES },
   };
 }
@@ -458,19 +532,61 @@ export function calculateCharacterInfluence(
   // Calculate character position (0-100)
   const charPosition = (charIndex / Math.max(1, totalChars - 1)) * 100;
 
-  // Check if character is in range
-  const normalizedStart = Math.min(effectiveStart, effectiveEnd);
-  const normalizedEnd = Math.max(effectiveStart, effectiveEnd);
+  // Determine if range wraps around due to offset
+  // Wraparound only happens when:
+  // 1. Original range was valid (end >= start)
+  // 2. Offset caused the range to cross the 100%/0% boundary
+  // If user set start > end naturally (no offset), we normalize instead
+  const originalRangeValid = endValue >= startValue;
+  const rangeWraps = originalRangeValid && effectiveEnd < effectiveStart;
 
-  if (charPosition < normalizedStart || charPosition > normalizedEnd) {
-    return 0;
+  let inRange: boolean;
+  let positionInRange: number;
+
+  if (rangeWraps) {
+    // Wraparound range: affects [effectiveStart, 100] AND [0, effectiveEnd]
+    // Example: start=80%, end=30% means characters at 80-100% and 0-30% are affected
+    if (charPosition >= effectiveStart) {
+      // In upper segment [effectiveStart, 100]
+      inRange = true;
+      const upperSegmentSize = 100 - effectiveStart;
+      const totalRangeSize = upperSegmentSize + effectiveEnd;
+      positionInRange = totalRangeSize > 0
+        ? (charPosition - effectiveStart) / totalRangeSize
+        : 0;
+    } else if (charPosition <= effectiveEnd) {
+      // In lower segment [0, effectiveEnd]
+      inRange = true;
+      const upperSegmentSize = 100 - effectiveStart;
+      const totalRangeSize = upperSegmentSize + effectiveEnd;
+      positionInRange = totalRangeSize > 0
+        ? (upperSegmentSize + charPosition) / totalRangeSize
+        : 1;
+    } else {
+      // In the gap between end and start
+      inRange = false;
+      positionInRange = 0;
+    }
+  } else {
+    // Normal range (no wraparound)
+    const normalizedStart = Math.min(effectiveStart, effectiveEnd);
+    const normalizedEnd = Math.max(effectiveStart, effectiveEnd);
+
+    if (charPosition < normalizedStart || charPosition > normalizedEnd) {
+      inRange = false;
+      positionInRange = 0;
+    } else {
+      inRange = true;
+      const rangeSize = normalizedEnd - normalizedStart;
+      positionInRange = rangeSize > 0
+        ? (charPosition - normalizedStart) / rangeSize
+        : 0.5;
+    }
   }
 
-  // Calculate position within range (0-1)
-  const rangeSize = normalizedEnd - normalizedStart;
-  const positionInRange = rangeSize > 0
-    ? (charPosition - normalizedStart) / rangeSize
-    : 0.5;
+  if (!inRange) {
+    return 0;
+  }
 
   // Apply shape function
   return applyShape(positionInRange, rangeSelector.shape, rangeSelector.ease);

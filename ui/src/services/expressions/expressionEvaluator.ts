@@ -575,11 +575,22 @@ export function evaluateCustomExpression(
     const paramNames = Object.keys(contextVars);
     const paramValues = Object.values(contextVars);
 
+    // Auto-return the last expression if code doesn't contain explicit return
+    // This makes expressions like "linear(time, 0, 5, 0, 100)" work without "return"
+    const needsReturn = !code.includes('return ') && !code.includes('return;');
+    const processedCode = needsReturn
+      ? code.trim().split('\n').map((line, i, arr) =>
+          i === arr.length - 1 && !line.trim().startsWith('//') && line.trim().length > 0
+            ? `return ${line}`
+            : line
+        ).join('\n')
+      : code;
+
     const wrappedCode = `
       "use strict";
       try {
         return (function() {
-          ${code}
+          ${processedCode}
         })();
       } catch(e) {
         return "Error: " + e.message;
@@ -629,12 +640,30 @@ function createThisCompObject(ctx: ExpressionContext) {
           return getLayerEffectParam?.(layerId, effectName, paramName) ?? 0;
         };
         accessor.param = accessor;
+        // Slider Control
         accessor.value = getLayerEffectParam?.(layerId, effectName, 'value') ?? 0;
-        accessor.slider = getLayerEffectParam?.(layerId, effectName, 'slider') ?? 0;
-        accessor.angle = getLayerEffectParam?.(layerId, effectName, 'angle') ?? 0;
-        accessor.checkbox = getLayerEffectParam?.(layerId, effectName, 'checkbox') ?? false;
-        accessor.color = getLayerEffectParam?.(layerId, effectName, 'color') ?? [1, 1, 1, 1];
-        accessor.point = getLayerEffectParam?.(layerId, effectName, 'point') ?? [0, 0];
+        accessor.slider = getLayerEffectParam?.(layerId, effectName, 'slider') ??
+                          getLayerEffectParam?.(layerId, effectName, 'Slider') ?? 0;
+        // Angle Control
+        accessor.angle = getLayerEffectParam?.(layerId, effectName, 'angle') ??
+                         getLayerEffectParam?.(layerId, effectName, 'Angle') ?? 0;
+        // Checkbox Control
+        accessor.checkbox = getLayerEffectParam?.(layerId, effectName, 'checkbox') ??
+                            getLayerEffectParam?.(layerId, effectName, 'Checkbox') ?? false;
+        // Color Control
+        accessor.color = getLayerEffectParam?.(layerId, effectName, 'color') ??
+                         getLayerEffectParam?.(layerId, effectName, 'Color') ?? [1, 1, 1, 1];
+        // Point Control (2D and 3D)
+        accessor.point = getLayerEffectParam?.(layerId, effectName, 'point') ??
+                         getLayerEffectParam?.(layerId, effectName, 'Point') ?? [0, 0];
+        accessor.point3D = getLayerEffectParam?.(layerId, effectName, 'point3D') ??
+                           getLayerEffectParam?.(layerId, effectName, '3D Point') ?? [0, 0, 0];
+        // Dropdown Menu Control
+        accessor.menu = getLayerEffectParam?.(layerId, effectName, 'menu') ??
+                        getLayerEffectParam?.(layerId, effectName, 'Menu') ?? 1;
+        // Layer Control
+        accessor.layer = getLayerEffectParam?.(layerId, effectName, 'layer') ??
+                         getLayerEffectParam?.(layerId, effectName, 'Layer') ?? null;
         return accessor;
       };
 
@@ -693,12 +722,22 @@ function createThisLayerObject(ctx: ExpressionContext) {
         return eff.parameters[paramName] ?? 0;
       };
       accessor.param = accessor;
+      // Slider Control
       accessor.value = eff?.parameters['value'] ?? 0;
-      accessor.slider = eff?.parameters['slider'] ?? 0;
-      accessor.angle = eff?.parameters['angle'] ?? 0;
-      accessor.checkbox = eff?.parameters['checkbox'] ?? false;
-      accessor.color = eff?.parameters['color'] ?? [1, 1, 1, 1];
-      accessor.point = eff?.parameters['point'] ?? [0, 0];
+      accessor.slider = eff?.parameters['slider'] ?? eff?.parameters['Slider'] ?? 0;
+      // Angle Control
+      accessor.angle = eff?.parameters['angle'] ?? eff?.parameters['Angle'] ?? 0;
+      // Checkbox Control
+      accessor.checkbox = eff?.parameters['checkbox'] ?? eff?.parameters['Checkbox'] ?? false;
+      // Color Control
+      accessor.color = eff?.parameters['color'] ?? eff?.parameters['Color'] ?? [1, 1, 1, 1];
+      // Point Control (2D and 3D)
+      accessor.point = eff?.parameters['point'] ?? eff?.parameters['Point'] ?? [0, 0];
+      accessor.point3D = eff?.parameters['point3D'] ?? eff?.parameters['3D Point'] ?? [0, 0, 0];
+      // Dropdown Menu Control
+      accessor.menu = eff?.parameters['menu'] ?? eff?.parameters['Menu'] ?? 1;
+      // Layer Control
+      accessor.layer = eff?.parameters['layer'] ?? eff?.parameters['Layer'] ?? null;
       return accessor;
     },
     sourceRectAtTime: (_t: number = ctx.time, _includeExtents: boolean = false) => {

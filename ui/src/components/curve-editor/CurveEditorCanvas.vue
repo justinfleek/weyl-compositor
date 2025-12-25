@@ -76,11 +76,16 @@
             v-for="kf in curve.keyframes"
             :key="kf.id"
             class="keyframe-point"
-            :class="{ selected: selectedKeyframeIds.includes(kf.id) }"
+            :class="{
+              selected: selectedKeyframeIds.includes(kf.id),
+              'interp-linear': kf.interpolation === 'linear',
+              'interp-bezier': kf.interpolation === 'bezier' || isEasingInterpolation(kf.interpolation),
+              'interp-hold': kf.interpolation === 'hold'
+            }"
             :style="getKeyframeStyle(curve, kf)"
             @mousedown.stop="startKeyframeDrag(curve, kf, $event)"
             @click.stop="selectKeyframe(kf.id, $event)"
-            :title="`${curve.name}: ${formatValue(kf.value)} @ Frame ${kf.frame}`"
+            :title="`${curve.name}: ${formatValue(kf.value)} @ Frame ${kf.frame} (${kf.interpolation})`"
           >
             <div class="point-inner" :style="{ background: curve.color }"></div>
           </div>
@@ -729,6 +734,15 @@ function formatValue(value: any): string {
   return String(value);
 }
 
+/**
+ * Check if interpolation type is an easing function (not linear/bezier/hold)
+ */
+function isEasingInterpolation(interpolation: string): boolean {
+  return interpolation.startsWith('easeIn') ||
+         interpolation.startsWith('easeOut') ||
+         interpolation.startsWith('easeInOut');
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // ZOOM & PAN CONTROLS
 // ═══════════════════════════════════════════════════════════════════
@@ -836,12 +850,16 @@ function handleMouseMove(event: MouseEvent) {
     const frameOffset = mouseFrame - dragKeyframe.frame;
     const valueOffset = mouseValue - kfValue;
 
-    store.setKeyframeHandle(
+    // Ctrl+drag breaks handles (sets controlMode to 'corner')
+    const breakHandle = event.ctrlKey || event.metaKey;
+
+    store.setKeyframeHandleWithMode(
       dragCurve.layerId,
       dragCurve.propertyPath,
       dragKeyframe.id,
       dragHandleType,
-      { frame: frameOffset, value: valueOffset, enabled: true }
+      { frame: frameOffset, value: valueOffset, enabled: true },
+      breakHandle
     );
   }
 
@@ -1066,6 +1084,28 @@ onUnmounted(() => {
   background: #fff !important;
   border-color: #7c9cff;
   box-shadow: 0 0 0 3px rgba(124, 156, 255, 0.4);
+}
+
+/* Keyframe icon shapes by interpolation type */
+
+/* Linear: diamond shape */
+.keyframe-point.interp-linear .point-inner {
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+
+.keyframe-point.interp-linear:hover .point-inner {
+  transform: rotate(45deg) scale(1.3);
+}
+
+/* Bezier/Easing: circle (default) */
+.keyframe-point.interp-bezier .point-inner {
+  border-radius: 50%;
+}
+
+/* Hold: square shape */
+.keyframe-point.interp-hold .point-inner {
+  border-radius: 2px;
 }
 
 .bezier-handle {

@@ -13,6 +13,7 @@ import { registerStylizeEffects } from './stylizeRenderer';
 import { registerAudioVisualizerEffects } from './audioVisualizer';
 import { registerExpressionControlRenderers } from './expressionControlRenderer';
 import { registerCinematicBloomEffects } from './cinematicBloom';
+import { registerMeshDeformEffect } from './meshDeformRenderer';
 
 /**
  * Initialize all effect renderers
@@ -28,6 +29,7 @@ export function initializeEffects(): void {
   registerAudioVisualizerEffects();
   registerExpressionControlRenderers();
   registerCinematicBloomEffects();
+  registerMeshDeformEffect();
 }
 
 // Re-export blur effects
@@ -182,3 +184,10 @@ export {
   erodeAlpha,
   getCompositeOperation
 } from './layerStyleRenderer';
+
+// Re-export mesh deform effect (puppet pin-style deformation)
+export {
+  meshDeformRenderer,
+  registerMeshDeformEffect,
+  clearMeshDeformCaches
+} from './meshDeformRenderer';

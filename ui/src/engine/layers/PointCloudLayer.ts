@@ -392,6 +392,27 @@ export class PointCloudLayer extends BaseLayer {
   }
 
   /**
+   * Hash a string to a number for deterministic seeding
+   */
+  private hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * Deterministic pseudo-random number generator
+   */
+  private seededRandom(seed: number): number {
+    const x = Math.sin(seed) * 43758.5453123;
+    return x - Math.floor(x);
+  }
+
+  /**
    * Create placeholder geometry
    */
   private createPlaceholderGeometry(): THREE.BufferGeometry {
@@ -402,13 +423,20 @@ export class PointCloudLayer extends BaseLayer {
     const size = 100;
     const count = 1000;
 
+    // Use deterministic seeded random based on layer ID
+    const baseSeed = this.hashString(this.id);
+
     for (let i = 0; i < count; i++) {
       positions.push(
-        (Math.random() - 0.5) * size,
-        (Math.random() - 0.5) * size,
-        (Math.random() - 0.5) * size
+        (this.seededRandom(baseSeed + i * 6) - 0.5) * size,
+        (this.seededRandom(baseSeed + i * 6 + 1) - 0.5) * size,
+        (this.seededRandom(baseSeed + i * 6 + 2) - 0.5) * size
       );
-      colors.push(Math.random(), Math.random(), Math.random());
+      colors.push(
+        this.seededRandom(baseSeed + i * 6 + 3),
+        this.seededRandom(baseSeed + i * 6 + 4),
+        this.seededRandom(baseSeed + i * 6 + 5)
+      );
     }
 
     const geometry = new THREE.BufferGeometry();

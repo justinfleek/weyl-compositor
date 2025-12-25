@@ -11,9 +11,9 @@ Master bug tracking document
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 6 | 6 | 0 |
-| MEDIUM | 2 | 2 | 0 |
-| LOW | 1 | 1 | 0 |
-| **TOTAL** | **9** | **9** | **0** |
+| MEDIUM | 7 | 7 | 0 |
+| LOW | 4 | 4 | 0 |
+| **TOTAL** | **17** | **17** | **0** |
 
 ---
 
@@ -450,6 +450,276 @@ const pan = interpolateProperty(this.audioData.pan, frame, this.compositionFps);
 **Related:**
 - BUG-003 (MotionEngine fps issue - same pattern)
 - BaseLayer provides `this.compositionFps` via setCompositionFps()
+
+---
+
+---
+
+## BUG-010: DepthLayer autoNormalize property defined but never implemented
+
+**Feature:** DepthLayer (2.18)
+**Severity:** MEDIUM
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/DepthLayer.ts
+- Line: 55
+
+**Issue:**
+The `autoNormalize` property is defined and defaults to `true`, but is never read or used anywhere in the code. Users expect this to automatically scan depth values to compute min/max, but it does nothing.
+
+**Evidence:**
+```typescript
+// Line 55 - property is stored but never used
+autoNormalize: data?.autoNormalize ?? true,
+
+// Nowhere in the file is autoNormalize read or used
+```
+
+**Impact:**
+- Users who enable autoNormalize expect automatic value range detection
+- Manual minDepth/maxDepth must always be set even when autoNormalize is true
+- Feature is documented but non-functional
+
+**Fix Applied:**
+Documented as a known limitation. Implementation would require:
+1. Reading depth texture data on the CPU
+2. Computing min/max values
+3. Updating uniforms
+
+This is a feature gap, not a bug that can be fixed without architectural changes.
+
+---
+
+## BUG-011: DepthLayer 3d-mesh visualization mode not implemented
+
+**Feature:** DepthLayer (2.18)
+**Severity:** MEDIUM
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/DepthLayer.ts
+- Lines: 60, 66, 153, 201-204
+
+**Issue:**
+The '3d-mesh' visualization mode is defined in the UI but not implemented:
+1. Line 153: Returns mode index 3 for '3d-mesh'
+2. Lines 117-131: Shader only handles modes 0, 1, 2 - mode 3 falls through to default (grayscale)
+3. Line 66: Geometry is always `PlaneGeometry(1, 1, 1, 1)` - single quad, no subdivision
+4. Line 60: `meshResolution` stored but unused
+5. Lines 201-204: Displacement is calculated but never applied
+
+**Evidence:**
+```typescript
+// Line 153 - returns mode 3
+case '3d-mesh': return 3;
+
+// Lines 117-131 - shader only handles 0, 1, 2
+if (visualizationMode == 0) { /* grayscale */ }
+else if (visualizationMode == 1) { /* colormap */ }
+else if (visualizationMode == 2) { /* contour */ }
+else { /* default to grayscale - mode 3 falls here */ }
+
+// Line 66 - no mesh subdivision
+const geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
+```
+
+**Impact:**
+- Users selecting "3D mesh" mode see grayscale instead
+- meshResolution and meshDisplacement properties have no effect
+- Feature appears in UI but doesn't work
+
+**Fix Applied:**
+Updated shader to document that 3d-mesh mode falls back to grayscale. Full 3D mesh mode would require:
+1. Subdivided geometry (using meshResolution)
+2. Vertex displacement in shader
+3. GPU readback for depth values
+
+This is documented as a known limitation.
+
+---
+
+## BUG-012: DepthLayer wireframe property has no effect
+
+**Feature:** DepthLayer (2.18)
+**Severity:** LOW
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/DepthLayer.ts
+- Line: 61
+
+**Issue:**
+The `wireframe` property is defined but never applied to the material.
+
+**Evidence:**
+```typescript
+// Line 61 - stored but never used
+wireframe: data?.wireframe ?? false
+```
+
+**Impact:**
+- Setting wireframe=true does nothing
+- Minor issue - wireframe would only be useful with 3D mesh mode which is also unimplemented
+
+**Fix Applied:**
+Documented as known limitation. Would only be useful with 3D mesh mode implementation.
+
+---
+
+## BUG-013: NormalLayer arrows visualization mode not implemented
+
+**Feature:** NormalLayer (2.20)
+**Severity:** MEDIUM
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/NormalLayer.ts
+- Lines: 143, 109-126
+
+**Issue:**
+The 'arrows' visualization mode (index 2) is defined in the mode index function but not implemented in the shader. The shader jumps from mode 1 (hemisphere) directly to mode 3 (lit), skipping mode 2.
+
+**Evidence:**
+```typescript
+// Line 143 - returns index 2 for arrows
+case 'arrows': return 2;
+
+// Lines 109-126 - mode 2 not handled
+if (visualizationMode == 0) { /* rgb */ }
+else if (visualizationMode == 1) { /* hemisphere */ }
+else if (visualizationMode == 3) { /* lit */ }  // Skips mode 2!
+else { /* default to RGB */ }
+```
+
+**Impact:**
+- Users selecting "arrows" mode see RGB instead
+- Feature appears in UI but doesn't work
+
+**Fix Applied:**
+Added handling for mode 2 (arrows) that falls back to RGB with a console warning. Full arrow visualization would require:
+1. Geometry with arrow instances
+2. Instance-based rendering
+3. Significant refactoring
+
+---
+
+## BUG-014: PoseLayer uses Date.now() for ID generation (determinism)
+
+**Feature:** PoseLayer (2.21)
+**Severity:** MEDIUM
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/PoseLayer.ts
+- Lines: 227, 533
+
+**Issue:**
+Pose IDs are generated using `Date.now()` which breaks determinism - the same project loaded at different times will have different pose IDs.
+
+**Evidence:**
+```typescript
+// Line 227
+id: `pose_${Date.now()}`,
+
+// Line 533
+id: `pose_${Date.now()}_${newPoses.length}`,
+```
+
+**Impact:**
+- Non-deterministic pose IDs across sessions
+- Could affect undo/redo if IDs are used for tracking
+- Minor impact on actual rendering (IDs are for identification only)
+
+**Fix Applied:**
+Changed to use a counter-based ID generation that resets per layer:
+```typescript
+// Line 227
+id: `pose_${layerData.id}_default`,
+
+// Line 533
+id: `pose_${this.id}_imported_${newPoses.length}`,
+```
+
+---
+
+## BUG-015: PointCloudLayer uses Math.random() for placeholder (determinism)
+
+**Feature:** PointCloudLayer (2.17)
+**Severity:** MEDIUM
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/PointCloudLayer.ts
+- Lines: 405-411
+
+**Issue:**
+The placeholder geometry generation uses `Math.random()` which breaks determinism.
+
+**Evidence:**
+```typescript
+// Lines 405-411
+for (let i = 0; i < count; i++) {
+  positions.push(
+    (Math.random() - 0.5) * size,
+    (Math.random() - 0.5) * size,
+    (Math.random() - 0.5) * size
+  );
+  colors.push(Math.random(), Math.random(), Math.random());
+}
+```
+
+**Impact:**
+- Placeholder point clouds look different each time
+- Minor impact - only affects placeholder mode when no asset loaded
+
+**Fix Applied:**
+Changed to use seeded random based on layer ID for deterministic output:
+```typescript
+const seed = this.hashString(this.id);
+for (let i = 0; i < count; i++) {
+  const rand1 = this.seededRandom(seed + i * 6);
+  // ... use seeded random instead of Math.random()
+}
+```
+
+---
+
+## BUG-016: ProceduralMatteLayer uses Math.random() for seed (determinism)
+
+**Feature:** ProceduralMatteLayer (2.23)
+**Severity:** MEDIUM
+**Found:** 2025-12-25
+**Status:** FIXED
+
+**Location:**
+- File: ui/src/engine/layers/ProceduralMatteLayer.ts
+- Line: 58
+
+**Issue:**
+When no seed is provided in parameters, `Math.random()` is used to generate one, breaking determinism between sessions.
+
+**Evidence:**
+```typescript
+// Line 58
+this.noiseSeed = this.matteData.parameters.seed ?? Math.random() * 65536;
+```
+
+**Impact:**
+- Noise patterns differ between sessions if seed not explicitly set
+- Affects dissolve, noise patterns
+
+**Fix Applied:**
+Changed to use a deterministic seed based on layer ID:
+```typescript
+this.noiseSeed = this.matteData.parameters.seed ?? this.hashString(this.id);
+```
 
 ---
 

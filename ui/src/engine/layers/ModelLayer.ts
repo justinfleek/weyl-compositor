@@ -74,9 +74,6 @@ export class ModelLayer extends BaseLayer {
   private static colladaLoader: ColladaLoader | null = null;
   private static dracoLoader: DRACOLoader | null = null;
 
-  /** Composition FPS for animation sync */
-  private fps = 30;
-
   constructor(layerData: Layer) {
     super(layerData);
 
@@ -464,7 +461,7 @@ export class ModelLayer extends BaseLayer {
     this.modelData.animation!.clips = this.animationClips.map((clip) => ({
       name: clip.name,
       duration: clip.duration,
-      frameCount: Math.round(clip.duration * this.fps),
+      frameCount: Math.round(clip.duration * this.compositionFps),
     }));
 
     // Auto-play first clip if enabled
@@ -714,9 +711,10 @@ export class ModelLayer extends BaseLayer {
 
   /**
    * Set FPS for animation sync
+   * @deprecated Use setCompositionFps from BaseLayer instead
    */
   setFPS(fps: number): void {
-    this.fps = fps;
+    this.setCompositionFps(fps);
   }
 
   // ============================================================================
@@ -782,7 +780,7 @@ export class ModelLayer extends BaseLayer {
 
     // Update animation mixer (for auto-playing animations)
     if (this.mixer && this.modelData.animation?.autoPlay) {
-      const deltaTime = 1 / this.fps;
+      const deltaTime = 1 / this.compositionFps;
       this.updateAnimation(deltaTime);
     }
 

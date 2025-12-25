@@ -41,3 +41,6 @@ export * from './layerStyleActions';
 
 // Physics actions (Newton Physics Simulation)
 export * from './physicsActions';
+
+// Text Animator actions (Tutorial 06)
+export * from './textAnimatorActions';

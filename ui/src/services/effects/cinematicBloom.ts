@@ -681,7 +681,13 @@ export function cinematicBloomRenderer(
   const { width, height } = input.canvas;
 
   // Get original image data
-  let originalData = input.ctx.getImageData(0, 0, width, height);
+  // Use _sourceCanvas if provided (for additive stacking), otherwise use input
+  // This ensures stacked blooms extract from original layer, not from previous bloom output
+  const sourceCanvas = params._sourceCanvas as HTMLCanvasElement | undefined;
+  const sourceCtx = sourceCanvas?.getContext('2d');
+  let originalData = sourceCtx
+    ? sourceCtx.getImageData(0, 0, width, height)
+    : input.ctx.getImageData(0, 0, width, height);
 
   // Apply chromatic aberration to original if enabled
   if (chromaticAberration > 0) {
@@ -754,6 +760,7 @@ export function glowRenderer(
   }
 
   // Use cinematic bloom with simplified settings
+  // Pass through _sourceCanvas for additive stacking support
   return cinematicBloomRenderer(input, {
     intensity,
     threshold,
@@ -769,7 +776,8 @@ export function glowRenderer(
     lens_dirt_enabled: false,
     lens_dirt_intensity: 0,
     lens_dirt_scale: 1,
-    blend_mode: 'add'
+    blend_mode: 'add',
+    _sourceCanvas: params._sourceCanvas,
   });
 }
 

@@ -55,7 +55,8 @@ function createMockStore(layers: Layer[] = []) {
   return {
     project: { meta: { modified: '' }, composition: { width: 1920, height: 1080 } },
     getLayerById: (id: string) => layers.find(l => l.id === id),
-    getActiveComp: () => ({ settings: { width: 1920, height: 1080, frameCount: 81 }, layers })
+    getActiveComp: () => ({ settings: { width: 1920, height: 1080, frameCount: 81 }, layers }),
+    pushHistory: () => {} // No-op for tests
   };
 }
 

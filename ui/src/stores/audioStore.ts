@@ -88,11 +88,15 @@ export const useAudioStore = defineStore('audio', {
     hasAudioBuffer: (state) => (_assetId?: string) => state.audioBuffer !== null,
     /** Get audio buffer for waveform generation */
     getAudioBuffer: (state) => (_assetId?: string) => state.audioBuffer,
-    /** Get beat timestamps in seconds */
+    /** Get beat timestamps in seconds
+     *  @param _assetId - Optional asset ID (unused, for API compatibility)
+     *  Uses the fps from the audio analysis (derived from frameCount/duration)
+     */
     getBeats: (state) => (_assetId?: string): number[] | undefined => {
       if (!state.audioAnalysis) return undefined;
-      // Extract beat frames and convert to seconds
-      const fps = 16; // Default FPS
+      // Calculate fps from analysis data: fps = frameCount / duration
+      // This ensures we use the same fps that was used during analysis
+      const fps = state.audioAnalysis.frameCount / state.audioAnalysis.duration;
       const beats: number[] = [];
       for (let frame = 0; frame < state.audioAnalysis.frameCount; frame++) {
         if (isBeatAtFrame(state.audioAnalysis, frame)) {

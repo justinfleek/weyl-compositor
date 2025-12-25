@@ -29,6 +29,17 @@
 import * as THREE from 'three';
 import type { Keyframe } from '@/types/project';
 
+/** Position can be either an array [x, y, z] or an object {x, y, z} */
+export type PositionValue = number[] | { x: number; y: number; z?: number };
+
+/** Extract x, y, z from either position format */
+function extractXYZ(value: PositionValue): [number, number, number] {
+  if (Array.isArray(value)) {
+    return [value[0] || 0, value[1] || 0, value[2] || 0];
+  }
+  return [value.x || 0, value.y || 0, value.z || 0];
+}
+
 export interface RovingOptions {
   /**
    * Whether to preserve the first keyframe's frame number
@@ -49,9 +60,9 @@ export interface RovingOptions {
   minKeyframes?: number;
 }
 
-export interface RovingResult {
+export interface RovingResult<T extends PositionValue = PositionValue> {
   /** Updated keyframes with redistributed frame numbers */
-  keyframes: Keyframe<number[]>[];
+  keyframes: Keyframe<T>[];
   /** Total arc length of the motion path */
   totalLength: number;
   /** Arc length at each keyframe position */
@@ -67,35 +78,32 @@ export interface RovingResult {
  * Uses linear interpolation for simplicity (can upgrade to bezier if needed)
  */
 function calculateSegmentLength(
-  p1: number[],
-  p2: number[]
+  p1: PositionValue,
+  p2: PositionValue
 ): number {
-  const dx = (p2[0] || 0) - (p1[0] || 0);
-  const dy = (p2[1] || 0) - (p1[1] || 0);
-  const dz = (p2[2] || 0) - (p1[2] || 0);
+  const [x1, y1, z1] = extractXYZ(p1);
+  const [x2, y2, z2] = extractXYZ(p2);
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dz = z2 - z1;
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 /**
  * Build a Three.js curve path from position keyframes
  */
-function buildCurvePath(keyframes: Keyframe<number[]>[]): THREE.CurvePath<THREE.Vector3> {
+function buildCurvePath(keyframes: Keyframe<PositionValue>[]): THREE.CurvePath<THREE.Vector3> {
   const path = new THREE.CurvePath<THREE.Vector3>();
 
   for (let i = 0; i < keyframes.length - 1; i++) {
     const curr = keyframes[i];
     const next = keyframes[i + 1];
 
-    const p0 = new THREE.Vector3(
-      curr.value[0] || 0,
-      curr.value[1] || 0,
-      curr.value[2] || 0
-    );
-    const p3 = new THREE.Vector3(
-      next.value[0] || 0,
-      next.value[1] || 0,
-      next.value[2] || 0
-    );
+    const [cx, cy, cz] = extractXYZ(curr.value);
+    const [nx, ny, nz] = extractXYZ(next.value);
+
+    const p0 = new THREE.Vector3(cx, cy, cz);
+    const p3 = new THREE.Vector3(nx, ny, nz);
 
     // For bezier interpolation, calculate control points at 1/3 intervals
     // This creates a smooth catmull-rom like curve
@@ -128,14 +136,14 @@ function buildCurvePath(keyframes: Keyframe<number[]>[]): THREE.CurvePath<THREE.
  * automatically adjusting intermediate keyframe times based on their
  * spatial position along the path.
  *
- * @param keyframes - Array of position keyframes (must be Vec3 / number[])
+ * @param keyframes - Array of position keyframes (Vec3 as number[] or {x,y,z} object)
  * @param options - Roving options
  * @returns Updated keyframes with redistributed frame numbers
  */
-export function applyRovingKeyframes(
-  keyframes: Keyframe<number[]>[],
+export function applyRovingKeyframes<T extends PositionValue>(
+  keyframes: Keyframe<T>[],
   options: RovingOptions = {}
-): RovingResult {
+): RovingResult<T> {
   const {
     anchorFirst = true,
     anchorLast = true,
@@ -236,7 +244,7 @@ export function applyRovingKeyframes(
  * @returns true if roving would make significant changes
  */
 export function wouldRovingChange(
-  keyframes: Keyframe<number[]>[],
+  keyframes: Keyframe<PositionValue>[],
   threshold: number = 2
 ): boolean {
   if (keyframes.length < 3) return false;
@@ -264,7 +272,7 @@ export function wouldRovingChange(
  * @returns Array of frame numbers for evenly spaced positions
  */
 export function getEvenlySpacedFrames(
-  keyframes: Keyframe<number[]>[],
+  keyframes: Keyframe<PositionValue>[],
   numPoints: number
 ): number[] {
   if (keyframes.length < 2 || numPoints < 2) {
@@ -294,7 +302,7 @@ export function getEvenlySpacedFrames(
  * @returns Array of velocity magnitudes at each keyframe
  */
 export function calculateVelocities(
-  keyframes: Keyframe<number[]>[],
+  keyframes: Keyframe<PositionValue>[],
   fps: number = 16
 ): number[] {
   if (keyframes.length < 2) return [];

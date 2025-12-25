@@ -224,7 +224,7 @@ export function createDefaultPose(format: PoseFormat = 'coco18'): Pose {
   }
 
   return {
-    id: `pose_${Date.now()}`,
+    id: `pose_default_${format}`,
     keypoints,
     format
   };
@@ -531,7 +531,7 @@ export class PoseLayer extends BaseLayer {
           }
 
           newPoses.push({
-            id: `pose_${Date.now()}_${newPoses.length}`,
+            id: `pose_imported_${newPoses.length}`,
             keypoints,
             format: 'coco18'
           });

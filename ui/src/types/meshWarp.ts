@@ -15,10 +15,24 @@ import type { AnimatableProperty } from './project';
 // ============================================================================
 
 /** Type of warp pin */
-export type WarpPinType = 'position' | 'rotation' | 'starch';
+export type WarpPinType =
+  | 'position'   // Deform pin: Move mesh vertices by animating position
+  | 'rotation'   // Rotation pin: Rotate around fixed point (legacy, use 'bend' for new code)
+  | 'starch'     // Stiffness pin: Define rigid areas that resist deformation
+  | 'overlap'    // Overlap pin: Control depth/z-order during deformation
+  | 'bend'       // Bend pin: Rotation + scale at joints (position is fixed reference)
+  | 'advanced';  // Advanced pin: Full transform control (position + rotation + scale)
 
 /**
  * A control pin for mesh warp deformation
+ *
+ * Pin type determines which properties are actively used:
+ * - position: Animates position only (standard deform pin)
+ * - rotation: Animates rotation only (legacy, prefer 'bend')
+ * - starch: No animation, uses stiffness to define rigid areas
+ * - overlap: No position animation, uses inFront for depth control
+ * - bend: Animates rotation + scale at fixed position (joint pin)
+ * - advanced: Animates position + rotation + scale (full transform)
  */
 export interface WarpPin {
   /** Unique identifier */
@@ -27,30 +41,39 @@ export interface WarpPin {
   name: string;
   /** Pin type determines deformation behavior */
   type: WarpPinType;
-  /** Pin position (animatable) */
+  /** Pin position (animatable for position/advanced types) */
   position: AnimatableProperty<{ x: number; y: number }>;
-  /** Influence radius in pixels */
+  /** Influence radius in pixels (also used as extent for overlap pins) */
   radius: number;
-  /** Stiffness/rigidity of the pin area (0-1) */
+  /** Stiffness/rigidity of the pin area (0-1, used by starch type) */
   stiffness: number;
-  /** Rotation at this pin in degrees (for rotation pins) */
+  /** Rotation at this pin in degrees (animatable for rotation/bend/advanced types) */
   rotation: AnimatableProperty<number>;
-  /** Scale factor at this pin (for scale deformation) */
+  /** Scale factor at this pin (animatable for bend/advanced types) */
   scale: AnimatableProperty<number>;
   /** Pin depth/priority (higher = processed first) */
   depth: number;
   /** Is this pin selected in the UI */
   selected?: boolean;
+  /**
+   * Overlap depth value (animatable, used by overlap type)
+   * Positive = in front of other mesh areas, Negative = behind
+   * Range: -100 to +100
+   */
+  inFront?: AnimatableProperty<number>;
 }
 
 /**
- * Initial/rest position of a pin (before animation)
+ * Initial/rest state of a pin (before animation)
+ * Used for calculating animation deltas
  */
 export interface WarpPinRestState {
   pinId: string;
   position: { x: number; y: number };
   rotation: number;
   scale: number;
+  /** Rest state for overlap depth (for overlap pins) */
+  inFront?: number;
 }
 
 // ============================================================================
@@ -138,9 +161,9 @@ export function createDefaultWarpPin(
   y: number,
   type: WarpPinType = 'position'
 ): WarpPin {
-  return {
+  const pin: WarpPin = {
     id,
-    name: `Pin ${id.slice(-4)}`,
+    name: getPinDefaultName(type, id),
     type,
     position: {
       id: `pin_pos_${id}`,
@@ -171,6 +194,40 @@ export function createDefaultWarpPin(
     depth: 0,
     selected: false,
   };
+
+  // Add inFront property for overlap pins
+  if (type === 'overlap') {
+    pin.inFront = {
+      id: `pin_infront_${id}`,
+      name: 'In Front',
+      type: 'number',
+      value: 0,
+      animated: false,
+      keyframes: [],
+    };
+  }
+
+  return pin;
+}
+
+/** Get default name based on pin type */
+function getPinDefaultName(type: WarpPinType, id: string): string {
+  const suffix = id.slice(-4);
+  switch (type) {
+    case 'position':
+      return `Deform ${suffix}`;
+    case 'starch':
+      return `Stiffness ${suffix}`;
+    case 'overlap':
+      return `Overlap ${suffix}`;
+    case 'bend':
+      return `Bend ${suffix}`;
+    case 'advanced':
+      return `Advanced ${suffix}`;
+    case 'rotation':
+    default:
+      return `Pin ${suffix}`;
+  }
 }
 
 /** Create an empty warp mesh */

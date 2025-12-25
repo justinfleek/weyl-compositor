@@ -149,6 +149,9 @@ export class TextLayer extends BaseLayer {
     // Extract text data
     this.textData = this.extractTextData(layerData);
 
+    // Initialize animators from text data (for quick access during frame evaluation)
+    this.animators = this.textData.animators ?? [];
+
     // Extract animatable properties
     this.extractAnimatableProperties(layerData);
 
@@ -269,9 +272,6 @@ export class TextLayer extends BaseLayer {
       // Text animators
       animators: data?.animators ?? [],
     };
-
-    // Also store animators separately for quick access
-    this.animators = data?.animators ?? [];
   }
 
   /**
@@ -1014,6 +1014,7 @@ export class TextLayer extends BaseLayer {
 
   protected override onApplyEvaluatedState(state: import('../MotionEngine').EvaluatedLayer): void {
     const props = state.properties;
+    const frame = state.frame;
 
     // Apply evaluated text properties
     if (props['fontSize'] !== undefined) {
@@ -1051,6 +1052,21 @@ export class TextLayer extends BaseLayer {
     // Effects
     if (state.effects.length > 0) {
       this.applyEvaluatedEffects(state.effects);
+    }
+
+    // Apply text animators (After Effects-style per-character animation)
+    // This is critical for kinetic typography - without this, animators won't render!
+    if (this.animators.length > 0) {
+      // Enable per-character mode if needed (animators require individual char meshes)
+      if (!this.perCharacterGroup) {
+        this.enablePerCharacter3D();
+      }
+      this.applyAnimatorsToCharacters(frame, this.compositionFps);
+    }
+
+    // Per-character transforms (from characterTransforms property, if animated)
+    if (this.characterTransforms?.animated && this.perCharacterGroup) {
+      this.applyCharacterTransforms(frame);
     }
   }
 
@@ -1123,11 +1139,19 @@ export class TextLayer extends BaseLayer {
       letterSpacing: mesh.letterSpacing ?? 0,
     }));
 
+    // Track if any layout properties were modified (require Troika sync)
+    let needsSync = false;
+
     // Apply each animator
     for (const animator of this.animators) {
       if (!animator.enabled) continue;
 
       const props = animator.properties;
+
+      // Check if this animator has layout properties that need sync
+      if (props.tracking) {
+        needsSync = true;
+      }
 
       for (let i = 0; i < totalChars; i++) {
         const charMesh = this.characterMeshes[i];
@@ -1217,6 +1241,14 @@ export class TextLayer extends BaseLayer {
           (charMesh as any).__blurX = blurVal.x * influence;
           (charMesh as any).__blurY = blurVal.y * influence;
         }
+      }
+    }
+
+    // Sync character meshes if layout properties were modified
+    // letterSpacing is a Troika layout property that requires sync() to take effect
+    if (needsSync) {
+      for (const charMesh of this.characterMeshes) {
+        charMesh.sync();
       }
     }
   }

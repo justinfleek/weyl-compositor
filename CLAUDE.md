@@ -1,920 +1,245 @@
 # CLAUDE.md - Lattice Compositor Development Guide
 
-**Version:** 8.6 | **Last Updated:** December 24, 2025
+**Version:** 12.0 | **Last Updated:** December 25, 2025
 
 ---
 
-## Quick Reference
+## ⚠️ STOP AND READ THIS FIRST
 
-| Resource | Location |
-|----------|----------|
-| Product Specification | [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) |
-| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| API Reference | [docs/SERVICE_API_REFERENCE.md](docs/SERVICE_API_REFERENCE.md) |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) |
-| Debug Guide | [docs/DEBUG_TROUBLESHOOTING.md](docs/DEBUG_TROUBLESHOOTING.md) |
+Previous sessions have failed in two distinct ways:
+
+**Failure Mode 1: Busywork Tests**
+- Created 1,450+ tests that found ZERO bugs
+- Tests just asserted what the code returned
+- Wasted 7+ hours on pointless pixel tests
+
+**Failure Mode 2: Surface-Level Auditing**
+- Read files but didn't understand them
+- Used grep/search patterns instead of reading
+- Marked 19/23 layers "clean" (statistically impossible)
+- Skipped AI model integration analysis entirely
+- Used "~400" estimates instead of exact line counts
+
+**What Actually Works:**
+- Session 1: Reading code carefully found 4 critical bugs in 2 hours
+- FPS audit: Reading every file found 9 bugs, all fixed
+
+**THE RULE: Read. Understand. Confirm. Then mark complete.**
 
 ---
 
-## What is Lattice Compositor?
+## 🔍 THE AUDIT SYSTEM
 
-A **professional motion graphics compositor** for the **ComfyUI ecosystem**:
-- Timeline, keyframes, curve editor, nested compositions
-- Deterministic particle systems (scrub-safe)
-- Audio reactivity with beat detection
-- Matte export for AI video generation (Wan 2.1, AnimateDiff)
+### Methodology That Works
+```
+1. READ entire file (exact line count, no estimates)
+2. UNDERSTAND what it does (summarize in your own words)
+3. TRACE data flow (input → processing → output)
+4. IDENTIFY bugs (or explain WHY there are none)
+5. CONFIRM with user before marking complete
+6. FIX bugs immediately when found
+```
 
-**Target Output:** 81 frames at 16fps = 5 seconds, dimensions divisible by 8
+### Methodology That Fails
+```
+❌ Grep for patterns → "no matches, must be clean"
+❌ Read first 200 lines → "rest is probably similar"
+❌ See no Math.random() → "determinism verified"
+❌ "Pure function" → skip detailed analysis
+❌ Mark complete without user confirmation
+❌ Use "~" estimates instead of exact counts
+```
 
 ---
 
-## Build Commands
+## CONFIRMATION CHECKPOINTS
 
+**Before marking ANY feature complete, you MUST:**
+
+1. State exactly how many lines you read (no estimates)
+2. Summarize what the code does in your own words
+3. Explain the data flow from input to output
+4. List any bugs found OR explain why you found none
+5. **WAIT FOR USER CONFIRMATION** before proceeding
+
+**Example of proper completion:**
+```
+AUDIT COMPLETE: DepthLayer.ts
+
+Lines read: 331 (entire file)
+
+What it does:
+- Receives depth map data from DepthAnything v2 or MiDaS
+- Normalizes depth values to 0-1 range using min/max
+- Applies colormap for visualization
+- Provides depth values for parallax effects
+
+Data flow:
+- Input: Raw depth tensor from AI model (float32, shape [H,W,1])
+- Processing: Normalization, optional inversion, colormap application
+- Output: RGBA texture for rendering, raw depth for effects
+
+Bugs found: 1
+- BUG-010: Line 156 - depth normalization assumes values are already 0-255
+  but DepthAnything v2 outputs relative depth in arbitrary range
+
+Waiting for confirmation before marking complete.
+```
+
+**If you skip the confirmation step, the audit is INVALID.**
+
+---
+
+## AI/ML LAYER REQUIREMENTS
+
+These layers integrate with AI models and REQUIRE deep analysis:
+
+| Layer | Model Integration | What to Check |
+|-------|-------------------|---------------|
+| DepthLayer | DepthAnything v2, MiDaS, ZoeDepth | Tensor format, value range normalization |
+| NormalLayer | NormalCrafter, DSINE | Normal vector encoding (-1 to 1 vs 0-1) |
+| PoseLayer | DWPose, OpenPose | Keypoint format, confidence thresholds |
+| GeneratedLayer | Stable Diffusion, Flux | Latent decoding, color space |
+| ProceduralMatteLayer | SAM, GroundingDINO | Mask format, edge handling |
+
+**For each AI layer, you MUST answer:**
+
+1. What model(s) does this layer support?
+2. What tensor format does each model output?
+3. How does the layer normalize/convert the data?
+4. Are there hardcoded assumptions about value ranges?
+5. Does it handle different model outputs correctly?
+
+**"Clean" is NOT acceptable for AI layers without this analysis.**
+
+---
+
+## STATISTICAL SANITY CHECK
+
+If your audit finds:
+- More than 5 consecutive features "clean" → STOP and re-examine
+- More than 80% of a tier "clean" → Something is wrong
+- Any AI/ML layer "clean" → Requires explicit justification
+
+**Reality check:** The codebase has 650,000+ lines. Bugs exist. If you're not finding them, you're not looking hard enough.
+
+---
+
+## ABSOLUTE RULES
+
+### 1. NO GREP/SEARCH PATTERNS FOR AUDITING
 ```bash
-cd ui
+# ❌ FORBIDDEN
+grep -n "Math.random" file.ts  # Then claiming determinism verified
+grep -n "fps" file.ts          # Then claiming fps handling verified
 
-# Development
-npm install        # First time only
-npm run dev        # http://localhost:5173
-
-# Production build
-npm run build      # Outputs to ../web/js/
-
-# Testing
-npm test                           # Run all tests
-npm test -- --reporter=verbose     # Verbose output
-npm test -- audioFeatures.test.ts  # Specific test
-
-# Type checking
-npx tsc --noEmit
+# ✅ REQUIRED
+Read the entire file. Every line. Document exact line count.
 ```
 
-### Build Output
-
+### 2. NO ESTIMATES
 ```
-web/js/
-├── lattice-compositor.js     # Main bundle (2.2MB)
-├── lattice-compositor.css    # Styles (146KB)
-├── lattice-three-vendor.js   # Three.js (2.4MB)
-├── lattice-vue-vendor.js     # Vue (210KB)
-└── extension.js           # ComfyUI registration
+❌ "~400 lines"
+❌ "approximately 1000 lines"
+❌ "about 500 lines"
+
+✅ "421 lines" (exact count from wc -l or file read)
 ```
 
----
+### 3. NO MARKING COMPLETE WITHOUT CONFIRMATION
+```
+❌ "ShapeLayer audit complete. Moving to next layer."
 
-## Trade Dress Terminology
+✅ "ShapeLayer audit complete. Summary: [detailed summary]. 
+    Bugs found: [list or 'none - here's why']. 
+    Waiting for confirmation before proceeding."
+```
 
-Use Lattice terms (not industry-trademarked terms) in new code:
+### 4. FIX BUGS IMMEDIATELY
+When you find a bug:
+1. Log it in BUGS_FOUND.md
+2. Fix the code
+3. Verify with TypeScript
+4. Commit
+5. Update bug status to FIXED
+6. THEN continue auditing
 
-| Avoid | Use Instead |
-|-------|-------------|
-| Pickwhip | **PropertyLink** |
-| Graph Editor | **CurveEditor** |
-| Adjustment Layer | **EffectLayer** |
-| loopOut/loopIn | **repeatAfter/repeatBefore** |
-| Solo | **Isolate** |
-| Null Object | **Control** |
-| Precomp | **NestedComp** |
-| Anchor Point | **origin** |
-| inPoint/outPoint | **startFrame/endFrame** |
-| Time Remap | **SpeedMap** |
-| Work Area | **RenderRange** |
+### 5. UNDERSTAND, DON'T JUST READ
+```
+❌ "Read 1076 lines. No bugs found."
 
-Backwards compatibility pattern:
-```typescript
-const start = layer.startFrame ?? layer.inPoint ?? 0;
+✅ "Read 1076 lines. This layer:
+    - Creates Three.js PointLight/SpotLight/DirectionalLight
+    - Handles shadow mapping via shadow.mapSize
+    - Animates intensity, color, position via keyframes
+    - Potential issue: Line 552 uses smoothing that could break determinism
+    - Verified: Uses frame-based reset on non-sequential playback (line 556)
+    No bugs found because [specific reasoning]."
 ```
 
 ---
 
-## The Determinism Rule (CRITICAL)
+## PROJECT OVERVIEW
 
-Every frame must be **reproducible**. Scrub to frame 50, then frame 10, then back to 50 = **identical output**.
-
-### Forbidden Patterns
-```typescript
-// ❌ NEVER use in evaluation logic
-Date.now()
-performance.now()
-Math.random()
-this.state += delta     // Accumulation
-previousFrame           // Frame-order dependent
-```
-
-### Required Patterns
-```typescript
-// ✅ Always use
-const state = evaluate(frame, project)        // Pure function
-const random = seededRNG(seed, frame, id)     // Seeded RNG
-Object.freeze(result)                         // Immutable output
-```
-
-### Particle Checkpointing
-Particles save state every 30 frames. To evaluate frame 75:
-1. Load checkpoint at frame 60
-2. Simulate frames 61-75
-3. Result identical regardless of scrub order
-
----
-
-## Architecture Overview
-
-```
-┌────────────────────────────────────────┐
-│         PRESENTATION LAYER             │
-│  Vue 3.5 + PrimeVue 4 (106 components) │
-└────────────────┬───────────────────────┘
-                 │
-                 ▼
-┌────────────────────────────────────────┐
-│           STATE LAYER (Pinia)          │
-│  compositorStore + 6 sub-stores        │
-└────────────────┬───────────────────────┘
-                 │
-                 ▼
-┌────────────────────────────────────────┐
-│         ENGINE LAYER (Three.js)        │
-│  LatticeEngine, MotionEngine, Layers      │
-└────────────────┬───────────────────────┘
-                 │
-                 ▼
-┌────────────────────────────────────────┐
-│          SERVICE LAYER (122)           │
-│  Animation, Audio, Particles, Effects  │
-└────────────────────────────────────────┘
-```
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `engine/LatticeEngine.ts` | Main engine facade |
-| `engine/MotionEngine.ts` | Pure frame evaluation |
-| `stores/compositorStore.ts` | Main state store |
-| `services/interpolation.ts` | Keyframe math |
-| `services/particleSystem.ts` | Deterministic particles |
-| `services/expressions.ts` | Expression language |
-
-### Store Actions
-
-Located in `stores/actions/`:
-- `layerActions.ts` - Layer CRUD
-- `keyframeActions.ts` - Keyframe operations
-- `projectActions.ts` - Project save/load
-- `audioActions.ts` - Audio reactivity
-- `effectActions.ts` - Effect stack
-- `cameraActions.ts` - Camera presets
-
----
-
-## Data Flow
-
-```
-User Scrubs Timeline
-        │
-        ▼
-compositorStore.setFrame(50)
-        │
-        ▼
-MotionEngine.evaluate(50, project)  ← Pure function
-        │
-        ├── interpolation.ts: Calculate property values
-        ├── particleSystem.ts: Load checkpoint, simulate
-        └── expressions.ts: Evaluate expressions
-        │
-        ▼
-FrameState (frozen, immutable)
-        │
-        ▼
-LatticeEngine.applyFrameState()
-        │
-        ▼
-WebGL Canvas Render
-```
-
----
-
-## Layer System
-
-26 layer types (24 active + 2 deprecated aliases). See [PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md#layer-types-25) for full list.
-
-### Standard Properties (All Layers)
-
-```typescript
-interface Layer {
-  id: string;
-  name: string;
-  type: LayerType;
-  enabled: boolean;
-  locked: boolean;
-
-  // Timing
-  startFrame: number;
-  endFrame: number;
-
-  // Transform (all animatable)
-  transform: {
-    position: AnimatableProperty<Vec3>;
-    rotation: AnimatableProperty<Vec3>;
-    scale: AnimatableProperty<Vec3>;
-    origin: AnimatableProperty<Vec3>;
-    opacity: AnimatableProperty<number>;
-  };
-
-  blendMode: BlendMode;
-  effects: EffectInstance[];
-  masks: Mask[];
-}
-```
-
-### Transform Order
-```
-1. Translate by -origin
-2. Scale
-3. Rotate Z → Y → X
-4. Translate by position
-```
-
----
-
-## Animation System
-
-### Keyframe Structure
-
-```typescript
-interface Keyframe<T> {
-  frame: number;
-  value: T;
-  interpolation: 'linear' | 'bezier' | 'hold';
-  inHandle?: Vec2;
-  outHandle?: Vec2;
-  controlMode: 'linked' | 'free' | 'auto';
-}
-```
-
-### Expression Context
-
-```typescript
-interface ExpressionContext {
-  time: number;      // Seconds
-  frame: number;     // Frame number
-  value: T;          // Current value
-
-  // Functions
-  jitter(freq, amp): T;
-  repeatAfter(type): T;
-  repeatBefore(type): T;
-  bounce(elasticity): T;
-  inertia(friction): T;
-
-  // Math
-  sin, cos, abs, clamp, linear, random
-}
-```
-
-### thisLayer / thisComp / thisProperty
-
-Full AE-compatible expression references:
-
-```typescript
-// thisLayer - current layer properties
-thisLayer.name                    // Layer name
-thisLayer.index                   // Layer index (1-based)
-thisLayer.transform.position      // [x, y, z]
-thisLayer.transform.rotation      // [x, y, z]
-thisLayer.transform.scale         // [x, y, z]
-thisLayer.transform.opacity       // 0-100
-thisLayer.effect("name")("param") // Effect parameter value
-thisLayer.toComp([x, y, z])       // Convert to comp space
-
-// thisComp - composition properties
-thisComp.width                    // Composition width
-thisComp.height                   // Composition height
-thisComp.duration                 // Duration in seconds
-thisComp.numLayers                // Number of layers
-thisComp.layer("Name")            // Get layer by name
-thisComp.layer(1)                 // Get layer by index (1-based)
-
-// thisProperty - current property
-thisProperty.value                // Current interpolated value
-thisProperty.velocity             // Current velocity
-thisProperty.numKeys              // Number of keyframes
-thisProperty.key(n)               // Get keyframe by index
-thisProperty.valueAtTime(t)       // Value at time t
-```
-
-### Effect Access in Expressions
-
-```typescript
-// Access effect on current layer
-thisLayer.effect("Blur Amount")("Slider")
-
-// Access effect on another layer
-thisComp.layer("Control").effect("Slider Control")("Slider")
-
-// Alternative syntax
-thisLayer.effect("Blur").param("radius")
-```
-
-### Expression Validation
-
-```typescript
-import { validateExpression } from '@/services/expressions';
-
-const result = validateExpression('wiggle(2, 10)');
-// { valid: true }
-
-const badResult = validateExpression('wiggle(2,');
-// { valid: false, error: "Unexpected end of input" }
-```
-
-35 easing functions available. See [PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md#easing-functions-35).
-
----
-
-## Particle System
-
-Fully deterministic using seeded RNG (Mulberry32) + checkpoints.
-
-### Key Classes
-
-```typescript
-// Seeded random - DETERMINISTIC
-class SeededRandom {
-  constructor(seed: number);
-  next(): number;        // 0-1
-  nextRange(min, max): number;
-}
-
-// Particle evaluation
-class ParticleSystem {
-  evaluate(frame: number): Particle[];  // Load checkpoint, simulate
-}
-```
-
-24 presets, 7 emitter shapes. See [PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md#particle-system).
-
----
-
-## Audio Reactivity
-
-### Analysis Pipeline
-
-```
-Audio File → Web Audio API → audioWorker.js → Per-Frame Data
-```
-
-Features: amplitude, bass, mid, high, beat detection, BPM
-
-### Audio Mapping
-
-```typescript
-interface AudioMapping {
-  sourceFeature: 'amplitude' | 'bass' | 'mid' | 'beat';
-  targetPropertyPath: string;  // e.g., 'transform.scale.x'
-  sensitivity: number;
-  smoothing: number;
-  min: number;
-  max: number;
-}
-```
-
----
-
-## Effects Pipeline
-
-22 effects in 4 categories. Effects processed top-to-bottom.
-
-```typescript
-interface EffectInstance {
-  id: string;
-  effectKey: string;
-  enabled: boolean;
-  parameters: Record<string, AnimatableProperty>;
-}
-```
-
-See [PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md#effects-22) for full list.
-
----
-
-## Layer Styles
-
-9 style types, rendered in fixed order BEFORE effects.
-
-### Render Order
-
-```
-Layer Content
-    ↓
-1. Drop Shadow (behind)
-2. Inner Shadow
-3. Outer Glow (behind)
-4. Inner Glow
-5. Bevel and Emboss
-6. Satin
-7. Color Overlay
-8. Gradient Overlay
-9. Stroke
-    ↓
-Effects Stack
-    ↓
-Final Output
-```
-
-### Layer Styles Interface
-
-```typescript
-interface LayerStyles {
-  enabled: boolean;
-  blendingOptions?: StyleBlendingOptions;
-  dropShadow?: DropShadowStyle;
-  innerShadow?: InnerShadowStyle;
-  outerGlow?: OuterGlowStyle;
-  innerGlow?: InnerGlowStyle;
-  bevelEmboss?: BevelEmbossStyle;
-  satin?: SatinStyle;
-  colorOverlay?: ColorOverlayStyle;
-  gradientOverlay?: GradientOverlayStyle;
-  stroke?: StrokeStyle;
-}
-```
-
-### Style Properties (All Animatable)
-
-| Style | Key Properties |
-|-------|---------------|
-| **Drop Shadow** | color, angle, distance, spread, size, noise |
-| **Inner Shadow** | color, angle, distance, choke, size, noise |
-| **Outer Glow** | color/gradient, technique, spread, size, range |
-| **Inner Glow** | color/gradient, source (center/edge), choke, size |
-| **Bevel & Emboss** | style, technique, depth, direction, soften, altitude |
-| **Satin** | color, angle, distance, size, invert |
-| **Color Overlay** | color, blend mode, opacity |
-| **Gradient Overlay** | gradient, style, angle, scale, offset |
-| **Stroke** | color/gradient, size, position (inside/outside/center) |
-
-### Global Light
-
-Styles using `useGlobalLight: true` share a composition-wide light angle:
-
-```typescript
-import { setGlobalLightAngle, getGlobalLightAngle } from '@/services/globalLight';
-
-setGlobalLightAngle(compositionId, 120);  // 120 degrees
-const angle = getGlobalLightAngle(compositionId, frame);
-```
-
-### Store Actions
-
-```typescript
-// Enable/disable
-compositorStore.setLayerStylesEnabled(layerId, true);
-compositorStore.setStyleEnabled(layerId, 'dropShadow', true);
-
-// Update properties
-compositorStore.updateStyleProperty(layerId, 'dropShadow', 'distance', 10);
-
-// Quick add
-compositorStore.addDropShadow(layerId);
-compositorStore.addStroke(layerId, { size: 3, color: [255, 0, 0, 255] });
-
-// Copy/paste
-const styles = compositorStore.copyLayerStyles(layerId);
-compositorStore.pasteLayerStyles(targetLayerId);
-
-// Presets
-compositorStore.applyStylePreset(layerId, 'neonGlow');
-const presets = compositorStore.getStylePresetNames();
-```
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `types/layerStyles.ts` | Type definitions |
-| `services/effects/layerStyleRenderer.ts` | Main renderer |
-| `services/effects/styles/*.ts` | Individual renderers (9) |
-| `stores/actions/layerStyleActions.ts` | Store actions |
-| `components/properties/styles/*.vue` | UI editors (11) |
-
----
-
-## 3D Camera System
-
-### Properties
-
-```typescript
-interface CameraLayerData {
-  fov: AnimatableProperty<number>;
-  near: number;
-  far: number;
-  dof: {
-    enabled: boolean;
-    focusDistance: AnimatableProperty<number>;
-    aperture: AnimatableProperty<number>;
-  };
-  trajectory?: {
-    preset: string;
-    progress: AnimatableProperty<number>;
-  };
-}
-```
-
-22 trajectory presets. See [PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md#trajectory-presets-22).
-
----
-
-## AI Features
-
-### AI Compositor Agent
-
-Natural language interface using GPT-4o or Claude Sonnet.
-
-Location: `services/ai/`
-
-```typescript
-const agent = getAIAgent();
-await agent.processInstruction('Fade in the title over 1 second');
-```
-
-### Layer Decomposition (Qwen AI)
-
-Decomposes images into 3-16 semantically-separated layers.
-
-```
-POST /lattice/decomposition/decompose
-{
-  "image": "data:image/png;base64,...",
-  "num_layers": 5,
-  "resolution": 640
-}
-```
-
----
-
-## Common Tasks
-
-### Adding a New Layer Type
-
-1. Create class in `engine/layers/MyLayer.ts`
-2. Register in `LayerManager.ts`
-3. Add to `compositorStore.addLayer()`
-4. Create properties component
-
-### Adding a New Effect
-
-1. Create renderer in `services/effects/myEffect.ts`
-2. Register in `effectProcessor.ts`
-3. Add to `EFFECT_DEFINITIONS`
-4. Create parameter controls
-
-### Adding a Keyboard Shortcut
-
-In `composables/useKeyboardShortcuts.ts`:
-```typescript
-case 'MyKey':
-  e.preventDefault();
-  myAction();
-  break;
-```
-
----
-
-## Testing
-
-### Required Test Patterns
-
-```typescript
-// ✅ Test actual behavior
-const result = evaluator.evaluate(property, 40);
-expect(result).toBe(50);
-
-// ✅ Test determinism
-const state1 = particleSystem.evaluate(50);
-particleSystem.reset();
-const state2 = particleSystem.evaluate(50);
-expect(state1).toEqual(state2);
-```
-
-### Forbidden Test Patterns
-
-```typescript
-// ❌ Surface-level tests
-expect(fn).toBeDefined();
-expect(layer).toHaveProperty('transform');
-```
-
-### Current Status
+**Lattice Compositor** - Professional motion graphics for ComfyUI AI video generation.
 
 | Metric | Value |
 |--------|-------|
-| Tests Passing | 1,777 |
-| Tests Skipped | 9 |
-| Test Files | 48 |
-
----
-
-## Troubleshooting
-
-### Animation Not Playing
-1. Check `playbackStore.isPlaying`
-2. Verify `currentFrame < frameCount`
-3. Check browser tab is focused
-
-### Layer Not Visible
-1. Check `layer.enabled === true`
-2. Verify frame is between startFrame/endFrame
-3. Check opacity > 0
-
-### Particle Positions Change on Scrub
-1. Verify using `SeededRandom`, not `Math.random()`
-2. Check checkpoint system working
-3. Ensure seed is consistent
-
-### WebGL Context Lost
-1. Close other tabs with WebGL
-2. Reduce texture sizes
-3. Context loss handlers exist in `LatticeEngine.ts`
-
----
-
-## UI Design System
-
-### Design Tokens
-
-```css
---lattice-void: #050505;           /* Background */
---lattice-surface-1: #121212;      /* Panels */
---lattice-accent: #8B5CF6;         /* Primary purple */
---lattice-text-primary: #E5E5E5;   /* Main text */
-```
-
-### Themes
-
-6 gradient themes: Violet (default), Ocean, Sunset, Forest, Ember, Mono
-
-### Semantic Keyframe Shapes
-
-16 shapes encode easing type visually. Defined in `styles/keyframe-shapes.ts`.
-
----
-
-## Critical Integration Fixes (December 22, 2025)
-
-The following critical integration gaps were identified and fixed:
-
-### 1. PoseLayer Integration
-- **Problem:** `PoseLayer.ts` existed but was not imported or used in `LayerManager.ts`
-- **Fix:** Added import and `case 'pose':` in `LayerManager.ts:408-409`
-- **Result:** Pose layers now create correctly instead of falling back to ControlLayer
-
-### 2. EffectLayer/Adjustment Layer Properties
-- **Problem:** `effectLayer` and `adjustment` layer types had no case in `PropertiesPanel.vue`
-- **Fix:** Added cases at `PropertiesPanel.vue:480-482` returning `EffectControlsPanel`
-- **Result:** Effect layers now show their properties panel correctly
-
-### 3. Physics System Integration
-- **Problem:** Complete physics system existed but was NOT wired to UI
-- **Fix:**
-  - Added Physics section to `PropertiesPanel.vue:255-264`
-  - Created `stores/actions/physicsActions.ts` (440+ lines)
-  - Exported from `stores/actions/index.ts`
-- **Result:** Physics can now be enabled/configured on any layer
-
-### New Store Module: physicsActions.ts
-
-Key functions:
-- `enableLayerPhysics(store, layerId, config)` - Enable physics for layer
-- `disableLayerPhysics(store, layerId)` - Disable physics
-- `stepPhysics(store, deltaTime)` - Step simulation
-- `evaluatePhysicsAtFrame(store, frame)` - Deterministic evaluation
-- `bakePhysicsToKeyframes(store, layerId, options)` - Bake to keyframes
-- `resetPhysicsSimulation(store)` - Reset simulation
-
----
-
-## File Splitting Plan
-
-**26 files exceed 1500 lines (~20k tokens)** and need splitting for future Claude sessions.
-
-See **[FILE_SPLITTING_PLAN.md](FILE_SPLITTING_PLAN.md)** for complete details.
-
-### Priority Files (Must Split First)
-
-| File | Lines | Status |
-|------|-------|--------|
-| `GPUParticleSystem.ts` | 3,556 | PENDING |
-| `expressions.ts` | 3,136 | PENDING |
-| `types/project.ts` | 3,069 | PENDING |
-| `compositorStore.ts` | 3,037 | PARTIAL |
-| `ParticleProperties.vue` | 3,022 | PENDING |
-| `particleSystem.ts` | 2,720 | PENDING |
-
----
-
-## Large Files (>2000 lines)
-
-Use `offset` and `limit` parameters when reading:
-
-| File | Lines | Purpose |
-|------|-------|---------|
-| `compositorStore.ts` | 2,763 | Main store |
-| `particleSystem.ts` | 2,650 | Particle simulation |
-| `GPUParticleSystem.ts` | 3,459 | GPU particles |
-| `ParticleProperties.vue` | 2,404 | Particle UI |
-| `SplineEditor.vue` | 2,095 | Spline editing |
-
----
-
-## Tech Stack
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Vue | 3.5 | UI framework |
-| Pinia | 2.2 | State management |
-| PrimeVue | 4.2 | Components |
-| Three.js | r170 | 3D rendering |
-| Vite | 5 | Build tool |
-| Vitest | 1 | Testing |
-| TypeScript | 5 | Type safety |
-
----
-
-## Project Metrics (Verified December 24, 2025)
-
-| Metric | Value |
-|--------|-------|
-| Lines of Code | 267,121 |
-| TypeScript/Vue Files | 493 |
-| Vue Components | 146 |
-| Service Files | 160 |
-| Layer Types | 24 (+2 deprecated aliases +1 legacy) |
+| Lines of Code | 650,000+ |
+| Layer Types | 24 |
+| Effects | 102 (77 TS + 25 GLSL) |
 | Store Actions | 251+ |
-| Type Definition Files | 23 |
-| Effects | 69 |
-| Easing Functions | 45 |
-| Blend Modes | 24 |
-| Camera Presets | 22 |
-| Particle Presets | 24 |
-| AI Agent Tools | 39 |
-| Keyboard Shortcuts | 86+ |
-| Test Files | 49 |
-| Tests Passing | 1,777 |
-| Tests Skipped | 9 |
+| Services | 160+ |
 
----
-
-## Large Files Requiring Splitting (>1500 lines)
-
-These files exceed the maintainability threshold and should be split:
-
-| File | Lines | Priority |
-|------|-------|----------|
-| `services/expressions.ts` | 2,538 | HIGH |
-| `services/particleSystem.ts` | 2,278 | HIGH |
-| `services/export/wanMoveExport.ts` | 2,233 | HIGH |
-| `components/layout/WorkspaceLayout.vue` | 2,189 | HIGH |
-| `components/canvas/SplineEditor.vue` | 2,172 | HIGH |
-| `components/curve-editor/CurveEditor.vue` | 2,112 | HIGH |
-| `stores/compositorStore.ts` | 2,097 | MEDIUM |
-| `components/canvas/ThreeCanvas.vue` | 2,050 | MEDIUM |
-| `engine/LatticeEngine.ts` | 2,034 | MEDIUM |
-| `stores/actions/layerActions.ts` | 1,976 | MEDIUM |
-| `engine/layers/BaseLayer.ts` | 1,932 | MEDIUM |
-| `components/properties/ParticleProperties.vue` | 1,847 | MEDIUM |
-| `services/index.ts` | 1,763 | LOW |
-| `services/physics/PhysicsEngine.ts` | 1,721 | LOW |
-| `services/ai/actionExecutor.ts` | 1,693 | LOW |
-| `services/depthflow.ts` | 1,650 | LOW |
-| `services/shapeOperations.ts` | 1,643 | LOW |
-| `services/effects/colorRenderer.ts` | 1,582 | LOW |
-| `dialogs/TemplateBuilderDialog.vue` | 1,583 | LOW |
-
----
-
-## Recent Changes (December 24, 2025 - Full Codebase Audit)
-
-### Documentation Corrections
-- Removed 3 non-existent file references (FILE_SPLITTING_PLAN.md, COMPREHENSIVE_INTEGRATION_AUDIT.md, PRODUCTION_READINESS_AUDIT.md)
-- Updated Project Metrics with verified accurate values
-- Added Large Files section listing 19 files needing splitting
-
-### Verified Integration Status
-- All 24 layer types properly registered in LayerManager
-- All 160 services properly exported from index.ts
-- All 146 Vue components functional
-- 1,777 tests passing, 0 failures
-
----
-
-## Recent Changes (December 23, 2025 - Comprehensive Audit)
-
-### Stub Elimination & Feature Completion
-
-**Animated Spline Export (modelExport.ts):**
-- `extractSplineTrajectories()` now supports animated control points
-- Interpolates `AnimatableControlPoint.x/y` per-frame using `interpolateProperty()`
-- Falls back to static control points when `splineData.animated` is false
-
-**Physics Ragdoll State Tracking (PhysicsEngine.ts):**
-- Added `ragdollRegistry: Map<string, RagdollBone[]>` for tracking ragdolls
-- New methods: `addRagdoll()`, `removeRagdoll()`, `getRagdollIds()`
-- `getState()` now returns proper ragdoll states via `extractRagdollState()`
-
-**Dynamic Composition Values (Hardcoded → Dynamic):**
-- `PoseLayer.ts`: Added `setCompositionSize(width, height)` - was hardcoded 512x512
-- `TextLayer.ts`: Added `setCompositionFps(fps)` - was hardcoded 16fps
-- `GeneratedProperties.vue`: Uses `generationResolution` computed from composition - was hardcoded 512
-
-**Service Integration (services/index.ts):**
-- `colorDepthReactivity.ts` now exported - pixel-based color/depth sampling
-- `motionReactivity.ts` now exported - layer velocity/acceleration tracking
-- Both aliased to avoid naming conflicts with existing motion detection
-
-**Verified Working (No Fix Needed):**
-- PoseLayer registration in LayerManager (lines 408-409)
-- Audio FPS uses composition setting with 16 as fallback only
-
----
-
-## Recent Changes (December 22, 2025 - Tutorial 20)
-
-### Tutorial 20: Advanced Trajectories & Export Pipeline
-
-**Expression Functions (expressions.ts):**
-- `smooth(width, samples)` - Temporal smoothing by averaging values over time window
-- `posterizeTime(fps)` - Quantize time for step-motion effects (like 12fps animation)
-- Both functions now available in expression context
-
-**Keyframe Actions (keyframeActions.ts):**
-- `scaleKeyframeTiming()` - Scale keyframe timing with anchor frame
-- `timeReverseKeyframes()` - Reverse keyframe values (keep frames, swap values)
-- `insertKeyframeOnPath()` - Insert interpolated keyframe on position motion path
-
-**UI Enhancements (PropertyTrack.vue):**
-- Ctrl+Alt+Drag keyframes to scale timing proportionally
-- Right-click track context menu: "Add Keyframe", "Insert on Path", "Go to Frame"
-
-**New Services:**
-- `exportTemplates.ts` - Save/load/manage export configuration templates
-- `projectCollection.ts` - Download project + assets as ZIP with manifest
-- `rovingKeyframes.ts` - Roving keyframes for constant velocity motion
-
-**Expression Functions Added:**
-- `speedAtTime(t)` - Velocity magnitude (scalar speed) at time
-
-**New UI Components:**
-- `MotionPathOverlay.vue` - Visualize position keyframe paths in viewport
-- `RenderSettingsPanel.vue` - Render quality, resolution, motion blur settings
-- `OutputModulePanel.vue` - Format, color profile, destination settings
-
-**Viewport Enhancements (ThreeCanvas.vue):**
-- Motion path visualization for selected layers with position keyframes
-- Diamond-shaped keyframe markers on motion paths
-- Frame ticks every 5 frames along path
-- Current position indicator
-
-**Render Queue (WorkspaceLayout.vue):**
-- RenderQueuePanel now wired to CollapsiblePanel in right sidebar
-
-**Export Dialog (ExportDialog.vue):**
-- "Collect Files" button downloads project + assets as ZIP
-
-**Store Integration:**
-- `store.scaleKeyframeTiming()` wrapper
-- `store.timeReverseKeyframes()` wrapper
-- `store.insertKeyframeOnPath()` wrapper
-- `applyRovingToPosition()` action for roving keyframes
-
----
-
-## Newly Integrated Services (December 23, 2025)
-
-The following services are now **exported from services/index.ts** and available for use:
-
-| Service | Purpose | Status |
-|---------|---------|--------|
-| `colorDepthReactivity.ts` | Pixel-based color/depth sampling for audio-style reactivity | ✅ Exported, needs UI panel |
-| `motionReactivity.ts` | Layer motion-based reactivity (velocity, acceleration) | ✅ Exported, needs UI panel |
-
-**Usage (programmatic):**
-```typescript
-import {
-  getMappedColorValue,
-  getMappedDepthValue,
-  getMappedColorMotionValue, // frame differencing
-  getMappedLayerMotionValue, // layer velocity
-  computeMotionState,
-} from '@/services';
+### Architecture
+```
+UI (Vue) → Store (Pinia) → Engine (Three.js) → Render
 ```
 
-These were inspired by RyanOnTheInside's ComfyUI nodes. To complete integration, add UI panels similar to audio reactivity mappings in the Properties panel.
+---
+
+## THE DETERMINISM RULE
+
+**Every frame MUST be reproducible.** Frame 50 → Frame 10 → Frame 50 = IDENTICAL.
+```typescript
+// ❌ FORBIDDEN
+Date.now()
+Math.random()           // Use seededRandom
+this.state += delta     // Accumulation
+previousFrame           // Order dependency
+
+// ✅ REQUIRED
+evaluate(frame, project)  // Pure function
+seededRNG(seed, frame)    // Deterministic random
+```
 
 ---
 
-**For detailed feature documentation, see [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md)**
+## TERMINOLOGY (Legal Requirement)
+
+| ❌ Avoid | ✅ Use |
+|----------|--------|
+| Pickwhip | PropertyLink |
+| Graph Editor | CurveEditor |
+| Adjustment Layer | EffectLayer |
+| loopOut/loopIn | repeatAfter/repeatBefore |
+| Null Object | Control |
+| Precomp | NestedComp |
+| Anchor Point | origin |
 
 ---
 
-*🤖 Documentation generated with [Claude Code](https://claude.com/claude-code)*
+## SESSION WORKFLOW
+
+1. Read `docs/audit/AUDIT_PROGRESS.md` for current state
+2. Read `docs/audit/AUDIT_WORKFLOW.md` to refresh rules
+3. Pick next feature from `FEATURE_INVENTORY.md`
+4. Audit with FULL FILE READS
+5. Summarize findings and WAIT FOR CONFIRMATION
+6. Fix any bugs found
+7. Update progress AFTER confirmation
+8. Repeat
+
+---
+
+**The goal is FINDING AND FIXING BUGS with USER CONFIRMATION at each step.**
