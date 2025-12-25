@@ -10,9 +10,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 2 | 2 | 0 |
-| MEDIUM | 12 | 12 | 0 |
+| MEDIUM | 13 | 13 | 0 |
 | LOW | 3 | 3 | 0 |
-| **TOTAL** | **17** | **17** | **0** |
+| **TOTAL** | **18** | **18** | **0** |
 
 ---
 
@@ -249,5 +249,19 @@
 - **Status:** FIXED
 - **Fix:** Added fps and layerId variables using `this.compositionFps` and `this.id`, passed to interpolateProperty calls.
 - **Files Changed:** ui/src/engine/layers/PointCloudLayer.ts
+
+---
+
+## BUG-022: DepthLayer.onEvaluateFrame missing fps parameter
+- **Severity:** MEDIUM
+- **Feature:** 2.18 DepthLayer
+- **File:** ui/src/engine/layers/DepthLayer.ts
+- **Line:** 198
+- **Description:** `interpolateProperty` call for meshDisplacement is missing fps and layerId parameters. Defaults to 30fps.
+- **Expected:** Should use `this.compositionFps` for correct timing at all framerates.
+- **Actual:** Always uses default 30fps regardless of composition settings.
+- **Status:** FIXED
+- **Fix:** Added fps and layerId variables using `this.compositionFps` and `this.id`, passed to interpolateProperty call.
+- **Files Changed:** ui/src/engine/layers/DepthLayer.ts
 
 ---

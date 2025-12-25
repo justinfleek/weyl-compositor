@@ -193,9 +193,13 @@ export class DepthLayer extends BaseLayer {
   protected onEvaluateFrame(frame: number): void {
     if (!this.material) return;
 
+    // Use composition fps for correct animation timing (not hardcoded 30fps)
+    const fps = this.compositionFps;
+    const layerId = this.id;
+
     // Evaluate animated properties
     if (this.depthData.meshDisplacement && this.depthData.visualizationMode === '3d-mesh') {
-      const displacement = interpolateProperty(this.depthData.meshDisplacement, frame);
+      const displacement = interpolateProperty(this.depthData.meshDisplacement, frame, fps, layerId);
       // Would be used for mesh displacement if implementing 3D mesh mode
     }
 
