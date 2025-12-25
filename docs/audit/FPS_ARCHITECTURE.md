@@ -3,7 +3,7 @@
 **Generated:** 2025-12-25
 **Updated:** 2025-12-25
 **Files Audited:** 143 files with fps-related code
-**Status:** PHASES 1-2 COMPLETE - Phase 3 in progress
+**Status:** PHASES 1-3 MOSTLY COMPLETE - Phase 3.4 (validation) pending
 
 ---
 
@@ -13,7 +13,8 @@
 |-------|-------------|--------|
 | **Phase 1** | Standardize defaults to 16fps | **COMPLETE** (commit 9326e4b) |
 | **Phase 2** | Video import fps handling | **COMPLETE** (commits 96cf7e2, 04247a8) |
-| **Phase 3** | Architecture cleanup/validation | **IN PROGRESS** |
+| **Phase 3.1-3.3** | Function/store defaults, hardcoded fixes | **COMPLETE** (commit f3ca0ed) |
+| **Phase 3.4** | Validation (fps > 0 checks) | **PENDING** |
 
 ### Phase 1 Completed Changes
 - `BaseLayer.ts` - Changed default from 30 to 16
@@ -270,23 +271,25 @@ CONSUMERS (where fps is USED):
 
 ## PHASE 3: ARCHITECTURE CLEANUP TASKS
 
-### 3.1 Function Parameter Defaults
-- [ ] `interpolation.ts` - Change default fps from 30 to 16
-- [ ] `effectProcessor.ts` - Change default fps from 30 to 16
-- [ ] `GPUParticleSystem.ts` - Change simulateToFrame default from 30 to 16
-- [ ] `timewarp.ts` - Change createSpeedRampPreset default from 30 to 16
-- [ ] `motionExpressions.ts` - Change inertia/bounce/elastic defaults from 30 to 16
+### 3.1 Function Parameter Defaults - **COMPLETE**
+- [x] `GPUParticleSystem.ts` - Change simulateToFrame default from 30 to 16
+- [x] `timewarp.ts` - Change createSpeedRampPreset default from 30 to 16
+- [x] `motionExpressions.ts` - Change inertia/bounce/elastic defaults from 30 to 16
+- [x] `DepthflowLayer.ts` - Change calculatePresetValues default from 30 to 16
+- [x] `videoDecoder.ts` - Change fps fallback from 30 to 16
+- N/A `interpolation.ts` - No hardcoded 30fps default found
+- N/A `effectProcessor.ts` - No hardcoded 30fps default found
 
-### 3.2 Store Action Defaults
-- [ ] `layerActions.ts` - Change fps defaults in freezeFrameAtPlayhead, splitLayerAtPlayhead
-- [ ] `keyframeActions.ts` - Change fps defaults in velocity functions
+### 3.2 Store Action Defaults - **COMPLETE**
+- [x] `layerActions.ts` - Change fps defaults in freezeFrameAtPlayhead, splitLayerAtPlayhead
+- [x] `keyframeActions.ts` - Change fps defaults in velocity functions
 
-### 3.3 Hardcoded Values
-- [ ] `particleSystem.ts` - Replace `/60` with `/compositionFps`
-- [ ] `timeRenderer.ts` - Replace `-0.033` with `-1/fps`
-- [ ] `ParticleSimulationController.ts` - Make checkpoint interval fps-aware
+### 3.3 Hardcoded Values - **COMPLETE**
+- [x] `timeRenderer.ts` - Fixed echo time to calculate from fps: `(-1 / fps)` instead of hardcoded `-0.033`
+- N/A `particleSystem.ts` - Uses 60fps for physics timestep (intentional, standard practice)
+- N/A `ParticleSimulationController.ts` - Checkpoint interval is a memory/performance param, not timing
 
-### 3.4 Validation
+### 3.4 Validation - **PENDING**
 - [ ] Add fps > 0 validation before division operations
 - [ ] Document fps requirements in function JSDoc
 - [ ] Add fps to MotionBlurSettings interface
@@ -313,7 +316,8 @@ Before implementing Phase 3 fixes, verify each change against:
 | `9326e4b` | Phase 1: Standardize layer defaults to 16fps |
 | `96cf7e2` | Phase 2: Video import fps mismatch handling |
 | `04247a8` | Phase 2: Add fps_unknown dialog for undetectable framerates |
+| `f3ca0ed` | Phase 3: Function/store defaults and echo time fix |
 
 ---
 
-*Document updated after Phase 1-2 completion. Phase 3 in progress.*
+*Document updated after Phase 3.1-3.3 completion. Phase 3.4 (validation) pending.*
