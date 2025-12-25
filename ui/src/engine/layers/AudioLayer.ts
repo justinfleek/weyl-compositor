@@ -415,6 +415,6 @@ export class AudioLayer extends BaseLayer {
    * Check if audio has been initialized
    */
   get hasAudio(): boolean {
-    return this.playbackNodes?.buffer !== null;
+    return this.playbackNodes !== null && this.playbackNodes.buffer !== null;
   }
 }

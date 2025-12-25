@@ -11,8 +11,8 @@
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 2 | 2 | 0 |
 | MEDIUM | 2 | 2 | 0 |
-| LOW | 2 | 1 | 1 |
-| **TOTAL** | **6** | **5** | **1** |
+| LOW | 2 | 2 | 0 |
+| **TOTAL** | **6** | **6** | **0** |
 
 ---
 
@@ -78,7 +78,9 @@
 - **Description:** The `hasAudio` getter uses `this.playbackNodes?.buffer !== null` which returns `true` when `playbackNodes` is null, because optional chaining returns `undefined` and `undefined !== null` is `true`.
 - **Expected:** Should return `false` when there's no audio loaded.
 - **Actual:** Returns `true` when `playbackNodes` is null.
-- **Status:** OPEN
+- **Status:** FIXED
+- **Fix:** Changed to explicit null check: `return this.playbackNodes !== null && this.playbackNodes.buffer !== null;`
+- **Files Changed:** ui/src/engine/layers/AudioLayer.ts
 
 ---
 
