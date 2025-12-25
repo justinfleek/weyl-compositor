@@ -763,16 +763,20 @@ export class ModelLayer extends BaseLayer {
   // ============================================================================
 
   protected onEvaluateFrame(frame: number): void {
+    // Use composition fps for correct animation timing (not hardcoded 30fps)
+    const fps = this.compositionFps;
+    const layerId = this.id;
+
     // Evaluate animated scale
     let scale: number;
     if (typeof this.modelData.scale === 'object' && 'value' in this.modelData.scale) {
-      scale = interpolateProperty(this.modelData.scale, frame);
+      scale = interpolateProperty(this.modelData.scale, frame, fps, layerId);
       this.setScale(scale);
     }
 
     // Evaluate animation time if keyframed
     if (this.modelData.animation?.time) {
-      const time = interpolateProperty(this.modelData.animation.time, frame);
+      const time = interpolateProperty(this.modelData.animation.time, frame, fps, layerId);
       this.setAnimationTime(time);
     }
 
