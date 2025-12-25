@@ -1,5 +1,82 @@
 # Lattice Compositor Audit Workflow
 
+---
+
+## ⛔ MANDATORY COMPLETE FILE READING — READ THIS FIRST
+
+**This section exists because a previous audit was INVALIDATED after 20+ hours of work.**
+
+The auditor was:
+- Pattern-matching (grepping for `Math.random()`, `Date.now()`, `fps ?? 30`)
+- Reading file excerpts instead of complete files
+- Assuming "pure pixel transformation = no bugs"
+- Marking features as "audited" after surface-level scanning
+
+**This is NOT auditing. This is shortcuts. This is incompetence.**
+
+### THE RULE
+
+**You MUST read EVERY LINE of EVERY FILE involved in a feature.**
+
+- If a file is 2000 lines → read all 2000 lines
+- If a file is 5000 lines → read all 5000 lines in chunks
+- If there are 10 files → read all 10 files completely
+- 700,000+ lines of code means 700,000+ lines READ
+
+**"Read" means:**
+1. Load the complete file into context (use chunks if needed)
+2. Trace every function call
+3. Trace every data flow
+4. Understand what EVERY line does
+5. Verify correctness of EVERY line
+
+**"Read" does NOT mean:**
+- Grep for patterns and assume the rest is fine
+- Read the first 100 lines and extrapolate
+- Skim headers and assume implementation is correct
+- Search for known anti-patterns only
+
+### PROHIBITED SHORTCUTS
+
+| Shortcut | Why It's Wrong |
+|----------|----------------|
+| `grep "Math.random"` and call it done | Misses bugs that don't match the pattern |
+| Read lines 1-200 of a 2000-line file | Misses 90% of the code |
+| "This is a pure function, skip it" | Pure functions can have bugs too |
+| "Effect just transforms pixels" | Effects have timing, parameters, edge cases |
+| "Similar to X which was fine" | Every file is different |
+| "Too complex, moving on" | Complex code is WHERE BUGS HIDE |
+| Mark feature complete without reading all files | AUDIT INVALIDATION |
+
+### VERIFICATION CHECKPOINT
+
+Before marking ANY feature as audited, you MUST be able to answer:
+
+```
+1. What are ALL the files involved in this feature?
+2. How many total lines are in those files?
+3. Did I read EVERY line of EVERY file?
+4. Can I explain what lines 500-550 do? (random sample)
+5. Can I explain what lines 1200-1250 do? (random sample)
+6. Did I trace the data flow from input to output?
+7. Did I verify edge cases are handled?
+```
+
+**If you cannot answer all of these → YOU DID NOT AUDIT THE FEATURE.**
+
+### AUDIT INVALIDATION
+
+An audit is INVALID if:
+- Files were pattern-matched instead of read
+- File excerpts were read instead of complete files
+- Features were marked complete without full file reads
+- "Too complex" was used as an excuse
+- Any shortcuts from the PROHIBITED list were taken
+
+**Consequence of invalid audit: COMPLETE RESET. Start over from Tier 1.**
+
+---
+
 ## PRIME DIRECTIVE
 
 **Execute every step. No skipping. No partial completion. Verify before proceeding.**
@@ -73,11 +150,26 @@ There is no category of "found but not logged." Every issue discovered during au
 For each feature in AUDIT_PROGRESS.md:
 
 ### PHASE 1: AUDIT
+
+**This phase requires COMPLETE FILE READING. See "MANDATORY COMPLETE FILE READING" section.**
+
 ```
-[ ] Read source files for this feature
+[ ] List ALL files involved in this feature (document file names and line counts)
+[ ] Read EVERY LINE of the first file (use chunks if > 2000 lines)
+[ ] Read EVERY LINE of the second file
+[ ] Continue until ALL files are read completely
+[ ] Trace data flow from input to output
+[ ] Verify edge case handling
 [ ] Identify ALL issues (see BUG CLASSIFICATION RULES above)
-[ ] Count bugs found (may be 0, but only if truly nothing found)
+[ ] Count bugs found (may be 0, but only if truly nothing found after COMPLETE read)
 ```
+
+**Evidence required:**
+- List of files read with line counts
+- Summary of what each file does
+- Bugs found with exact line numbers
+
+**DO NOT proceed to next feature unless you read EVERY LINE.**
 
 ### PHASE 2: DOCUMENT (for EVERY bug found — no exceptions)
 ```
@@ -235,6 +327,14 @@ When user says "continue audit":
 
 ## FAILURE MODES TO AVOID
 
+### Critical Failures (Audit Invalidation)
+- **Pattern-matching instead of reading** — grep is not auditing
+- **Reading excerpts instead of complete files** — partial reads are worthless
+- **Assuming code is correct** — verify, don't assume
+- **"Too complex" as an excuse** — complex code needs MORE scrutiny, not less
+- **Marking features complete without full file reads** — immediate audit invalidation
+
+### Process Failures
 - Fixing bug without updating BUG_REPORT.md
 - Updating BUG_REPORT.md without updating AUDIT_PROGRESS.md
 - Moving to next feature with OPEN bugs
@@ -246,6 +346,19 @@ When user says "continue audit":
 - Writing "code quality issues noted" without BUG entries
 - Classifying functional issues as "not bugs"
 - Skipping LOW severity issues
+
+### The Incompetence Checklist
+If you find yourself doing ANY of these, STOP:
+- "I'll grep for the pattern and see if it exists"
+- "This file is similar to the one I just read"
+- "Pure functions don't have bugs"
+- "Effects are simple pixel transformations"
+- "I read the important parts"
+- "The rest of the file is probably fine"
+- "This feature is straightforward"
+- "I don't need to trace the data flow"
+
+**These are ALL shortcuts. These are ALL wrong. Read every line.**
 
 ---
 

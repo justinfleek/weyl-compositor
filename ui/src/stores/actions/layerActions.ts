@@ -5,6 +5,7 @@
  * and layer-specific updates (spline, 3D, parenting).
  */
 
+import { toRaw } from 'vue';
 import { storeLogger } from '@/utils/logger';
 import type {
   Layer,
@@ -229,8 +230,8 @@ export function duplicateLayer(store: LayerStore, layerId: string): Layer | null
   const original = layers.find(l => l.id === layerId);
   if (!original) return null;
 
-  // Deep clone the layer
-  const duplicate: Layer = structuredClone(original);
+  // Deep clone the layer - use toRaw to handle Vue reactive proxies
+  const duplicate: Layer = structuredClone(toRaw(original));
 
   // Generate new IDs
   duplicate.id = crypto.randomUUID();
@@ -262,8 +263,8 @@ export function copySelectedLayers(store: LayerStore): void {
   const selectedLayers = layers.filter(l => selection.selectedLayerIds.includes(l.id));
   if (selectedLayers.length === 0) return;
 
-  // Deep clone layers to clipboard
-  store.clipboard.layers = selectedLayers.map(layer => structuredClone(layer));
+  // Deep clone layers to clipboard - use toRaw to handle Vue reactive proxies
+  store.clipboard.layers = selectedLayers.map(layer => structuredClone(toRaw(layer)));
   storeLogger.debug(`Copied ${store.clipboard.layers.length} layer(s) to clipboard`);
 }
 
@@ -321,10 +322,22 @@ export function cutSelectedLayers(store: LayerStore): void {
 
 /**
  * Update layer properties
+ * Note: Locked layers can only have their 'locked' property changed.
+ * All other updates are blocked.
  */
 export function updateLayer(store: LayerStore, layerId: string, updates: Partial<Layer>): void {
   const layer = store.getActiveCompLayers().find(l => l.id === layerId);
   if (!layer) return;
+
+  // If layer is locked, only allow changing the 'locked' property itself
+  if (layer.locked) {
+    const updateKeys = Object.keys(updates);
+    const onlyChangingLocked = updateKeys.length === 1 && updateKeys[0] === 'locked';
+    if (!onlyChangingLocked) {
+      storeLogger.warn('Cannot update locked layer:', layerId);
+      return;
+    }
+  }
 
   Object.assign(layer, updates);
   markLayerDirty(layerId); // Invalidate evaluation cache
@@ -334,15 +347,23 @@ export function updateLayer(store: LayerStore, layerId: string, updates: Partial
 
 /**
  * Update layer-specific data (e.g., text content, image path, etc.)
+ * Note: Cannot update data on locked layers.
  */
 export function updateLayerData(store: LayerStore, layerId: string, dataUpdates: Partial<AnyLayerData>): void {
   const layer = store.getActiveCompLayers().find(l => l.id === layerId);
   if (!layer || !layer.data) return;
 
-  // Use spread operator instead of Object.assign for proper Vue reactivity
-  layer.data = { ...layer.data, ...dataUpdates } as Layer['data'];
+  // Locked layers cannot have their data updated
+  if (layer.locked) {
+    storeLogger.warn('Cannot update data on locked layer:', layerId);
+    return;
+  }
+
+  // Use spread operator with toRaw to ensure plain objects for structuredClone
+  layer.data = { ...toRaw(layer.data), ...dataUpdates } as Layer['data'];
   markLayerDirty(layerId); // Invalidate evaluation cache
   store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 }
 
 /**
@@ -1477,7 +1498,7 @@ export function freezeFrameAtPlayhead(
  * Creates two layers: one ending at playhead, one starting at playhead
  */
 export function splitLayerAtPlayhead(
-  store: LayerStore & { currentFrame: number },
+  store: LayerStore & { currentFrame: number; fps: number },
   layerId: string
 ): Layer | null {
   const layer = store.getActiveCompLayers().find(l => l.id === layerId);
@@ -1515,7 +1536,7 @@ export function splitLayerAtPlayhead(
 
   // Adjust source time for video layers (VideoData has startTime and speed properties)
   if (isLayerOfType(newLayer, 'video') && newLayer.data) {
-    const fps = 30; // Default FPS
+    const fps = store.fps ?? 30; // Use composition fps with fallback
     const originalStartTime = newLayer.data.startTime ?? 0;
     const speed = newLayer.data.speed ?? 1;
 
@@ -1538,4 +1559,326 @@ export function splitLayerAtPlayhead(
   storeLogger.debug(`Split layer ${layer.name} at frame ${currentFrame}`);
 
   return newLayer;
+}
+
+/**
+ * Enable SpeedMap (time remapping) on a video or nested comp layer
+ * Auto-creates default 1:1 keyframes when enabling
+ *
+ * @param store - The layer store
+ * @param layerId - Layer to enable SpeedMap on
+ * @param fps - Composition FPS (for time calculations)
+ */
+export function enableSpeedMap(
+  store: LayerStore & { fps?: number },
+  layerId: string,
+  fps?: number
+): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('Layer not found for enableSpeedMap:', layerId);
+    return;
+  }
+
+  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
+    storeLogger.warn('SpeedMap only works on video/nestedComp layers');
+    return;
+  }
+
+  store.pushHistory();
+
+  const compositionFps = fps ?? store.fps ?? 30;
+  const layerStartFrame = layer.startFrame ?? 0;
+  const layerEndFrame = layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81;
+
+  // Both VideoData and NestedCompData have speedMapEnabled and speedMap properties
+  type SpeedMappableData = {
+    speedMapEnabled: boolean;
+    speedMap?: AnimatableProperty<number>;
+    timeRemapEnabled?: boolean;
+    timeRemap?: AnimatableProperty<number>;
+  };
+
+  if (layer.data) {
+    const data = layer.data as SpeedMappableData;
+
+    // Enable speed map
+    data.speedMapEnabled = true;
+    data.timeRemapEnabled = true; // Backwards compatibility
+
+    // Auto-create keyframes if speedMap doesn't exist or has no keyframes
+    if (!data.speedMap || data.speedMap.keyframes.length === 0) {
+      // Calculate source time at layer start and end
+      // Default: 1:1 mapping (frame 0 maps to 0 seconds, etc.)
+      const startSourceTime = 0;
+      const layerDuration = layerEndFrame - layerStartFrame;
+      const endSourceTime = layerDuration / compositionFps;
+
+      data.speedMap = createAnimatableProperty('Speed Map', startSourceTime, 'number');
+      data.speedMap.animated = true;
+      data.speedMap.keyframes = [
+        {
+          id: `kf_speedmap_start_${Date.now()}`,
+          frame: layerStartFrame,
+          value: startSourceTime,
+          interpolation: 'linear' as const,
+          controlMode: 'smooth' as const,
+          inHandle: { frame: -5, value: 0, enabled: true },
+          outHandle: { frame: 5, value: 0, enabled: true }
+        },
+        {
+          id: `kf_speedmap_end_${Date.now() + 1}`,
+          frame: layerEndFrame,
+          value: endSourceTime,
+          interpolation: 'linear' as const,
+          controlMode: 'smooth' as const,
+          inHandle: { frame: -5, value: 0, enabled: true },
+          outHandle: { frame: 5, value: 0, enabled: true }
+        }
+      ];
+
+      // Backwards compatibility
+      data.timeRemap = data.speedMap;
+    }
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.debug(`Enabled SpeedMap on layer: ${layer.name}`);
+}
+
+/**
+ * Disable SpeedMap (time remapping) on a video or nested comp layer
+ * Preserves the speedMap data but disables its effect
+ */
+export function disableSpeedMap(
+  store: LayerStore,
+  layerId: string
+): void {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('Layer not found for disableSpeedMap:', layerId);
+    return;
+  }
+
+  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
+    return;
+  }
+
+  store.pushHistory();
+
+  type SpeedMappableData = {
+    speedMapEnabled: boolean;
+    timeRemapEnabled?: boolean;
+  };
+
+  if (layer.data) {
+    const data = layer.data as SpeedMappableData;
+    data.speedMapEnabled = false;
+    data.timeRemapEnabled = false; // Backwards compatibility
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.debug(`Disabled SpeedMap on layer: ${layer.name}`);
+}
+
+/**
+ * Toggle SpeedMap on/off for a layer
+ */
+export function toggleSpeedMap(
+  store: LayerStore & { fps?: number },
+  layerId: string,
+  fps?: number
+): boolean {
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer || (layer.type !== 'video' && layer.type !== 'nestedComp')) {
+    return false;
+  }
+
+  type SpeedMappableData = { speedMapEnabled?: boolean };
+  const data = layer.data as SpeedMappableData | null;
+  const isCurrentlyEnabled = data?.speedMapEnabled ?? false;
+
+  if (isCurrentlyEnabled) {
+    disableSpeedMap(store, layerId);
+    return false;
+  } else {
+    enableSpeedMap(store, layerId, fps);
+    return true;
+  }
+}
+
+// ============================================================================
+// SEQUENCE LAYERS
+// ============================================================================
+
+export interface SequenceLayersOptions {
+  /** Gap between layers in frames (positive = gap, negative = overlap) */
+  gapFrames?: number;
+  /** Starting frame for the sequence */
+  startFrame?: number;
+  /** Whether to maintain layer order or reverse */
+  reverse?: boolean;
+}
+
+/**
+ * Sequence selected layers - arrange them one after another.
+ * Similar to After Effects "Keyframe Assistant > Sequence Layers"
+ *
+ * @param store - The layer store
+ * @param layerIds - Array of layer IDs to sequence (in order)
+ * @param options - Sequence options
+ * @returns Number of layers sequenced
+ */
+export function sequenceLayers(
+  store: LayerStore,
+  layerIds: string[],
+  options: SequenceLayersOptions = {}
+): number {
+  const {
+    gapFrames = 0,
+    startFrame = 0,
+    reverse = false
+  } = options;
+
+  if (layerIds.length < 2) {
+    storeLogger.warn('sequenceLayers: need at least 2 layers');
+    return 0;
+  }
+
+  // Get layers in order
+  const layers = layerIds
+    .map(id => store.getActiveCompLayers().find(l => l.id === id))
+    .filter((l): l is Layer => l !== null && l !== undefined);
+
+  if (layers.length < 2) {
+    storeLogger.warn('sequenceLayers: could not find enough layers');
+    return 0;
+  }
+
+  // Optionally reverse the order
+  const orderedLayers = reverse ? [...layers].reverse() : layers;
+
+  // Push history BEFORE changes for undo support
+  store.pushHistory();
+
+  let currentFrame = startFrame;
+
+  orderedLayers.forEach((layer, index) => {
+    const duration = layer.endFrame - layer.startFrame;
+
+    // Set new start/end frames
+    layer.startFrame = currentFrame;
+    layer.endFrame = currentFrame + duration;
+
+    // Move to next position
+    currentFrame = layer.endFrame + gapFrames;
+
+    markLayerDirty(layer.id);
+  });
+
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.info(`sequenceLayers: sequenced ${orderedLayers.length} layers starting at frame ${startFrame}`);
+  return orderedLayers.length;
+}
+
+// ============================================================================
+// EXPONENTIAL SCALE
+// ============================================================================
+
+export interface ExponentialScaleOptions {
+  /** Starting scale percentage */
+  startScale?: number;
+  /** Ending scale percentage */
+  endScale?: number;
+  /** Starting frame */
+  startFrame?: number;
+  /** Ending frame */
+  endFrame?: number;
+  /** Number of keyframes to create (more = smoother) */
+  keyframeCount?: number;
+  /** Whether to apply to X, Y, or both */
+  axis?: 'both' | 'x' | 'y';
+}
+
+/**
+ * Create exponential scale animation on a layer.
+ * Uses exponential curve instead of linear for more natural zoom effect.
+ *
+ * Formula: scale(t) = startScale * (endScale/startScale)^t
+ *
+ * @param store - The layer store (must have pushHistory)
+ * @param layerId - Layer to apply exponential scale to
+ * @param options - Scale animation options
+ * @returns Number of keyframes created
+ */
+export function applyExponentialScale(
+  store: LayerStore,
+  layerId: string,
+  options: ExponentialScaleOptions = {}
+): number {
+  const {
+    startScale = 100,
+    endScale = 200,
+    startFrame = 0,
+    endFrame = 30,
+    keyframeCount = 10,
+    axis = 'both'
+  } = options;
+
+  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
+  if (!layer) {
+    storeLogger.warn('applyExponentialScale: layer not found');
+    return 0;
+  }
+
+  // Push history BEFORE changes for undo support
+  store.pushHistory();
+
+  // Clear existing scale keyframes
+  layer.transform.scale.keyframes = [];
+  layer.transform.scale.animated = true;
+
+  const duration = endFrame - startFrame;
+  const ratio = endScale / startScale;
+
+  // Generate keyframes with exponential interpolation
+  for (let i = 0; i <= keyframeCount; i++) {
+    const t = i / keyframeCount; // 0 to 1
+    const frame = Math.round(startFrame + t * duration);
+
+    // Exponential formula: startScale * ratio^t
+    const scaleValue = startScale * Math.pow(ratio, t);
+
+    const currentValue = layer.transform.scale.value;
+    let newValue: { x: number; y: number; z?: number };
+
+    if (axis === 'x') {
+      newValue = { x: scaleValue, y: currentValue.y, z: currentValue.z };
+    } else if (axis === 'y') {
+      newValue = { x: currentValue.x, y: scaleValue, z: currentValue.z };
+    } else {
+      newValue = { x: scaleValue, y: scaleValue, z: currentValue.z };
+    }
+
+    layer.transform.scale.keyframes.push({
+      id: `kf_expscale_${frame}_${Date.now()}_${i}`,
+      frame,
+      value: newValue,
+      interpolation: 'linear', // Linear between exponential samples gives smooth curve
+      inHandle: { frame: -2, value: 0, enabled: false },
+      outHandle: { frame: 2, value: 0, enabled: false },
+      controlMode: 'smooth'
+    });
+  }
+
+  markLayerDirty(layerId);
+  store.project.meta.modified = new Date().toISOString();
+
+  storeLogger.info(`applyExponentialScale: created ${keyframeCount + 1} keyframes for exponential scale ${startScale}% -> ${endScale}%`);
+  return keyframeCount + 1;
 }
