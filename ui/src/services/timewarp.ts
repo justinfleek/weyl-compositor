@@ -273,7 +273,7 @@ export function createSpeedRampPreset(
   preset: 'slow-fast' | 'fast-slow' | 'slow-fast-slow' | 'impact' | 'rewind',
   layerStartFrame: number,
   layerDuration: number,
-  fps: number = 30
+  fps: number = 16
 ): AnimatableProperty<number> {
   const midFrame = layerStartFrame + layerDuration / 2;
   const endFrame = layerStartFrame + layerDuration;

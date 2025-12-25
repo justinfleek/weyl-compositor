@@ -1373,7 +1373,7 @@ export class GPUParticleSystem {
   /**
    * Simulate particles to a specific frame, using cache when available
    */
-  simulateToFrame(targetFrame: number, fps: number = 30): number {
+  simulateToFrame(targetFrame: number, fps: number = 16): number {
     if (!this.frameCacheSystem) return 0;
     const deltaTime = 1 / fps;
     const currentFrame = this.frameCacheSystem.getCurrentFrame();

@@ -1444,7 +1444,7 @@ export function freezeFrameAtPlayhead(
   store.pushHistory();
 
   const currentFrame = store.currentFrame ?? 0;
-  const fps = store.fps ?? 30;
+  const fps = store.fps ?? 16;
   const sourceTime = currentFrame / fps;
 
   // Both VideoData and NestedCompData have speedMapEnabled and speedMap properties
@@ -1536,7 +1536,7 @@ export function splitLayerAtPlayhead(
 
   // Adjust source time for video layers (VideoData has startTime and speed properties)
   if (isLayerOfType(newLayer, 'video') && newLayer.data) {
-    const fps = store.fps ?? 30; // Use composition fps with fallback
+    const fps = store.fps ?? 16; // Use composition fps with fallback
     const originalStartTime = newLayer.data.startTime ?? 0;
     const speed = newLayer.data.speed ?? 1;
 

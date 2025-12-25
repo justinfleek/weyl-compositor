@@ -308,7 +308,7 @@ export class DepthflowLayer extends BaseLayer {
   /**
    * Calculate preset-based animation values
    */
-  private calculatePresetValues(frame: number, fps: number = 30): {
+  private calculatePresetValues(frame: number, fps: number = 16): {
     zoom: number;
     offsetX: number;
     offsetY: number;

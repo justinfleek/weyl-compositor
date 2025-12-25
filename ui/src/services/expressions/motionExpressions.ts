@@ -40,7 +40,7 @@ export function inertia(
   if (keyframes.length === 0) return value;
 
   // Find nearest keyframe before current time
-  const fps = ctx.fps || 30;
+  const fps = ctx.fps || 16;
   const currentFrame = time * fps;
 
   let nearestKey: Keyframe<any> | null = null;
@@ -87,7 +87,7 @@ export function bounce(
 
   if (keyframes.length === 0) return value;
 
-  const fps = ctx.fps || 30;
+  const fps = ctx.fps || 16;
   const currentFrame = time * fps;
 
   // Find last keyframe
@@ -148,7 +148,7 @@ export function elastic(
 
   if (keyframes.length === 0) return value;
 
-  const fps = ctx.fps || 30;
+  const fps = ctx.fps || 16;
   const currentFrame = time * fps;
 
   let lastKey: Keyframe<any> | null = null;

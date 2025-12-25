@@ -258,9 +258,9 @@ export class VideoDecoderService {
       this.videoElement.onloadedmetadata = () => {
         const video = this.videoElement!;
 
-        // Detect FPS (default to 30 if not available)
+        // Detect FPS (default to 16 if not available)
         // WebKit browsers expose getVideoPlaybackQuality()
-        let fps = 30;
+        let fps = 16;
         if ('getVideoPlaybackQuality' in video) {
           // Can't reliably get FPS without playing, use common defaults
           fps = this.detectFPS(video.duration);

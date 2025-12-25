@@ -1326,7 +1326,7 @@ export function applyKeyframeVelocity(
 
   // Convert velocity to value offset
   // Velocity is in units per second, convert to units per frame segment
-  const fps = store.fps ?? 30;
+  const fps = store.fps ?? 16;
   const inVelocityPerFrame = settings.incomingVelocity / fps;
   const outVelocityPerFrame = settings.outgoingVelocity / fps;
 
@@ -1389,7 +1389,7 @@ export function getKeyframeVelocity(
     : 33.33;
 
   // Convert value offset back to velocity
-  const fps = store.fps ?? 30;
+  const fps = store.fps ?? 16;
   const inVelocity = keyframe.inHandle?.enabled && keyframe.inHandle.frame !== 0
     ? -keyframe.inHandle.value / Math.abs(keyframe.inHandle.frame) * fps
     : 0;

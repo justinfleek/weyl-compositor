@@ -207,16 +207,17 @@ export function echoRenderer(
   input: EffectStackResult,
   params: EvaluatedEffectParams
 ): EffectStackResult {
+  // Get frame info from extended params (needed for echoTime default calculation)
+  const frame = params._frame ?? 0;
+  const fps = params._fps ?? 16;
+
   // Extract parameters with defaults
-  const echoTime = params.echo_time ?? -0.033;  // ~1 frame at 30fps
+  // Default echo time is -1 frame (negative = previous frames)
+  const echoTime = params.echo_time ?? (-1 / fps);
   const numEchoes = Math.max(1, Math.min(50, params.number_of_echoes ?? 8));
   const startingIntensity = Math.max(0, Math.min(1, params.starting_intensity ?? 1.0));
   const decay = Math.max(0, Math.min(1, params.decay ?? 0.5));
   const operator: EchoOperator = params.echo_operator ?? 'add';
-
-  // Get frame info from extended params
-  const frame = params._frame ?? 0;
-  const fps = params._fps ?? 30;
   const layerId = params._layerId ?? 'default';
 
   // Calculate echo time in frames
@@ -515,6 +516,89 @@ export function timeDisplacementRenderer(
 
   output.ctx.putImageData(outputData, 0, 0);
   return output;
+}
+
+// ============================================================================
+// FREEZE FRAME EFFECT
+// Freezes the layer at a specific source frame
+// ============================================================================
+
+// Store frozen frames by layer ID
+const frozenFrames = new Map<string, { frame: number; imageData: ImageData }>();
+
+/**
+ * Freeze Frame effect renderer
+ * Holds the layer at a specific source frame number.
+ *
+ * Parameters:
+ * - freeze_at_frame: The source frame to freeze at (0+)
+ *
+ * Unlike the SpeedMap-based freeze (in layerActions.freezeFrameAtPlayhead),
+ * this effect version works by capturing and holding a specific frame.
+ */
+export function freezeFrameRenderer(
+  input: EffectStackResult,
+  params: EvaluatedEffectParams
+): EffectStackResult {
+  const freezeAtFrame = Math.max(0, Math.round(params.freeze_at_frame ?? 0));
+  const frame = params._frame ?? 0;
+  const layerId = params._layerId ?? 'default';
+  const cacheKey = `${layerId}_freeze`;
+
+  // Get frame buffer for storing/retrieving frames
+  const buffer = getFrameBuffer(layerId);
+
+  // Store current frame in buffer
+  buffer.store(frame, input.canvas);
+
+  // Check if we have a cached frozen frame at the target
+  const cached = frozenFrames.get(cacheKey);
+  if (cached && cached.frame === freezeAtFrame) {
+    // We already have the frozen frame cached - return it
+    const { width, height } = input.canvas;
+    const output = createMatchingCanvas(input.canvas);
+    output.ctx.putImageData(cached.imageData, 0, 0);
+    return output;
+  }
+
+  // If current frame matches freeze target, cache it and return
+  if (frame === freezeAtFrame) {
+    const { width, height } = input.canvas;
+    const imageData = input.ctx.getImageData(0, 0, width, height);
+    frozenFrames.set(cacheKey, { frame: freezeAtFrame, imageData });
+    return input;
+  }
+
+  // Try to get the frozen frame from buffer
+  const frozenImageData = buffer.get(freezeAtFrame);
+  if (frozenImageData) {
+    // Cache it for future use
+    frozenFrames.set(cacheKey, { frame: freezeAtFrame, imageData: frozenImageData });
+
+    const { width, height } = input.canvas;
+    const output = createMatchingCanvas(input.canvas);
+    output.ctx.putImageData(frozenImageData, 0, 0);
+    return output;
+  }
+
+  // Frozen frame not available yet - return current frame
+  // This happens when scrubbing directly to a frame without having
+  // rendered the freeze target frame first
+  return input;
+}
+
+/**
+ * Clear a frozen frame cache for a layer
+ */
+export function clearFrozenFrame(layerId: string): void {
+  frozenFrames.delete(`${layerId}_freeze`);
+}
+
+/**
+ * Clear all frozen frame caches
+ */
+export function clearAllFrozenFrames(): void {
+  frozenFrames.clear();
 }
 
 // ============================================================================
@@ -831,16 +915,20 @@ export function pixelMotionBlend(
 export function registerTimeEffects(): void {
   registerEffectRenderer('echo', echoRenderer);
   registerEffectRenderer('posterize-time', posterizeTimeRenderer);
+  registerEffectRenderer('freeze-frame', freezeFrameRenderer);
   registerEffectRenderer('time-displacement', timeDisplacementRenderer);
 }
 
 export default {
   echoRenderer,
   posterizeTimeRenderer,
+  freezeFrameRenderer,
   timeDisplacementRenderer,
   applyTimewarpBlending,
   pixelMotionBlend,
   registerTimeEffects,
   clearAllFrameBuffers,
+  clearAllFrozenFrames,
+  clearFrozenFrame,
   getFrameBuffer
 };
