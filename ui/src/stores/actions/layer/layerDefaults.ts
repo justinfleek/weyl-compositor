@@ -46,7 +46,7 @@ export interface CompositionContext {
 export function getDefaultLayerData(
   type: LayerType,
   context: CompositionContext
-): AnyLayerData | null {
+): AnyLayerData {
   switch (type) {
     case 'text':
       return {
@@ -405,6 +405,6 @@ export function getDefaultLayerData(
       } as unknown as AnyLayerData;
 
     default:
-      return null;
+      throw new Error(`Unknown layer type: ${type}. Cannot create default layer data.`);
   }
 }
