@@ -6,6 +6,7 @@
  */
 import { defineStore } from 'pinia';
 import { storeLogger } from '@/utils/logger';
+import { validateFps } from '@/utils/fpsUtils';
 
 interface PlaybackState {
   isPlaying: boolean;
@@ -57,7 +58,7 @@ export const usePlaybackStore = defineStore('playback', {
 
     /**
      * Start playback
-     * @param fps - Frames per second
+     * @param fps - Frames per second (must be > 0, validated internally)
      * @param frameCount - Total frame count
      * @param currentFrame - Starting frame
      * @param onFrame - Callback for each frame
@@ -69,6 +70,9 @@ export const usePlaybackStore = defineStore('playback', {
       onFrame: (frame: number) => void
     ): void {
       if (this.isPlaying) return;
+
+      // Validate fps to prevent division by zero
+      const validFps = validateFps(fps);
 
       this.isPlaying = true;
       this.playbackStartTime = performance.now();
@@ -87,7 +91,7 @@ export const usePlaybackStore = defineStore('playback', {
         }
       }
 
-      const frameDuration = 1000 / fps;
+      const frameDuration = 1000 / validFps;
       let lastFrameTime = this.playbackStartTime;
 
       const tick = (now: number) => {

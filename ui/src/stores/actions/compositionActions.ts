@@ -8,6 +8,7 @@
  */
 
 import { storeLogger } from '@/utils/logger';
+import { validateFps, DEFAULT_FPS } from '@/utils/fpsUtils';
 import type {
   Layer,
   Composition,
@@ -63,7 +64,8 @@ export function createComposition(
     fps: settings?.fps ?? activeComp?.settings.fps ?? 16,
     duration: 0,
     backgroundColor: settings?.backgroundColor ?? '#050505',
-    autoResizeToContent: settings?.autoResizeToContent ?? true
+    autoResizeToContent: settings?.autoResizeToContent ?? true,
+    frameBlendingEnabled: settings?.frameBlendingEnabled ?? false
   };
   defaultSettings.duration = defaultSettings.frameCount / defaultSettings.fps;
 
@@ -83,6 +85,9 @@ export function createComposition(
     store.openCompositionIds.push(id);
   }
   store.activeCompositionId = id;
+
+  // Push history for undo/redo
+  store.pushHistory();
 
   storeLogger.debug('Created composition:', name, id);
   return composition;
@@ -131,6 +136,10 @@ export function renameComposition(store: CompositionStore, compId: string, newNa
 
 /**
  * Update composition settings
+ *
+ * @param store - The compositor store
+ * @param compId - Composition ID to update
+ * @param settings - Partial settings to update (fps must be > 0 if provided)
  */
 export function updateCompositionSettings(
   store: CompositionStore,
@@ -142,10 +151,15 @@ export function updateCompositionSettings(
 
   const oldFrameCount = comp.settings.frameCount;
 
+  // Validate fps if provided to prevent division by zero
+  if (settings.fps !== undefined) {
+    settings.fps = validateFps(settings.fps);
+  }
+
   // Update settings
   Object.assign(comp.settings, settings);
 
-  // Recalculate duration
+  // Recalculate duration (fps is guaranteed valid via validateFps)
   comp.settings.duration = comp.settings.frameCount / comp.settings.fps;
 
   // Extend layer outPoints if frameCount increased
@@ -161,6 +175,35 @@ export function updateCompositionSettings(
   if (compId === store.project.mainCompositionId) {
     Object.assign(store.project.composition, comp.settings);
   }
+
+  // Push history for undo/redo
+  store.pushHistory();
+}
+
+/**
+ * Enable frame blending for a composition
+ * When enabled, layers with timeStretch or speedMap interpolate between frames
+ */
+export function enableFrameBlending(store: CompositionStore, compId: string): void {
+  updateCompositionSettings(store, compId, { frameBlendingEnabled: true });
+}
+
+/**
+ * Disable frame blending for a composition
+ */
+export function disableFrameBlending(store: CompositionStore, compId: string): void {
+  updateCompositionSettings(store, compId, { frameBlendingEnabled: false });
+}
+
+/**
+ * Toggle frame blending for a composition
+ */
+export function toggleFrameBlending(store: CompositionStore, compId: string): void {
+  const comp = store.project.compositions[compId];
+  if (!comp) return;
+
+  const enabled = !comp.settings.frameBlendingEnabled;
+  updateCompositionSettings(store, compId, { frameBlendingEnabled: enabled });
 }
 
 /**

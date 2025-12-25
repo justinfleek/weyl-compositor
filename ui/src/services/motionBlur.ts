@@ -53,6 +53,10 @@ export interface MotionBlurSettings {
   adaptiveThreshold: number;    // Min velocity for blur (px/frame)
   motionBlurQuality: 'draft' | 'normal' | 'high';
   useGPU: boolean;
+
+  // Composition fps for preset enforcement (optional)
+  // When set, suggestSettings() will validate against this fps
+  targetFps?: number;           // Composition fps these settings were tuned for
 }
 
 export interface VelocityData {
