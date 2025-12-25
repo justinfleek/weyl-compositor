@@ -9,7 +9,7 @@ Current Phase: TIER 1 COMPLETE - ALL BUGS FIXED, READY FOR TIER 2
 | Tier | Total | Complete | Bugs Found |
 |------|-------|----------|------------|
 | 1. Foundation | 7 | 7 | 3 |
-| 2. Layer Types | 23 | 10 | 9 |
+| 2. Layer Types | 23 | 11 | 10 |
 | 3. Animation | 10 | 0 | 0 |
 | 4. Effects | 12 | 0 | 0 |
 | 5. Particles | 12 | 0 | 0 |
@@ -20,7 +20,7 @@ Current Phase: TIER 1 COMPLETE - ALL BUGS FIXED, READY FOR TIER 2
 | 10. Export | 6 | 0 | 0 |
 | 11. AI | 5 | 0 | 0 |
 | 12. Data/Templates | 4 | 0 | 0 |
-| **TOTAL** | **127** | **19** | **12** |
+| **TOTAL** | **127** | **20** | **13** |
 
 ---
 
@@ -52,7 +52,7 @@ Current Phase: TIER 1 COMPLETE - ALL BUGS FIXED, READY FOR TIER 2
 | 2.10 | GroupLayer | [x] | 0 | 5m | 4 |
 | 2.11 | NestedCompLayer | [x] | 1 | 15m | 4 |
 | 2.12 | EffectLayer | [x] | 2 | 10m | 4 |
-| 2.13 | ParticleLayer | [ ] | 0 | - | - |
+| 2.13 | ParticleLayer | [x] | 1 | 20m | 4 |
 | 2.14 | PathLayer | [ ] | 0 | - | - |
 | 2.15 | SplineLayer | [ ] | 0 | - | - |
 | 2.16 | ModelLayer | [ ] | 0 | - | - |

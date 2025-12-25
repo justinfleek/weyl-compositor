@@ -10,9 +10,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 2 | 2 | 0 |
-| MEDIUM | 7 | 7 | 0 |
+| MEDIUM | 8 | 8 | 0 |
 | LOW | 3 | 3 | 0 |
-| **TOTAL** | **12** | **12** | **0** |
+| **TOTAL** | **13** | **13** | **0** |
 
 ---
 
@@ -179,5 +179,19 @@
 - **Status:** FIXED
 - **Fix:** Added opacity handling in `onApplyEvaluatedState`: reads `state.transform.opacity` and applies to `this.material.opacity`.
 - **Files Changed:** ui/src/engine/layers/EffectLayer.ts
+
+---
+
+## BUG-017: ParticleLayer audio reactivity compounds emitter values
+- **Severity:** MEDIUM
+- **Feature:** 2.13 ParticleLayer
+- **File:** ui/src/engine/layers/ParticleLayer.ts
+- **Line:** 1004-1045
+- **Description:** `applyAudioReactivity()` reads current emitter/force field values from config and multiplies by audio factor. Since config values are modified in place, values compound each frame (e.g., 100→110→121→133...) instead of being applied fresh from base values.
+- **Expected:** Audio should modulate from original BASE values, not already-modulated values.
+- **Actual:** Audio modulation compounds unboundedly over time, causing particle properties to grow/shrink wildly.
+- **Status:** FIXED
+- **Fix:** Added `baseEmitterValues` and `baseForceFieldValues` Maps to store original values. Modified `applyAudioReactivity` to always multiply from base values. Added `storeBaseValues()` called during initialization.
+- **Files Changed:** ui/src/engine/layers/ParticleLayer.ts
 
 ---

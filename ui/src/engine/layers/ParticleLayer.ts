@@ -49,6 +49,12 @@ export class ParticleLayer extends BaseLayer {
   /** Last evaluated frame (for scrub detection) */
   private lastEvaluatedFrame: number = -1;
 
+  /** Base emitter values for audio reactivity (prevents compounding) */
+  private baseEmitterValues: Map<string, { initialSpeed: number; initialSize: number }> = new Map();
+
+  /** Base force field values for audio reactivity (prevents compounding) */
+  private baseForceFieldValues: Map<string, { strength: number }> = new Map();
+
   /** Performance stats */
   private stats = {
     particleCount: 0,
@@ -671,6 +677,34 @@ export class ParticleLayer extends BaseLayer {
 
     // Create emitter and force field gizmos for visualization
     this.createGizmos();
+
+    // Store base emitter/force field values for audio reactivity
+    this.storeBaseValues();
+  }
+
+  /**
+   * Store base emitter and force field values for audio reactivity
+   * This prevents compounding when audio values are applied each frame
+   */
+  private storeBaseValues(): void {
+    const config = this.particleSystem.getConfig();
+
+    // Store emitter base values
+    this.baseEmitterValues.clear();
+    for (const emitter of config.emitters) {
+      this.baseEmitterValues.set(emitter.id, {
+        initialSpeed: emitter.initialSpeed,
+        initialSize: emitter.initialSize,
+      });
+    }
+
+    // Store force field base values
+    this.baseForceFieldValues.clear();
+    for (const field of config.forceFields) {
+      this.baseForceFieldValues.set(field.id, {
+        strength: field.strength,
+      });
+    }
   }
 
   // Glow configuration
@@ -967,38 +1001,44 @@ export class ParticleLayer extends BaseLayer {
       this.particleSystem.setAudioFeature('amplitude', emissionRate);
     }
 
-    // Update emitters based on audio
+    // Update emitters based on audio (using BASE values to prevent compounding)
     if (speed !== 0 || size !== 0 || emissionRate !== 0) {
       const emitters = this.particleSystem.getConfig().emitters;
       for (const emitter of emitters) {
+        const baseValues = this.baseEmitterValues.get(emitter.id);
+        if (!baseValues) continue;
+
         // Speed modulation (0.5 base + audio value for range 0.5x to 1.5x)
         if (speed !== 0) {
           this.particleSystem.updateEmitter(emitter.id, {
-            initialSpeed: emitter.initialSpeed * (0.5 + speed)
+            initialSpeed: baseValues.initialSpeed * (0.5 + speed)
           });
         }
 
         // Size modulation
         if (size !== 0) {
           this.particleSystem.updateEmitter(emitter.id, {
-            initialSize: emitter.initialSize * (0.5 + size)
+            initialSize: baseValues.initialSize * (0.5 + size)
           });
         }
       }
     }
 
-    // Update force fields based on audio
+    // Update force fields based on audio (using BASE values to prevent compounding)
     if (gravity !== 0 || windStrength !== 0) {
       const forceFields = this.particleSystem.getConfig().forceFields;
       for (const field of forceFields) {
+        const baseValues = this.baseForceFieldValues.get(field.id);
+        if (!baseValues) continue;
+
         if (field.type === 'gravity' && gravity !== 0) {
           this.particleSystem.updateForceField(field.id, {
-            strength: field.strength * (0.5 + gravity)
+            strength: baseValues.strength * (0.5 + gravity)
           });
         }
         if (field.type === 'wind' && windStrength !== 0) {
           this.particleSystem.updateForceField(field.id, {
-            strength: field.strength * (0.5 + windStrength)
+            strength: baseValues.strength * (0.5 + windStrength)
           });
         }
       }
