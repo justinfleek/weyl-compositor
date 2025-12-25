@@ -9,7 +9,7 @@ Current Phase: TIER 1 COMPLETE - ALL BUGS FIXED, READY FOR TIER 2
 | Tier | Total | Complete | Bugs Found |
 |------|-------|----------|------------|
 | 1. Foundation | 7 | 7 | 3 |
-| 2. Layer Types | 23 | 8 | 6 |
+| 2. Layer Types | 23 | 9 | 7 |
 | 3. Animation | 10 | 0 | 0 |
 | 4. Effects | 12 | 0 | 0 |
 | 5. Particles | 12 | 0 | 0 |
@@ -20,7 +20,7 @@ Current Phase: TIER 1 COMPLETE - ALL BUGS FIXED, READY FOR TIER 2
 | 10. Export | 6 | 0 | 0 |
 | 11. AI | 5 | 0 | 0 |
 | 12. Data/Templates | 4 | 0 | 0 |
-| **TOTAL** | **127** | **15** | **9** |
+| **TOTAL** | **127** | **18** | **10** |
 
 ---
 
@@ -48,9 +48,9 @@ Current Phase: TIER 1 COMPLETE - ALL BUGS FIXED, READY FOR TIER 2
 | 2.6 | AudioLayer | [x] | 1 | 10m | 3 |
 | 2.7 | CameraLayer | [x] | 2 | 15m | 3 |
 | 2.8 | LightLayer | [x] | 1 | 15m | 4 |
-| 2.9 | ControlLayer | [ ] | 0 | - | - |
-| 2.10 | GroupLayer | [ ] | 0 | - | - |
-| 2.11 | NestedCompLayer | [ ] | 0 | - | - |
+| 2.9 | ControlLayer | [x] | 0 | 5m | 4 |
+| 2.10 | GroupLayer | [x] | 0 | 5m | 4 |
+| 2.11 | NestedCompLayer | [x] | 1 | 15m | 4 |
 | 2.12 | EffectLayer | [ ] | 0 | - | - |
 | 2.13 | ParticleLayer | [ ] | 0 | - | - |
 | 2.14 | PathLayer | [ ] | 0 | - | - |

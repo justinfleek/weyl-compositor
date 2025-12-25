@@ -10,9 +10,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 2 | 2 | 0 |
-| MEDIUM | 4 | 4 | 0 |
+| MEDIUM | 5 | 5 | 0 |
 | LOW | 3 | 3 | 0 |
-| **TOTAL** | **9** | **9** | **0** |
+| **TOTAL** | **10** | **10** | **0** |
 
 ---
 
@@ -137,5 +137,19 @@
 - **Status:** FIXED
 - **Fix:** Added `lastPOIFrame` tracker. Smoothing only applies on sequential frames (frame === lastPOIFrame + 1). Non-sequential access resets smoothedPOI to target directly, ensuring determinism.
 - **Files Changed:** ui/src/engine/layers/LightLayer.ts
+
+---
+
+## BUG-014: NestedCompLayer opacity never applied to material
+- **Severity:** MEDIUM
+- **Feature:** 2.11 NestedCompLayer
+- **File:** ui/src/engine/layers/NestedCompLayer.ts
+- **Line:** 280-292
+- **Description:** The layer's animated opacity is never applied to `this.material.opacity`. Material is created with default opacity=1.0 and `onApplyEvaluatedState` only handles speedMap.
+- **Expected:** Animated opacity should control nested comp visibility.
+- **Actual:** Nested comp always renders at 100% opacity. Also affects `combineTransforms()` which uses wrong opacity for flattened layers.
+- **Status:** FIXED
+- **Fix:** Added opacity handling in `onApplyEvaluatedState`: reads `state.transform.opacity` and applies to `this.material.opacity`.
+- **Files Changed:** ui/src/engine/layers/NestedCompLayer.ts
 
 ---

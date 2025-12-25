@@ -187,12 +187,19 @@ export class NestedCompLayer extends BaseLayer {
 
   /**
    * Calculate the frame in the nested composition
-   * based on parent frame and speed map (time remapping)
+   * based on parent frame, timeStretch, and speed map (time remapping)
+   *
+   * DETERMINISM: This is a pure function of (parentFrame, layer state).
+   * Same inputs always produce same outputs.
    */
   private calculateNestedFrame(parentFrame: number): number {
     if (!this.cachedComposition) return 0;
 
-    // If speed map is enabled, use that
+    const nestedFps = this.nestedCompData.overrideFrameRate && this.nestedCompData.frameRate
+      ? this.nestedCompData.frameRate
+      : this.cachedComposition.settings.fps;
+
+    // If speed map is enabled, use that (overrides timeStretch)
     const speedMapEnabled = this.nestedCompData.speedMapEnabled ?? this.nestedCompData.timeRemapEnabled;
     const speedMapProp = this.nestedCompData.speedMap ?? this.nestedCompData.timeRemap;
     if (speedMapEnabled && speedMapProp) {
@@ -200,23 +207,37 @@ export class NestedCompLayer extends BaseLayer {
         ? this.nestedCompEvaluator.evaluate(speedMapProp, parentFrame)
         : speedMapProp.value;
 
-      // Convert time (seconds) to frame
-      const fps = this.nestedCompData.overrideFrameRate && this.nestedCompData.frameRate
-        ? this.nestedCompData.frameRate
-        : this.cachedComposition.settings.fps;
-
-      return Math.floor(remappedTime * fps);
+      return Math.floor(remappedTime * nestedFps);
     }
 
-    // Direct mapping - parent frame = child frame
-    // Handle frame rate differences if override is set
+    // Get layer's timeStretch (100 = normal, 200 = half speed, -100 = reversed)
+    const timeStretch = this.layerData.timeStretch ?? 100;
+    const isReversed = timeStretch < 0;
+
+    // Calculate effective speed: 100% stretch = 1x, 200% = 0.5x, 50% = 2x
+    const stretchFactor = timeStretch !== 0 ? 100 / Math.abs(timeStretch) : 0;
+
+    // Calculate frame relative to layer start
+    const layerStartFrame = this.layerData.startFrame ?? 0;
+    const layerFrame = parentFrame - layerStartFrame;
+
+    // Apply time stretch and frame rate conversion
+    let nestedFrame: number;
     if (this.nestedCompData.overrideFrameRate && this.nestedCompData.frameRate) {
       const parentFps = this.parentFPS;
       const childFps = this.nestedCompData.frameRate;
-      return Math.floor(parentFrame * (childFps / parentFps));
+      nestedFrame = layerFrame * stretchFactor * (childFps / parentFps);
+    } else {
+      nestedFrame = layerFrame * stretchFactor;
     }
 
-    return parentFrame;
+    // Handle reversed playback
+    if (isReversed) {
+      const nestedDuration = this.cachedComposition.settings.frameCount;
+      nestedFrame = nestedDuration - 1 - nestedFrame;
+    }
+
+    return Math.floor(nestedFrame);
   }
 
   // ============================================================================
@@ -258,6 +279,12 @@ export class NestedCompLayer extends BaseLayer {
 
   protected override onApplyEvaluatedState(state: import('../MotionEngine').EvaluatedLayer): void {
     const props = state.properties;
+
+    // Apply opacity to material
+    if (state.transform?.opacity !== undefined && this.material) {
+      this.material.opacity = state.transform.opacity / 100;
+      this.material.needsUpdate = true;
+    }
 
     // Apply speed map if evaluated
     // Check both new 'speedMap' and legacy 'timeRemap' for backwards compatibility
