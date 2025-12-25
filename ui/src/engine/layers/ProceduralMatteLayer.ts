@@ -182,7 +182,8 @@ export class ProceduralMatteLayer extends BaseLayer {
     // Get animation time (explicit types for TypeScript inference)
     const speed: number = this.matteEvaluator.evaluate(this.matteData.animation.speed, frame);
     const phase: number = this.matteEvaluator.evaluate(this.matteData.animation.phase, frame);
-    const time = this.matteData.animation.enabled ? (frame * speed / 60 + phase) : 0;
+    // Use composition fps for correct animation timing (not hardcoded 60fps)
+    const time = this.matteData.animation.enabled ? (frame * speed / this.compositionFps + phase) : 0;
 
     // Render based on pattern type
     switch (this.matteData.patternType) {

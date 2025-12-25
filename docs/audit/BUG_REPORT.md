@@ -10,9 +10,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 2 | 2 | 0 |
-| MEDIUM | 14 | 14 | 0 |
+| MEDIUM | 15 | 15 | 0 |
 | LOW | 3 | 3 | 0 |
-| **TOTAL** | **19** | **19** | **0** |
+| **TOTAL** | **20** | **20** | **0** |
 
 ---
 
@@ -277,5 +277,19 @@
 - **Status:** FIXED
 - **Fix:** Pass `this.compositionFps` to `calculatePresetValues()` and use `fps` variable for time uniform calculation.
 - **Files Changed:** ui/src/engine/layers/DepthflowLayer.ts
+
+---
+
+## BUG-024: ProceduralMatteLayer time calculation hardcodes 60fps
+- **Severity:** MEDIUM
+- **Feature:** 2.23 ProceduralMatteLayer
+- **File:** ui/src/engine/layers/ProceduralMatteLayer.ts
+- **Line:** 185
+- **Description:** Time calculation uses `(frame * speed / 60)` with hardcoded 60fps instead of using composition fps.
+- **Expected:** Should use `this.compositionFps` for correct animation timing at all framerates.
+- **Actual:** Animations run 2x too fast at 30fps, wrong speed at all non-60fps compositions.
+- **Status:** FIXED
+- **Fix:** Changed `60` to `this.compositionFps`.
+- **Files Changed:** ui/src/engine/layers/ProceduralMatteLayer.ts
 
 ---
