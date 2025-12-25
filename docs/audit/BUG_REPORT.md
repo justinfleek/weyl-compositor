@@ -10,9 +10,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 2 | 2 | 0 |
-| MEDIUM | 2 | 2 | 0 |
-| LOW | 2 | 2 | 0 |
-| **TOTAL** | **6** | **6** | **0** |
+| MEDIUM | 3 | 3 | 0 |
+| LOW | 3 | 3 | 0 |
+| **TOTAL** | **8** | **8** | **0** |
 
 ---
 
@@ -95,5 +95,33 @@
 - **Status:** FIXED
 - **Fix:** Changed hardcoded `30` to `this.compositionFps` (inherited from BaseLayer). BaseLayer already has this property and setCompositionFps() method.
 - **Files Changed:** ui/src/engine/layers/ShapeLayer.ts
+
+---
+
+## BUG-011: CameraLayer missing fps in interpolateProperty call
+- **Severity:** MEDIUM
+- **Feature:** 2.7 CameraLayer
+- **File:** ui/src/engine/layers/CameraLayer.ts
+- **Line:** 497
+- **Description:** `interpolateProperty(pathFollowing.parameter, frame)` is missing fps parameter. Defaults to 30fps causing wrong path animation timing at non-30fps framerates.
+- **Expected:** Should pass composition fps for correct timing.
+- **Actual:** Falls back to 30fps regardless of composition settings.
+- **Status:** FIXED
+- **Fix:** Added `this.compositionFps` and `this.id` parameters to interpolateProperty call.
+- **Files Changed:** ui/src/engine/layers/CameraLayer.ts
+
+---
+
+## BUG-012: CameraLayer hardcoded 16/9 aspect ratio in frustum
+- **Severity:** LOW
+- **Feature:** 2.7 CameraLayer
+- **File:** ui/src/engine/layers/CameraLayer.ts
+- **Line:** 239
+- **Description:** Frustum visualization uses hardcoded `16/9` aspect ratio instead of composition aspect. Causes frustum to display incorrectly for non-16:9 compositions.
+- **Expected:** Should use composition width/height to calculate aspect ratio.
+- **Actual:** Always displays as 16:9 frustum regardless of actual composition dimensions.
+- **Status:** FIXED
+- **Fix:** Added `compositionAspect` property with `setCompositionAspect()` method. Changed hardcoded `16/9` to `this.compositionAspect`. Also tracks aspect in frustum state for re-creation when aspect changes.
+- **Files Changed:** ui/src/engine/layers/CameraLayer.ts
 
 ---

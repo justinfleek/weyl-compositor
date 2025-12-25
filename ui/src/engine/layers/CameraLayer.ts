@@ -65,7 +65,10 @@ export class CameraLayer extends BaseLayer {
   private showFrustum: boolean = true;
 
   // Track last camera state for frustum updates
-  private lastFrustumState: { fov: number; near: number; far: number } | null = null;
+  private lastFrustumState: { fov: number; near: number; far: number; aspect: number } | null = null;
+
+  // Composition aspect ratio for frustum visualization
+  private compositionAspect: number = 16 / 9;
 
   // Spline provider for path following
   private splineProvider: CameraSplineProvider | null = null;
@@ -121,6 +124,13 @@ export class CameraLayer extends BaseLayer {
    */
   setSplineProvider(provider: CameraSplineProvider | null): void {
     this.splineProvider = provider;
+  }
+
+  /**
+   * Set composition aspect ratio for frustum visualization
+   */
+  setCompositionAspect(aspect: number): void {
+    this.compositionAspect = aspect;
   }
 
   /**
@@ -236,7 +246,7 @@ export class CameraLayer extends BaseLayer {
     const near = camera.nearClip;
     const far = Math.min(camera.farClip, 2000); // Cap for visualization
     const fov = camera.angleOfView * (Math.PI / 180);
-    const aspect = 16 / 9; // Assume standard aspect
+    const aspect = this.compositionAspect;
 
     const nearHeight = 2 * Math.tan(fov / 2) * near;
     const nearWidth = nearHeight * aspect;
@@ -447,12 +457,14 @@ export class CameraLayer extends BaseLayer {
       fov: camera.angleOfView,
       near: camera.nearClip,
       far: camera.farClip,
+      aspect: this.compositionAspect,
     };
 
     const needsFrustumUpdate = !this.lastFrustumState ||
       this.lastFrustumState.fov !== currentState.fov ||
       this.lastFrustumState.near !== currentState.near ||
-      this.lastFrustumState.far !== currentState.far;
+      this.lastFrustumState.far !== currentState.far ||
+      this.lastFrustumState.aspect !== currentState.aspect;
 
     if (needsFrustumUpdate) {
       if (this.frustumHelper) {
@@ -494,7 +506,7 @@ export class CameraLayer extends BaseLayer {
       t = (frame * pathFollowing.autoAdvanceSpeed) % 1;
     } else {
       // Manual/keyframed mode: interpolate from animated property
-      t = interpolateProperty(pathFollowing.parameter, frame);
+      t = interpolateProperty(pathFollowing.parameter, frame, this.compositionFps, this.id);
     }
 
     // Clamp t to valid range
