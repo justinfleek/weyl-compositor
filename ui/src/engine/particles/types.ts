@@ -498,6 +498,7 @@ export type AudioFeature =
   | 'rms'
   | 'spectralCentroid'
   | 'onsets'
+  | 'peaks'  // BUG-083 fix: Add peaks for isPeakAtFrame() support
   // Frequency bands
   | 'sub'
   | 'bass'

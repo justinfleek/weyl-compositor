@@ -39,7 +39,12 @@ import type { AudioAnalysis } from '@/services/audioFeatures';
 import { interpolateProperty } from '@/services/interpolation';
 import { getFeatureAtFrame } from '@/services/audioFeatures';
 import type { AudioMapping, TargetParameter } from '@/services/audioReactiveMapping';
-import { AudioReactiveMapper, collectAudioReactiveModifiers } from '@/services/audioReactiveMapping';
+import {
+  AudioReactiveMapper,
+  collectAudioReactiveModifiers,
+  collectParticleAudioReactiveModifiers,
+  type ParticleAudioReactiveModifiers,
+} from '@/services/audioReactiveMapping';
 import { particleSimulationRegistry, type ParticleSnapshot } from './ParticleSimulationController';
 import type { ParticleSystemConfig } from '@/services/particleSystem';
 // Camera enhancement imports - deterministic (seeded noise)
@@ -131,6 +136,9 @@ export interface EvaluatedLayer {
 
   /** Audio reactive modifiers (additive values from audio mappings) */
   readonly audioModifiers: AudioReactiveModifiers;
+
+  /** BUG-081 fix: Per-emitter audio reactive modifiers for particle layers */
+  readonly emitterAudioModifiers?: Readonly<Map<string, ParticleAudioReactiveModifiers>>;
 }
 
 /**
@@ -432,12 +440,27 @@ export class MotionEngine {
   private lastProjectHash: string = '';
 
   /**
+   * BUG-082 fix: Persistent AudioReactiveMapper for temporal state
+   * Temporal features (smoothing, release envelopes, beat toggles) require
+   * state to persist across frames during sequential playback.
+   */
+  private audioMapper: AudioReactiveMapper | null = null;
+  private lastAudioReactiveFrame: number = -1;
+  private lastAudioAnalysis: AudioAnalysis | null = null;
+
+  /**
    * Invalidate the frame cache
    * Call this when project structure changes
    */
   invalidateCache(): void {
     this.frameCache.invalidate();
     this.lastProjectHash = '';
+    // BUG-082 fix: Reset audio reactive state on cache invalidation
+    if (this.audioMapper) {
+      this.audioMapper.resetTemporalState();
+    }
+    this.lastAudioReactiveFrame = -1;
+    this.lastAudioAnalysis = null;
   }
 
   /**
@@ -488,13 +511,52 @@ export class MotionEngine {
       }
     }
 
-    // Create audio reactive mapper if we have audio data
+    // BUG-082 fix: Persist AudioReactiveMapper for temporal features
+    // Temporal state (smoothing, release envelopes, beat toggles) must persist
+    // across sequential frames but reset on non-sequential access (scrubbing).
     let audioMapper: AudioReactiveMapper | null = null;
     if (audioReactive && audioReactive.analysis && audioReactive.mappings.length > 0) {
-      audioMapper = new AudioReactiveMapper(audioReactive.analysis);
-      for (const mapping of audioReactive.mappings) {
-        audioMapper.addMapping(mapping);
+      // Create mapper if needed
+      if (!this.audioMapper) {
+        this.audioMapper = new AudioReactiveMapper(audioReactive.analysis);
+        this.lastAudioAnalysis = audioReactive.analysis;
+      } else if (this.lastAudioAnalysis !== audioReactive.analysis) {
+        // Analysis changed - must call setAnalysis (which resets temporal state)
+        // This is correct: new audio means temporal state should reset
+        this.audioMapper.setAnalysis(audioReactive.analysis);
+        this.lastAudioAnalysis = audioReactive.analysis;
       }
+      // If same analysis, reuse mapper with preserved temporal state
+
+      // Detect non-sequential frame access and reset temporal state
+      // Sequential: frame === lastFrame + 1 OR first frame (lastFrame === -1)
+      const isNonSequential = this.lastAudioReactiveFrame >= 0 &&
+                              frame !== this.lastAudioReactiveFrame + 1;
+      if (isNonSequential) {
+        this.audioMapper.resetTemporalState();
+      }
+
+      // Sync mappings: add/update new, remove old
+      const currentMappingIds = new Set(this.audioMapper.getAllMappings().map(m => m.id));
+      const newMappingIds = new Set<string>();
+
+      for (const mapping of audioReactive.mappings) {
+        this.audioMapper.addMapping(mapping);  // Preserves temporal state for existing
+        newMappingIds.add(mapping.id);
+      }
+
+      // Remove mappings that are no longer present
+      for (const id of currentMappingIds) {
+        if (!newMappingIds.has(id)) {
+          this.audioMapper.removeMapping(id);
+        }
+      }
+
+      audioMapper = this.audioMapper;
+      this.lastAudioReactiveFrame = frame;
+    } else {
+      // No audio reactive input - reset tracking
+      this.lastAudioReactiveFrame = -1;
     }
 
     // Get composition fps
@@ -584,12 +646,37 @@ export class MotionEngine {
 
       // Evaluate audio reactive modifiers for this layer
       let audioModifiers: AudioReactiveModifiers = {};
+      let emitterAudioModifiers: Map<string, ParticleAudioReactiveModifiers> | undefined;
       if (audioMapper) {
         audioModifiers = collectAudioReactiveModifiers(audioMapper, layer.id, frame);
 
         // Apply audio modifiers to opacity (additive)
         if (audioModifiers.opacity !== undefined) {
           opacity = Math.max(0, Math.min(100, opacity + audioModifiers.opacity * 100));
+        }
+
+        // BUG-081 fix: Compute per-emitter modifiers for particle layers
+        if (layer.type === 'particles' && layer.data) {
+          const particleData = layer.data as { emitters?: Array<{ id: string }> };
+          if (particleData.emitters && particleData.emitters.length > 0) {
+            emitterAudioModifiers = new Map();
+            for (const emitter of particleData.emitters) {
+              const emitterMods = collectParticleAudioReactiveModifiers(
+                audioMapper,
+                layer.id,
+                emitter.id,
+                frame
+              );
+              // Only add if there are actual modifiers
+              if (Object.keys(emitterMods).length > 0) {
+                emitterAudioModifiers.set(emitter.id, emitterMods);
+              }
+            }
+            // Don't include if no emitters have modifiers
+            if (emitterAudioModifiers.size === 0) {
+              emitterAudioModifiers = undefined;
+            }
+          }
         }
       }
 
@@ -609,6 +696,7 @@ export class MotionEngine {
         threeD: layer.threeD,
         layerRef: layer, // Reference for static data only - NOT for evaluation
         audioModifiers: Object.freeze(audioModifiers),
+        emitterAudioModifiers: emitterAudioModifiers ? Object.freeze(emitterAudioModifiers) : undefined,
       }));
     }
 

@@ -50,10 +50,13 @@ export class ParticleLayer extends BaseLayer {
   private lastEvaluatedFrame: number = -1;
 
   /** Base emitter values for audio reactivity (prevents compounding) */
-  private baseEmitterValues: Map<string, { initialSpeed: number; initialSize: number }> = new Map();
+  private baseEmitterValues: Map<string, { initialSpeed: number; initialSize: number; emissionRate: number }> = new Map();
 
   /** Base force field values for audio reactivity (prevents compounding) */
   private baseForceFieldValues: Map<string, { strength: number }> = new Map();
+
+  /** BUG-081 fix: Per-emitter audio modifiers from MotionEngine */
+  private currentEmitterAudioModifiers: Map<string, import('@/services/audioReactiveMapping').ParticleAudioReactiveModifiers> | undefined;
 
   /** Performance stats */
   private stats = {
@@ -695,6 +698,7 @@ export class ParticleLayer extends BaseLayer {
       this.baseEmitterValues.set(emitter.id, {
         initialSpeed: emitter.initialSpeed,
         initialSize: emitter.initialSize,
+        emissionRate: emitter.emissionRate,  // BUG-081 fix: Store base emission rate
       });
     }
 
@@ -970,6 +974,13 @@ export class ParticleLayer extends BaseLayer {
     // The evaluated state includes the frame number for deterministic simulation
     const frame = state.frame ?? 0;
 
+    // BUG-081 fix: Store per-emitter audio modifiers before evaluation
+    this.currentEmitterAudioModifiers = state.emitterAudioModifiers as Map<string, import('@/services/audioReactiveMapping').ParticleAudioReactiveModifiers> | undefined;
+
+    // BUG-081 fix: Apply emission rate modifiers BEFORE simulation
+    // Emission happens inside step(), so we must modify emitter.emissionRate BEFORE calling simulateToFrame
+    this.applyEmissionRateModifiers();
+
     // Step the particle simulation (deterministic replay if needed)
     this.onEvaluateFrame(frame);
   }
@@ -986,45 +997,79 @@ export class ParticleLayer extends BaseLayer {
   }
 
   /**
+   * Apply emission rate modifiers BEFORE simulation step
+   * BUG-081 fix: Emission rate must be set before step() because emitParticles() uses it during step
+   */
+  private applyEmissionRateModifiers(): void {
+    const layerEmissionRate = this.getAudioReactiveValue('particle.emissionRate');
+
+    const emitters = this.particleSystem.getConfig().emitters;
+    for (const emitter of emitters) {
+      const baseValues = this.baseEmitterValues.get(emitter.id);
+      if (!baseValues) continue;
+
+      // BUG-081 fix: Get emitter-specific emission rate if available
+      const emitterMods = this.currentEmitterAudioModifiers?.get(emitter.id);
+      const emissionRateMod = emitterMods?.emissionRate ?? layerEmissionRate;
+
+      if (emissionRateMod !== 0) {
+        // Modulate emission rate: base * (0.5 + mod) for range 0.5x to 1.5x
+        this.particleSystem.updateEmitter(emitter.id, {
+          emissionRate: baseValues.emissionRate * (0.5 + emissionRateMod)
+        });
+      } else {
+        // Reset to base value when no modulation
+        this.particleSystem.updateEmitter(emitter.id, {
+          emissionRate: baseValues.emissionRate
+        });
+      }
+    }
+  }
+
+  /**
    * Apply audio-reactive values to particle system emitters and force fields
+   * BUG-081 fix: Now uses per-emitter audio modifiers when targetEmitterId is specified
+   * NOTE: Emission rate is handled separately in applyEmissionRateModifiers() BEFORE simulation
    */
   private applyAudioReactivity(): void {
-    // Map audio reactive targets to particle system features
-    const emissionRate = this.getAudioReactiveValue('particle.emissionRate');
-    const speed = this.getAudioReactiveValue('particle.speed');
-    const size = this.getAudioReactiveValue('particle.size');
-    const gravity = this.getAudioReactiveValue('particle.gravity');
-    const windStrength = this.getAudioReactiveValue('particle.windStrength');
-
-    // Set audio features on the particle system (values are 0-1 normalized)
-    if (emissionRate !== 0) {
-      this.particleSystem.setAudioFeature('amplitude', emissionRate);
-    }
+    // Layer-level audio values (for emitters without specific targeting)
+    const layerSpeed = this.getAudioReactiveValue('particle.speed');
+    const layerSize = this.getAudioReactiveValue('particle.size');
+    const layerGravity = this.getAudioReactiveValue('particle.gravity');
+    const layerWindStrength = this.getAudioReactiveValue('particle.windStrength');
 
     // Update emitters based on audio (using BASE values to prevent compounding)
-    if (speed !== 0 || size !== 0 || emissionRate !== 0) {
-      const emitters = this.particleSystem.getConfig().emitters;
-      for (const emitter of emitters) {
-        const baseValues = this.baseEmitterValues.get(emitter.id);
-        if (!baseValues) continue;
+    // NOTE: Emission rate is handled in applyEmissionRateModifiers() BEFORE step()
+    const emitters = this.particleSystem.getConfig().emitters;
+    for (const emitter of emitters) {
+      const baseValues = this.baseEmitterValues.get(emitter.id);
+      if (!baseValues) continue;
 
-        // Speed modulation (0.5 base + audio value for range 0.5x to 1.5x)
-        if (speed !== 0) {
-          this.particleSystem.updateEmitter(emitter.id, {
-            initialSpeed: baseValues.initialSpeed * (0.5 + speed)
-          });
-        }
+      // BUG-081 fix: Get emitter-specific modifiers if available
+      const emitterMods = this.currentEmitterAudioModifiers?.get(emitter.id);
 
-        // Size modulation
-        if (size !== 0) {
-          this.particleSystem.updateEmitter(emitter.id, {
-            initialSize: baseValues.initialSize * (0.5 + size)
-          });
-        }
+      // Use emitter-specific values if available, otherwise fall back to layer-level
+      const speed = emitterMods?.speed ?? layerSpeed;
+      const size = emitterMods?.size ?? layerSize;
+
+      // Speed modulation (0.5 base + audio value for range 0.5x to 1.5x)
+      if (speed !== 0) {
+        this.particleSystem.updateEmitter(emitter.id, {
+          initialSpeed: baseValues.initialSpeed * (0.5 + speed)
+        });
+      }
+
+      // Size modulation
+      if (size !== 0) {
+        this.particleSystem.updateEmitter(emitter.id, {
+          initialSize: baseValues.initialSize * (0.5 + size)
+        });
       }
     }
 
     // Update force fields based on audio (using BASE values to prevent compounding)
+    const gravity = layerGravity;
+    const windStrength = layerWindStrength;
     if (gravity !== 0 || windStrength !== 0) {
       const forceFields = this.particleSystem.getConfig().forceFields;
       for (const field of forceFields) {

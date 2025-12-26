@@ -148,6 +148,9 @@ export function createEnhancedBeatGrid(
   // Assign musical positions
   beats = assignMusicalPositions(beats, firstBeatFrame, framesPerBeat, cfg.timeSignature);
 
+  // BUG-080 fix: Filter out low-confidence beats
+  beats = beats.filter(b => b.confidence >= cfg.minConfidence);
+
   // Sort by frame
   beats.sort((a, b) => a.frame - b.frame);
 

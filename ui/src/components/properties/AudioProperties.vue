@@ -103,6 +103,28 @@
               </select>
             </div>
 
+            <!-- BUG-081 fix: Target Layer Selection -->
+            <div class="property-row">
+              <label>Layer</label>
+              <select v-model="mapping.targetLayerId" @change="onTargetLayerChange(mapping)">
+                <option :value="undefined">All Layers</option>
+                <option v-for="layer in allLayers" :key="layer.id" :value="layer.id">
+                  {{ layer.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- BUG-081 fix: Target Emitter Selection (only for particle layers) -->
+            <div class="property-row" v-if="isParticleLayer(mapping.targetLayerId)">
+              <label>Emitter</label>
+              <select v-model="mapping.targetEmitterId">
+                <option :value="undefined">All Emitters</option>
+                <option v-for="emitter in getEmittersForLayer(mapping.targetLayerId)" :key="emitter.id" :value="emitter.id">
+                  {{ emitter.name || emitter.id }}
+                </option>
+              </select>
+            </div>
+
             <div class="subsection-header">Basic Controls</div>
 
             <div class="property-row">
@@ -333,6 +355,29 @@ const currentFeatureValue = computed(() => {
   if (!store.audioAnalysis) return 0;
   return getFeatureAtFrame(store.audioAnalysis, visualizerFeature.value, store.currentFrame);
 });
+
+// BUG-081 fix: Layer and emitter selection helpers for targetEmitterId UI
+const allLayers = computed(() => store.layers);
+
+function isParticleLayer(layerId: string | undefined): boolean {
+  if (!layerId) return false;
+  const layer = store.layers.find(l => l.id === layerId);
+  return layer?.type === 'particles';
+}
+
+function getEmittersForLayer(layerId: string | undefined): Array<{ id: string; name: string }> {
+  if (!layerId) return [];
+  const layer = store.layers.find(l => l.id === layerId);
+  if (!layer || layer.type !== 'particles') return [];
+  // ParticleLayerData has emitters array with id and name
+  const data = layer.data as { emitters?: Array<{ id: string; name: string }> };
+  return data?.emitters || [];
+}
+
+function onTargetLayerChange(mapping: AudioMapping): void {
+  // Clear targetEmitterId when layer changes (emitter may not exist in new layer)
+  mapping.targetEmitterId = undefined;
+}
 
 // Methods
 function toggleSection(section: string): void {

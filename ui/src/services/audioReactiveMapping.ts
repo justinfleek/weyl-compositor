@@ -7,27 +7,15 @@
 
 import type { AudioAnalysis, PeakData } from './audioFeatures';
 import { getFeatureAtFrame, isPeakAtFrame } from './audioFeatures';
+// BUG-083 fix: Import AudioFeature from canonical source instead of duplicating
+import type { AudioFeature } from '@/engine/particles/types';
+
+// Re-export for consumers that import from this module
+export type { AudioFeature };
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export type AudioFeature =
-  // Core features
-  | 'amplitude' | 'rms' | 'spectralCentroid'
-  // Frequency bands
-  | 'sub' | 'bass' | 'lowMid' | 'mid' | 'highMid' | 'high'
-  // Events
-  | 'onsets' | 'peaks'
-  // Enhanced features (RyanOnTheInside / Yvann style)
-  | 'spectralFlux'          // Rate of spectral change - great for beats
-  | 'zeroCrossingRate'      // Percussiveness indicator
-  | 'spectralRolloff'       // High-frequency energy cutoff
-  | 'spectralFlatness'      // Tonal (0) vs noise-like (1)
-  | 'chromaEnergy'          // Overall harmonic energy
-  // Individual pitch classes (for music-aware animations)
-  | 'chromaC' | 'chromaCs' | 'chromaD' | 'chromaDs' | 'chromaE' | 'chromaF'
-  | 'chromaFs' | 'chromaG' | 'chromaGs' | 'chromaA' | 'chromaAs' | 'chromaB';
 
 export type TargetParameter =
   // Particle parameters
@@ -160,13 +148,19 @@ export class AudioReactiveMapper {
   }
 
   /**
-   * Add a new mapping
+   * Add or update a mapping
+   * BUG-082 fix: Only initializes temporal state for NEW mappings.
+   * Existing mappings preserve their temporal state (smoothing, release, toggles).
    */
   addMapping(mapping: AudioMapping): void {
+    const isNew = !this.mappings.has(mapping.id);
     this.mappings.set(mapping.id, mapping);
-    this.smoothedValues.set(mapping.id, 0);
-    this.releaseEnvelopes.set(mapping.id, 0);
-    this.beatToggleStates.set(mapping.id, 0);
+    // Only initialize temporal state for new mappings
+    if (isNew) {
+      this.smoothedValues.set(mapping.id, 0);
+      this.releaseEnvelopes.set(mapping.id, 0);
+      this.beatToggleStates.set(mapping.id, 0);
+    }
   }
 
   /**
@@ -177,6 +171,26 @@ export class AudioReactiveMapper {
     this.smoothedValues.delete(id);
     this.releaseEnvelopes.delete(id);
     this.beatToggleStates.delete(id);
+  }
+
+  /**
+   * Reset all temporal state (smoothing, release envelopes, beat toggles)
+   * Call this when seeking non-sequentially to ensure determinism.
+   * BUG-082 fix: Temporal state must be reset on frame jumps.
+   */
+  resetTemporalState(): void {
+    // Reset all smoothed values to 0
+    for (const id of this.smoothedValues.keys()) {
+      this.smoothedValues.set(id, 0);
+    }
+    // Reset all release envelopes to 0
+    for (const id of this.releaseEnvelopes.keys()) {
+      this.releaseEnvelopes.set(id, 0);
+    }
+    // Reset all beat toggle states to 0
+    for (const id of this.beatToggleStates.keys()) {
+      this.beatToggleStates.set(id, 0);
+    }
   }
 
   /**
@@ -210,6 +224,28 @@ export class AudioReactiveMapper {
     return Array.from(this.mappings.values()).filter(
       m => m.targetLayerId === layerId || m.targetLayerId === undefined
     );
+  }
+
+  /**
+   * Get mappings for a specific emitter
+   * BUG-081 fix: Implements targetEmitterId filtering
+   */
+  getMappingsForEmitter(emitterId: string): AudioMapping[] {
+    return Array.from(this.mappings.values()).filter(
+      m => m.targetEmitterId === emitterId || m.targetEmitterId === undefined
+    );
+  }
+
+  /**
+   * Get mappings for a specific layer and emitter combination
+   * BUG-081 fix: Combined layer + emitter filtering for particle systems
+   */
+  getMappingsForLayerEmitter(layerId: string, emitterId: string): AudioMapping[] {
+    return Array.from(this.mappings.values()).filter(m => {
+      const layerMatch = m.targetLayerId === layerId || m.targetLayerId === undefined;
+      const emitterMatch = m.targetEmitterId === emitterId || m.targetEmitterId === undefined;
+      return layerMatch && emitterMatch;
+    });
   }
 
   /**
@@ -356,6 +392,7 @@ export class AudioReactiveMapper {
 
   /**
    * Get mapped values for a specific layer at a frame
+   * BUG-081 fix: Excludes emitter-specific mappings (those go to emitters, not layers)
    */
   getValuesForLayerAtFrame(
     layerId: string,
@@ -366,6 +403,64 @@ export class AudioReactiveMapper {
     for (const mapping of this.mappings.values()) {
       if (!mapping.enabled) continue;
       if (mapping.targetLayerId && mapping.targetLayerId !== layerId) continue;
+      // BUG-081 fix: Skip emitter-specific mappings - they should only apply to specific emitters
+      if (mapping.targetEmitterId) continue;
+
+      const value = this.getValueAtFrame(mapping.id, frame);
+      const existing = values.get(mapping.target);
+
+      if (existing !== undefined) {
+        values.set(mapping.target, existing + value);
+      } else {
+        values.set(mapping.target, value);
+      }
+    }
+
+    return values;
+  }
+
+  /**
+   * Get mapped values for a specific emitter at a frame
+   * BUG-081 fix: Implements targetEmitterId filtering for particle systems
+   */
+  getValuesForEmitterAtFrame(
+    emitterId: string,
+    frame: number
+  ): Map<TargetParameter, number> {
+    const values = new Map<TargetParameter, number>();
+
+    for (const mapping of this.mappings.values()) {
+      if (!mapping.enabled) continue;
+      if (mapping.targetEmitterId && mapping.targetEmitterId !== emitterId) continue;
+
+      const value = this.getValueAtFrame(mapping.id, frame);
+      const existing = values.get(mapping.target);
+
+      if (existing !== undefined) {
+        values.set(mapping.target, existing + value);
+      } else {
+        values.set(mapping.target, value);
+      }
+    }
+
+    return values;
+  }
+
+  /**
+   * Get mapped values for a specific layer and emitter at a frame
+   * BUG-081 fix: Combined filtering for particle systems with multiple emitters
+   */
+  getValuesForLayerEmitterAtFrame(
+    layerId: string,
+    emitterId: string,
+    frame: number
+  ): Map<TargetParameter, number> {
+    const values = new Map<TargetParameter, number>();
+
+    for (const mapping of this.mappings.values()) {
+      if (!mapping.enabled) continue;
+      if (mapping.targetLayerId && mapping.targetLayerId !== layerId) continue;
+      if (mapping.targetEmitterId && mapping.targetEmitterId !== emitterId) continue;
 
       const value = this.getValueAtFrame(mapping.id, frame);
       const existing = values.get(mapping.target);
@@ -804,6 +899,52 @@ export interface AudioReactiveModifiers {
 }
 
 /**
+ * Particle-specific audio reactive modifiers
+ * BUG-081 fix: Separate interface for particle emitter modifiers
+ */
+export interface ParticleAudioReactiveModifiers {
+  emissionRate?: number;
+  speed?: number;
+  size?: number;
+  gravity?: number;
+  windStrength?: number;
+  windDirection?: number;
+}
+
+/**
+ * Collect particle-specific audio-reactive modifiers for a layer+emitter at a frame
+ * BUG-081 fix: Uses targetEmitterId filtering for emitter-specific mappings
+ */
+export function collectParticleAudioReactiveModifiers(
+  mapper: AudioReactiveMapper,
+  layerId: string,
+  emitterId: string,
+  frame: number
+): ParticleAudioReactiveModifiers {
+  const values = mapper.getValuesForLayerEmitterAtFrame(layerId, emitterId, frame);
+  const modifiers: ParticleAudioReactiveModifiers = {};
+
+  // Map particle target parameters to modifier properties
+  const targetToModifier: Record<string, keyof ParticleAudioReactiveModifiers> = {
+    'particle.emissionRate': 'emissionRate',
+    'particle.speed': 'speed',
+    'particle.size': 'size',
+    'particle.gravity': 'gravity',
+    'particle.windStrength': 'windStrength',
+    'particle.windDirection': 'windDirection'
+  };
+
+  for (const [target, value] of values.entries()) {
+    const modifierKey = targetToModifier[target];
+    if (modifierKey) {
+      modifiers[modifierKey] = value;
+    }
+  }
+
+  return modifiers;
+}
+
+/**
  * Collect all audio-reactive modifiers for a layer at a specific frame
  */
 export function collectAudioReactiveModifiers(
@@ -1047,6 +1188,7 @@ export default {
   getAllTargets,
   getTargetsByCategory,
   collectAudioReactiveModifiers,
+  collectParticleAudioReactiveModifiers,  // BUG-081 fix: Emitter-specific modifiers
   applyAudioReactivePreset,
   AUDIO_REACTIVE_PRESETS
 };
