@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-060
+**Next Bug ID:** BUG-061
 
 ---
 
@@ -11,9 +11,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 15 | 15 | 0 |
-| MEDIUM | 34 | 34 | 0 |
+| MEDIUM | 35 | 35 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **56** | **56** | **0** |
+| **TOTAL** | **57** | **57** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 4 |
+| 5. Particles | 5 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2330,6 +2330,62 @@ if (subEmitter.parentEmitterId !== '*' && death.emitterId !== undefined) {
 - `ui/src/engine/particles/ParticleSubEmitter.ts` - Lines 110-116 (added parent emitter filter)
 
 **Related Bugs:** BUG-057, BUG-058 (same pattern - config not used)
+
+---
+
+### BUG-060: 'step' Curve Option Has No Effect in Audio Bindings
+
+**Feature:** Audio Reactive (5.8)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleAudioReactive.ts`
+- Lines: 108-113 (curve handling)
+- Function: `applyModulation()`
+
+**Problem:**
+The UI allows selecting 'step' as a curve type for audio bindings, but the engine only implemented 'exponential' and 'logarithmic' curves. Selecting 'step' fell through to the default linear behavior.
+
+**Evidence (before fix):**
+```typescript
+// Apply curve
+if (binding.curve === 'exponential') {
+  output = binding.outputMin + Math.pow(t, 2) * (binding.outputMax - binding.outputMin);
+} else if (binding.curve === 'logarithmic') {
+  output = binding.outputMin + Math.sqrt(t) * (binding.outputMax - binding.outputMin);
+}
+// 'step' is NOT handled - falls through to linear
+```
+
+**Expected Behavior:**
+- Selecting 'step' curve should produce discrete stepped output values
+
+**Actual Behavior:**
+- Selecting 'step' behaves identically to 'linear' (smooth interpolation)
+
+**Impact:**
+- Users selecting 'step' curve get unexpected smooth behavior instead of discrete steps
+
+**Fix Applied:**
+Added step curve implementation that snaps output to discrete levels:
+
+```typescript
+} else if (binding.curve === 'step') {
+  // Step curve: snap to discrete steps (5 steps)
+  const steps = 5;
+  const steppedT = Math.floor(t * steps) / steps;
+  output = binding.outputMin + steppedT * (binding.outputMax - binding.outputMin);
+}
+```
+
+**Files Modified:**
+- `ui/src/engine/particles/ParticleAudioReactive.ts` - Lines 113-118 (added step curve handling)
+
+**Related Bugs:** BUG-057, BUG-058, BUG-059 (same pattern - UI option not implemented in engine)
 
 ---
 
