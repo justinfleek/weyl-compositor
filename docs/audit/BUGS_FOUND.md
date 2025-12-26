@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-050
+**Next Bug ID:** BUG-051
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 13 | 13 | 0 |
+| HIGH | 14 | 14 | 0 |
 | MEDIUM | 29 | 28 | 1 |
 | LOW | 4 | 4 | 0 |
-| **TOTAL** | **46** | **45** | **1** |
+| **TOTAL** | **47** | **46** | **1** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -24,7 +24,7 @@
 | Tier | Bug Count |
 |------|-----------|
 | 1. Foundation | 11 |
-| 2. Layer Types | 33 |
+| 2. Layer Types | 34 |
 | 3-12 | 0 (not yet audited) |
 
 ---
@@ -1758,6 +1758,66 @@ store.updateLayer(props.layer.id, {
 
 **Related Bugs:** BUG-042, BUG-043, BUG-047 (same direct mutation pattern)
 **Note:** This file is actually for SplineLayer (Feature 2.15), discovered during ShapeLayer audit
+
+---
+
+### BUG-050: CameraProperties direct mutation of layer.properties bypasses history
+
+**Feature:** CameraLayer (2.7)
+**Tier:** 2
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/components/properties/CameraProperties.vue`
+- Lines: 751, 771-773, 779-794, 807-816, 832-843, 726
+- Functions: `updateAnimatable()`, `updateDOFAnimatable()`, `ensureProperty()`, `toggleKeyframe()`, `togglePathKeyframe()`, `updatePathProperty()`
+
+**Problem:**
+Multiple functions directly mutate `props.layer.properties` without using store methods, bypassing history tracking.
+
+**Evidence:**
+```typescript
+// Line 751 - updateAnimatable (BEFORE FIX)
+prop.value = value;  // Direct mutation
+
+// Lines 779-785 - ensureProperty (BEFORE FIX)
+if (!props.layer.properties) {
+  props.layer.properties = [];  // Direct mutation
+}
+props.layer.properties.push({...});  // Direct mutation
+
+// Lines 807-816 - toggleKeyframe (BEFORE FIX)
+prop.keyframes = prop.keyframes.filter(k => k.frame !== frame);  // Direct mutation
+prop.animated = prop.keyframes.length > 0;  // Direct mutation
+prop.keyframes.push({...});  // Direct mutation
+prop.animated = true;  // Direct mutation
+```
+
+**Expected Behavior:**
+Property changes should use store.updateLayer() to track in history.
+
+**Actual Behavior:**
+Keyframe and property changes are not tracked in history, undo/redo won't work.
+
+**Impact:**
+Users cannot undo keyframe additions/removals or property value changes on camera layers (FOV, focal length, DOF, path following, etc.).
+
+**Fix Applied:**
+Same pattern as BUG-049:
+```typescript
+// All functions now use store.updateLayer()
+const updatedProperties = (props.layer.properties || []).map(p =>
+  p.name === propName ? { ...p, value } : p
+);
+store.updateLayer(props.layer.id, { properties: updatedProperties });
+```
+
+**Files Modified:**
+- `ui/src/components/properties/CameraProperties.vue`
+
+**Related Bugs:** BUG-042, BUG-043, BUG-047, BUG-049 (same direct mutation pattern)
 
 ---
 
