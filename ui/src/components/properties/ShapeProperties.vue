@@ -652,7 +652,10 @@ function updateAnimatable(propName: string, value: number, dataKey: string) {
   // Also update the property in layer.properties if it exists
   const prop = getProperty(propName);
   if (prop) {
-    prop.value = value;
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === propName ? { ...p, value } : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
   }
 }
 
@@ -666,34 +669,46 @@ function toggleKeyframe(propName: string, dataKey: string) {
     const frame = store.currentFrame;
     const hasKeyframeAtFrame = prop.keyframes.some(k => k.frame === frame);
 
+    let updatedKeyframes: typeof prop.keyframes;
+    let updatedAnimated: boolean;
+
     if (hasKeyframeAtFrame) {
       // Remove keyframe at current frame
-      prop.keyframes = prop.keyframes.filter(k => k.frame !== frame);
-      prop.animated = prop.keyframes.length > 0;
+      updatedKeyframes = prop.keyframes.filter(k => k.frame !== frame);
+      updatedAnimated = updatedKeyframes.length > 0;
     } else {
       // Add keyframe at current frame
-      prop.keyframes.push({
-        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        frame,
-        value: prop.value,
-        easing: 'linear',
-      });
-      prop.animated = true;
+      updatedKeyframes = [
+        ...prop.keyframes,
+        {
+          id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          frame,
+          value: prop.value,
+          easing: 'linear' as const,
+        },
+      ];
+      updatedAnimated = true;
     }
+
+    // Update via store to track in history
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === propName
+        ? { ...p, keyframes: updatedKeyframes, animated: updatedAnimated }
+        : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
     emit('update');
   }
 }
 
 // Ensure a property exists in layer.properties for timeline display
 function ensureProperty(propName: string, dataKey: string) {
-  if (!props.layer.properties) {
-    props.layer.properties = [];
-  }
+  const existingProperties = props.layer.properties || [];
+  const existing = existingProperties.find(p => p.name === propName);
 
-  const existing = props.layer.properties.find(p => p.name === propName);
   if (!existing) {
     const currentValue = (shapeData.value as any)[dataKey] ?? 0;
-    props.layer.properties.push({
+    const newProperty = {
       id: `prop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       name: propName,
       type: 'number',
@@ -701,7 +716,12 @@ function ensureProperty(propName: string, dataKey: string) {
       animated: false,
       keyframes: [],
       group: propName.includes('Trim') ? 'Trim Paths' : propName.includes('Stroke') ? 'Stroke' : propName.includes('Fill') ? 'Fill' : 'Shape',
-    } as AnimatableProperty<number>);
+    } as AnimatableProperty<number>;
+
+    // Update via store to track in history
+    store.updateLayer(props.layer.id, {
+      properties: [...existingProperties, newProperty]
+    });
   }
 }
 
