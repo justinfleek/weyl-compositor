@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-044
+**Next Bug ID:** BUG-045
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 9 | 9 | 0 |
+| HIGH | 10 | 10 | 0 |
 | MEDIUM | 27 | 26 | 1 |
 | LOW | 4 | 4 | 0 |
-| **TOTAL** | **40** | **39** | **1** |
+| **TOTAL** | **41** | **40** | **1** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -23,7 +23,7 @@
 
 | Tier | Bug Count |
 |------|-----------|
-| 1. Foundation | 9 |
+| 1. Foundation | 10 |
 | 2. Layer Types | 29 |
 | 3-12 | 0 (not yet audited) |
 
@@ -1360,6 +1360,64 @@ store.pushHistory();  // BUG-043 FIX
 - `ui/src/services/ai/actionExecutor.ts` - Added pushHistory() to 14 handlers
 
 **Related Bugs:** BUG-042
+
+---
+
+### BUG-044: ThreeCanvas calls non-existent setResolution method
+
+**Feature:** Render Loop (1.6)
+**Tier:** 1
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 2
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/components/canvas/ThreeCanvas.vue`
+- Line: 1581
+- Function: `onResolutionChange()`
+
+**Problem:**
+The `onResolutionChange()` function calls `engine.value.setResolution(newWidth, newHeight)`, but `LatticeEngine` did not have a `setResolution` method. This caused a runtime TypeError when users tried to change preview resolution.
+
+**Evidence (before fix):**
+```typescript
+// ThreeCanvas.vue:1581
+engine.value.setResolution(newWidth, newHeight);
+// TypeError: engine.value.setResolution is not a function
+```
+
+**Expected Behavior:**
+Resolution dropdown should change the internal render buffer size for preview quality control.
+
+**Actual Behavior:**
+Clicking any option in the resolution dropdown (Half, Third, Quarter) threw "TypeError: engine.value.setResolution is not a function", breaking the resolution preview feature.
+
+**Impact:**
+- Resolution preview dropdown completely non-functional
+- Users cannot preview at lower resolutions for performance
+- Runtime crash on resolution change
+
+**Fix Applied:**
+```typescript
+// Added to LatticeEngine.ts after getViewport():
+setResolution(width: number, height: number): void {
+  this.assertNotDisposed();
+  if (width <= 0 || height <= 0) {
+    engineLogger.warn('Invalid resolution dimensions:', width, height);
+    return;
+  }
+  engineLogger.debug(`[LatticeEngine] setResolution: ${width}x${height}`);
+  this.renderer.resize(width, height);
+  this.updateSplineResolutions(width, height);
+  this.emit('resolutionChange', { width, height });
+}
+```
+
+**Files Modified:**
+- `ui/src/engine/LatticeEngine.ts` - Added setResolution method
+
+**Related Bugs:** None
 
 ---
 
