@@ -824,14 +824,16 @@ function renderWaveformToCanvas() {
   const inPoint = props.layer.inPoint ?? props.layer.startFrame ?? 0;
   const outPoint = props.layer.outPoint ?? props.layer.endFrame ?? (frameCount - 1);
 
+  // BUG-097 fix: visibleStart/visibleEnd should match layer timing since canvas
+  // represents the layer bar, not the full timeline viewport
   renderTimelineWaveform(canvas, waveformData.value, {
     layerId: props.layer.id,
     audioId: audioAssetId.value!,
     layerColor: props.layer.labelColor || '#D4A574',
     startFrame: inPoint,
     endFrame: outPoint,
-    visibleStart: 0,
-    visibleEnd: frameCount,
+    visibleStart: inPoint,
+    visibleEnd: outPoint,
     fps,
     trackWidth: parentWidth,
     trackHeight: parentHeight,
