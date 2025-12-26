@@ -84,6 +84,17 @@ export interface MIDIToKeyframeConfig {
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+// BUG-099/100 fix: Simple deterministic hash for IDs
+// Uses djb2 algorithm - fast and has good distribution
+function simpleHash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
 function midiNoteToName(noteNumber: number): string {
   const octave = Math.floor(noteNumber / 12) - 1;
   const noteName = NOTE_NAMES[noteNumber % 12];
@@ -163,9 +174,11 @@ export async function parseMIDIFile(arrayBuffer: ArrayBuffer): Promise<MIDIParse
   const timeSignatures: Array<{ time: number; numerator: number; denominator: number }> = [
     { time: 0, numerator: 4, denominator: 4 }
   ];
+  // BUG-098 fix: Track tempo changes by tick position for accurate timing
+  const tempoChangesByTick: Array<{ tick: number; bpm: number }> = [{ tick: 0, bpm: 120 }];
 
   for (let t = 0; t < numTracks; t++) {
-    const trackResult = parseTrack(view, offset, ticksPerBeat, tempos);
+    const trackResult = parseTrack(view, offset, ticksPerBeat, tempos, tempoChangesByTick);
     tracks.push(trackResult.track);
     offset = trackResult.nextOffset;
 
@@ -177,6 +190,9 @@ export async function parseMIDIFile(arrayBuffer: ArrayBuffer): Promise<MIDIParse
       timeSignatures.push(ts);
     }
   }
+
+  // Sort tempo changes by tick for correct interpolation
+  tempoChangesByTick.sort((a, b) => a.tick - b.tick);
 
   // Sort tempo and time signature events
   tempos.sort((a, b) => a.time - b.time);
@@ -205,18 +221,66 @@ export async function parseMIDIFile(arrayBuffer: ArrayBuffer): Promise<MIDIParse
 }
 
 /**
+ * BUG-098 fix: Convert ticks to seconds accounting for tempo changes
+ * Tempo changes occur at specific tick positions, so we need to calculate
+ * cumulative time by summing durations at each tempo.
+ */
+function ticksToSecondsWithTempoMap(
+  ticks: number,
+  ticksPerBeat: number,
+  tempoChanges: Array<{ tick: number; bpm: number }>
+): number {
+  if (tempoChanges.length === 0) {
+    // No tempo changes, use default 120 BPM
+    const secondsPerBeat = 60 / 120;
+    return (ticks / ticksPerBeat) * secondsPerBeat;
+  }
+
+  let totalSeconds = 0;
+  let lastTick = 0;
+  let currentBpm = tempoChanges[0]?.bpm ?? 120;
+
+  // Process each tempo change up to the target tick
+  for (const change of tempoChanges) {
+    if (change.tick >= ticks) {
+      // Target is before this tempo change
+      break;
+    }
+
+    // Add time from lastTick to this tempo change at the previous tempo
+    const ticksDelta = change.tick - lastTick;
+    const secondsPerBeat = 60 / currentBpm;
+    totalSeconds += (ticksDelta / ticksPerBeat) * secondsPerBeat;
+
+    // Update for next segment
+    lastTick = change.tick;
+    currentBpm = change.bpm;
+  }
+
+  // Add remaining ticks at current tempo
+  const remainingTicks = ticks - lastTick;
+  const secondsPerBeat = 60 / currentBpm;
+  totalSeconds += (remainingTicks / ticksPerBeat) * secondsPerBeat;
+
+  return totalSeconds;
+}
+
+/**
  * Parse a single MIDI track
  */
 function parseTrack(
   view: DataView,
   startOffset: number,
   ticksPerBeat: number,
-  globalTempos: Array<{ time: number; bpm: number }>
+  globalTempos: Array<{ time: number; bpm: number }>,
+  // BUG-098 fix: Track tempo changes by tick position for accurate timing
+  tempoChangesByTick: Array<{ tick: number; bpm: number }>
 ): {
   track: MIDITrack;
   nextOffset: number;
   tempos: Array<{ time: number; bpm: number }>;
   timeSignatures: Array<{ time: number; numerator: number; denominator: number }>;
+  tempoChangesByTick: Array<{ tick: number; bpm: number }>;
 } {
   let offset = startOffset;
 
@@ -240,6 +304,7 @@ function parseTrack(
 
   const tempos: Array<{ time: number; bpm: number }> = [];
   const timeSignatures: Array<{ time: number; numerator: number; denominator: number }> = [];
+  const localTempoChanges: Array<{ tick: number; bpm: number }> = [];
 
   // Track note-on events for pairing with note-off
   const activeNotes = new Map<string, { noteNumber: number; velocity: number; startTick: number; channel: number }>();
@@ -247,12 +312,9 @@ function parseTrack(
   let currentTick = 0;
   let runningStatus = 0;
 
-  // Helper to convert ticks to seconds
+  // BUG-098 fix: Helper to convert ticks to seconds using tempo map
   const ticksToSeconds = (ticks: number): number => {
-    // Simple conversion using current tempo
-    const tempo = globalTempos[globalTempos.length - 1]?.bpm ?? 120;
-    const secondsPerBeat = 60 / tempo;
-    return (ticks / ticksPerBeat) * secondsPerBeat;
+    return ticksToSecondsWithTempoMap(ticks, ticksPerBeat, tempoChangesByTick);
   };
 
   while (offset < trackEnd) {
@@ -369,6 +431,9 @@ function parseTrack(
           (view.getUint8(offset + 1) << 8) |
           view.getUint8(offset + 2);
         const bpm = 60000000 / microsecondsPerBeat;
+        // BUG-098 fix: Record tempo change by tick position for accurate timing
+        localTempoChanges.push({ tick: currentTick, bpm });
+        tempoChangesByTick.push({ tick: currentTick, bpm });
         tempos.push({ time: ticksToSeconds(currentTick), bpm });
         globalTempos.push({ time: ticksToSeconds(currentTick), bpm });
       }
@@ -388,7 +453,7 @@ function parseTrack(
     }
   }
 
-  return { track, nextOffset: trackEnd, tempos, timeSignatures };
+  return { track, nextOffset: trackEnd, tempos, timeSignatures, tempoChangesByTick: localTempoChanges };
 }
 
 /**
@@ -423,13 +488,26 @@ function readString(view: DataView, offset: number, length: number): string {
 
 /**
  * Convert MIDI notes to keyframes
+ * @param midiFile - Parsed MIDI file data
+ * @param config - Conversion configuration
+ * @param idPrefix - BUG-100 fix: Unique prefix for keyframe IDs (default: hash of config)
  */
 export function midiNotesToKeyframes(
   midiFile: MIDIParsedFile,
-  config: MIDIToKeyframeConfig
+  config: MIDIToKeyframeConfig,
+  idPrefix?: string
 ): Keyframe<number>[] {
   const keyframes: Keyframe<number>[] = [];
   const fps = config.fps;
+
+  // BUG-100 fix: Generate unique prefix from config if not provided
+  const prefix = idPrefix || simpleHash(JSON.stringify({
+    type: config.mappingType,
+    track: config.trackIndex,
+    channel: config.channel,
+    range: config.noteRange,
+    duration: midiFile.duration
+  }));
 
   // Collect notes from specified tracks/channels
   const notes: MIDINote[] = [];
@@ -463,7 +541,7 @@ export function midiNotesToKeyframes(
       case 'noteOnOff':
         // Create on/off keyframes
         keyframes.push({
-          id: `midi_kf_${keyframeId++}`,
+          id: `midi_${prefix}_${keyframeId++}`,
           frame: startFrame,
           value: config.valueMax,
           interpolation: config.interpolation || 'hold',
@@ -472,7 +550,7 @@ export function midiNotesToKeyframes(
           controlMode: 'smooth' as const
         });
         keyframes.push({
-          id: `midi_kf_${keyframeId++}`,
+          id: `midi_${prefix}_${keyframeId++}`,
           frame: endFrame,
           value: config.valueMin,
           interpolation: config.interpolation || 'hold',
@@ -486,7 +564,7 @@ export function midiNotesToKeyframes(
         // Value based on velocity
         value = config.valueMin + (note.velocity / 127) * (config.valueMax - config.valueMin);
         keyframes.push({
-          id: `midi_kf_${keyframeId++}`,
+          id: `midi_${prefix}_${keyframeId++}`,
           frame: startFrame,
           value,
           interpolation: config.interpolation || 'linear',
@@ -495,7 +573,7 @@ export function midiNotesToKeyframes(
           controlMode: 'smooth' as const
         });
         keyframes.push({
-          id: `midi_kf_${keyframeId++}`,
+          id: `midi_${prefix}_${keyframeId++}`,
           frame: endFrame,
           value: config.valueMin,
           interpolation: config.interpolation || 'linear',
@@ -511,7 +589,7 @@ export function midiNotesToKeyframes(
         const normalizedPitch = (note.noteNumber - (config.noteRange?.min ?? 0)) / pitchRange;
         value = config.valueMin + normalizedPitch * (config.valueMax - config.valueMin);
         keyframes.push({
-          id: `midi_kf_${keyframeId++}`,
+          id: `midi_${prefix}_${keyframeId++}`,
           frame: startFrame,
           value,
           interpolation: config.interpolation || 'linear',
@@ -531,10 +609,14 @@ export function midiNotesToKeyframes(
 
 /**
  * Convert MIDI Control Changes to keyframes
+ * @param midiFile - Parsed MIDI file data
+ * @param config - Conversion configuration
+ * @param idPrefix - BUG-100 fix: Unique prefix for keyframe IDs (default: hash of config)
  */
 export function midiCCToKeyframes(
   midiFile: MIDIParsedFile,
-  config: MIDIToKeyframeConfig
+  config: MIDIToKeyframeConfig,
+  idPrefix?: string
 ): Keyframe<number>[] {
   if (config.ccNumber === undefined) {
     throw new Error('ccNumber is required for controlChange mapping');
@@ -542,6 +624,15 @@ export function midiCCToKeyframes(
 
   const keyframes: Keyframe<number>[] = [];
   const fps = config.fps;
+
+  // BUG-100 fix: Generate unique prefix from config if not provided
+  const prefix = idPrefix || simpleHash(JSON.stringify({
+    type: 'cc',
+    ccNumber: config.ccNumber,
+    track: config.trackIndex,
+    channel: config.channel,
+    duration: midiFile.duration
+  }));
 
   // Collect CC events from specified tracks/channels
   const ccEvents: MIDIControlChange[] = [];
@@ -567,7 +658,7 @@ export function midiCCToKeyframes(
     const value = config.valueMin + (cc.value / 127) * (config.valueMax - config.valueMin);
 
     keyframes.push({
-      id: `midi_kf_${keyframeId++}`,
+      id: `midi_${prefix}_${keyframeId++}`,
       frame,
       value,
       interpolation: config.interpolation || 'linear',
@@ -588,11 +679,22 @@ export function createMIDIAnimatableProperty(
   midiFile: MIDIParsedFile,
   config: MIDIToKeyframeConfig
 ): AnimatableProperty<number> {
-  const keyframes = config.mappingType === 'controlChange'
-    ? midiCCToKeyframes(midiFile, config)
-    : midiNotesToKeyframes(midiFile, config);
+  // BUG-099 fix: Generate deterministic ID from name and config (no Date.now() or Math.random())
+  const idHash = simpleHash(JSON.stringify({
+    name,
+    mappingType: config.mappingType,
+    trackIndex: config.trackIndex,
+    channel: config.channel,
+    ccNumber: config.ccNumber,
+    duration: midiFile.duration,
+    trackCount: midiFile.tracks.length
+  }));
+  const id = `midi_prop_${idHash}`;
 
-  const id = `midi_prop_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  // Pass the id as prefix so keyframes are also unique
+  const keyframes = config.mappingType === 'controlChange'
+    ? midiCCToKeyframes(midiFile, config, idHash)
+    : midiNotesToKeyframes(midiFile, config, idHash);
 
   return {
     id,
