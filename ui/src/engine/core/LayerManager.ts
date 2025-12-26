@@ -73,8 +73,8 @@ export class LayerManager {
   // Renderer reference for particle systems
   private rendererRef: THREE.WebGLRenderer | null = null;
 
-  // Composition FPS for particle timing
-  private compositionFPS: number = 60;
+  // Composition FPS for particle timing (WAN standard: 16fps)
+  private compositionFPS: number = 16;
 
   // Camera reference for particles
   private cameraRef: THREE.PerspectiveCamera | null = null;

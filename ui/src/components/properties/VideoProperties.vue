@@ -310,14 +310,19 @@ function toggleSpeedMap(e: Event) {
 }
 
 function updateSpeedMap(val: number) {
+  // Use store method to ensure history tracking
   const data = props.layer.data as VideoData;
-  // Update both new and legacy properties
+  const updates: Partial<VideoData> = {};
+
+  // Update both new and legacy properties via store
   if (data.speedMap) {
-    data.speedMap.value = val;
+    updates.speedMap = { ...data.speedMap, value: val };
   }
   if (data.timeRemap) {
-    data.timeRemap.value = val;
+    updates.timeRemap = { ...data.timeRemap, value: val };
   }
+
+  store.updateVideoLayerData(props.layer.id, updates);
   emit('update');
 }
 
@@ -364,9 +369,12 @@ function toggleTimewarp(e: Event) {
 }
 
 function updateTimewarpSpeed(val: number) {
+  // Use store method to ensure history tracking
   const data = props.layer.data as VideoData;
   if (data.timewarpSpeed) {
-    data.timewarpSpeed.value = val;
+    store.updateVideoLayerData(props.layer.id, {
+      timewarpSpeed: { ...data.timewarpSpeed, value: val }
+    });
   }
   emit('update');
 }
@@ -410,8 +418,14 @@ function updateAudioLevel(val: number) {
 }
 
 function updateLevel(val: number) {
+  // Use store method to ensure history tracking
   if (props.layer.audio?.level) {
-    props.layer.audio.level.value = val;
+    store.updateLayer(props.layer.id, {
+      audio: {
+        ...props.layer.audio,
+        level: { ...props.layer.audio.level, value: val }
+      }
+    });
     emit('update');
   }
 }
