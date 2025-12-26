@@ -1,5 +1,7 @@
 import { ref, shallowRef } from 'vue';
 import type { AnimatableProperty, PropertyExpression } from '@/types/project';
+import { useCompositorStore } from '@/stores/compositorStore';
+import { setPropertyExpression, removePropertyExpression } from '@/stores/actions/keyframeActions';
 
 // Global state for expression editor
 const isVisible = ref(false);
@@ -35,20 +37,24 @@ export function useExpressionEditor() {
 
   /**
    * Apply expression to the current property
+   * BUG-042 FIX: Use store action instead of direct mutation for undo/redo support
    */
   function applyExpression(expression: PropertyExpression) {
-    if (currentProperty.value) {
-      currentProperty.value.expression = expression;
+    if (currentLayerId.value && currentPropertyPath.value) {
+      const store = useCompositorStore();
+      setPropertyExpression(store, currentLayerId.value, currentPropertyPath.value, expression);
     }
     closeExpressionEditor();
   }
 
   /**
    * Remove expression from the current property
+   * BUG-042 FIX: Use store action instead of direct mutation for undo/redo support
    */
   function removeExpression() {
-    if (currentProperty.value) {
-      currentProperty.value.expression = undefined;
+    if (currentLayerId.value && currentPropertyPath.value) {
+      const store = useCompositorStore();
+      removePropertyExpression(store, currentLayerId.value, currentPropertyPath.value);
     }
     closeExpressionEditor();
   }

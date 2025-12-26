@@ -341,6 +341,10 @@ function executeRenameLayer(
   const oldName = layer.name;
   layer.name = name;
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: `Renamed layer from "${oldName}" to "${name}"`,
@@ -424,6 +428,10 @@ function executeSetLayerProperty(
     }
   }
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: `Set ${propertyPath} to ${JSON.stringify(value)}`,
@@ -468,6 +476,10 @@ function executeSetLayerTransform(
     }
     changes.push('origin');
   }
+
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 
   return {
     success: true,
@@ -608,6 +620,12 @@ function executeScaleKeyframeTiming(
     }
   }
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  if (scaledCount > 0) {
+    store.project.meta.modified = new Date().toISOString();
+    store.pushHistory();
+  }
+
   return {
     success: true,
     message: `Scaled ${scaledCount} keyframes by factor ${scaleFactor}`,
@@ -643,6 +661,10 @@ function executeSetExpression(
     params: params || {},
   };
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: `Applied ${expressionType} expression to ${propertyPath}`,
@@ -667,6 +689,10 @@ function executeRemoveExpression(
   }
 
   property.expression = undefined;
+
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 
   return {
     success: true,
@@ -800,6 +826,10 @@ function executeConfigureParticles(
       // Map to system config if applicable
     }
   }
+
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 
   return {
     success: true,
@@ -957,6 +987,10 @@ function executeAddCameraShake(
     duration: duration ?? compDuration,
   };
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: `Added ${shakeType} camera shake (intensity: ${cameraData.shake.intensity}, duration: ${cameraData.shake.duration} frames)`,
@@ -1072,6 +1106,10 @@ function executeSetCameraPathFollowing(
     smoothing,
   };
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: splineLayerId
@@ -1121,6 +1159,10 @@ function executeSetCameraAutoFocus(
     sampleRadius: 0.1,
   };
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: enabled
@@ -1160,6 +1202,10 @@ function executeSetTextContent(
   }
   if (alignment !== undefined) textData.textAlign = alignment;
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: `Updated text content`,
@@ -1187,6 +1233,10 @@ function executeSetTextPath(
   if (startOffset !== undefined) {
     textData.pathOffset = startOffset;
   }
+
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 
   return {
     success: true,
@@ -1232,6 +1282,10 @@ function executeSetSplinePoints(
     splineData.closed = closed;
   }
 
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
+
   return {
     success: true,
     message: `Set ${points.length} control points on spline`,
@@ -1265,6 +1319,10 @@ function executeSetSpeedMap(
     keyframes: keyframes || [],
   };
   (layer.data as any).timeRemap = (layer.data as any).speedMap;
+
+  // BUG-043 FIX: Add pushHistory for undo/redo support
+  store.project.meta.modified = new Date().toISOString();
+  store.pushHistory();
 
   return {
     success: true,
