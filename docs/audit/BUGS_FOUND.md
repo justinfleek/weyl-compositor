@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-052
+**Next Bug ID:** BUG-053
 
 ---
 
@@ -12,8 +12,8 @@
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 14 | 14 | 0 |
 | MEDIUM | 30 | 30 | 0 |
-| LOW | 4 | 4 | 0 |
-| **TOTAL** | **48** | **48** | **0** |
+| LOW | 5 | 5 | 0 |
+| **TOTAL** | **49** | **49** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -25,7 +25,8 @@
 |------|-----------|
 | 1. Foundation | 11 |
 | 2. Layer Types | 35 |
-| 3-12 | 0 (not yet audited) |
+| 3. Animation | 1 |
+| 4-12 | 0 (not yet audited) |
 
 ---
 
@@ -1883,6 +1884,56 @@ Removed the unimplemented arrows option from the UI rather than implementing the
 - `ui/src/engine/layers/NormalLayer.ts` - Removed arrows case from mode index
 
 **Related Bugs:** BUG-010, BUG-011, BUG-012 (similar unimplemented features in DepthLayer)
+
+---
+
+## TIER 3 BUGS (Animation Subsystems)
+
+### BUG-052: Text Animator Actions FPS Fallback Inconsistency
+
+**Feature:** Text Animators (3.1)
+**Tier:** 3
+**Severity:** LOW
+**Found:** 2025-12-26
+**Session:** 3
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/stores/actions/textAnimatorActions.ts`
+- Lines: 515, 622
+- Functions: `getCharacterTransforms()`, `getSelectionValues()`
+
+**Problem:**
+The store actions used 24fps as fallback when composition settings aren't available, while the textAnimator.ts service uses 16fps default. This inconsistency means different results when composition fps isn't set.
+
+**Evidence:**
+```typescript
+// textAnimatorActions.ts lines 515, 622 (BEFORE FIX)
+const fps = comp?.settings?.fps || 24;  // Used 24fps fallback
+
+// textAnimator.ts lines 673, 712, 755, 862
+fps: number = 16  // Uses 16fps default (WAN standard)
+```
+
+**Expected Behavior:**
+Fallback fps should be consistent across the codebase at 16fps (WAN standard).
+
+**Actual Behavior:**
+Store actions used 24fps fallback while service used 16fps default.
+
+**Impact:**
+Minor - only affects edge case when no composition settings exist. Animation timing would differ between service calls and store action calls.
+
+**Fix Applied:**
+Changed fallback from `24` to `16` in both locations:
+```typescript
+const fps = comp?.settings?.fps || 16;
+```
+
+**Files Modified:**
+- `ui/src/stores/actions/textAnimatorActions.ts` - Lines 515, 622
+
+**Related Bugs:** BUG-001 (similar fps hardcoding issue in layerActions.ts)
 
 ---
 
