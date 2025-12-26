@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
-**Last Updated:** 2025-12-25
-**Next Bug ID:** BUG-039
+**Last Updated:** 2025-12-26
+**Next Bug ID:** BUG-044
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 7 | 7 | 0 |
+| HIGH | 9 | 9 | 0 |
 | MEDIUM | 27 | 26 | 1 |
 | LOW | 4 | 4 | 0 |
-| **TOTAL** | **38** | **37** | **1** |
+| **TOTAL** | **40** | **39** | **1** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -23,7 +23,7 @@
 
 | Tier | Bug Count |
 |------|-----------|
-| 1. Foundation | 7 |
+| 1. Foundation | 9 |
 | 2. Layer Types | 29 |
 | 3-12 | 0 (not yet audited) |
 
@@ -1208,6 +1208,158 @@ const ctx: ExpressionContext = {
 - Same callers as BUG-040 now pass duration
 
 **Related Bugs:** BUG-040
+
+---
+
+### BUG-042: useExpressionEditor Bypasses Store for Expression Changes
+
+**Feature:** Expression Evaluation (1.5)
+**Tier:** 1
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 1
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/composables/useExpressionEditor.ts`
+- Lines: 42-60
+- Functions: `applyExpression()`, `removeExpression()`
+
+**Problem:**
+The useExpressionEditor composable directly mutated the property's expression without going through store actions. This bypassed the history system entirely, making expression changes non-undoable.
+
+**Evidence (before fix):**
+```typescript
+function applyExpression(expression: PropertyExpression) {
+  if (currentProperty.value) {
+    currentProperty.value.expression = expression;  // Direct mutation!
+  }
+  closeExpressionEditor();
+}
+
+function removeExpression() {
+  if (currentProperty.value) {
+    currentProperty.value.expression = undefined;  // Direct mutation!
+  }
+  closeExpressionEditor();
+}
+```
+
+**Expected Behavior:**
+Expression changes should go through store actions with pushHistory() for undo/redo support.
+
+**Actual Behavior:**
+Expression changes could not be undone. Users had no way to revert expression edits.
+
+**Impact:**
+- Expression application not undoable
+- Expression removal not undoable
+- Inconsistent with all other property edits
+
+**Fix Applied:**
+```typescript
+import { setPropertyExpression, removePropertyExpression } from '@/stores/actions/keyframeActions';
+
+function applyExpression(expression: PropertyExpression) {
+  if (currentLayerId.value && currentPropertyPath.value) {
+    const store = useCompositorStore();
+    setPropertyExpression(store, currentLayerId.value, currentPropertyPath.value, expression);
+  }
+  closeExpressionEditor();
+}
+
+function removeExpression() {
+  if (currentLayerId.value && currentPropertyPath.value) {
+    const store = useCompositorStore();
+    removePropertyExpression(store, currentLayerId.value, currentPropertyPath.value);
+  }
+  closeExpressionEditor();
+}
+```
+
+**Files Modified:**
+- `ui/src/composables/useExpressionEditor.ts` - Use store actions instead of direct mutation
+
+**Related Bugs:** BUG-043
+
+---
+
+### BUG-043: AI actionExecutor Handlers Missing pushHistory
+
+**Feature:** Expression Evaluation (1.5)
+**Tier:** 1
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 1
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/services/ai/actionExecutor.ts`
+- Lines: Multiple (14 handlers)
+- Functions: See list below
+
+**Problem:**
+14 handlers in actionExecutor.ts mutate store state but do not call `store.pushHistory()`. This means AI-driven changes (via chat interface) cannot be undone.
+
+**Affected Handlers:**
+1. `executeSetExpression()` - line ~497
+2. `executeRemoveExpression()` - line ~534
+3. `executeRenameLayer()` - line ~569
+4. `executeSetLayerProperty()` - line ~599
+5. `executeSetLayerTransform()` - line ~639
+6. `executeScaleKeyframeTiming()` - line ~736
+7. `executeConfigureParticles()` - line ~824
+8. `executeAddCameraShake()` - line ~961
+9. `executeSetCameraPathFollowing()` - line ~1032
+10. `executeSetCameraAutoFocus()` - line ~1099
+11. `executeSetTextContent()` - line ~1142
+12. `executeSetTextPath()` - line ~1201
+13. `executeSetSplinePoints()` - line ~1341
+14. `executeSetSpeedMap()` - line ~1465
+
+**Evidence (before fix):**
+```typescript
+// executeSetExpression - NO pushHistory
+property.expression = {
+  enabled: true,
+  type: 'preset' as const,
+  name: expressionType,
+  params: params || {},
+};
+store.project.meta.modified = new Date().toISOString();
+// Missing: store.pushHistory();
+```
+
+**Expected Behavior:**
+All state mutations should call pushHistory() for undo/redo support.
+
+**Actual Behavior:**
+AI-driven changes cannot be undone. Users must manually revert changes.
+
+**Impact:**
+- 14 types of AI-driven edits are non-undoable
+- Inconsistent undo behavior between UI and AI actions
+- Users can lose work if AI makes unwanted changes
+
+**Fix Applied:**
+Added `store.pushHistory();` after `store.project.meta.modified = new Date().toISOString();` in all 14 handlers.
+
+Example:
+```typescript
+property.expression = {
+  enabled: true,
+  type: 'preset' as const,
+  name: expressionType,
+  params: params || {},
+};
+store.project.meta.modified = new Date().toISOString();
+store.pushHistory();  // BUG-043 FIX
+```
+
+**Files Modified:**
+- `ui/src/services/ai/actionExecutor.ts` - Added pushHistory() to 14 handlers
+
+**Related Bugs:** BUG-042
 
 ---
 
