@@ -17,22 +17,29 @@ The user passes messages. Another Claude reviews your output.
 
 ### 1. DISCOVERY
 
-Search ALL file categories for the feature. Check FEATURE_INVENTORY.md for listed files.
+Identify ALL files related to the feature:
+- Check FEATURE_INVENTORY.md for listed files
+- Check ui/src/components for related .vue files
+- Check ui/src/stores for related actions
+- Check ui/src/engine for related classes
+- Check ui/src/services for related services
+- Check ui/src/types for related types
 
-Document what you searched and found. This is reviewed.
+List every file you will read.
 
 ### 2. READ FILES
 
-Read every line of every relevant file.
+READ EVERY LINE of every file identified.
 
 - Exact line counts required
 - Large files: read in chunks, track progress
 - Note observations from each file/chunk
 
 Prohibited:
-- Grep instead of reading
+- Using grep/search to verify code
 - Reading one chunk and assuming the rest
 - Estimates like "~400 lines"
+- Skipping files
 
 ### 3. TRACE USER FLOW
 
@@ -74,6 +81,28 @@ These are reviewed. You cannot skip them.
 | 3+ consecutive 0-bug features | Pause. State trigger. Review methodology. |
 | AI/ML layer with 0 bugs | Pause. State trigger. Provide detailed justification. |
 | Session has 0 bugs after 3+ features | Pause. State trigger. Something is wrong. |
+
+---
+
+## FPS Architecture
+
+Reference: docs/audit/FPS_ARCHITECTURE.md
+
+Single Source of Truth: composition.settings.fps
+
+Default Values (WAN AI model standard):
+- fps: 16
+- duration: 5 seconds
+- frameCount: 81 (4n+1 pattern)
+
+When auditing fps-related code:
+
+1. Imported media with fps (video, animated assets) creates comp at that fps OR goes into subcomp with frame blending alert
+2. Static assets inherit composition settings
+3. New compositions default to 16fps / 81 frames
+4. Export handles fps conversion for different AI models (WAN 16, Hunyuan 24, etc.)
+
+If a function needs fps and does not have it, trace the call chain to find where fps originates (usually composition.settings.fps or store.fps) and determine why it was not passed.
 
 ---
 
@@ -142,12 +171,12 @@ Always:
 
 Your output is checked for:
 
-1. Discovery thoroughness - Did you search all categories?
+1. Discovery thoroughness - Did you identify all related files?
 2. Line count accuracy - Exact numbers, no estimates?
-3. Flow completeness - UI through Export traced?
-4. Bug quality - File:line:evidence:impact:fix present?
-5. Justification quality - If 0 bugs, is reasoning specific and credible?
-6. Format compliance - Required sections present?
+3. Full file reads - Did you read every line, not grep?
+4. Flow completeness - UI through Export traced?
+5. Bug quality - File:line:evidence:impact:fix present?
+6. Justification quality - If 0 bugs, is reasoning specific and credible?
 7. Statistical sanity - Too many clean features in a row?
 8. Context analysis - Did you trace missing context to its source?
 
