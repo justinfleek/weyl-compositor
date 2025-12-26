@@ -344,7 +344,7 @@ export function posterizeTimeRenderer(
 ): EffectStackResult {
   const targetFps = Math.max(1, Math.min(60, params.frame_rate ?? 12));
   const frame = params._frame ?? 0;
-  const fps = params._fps ?? 30;
+  const fps = params._fps ?? 16;  // WAN standard default
   const layerId = params._layerId ?? 'default';
 
   // Calculate which "posterized" frame this belongs to

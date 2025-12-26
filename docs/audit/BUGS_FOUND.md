@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-053
+**Next Bug ID:** BUG-054
 
 ---
 
@@ -12,8 +12,8 @@
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 14 | 14 | 0 |
 | MEDIUM | 30 | 30 | 0 |
-| LOW | 5 | 5 | 0 |
-| **TOTAL** | **49** | **49** | **0** |
+| LOW | 6 | 6 | 0 |
+| **TOTAL** | **50** | **50** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -25,7 +25,7 @@
 |------|-----------|
 | 1. Foundation | 11 |
 | 2. Layer Types | 35 |
-| 3. Animation | 1 |
+| 3. Animation | 2 |
 | 4-12 | 0 (not yet audited) |
 
 ---
@@ -1934,6 +1934,54 @@ const fps = comp?.settings?.fps || 16;
 - `ui/src/stores/actions/textAnimatorActions.ts` - Lines 515, 622
 
 **Related Bugs:** BUG-001 (similar fps hardcoding issue in layerActions.ts)
+
+---
+
+### BUG-053: Posterize Time Effect FPS Fallback Inconsistency
+
+**Feature:** Time Warp (3.7)
+**Tier:** 3
+**Severity:** LOW
+**Found:** 2025-12-26
+**Session:** 3
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/services/effects/timeRenderer.ts`
+- Line: 347
+- Function: `posterizeTimeRenderer()`
+
+**Problem:**
+The posterizeTimeRenderer used 30fps as fallback while echoRenderer (line 212) uses 16fps. This inconsistency means different temporal behavior between time effects.
+
+**Evidence:**
+```typescript
+// timeRenderer.ts line 347 (BEFORE FIX)
+const fps = params._fps ?? 30;  // Used 30fps fallback
+
+// timeRenderer.ts line 212 (echoRenderer)
+const fps = params._fps ?? 16;  // Uses 16fps default (WAN standard)
+```
+
+**Expected Behavior:**
+All time effects should use consistent 16fps fallback (WAN standard).
+
+**Actual Behavior:**
+posterizeTimeRenderer used 30fps fallback while echoRenderer used 16fps.
+
+**Impact:**
+Minor - affects posterize time frame holding calculations when _fps not passed. At 30fps fallback, frame ratio calculations would be incorrect for WAN standard compositions.
+
+**Fix Applied:**
+Changed fallback from `30` to `16`:
+```typescript
+const fps = params._fps ?? 16;  // WAN standard default
+```
+
+**Files Modified:**
+- `ui/src/services/effects/timeRenderer.ts` - Line 347
+
+**Related Bugs:** BUG-052 (similar fps fallback inconsistency in textAnimatorActions.ts)
 
 ---
 
