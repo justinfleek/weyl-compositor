@@ -397,27 +397,27 @@ const formattedTimecode = computed(() => {
 
 // Playback controls
 function goToStart() {
-  playbackStore.setFrame(0);
+  store.setFrame(0);
 }
 
 function goToEnd() {
   const frameCount = store.activeComposition?.frameCount || 81;
-  playbackStore.setFrame(frameCount - 1);
+  store.setFrame(frameCount - 1);
 }
 
 function stepBackward() {
   const newFrame = Math.max(0, store.currentFrame - 1);
-  playbackStore.setFrame(newFrame);
+  store.setFrame(newFrame);
 }
 
 function stepForward() {
   const frameCount = store.activeComposition?.frameCount || 81;
   const newFrame = Math.min(frameCount - 1, store.currentFrame + 1);
-  playbackStore.setFrame(newFrame);
+  store.setFrame(newFrame);
 }
 
 function togglePlay() {
-  playbackStore.togglePlayback();
+  store.togglePlayback();
 }
 
 // Undo/Redo

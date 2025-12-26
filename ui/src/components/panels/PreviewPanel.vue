@@ -221,21 +221,21 @@ function togglePlayback() {
 }
 
 function goToStart() {
-  store.setCurrentFrame(renderRangeStart.value);
+  store.setFrame(renderRangeStart.value);
 }
 
 function goToEnd() {
-  store.setCurrentFrame(renderRangeEnd.value - 1);
+  store.setFrame(renderRangeEnd.value - 1);
 }
 
 function stepForward() {
   const next = Math.min(currentFrame.value + 1, frameCount.value - 1);
-  store.setCurrentFrame(next);
+  store.setFrame(next);
 }
 
 function stepBackward() {
   const prev = Math.max(currentFrame.value - 1, 0);
-  store.setCurrentFrame(prev);
+  store.setFrame(prev);
 }
 
 function getCacheCount(layerId: string): number {
