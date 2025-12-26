@@ -110,6 +110,17 @@
               <option value="step">Step</option>
             </select>
           </div>
+          <div v-if="binding.curve === 'step'" class="property-row">
+            <label title="Number of discrete steps (2-20)">Step Count</label>
+            <input
+              type="number"
+              :value="binding.stepCount ?? 5"
+              min="2"
+              max="20"
+              step="1"
+              @input="$emit('update', binding.id, 'stepCount', Number(($event.target as HTMLInputElement).value))"
+            />
+          </div>
         </div>
       </div>
     </div>

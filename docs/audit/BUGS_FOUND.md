@@ -2371,19 +2371,29 @@ if (binding.curve === 'exponential') {
 - Users selecting 'step' curve get unexpected smooth behavior instead of discrete steps
 
 **Fix Applied:**
-Added step curve implementation that snaps output to discrete levels:
+Complete implementation with configurable step count:
+
+1. Added `stepCount` property to AudioBinding interface (types.ts line 521)
+2. Added `stepCount` property to AudioBindingConfig interface (particles.ts line 222)
+3. Added UI control for stepCount in ParticleAudioBindingsSection.vue (lines 113-123, shown only when curve='step')
+4. Added default stepCount: 5 in ParticleProperties.vue addAudioBinding()
+5. Updated engine to use configurable step count:
 
 ```typescript
 } else if (binding.curve === 'step') {
-  // Step curve: snap to discrete steps (5 steps)
-  const steps = 5;
+  // Step curve: snap to discrete steps
+  const steps = Math.max(2, binding.stepCount ?? 5);
   const steppedT = Math.floor(t * steps) / steps;
   output = binding.outputMin + steppedT * (binding.outputMax - binding.outputMin);
 }
 ```
 
 **Files Modified:**
-- `ui/src/engine/particles/ParticleAudioReactive.ts` - Lines 113-118 (added step curve handling)
+- `ui/src/engine/particles/types.ts` - Line 521 (added stepCount to AudioBinding)
+- `ui/src/types/particles.ts` - Line 222 (added stepCount to AudioBindingConfig)
+- `ui/src/components/properties/particle/ParticleAudioBindingsSection.vue` - Lines 113-123 (added conditional stepCount input)
+- `ui/src/components/properties/ParticleProperties.vue` - Line 1308 (added stepCount default)
+- `ui/src/engine/particles/ParticleAudioReactive.ts` - Lines 113-118 (step curve with configurable count)
 
 **Related Bugs:** BUG-057, BUG-058, BUG-059 (same pattern - UI option not implemented in engine)
 

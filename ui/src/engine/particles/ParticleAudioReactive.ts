@@ -111,8 +111,8 @@ export class ParticleAudioReactive {
       } else if (binding.curve === 'logarithmic') {
         output = binding.outputMin + Math.sqrt(t) * (binding.outputMax - binding.outputMin);
       } else if (binding.curve === 'step') {
-        // Step curve: snap to discrete steps (5 steps)
-        const steps = 5;
+        // Step curve: snap to discrete steps
+        const steps = Math.max(2, binding.stepCount ?? 5);
         const steppedT = Math.floor(t * steps) / steps;
         output = binding.outputMin + steppedT * (binding.outputMax - binding.outputMin);
       }

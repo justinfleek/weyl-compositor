@@ -518,6 +518,7 @@ export interface AudioBinding {
   outputMin: number;
   outputMax: number;
   curve: 'linear' | 'exponential' | 'logarithmic' | 'step';
+  stepCount?: number;          // Number of discrete steps for 'step' curve (default: 5)
 
   // Trigger mode (for discrete events)
   triggerMode?: 'continuous' | 'onThreshold' | 'onBeat';

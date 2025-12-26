@@ -219,6 +219,7 @@ export interface AudioBindingConfig {
   outputMin: number;              // Output range min
   outputMax: number;              // Output range max
   curve: AudioCurveType;          // Response curve
+  stepCount?: number;             // Number of discrete steps for 'step' curve (default: 5)
 }
 
 export interface SubEmitterConfig {

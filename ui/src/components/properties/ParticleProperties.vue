@@ -1304,7 +1304,8 @@ function addAudioBinding(): void {
     parameter: 'emissionRate',
     outputMin: 1,
     outputMax: 50,
-    curve: 'linear'
+    curve: 'linear',
+    stepCount: 5
   };
   emit('update', { audioBindings: [...audioBindings.value, newBinding] });
 }
