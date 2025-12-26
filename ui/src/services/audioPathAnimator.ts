@@ -61,8 +61,30 @@ export class AudioPathAnimator {
   private totalLength: number = 0;
   private releaseState: number = 0;  // For amplitude mode release tracking
 
-  constructor(config: Partial<PathAnimatorConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+  /**
+   * BUG-095 performance fix: Cache accumulated state at regular intervals
+   * For accumulate mode, store position/direction every N frames to avoid O(n²)
+   * When evaluating frame 1050, find checkpoint at 1000 and accumulate from there
+   */
+  private accumulateCache = new Map<number, { position: number; direction: 1 | -1 }>();
+  private readonly CACHE_INTERVAL = 100;  // Cache every 100 frames
+
+  /**
+   * Create AudioPathAnimator
+   * @param pathDataOrConfig - Either SVG path data string, or config object
+   * @param config - Config object (if first param is path data)
+   */
+  constructor(pathDataOrConfig?: string | Partial<PathAnimatorConfig>, config?: Partial<PathAnimatorConfig>) {
+    // Handle overloaded constructor signatures
+    if (typeof pathDataOrConfig === 'string') {
+      // Called as: new AudioPathAnimator(pathData, config)
+      this.config = { ...DEFAULT_CONFIG, ...(config || {}) };
+      this.setPath(pathDataOrConfig);
+    } else {
+      // Called as: new AudioPathAnimator(config) or new AudioPathAnimator()
+      this.config = { ...DEFAULT_CONFIG, ...(pathDataOrConfig || {}) };
+    }
+
     this.state = {
       position: 0,
       direction: 1,
@@ -80,6 +102,8 @@ export class AudioPathAnimator {
   setPath(pathData: string): void {
     this.pathSegments = this.parsePath(pathData);
     this.calculateSegmentLengths();
+    // Clear accumulate cache when path changes
+    this.accumulateCache.clear();
   }
 
   /**
@@ -433,6 +457,8 @@ export class AudioPathAnimator {
       angle: 0
     };
     this.releaseState = 0;
+    // Clear accumulate cache on reset
+    this.accumulateCache.clear();
   }
 
   /**
@@ -454,6 +480,173 @@ export class AudioPathAnimator {
    */
   getState(): PathAnimatorState {
     return { ...this.state };
+  }
+
+  /**
+   * DETERMINISTIC EVALUATION - Evaluate position at a specific frame
+   *
+   * Unlike update(), this method does NOT accumulate state.
+   * Same frame + same audio = identical result.
+   *
+   * For amplitude mode: position = audio amplitude at frame
+   * For accumulate mode: position = sum of audio from frame 0 to frameN
+   *
+   * @param frame - Frame number to evaluate
+   * @param getAudioAtFrame - Function to get audio amplitude at a frame (0-1)
+   * @param isBeatAtFrame - Function to check if frame is a beat
+   * @returns PathAnimatorState at the specified frame
+   */
+  evaluateAtFrame(
+    frame: number,
+    getAudioAtFrame: (f: number) => number,
+    isBeatAtFrame: (f: number) => boolean
+  ): PathAnimatorState {
+    if (this.pathSegments.length === 0) {
+      return {
+        position: 0,
+        direction: 1,
+        previousPosition: 0,
+        smoothedValue: 0,
+        x: 0,
+        y: 0,
+        angle: 0
+      };
+    }
+
+    let position: number;
+    let direction: 1 | -1 = 1;
+    let smoothedValue: number;
+
+    if (this.config.movementMode === 'amplitude') {
+      // Amplitude mode: position directly from audio value at this frame
+      const audioValue = getAudioAtFrame(frame);
+
+      // Apply amplitude curve (power function for noise gate effect)
+      let processedValue = Math.pow(audioValue, this.config.amplitudeCurve);
+
+      // For deterministic release envelope, we need to look at recent frames
+      // Find the max audio value in a window based on release setting
+      const releaseFrames = Math.ceil(this.config.release * 30); // release * 30 frames window
+      let releaseEnvelope = processedValue;
+      for (let f = Math.max(0, frame - releaseFrames); f < frame; f++) {
+        const pastAudio = getAudioAtFrame(f);
+        const pastProcessed = Math.pow(pastAudio, this.config.amplitudeCurve);
+        // Apply decay based on distance
+        const decay = Math.pow(1 - (this.config.release * 0.95), frame - f);
+        const decayedValue = pastProcessed * decay;
+        releaseEnvelope = Math.max(releaseEnvelope, decayedValue);
+      }
+
+      const finalValue = Math.max(processedValue, releaseEnvelope);
+      position = Math.max(0, Math.min(1, finalValue * this.config.sensitivity));
+      smoothedValue = audioValue;
+
+    } else {
+      // Accumulate mode: sum audio values from frame 0 to current frame
+      // BUG-095 performance fix: Use cached checkpoints to avoid O(n²)
+      // Instead of iterating 0 to frame every time, find nearest checkpoint and iterate from there
+
+      // Find nearest cached checkpoint at or before current frame
+      let startFrame = 0;
+      position = 0;
+      direction = 1;
+
+      // Check cache for checkpoints (at multiples of CACHE_INTERVAL)
+      const checkpointFrame = Math.floor(frame / this.CACHE_INTERVAL) * this.CACHE_INTERVAL;
+      if (checkpointFrame > 0) {
+        const cached = this.accumulateCache.get(checkpointFrame);
+        if (cached) {
+          // Start from cached checkpoint
+          startFrame = checkpointFrame;
+          position = cached.position;
+          direction = cached.direction;
+        } else {
+          // Need to build cache up to checkpoint first
+          // Iterate from 0 to checkpoint, caching at intervals
+          for (let f = 0; f <= checkpointFrame; f++) {
+            const audioValue = getAudioAtFrame(f);
+
+            if (this.config.flipOnBeat && isBeatAtFrame(f) && audioValue > this.config.beatThreshold) {
+              direction = direction === 1 ? -1 : 1;
+            }
+
+            const delta = audioValue * this.config.sensitivity * 0.02 * direction;
+            position += delta;
+
+            if (position > 1) {
+              position = 2 - position;
+              direction = -1;
+            } else if (position < 0) {
+              position = -position;
+              direction = 1;
+            }
+
+            // Cache at interval boundaries
+            if (f > 0 && f % this.CACHE_INTERVAL === 0) {
+              this.accumulateCache.set(f, { position, direction });
+            }
+          }
+          startFrame = checkpointFrame;
+        }
+      }
+
+      // Now iterate from startFrame to current frame
+      for (let f = startFrame + 1; f <= frame; f++) {
+        const audioValue = getAudioAtFrame(f);
+
+        // Check for beat-triggered direction flip
+        if (this.config.flipOnBeat && isBeatAtFrame(f) && audioValue > this.config.beatThreshold) {
+          direction = direction === 1 ? -1 : 1;
+        }
+
+        // Accumulate position
+        const delta = audioValue * this.config.sensitivity * 0.02 * direction;
+        position += delta;
+
+        // Bounce at boundaries
+        if (position > 1) {
+          position = 2 - position;
+          direction = -1;
+        } else if (position < 0) {
+          position = -position;
+          direction = 1;
+        }
+
+        // Cache at interval boundaries
+        if (f % this.CACHE_INTERVAL === 0) {
+          this.accumulateCache.set(f, { position, direction });
+        }
+      }
+
+      // Clamp final position
+      position = Math.max(0, Math.min(1, position));
+      smoothedValue = getAudioAtFrame(frame);
+    }
+
+    // Get position on path
+    const pathPoint = this.getPositionOnPath(position);
+
+    // Calculate previous position for motion blur
+    const prevFrame = Math.max(0, frame - 1);
+    let prevPosition = position;
+    if (frame > 0) {
+      // Quick evaluation for previous frame (simplified)
+      if (this.config.movementMode === 'amplitude') {
+        const prevAudio = getAudioAtFrame(prevFrame);
+        prevPosition = Math.max(0, Math.min(1, Math.pow(prevAudio, this.config.amplitudeCurve) * this.config.sensitivity));
+      }
+      // For accumulate mode, prevPosition is approximately position - last delta
+    }
+
+    return {
+      position,
+      direction,
+      previousPosition: prevPosition,
+      smoothedValue,
+      x: pathPoint.x,
+      y: pathPoint.y,
+      angle: pathPoint.angle
+    };
   }
 }
 

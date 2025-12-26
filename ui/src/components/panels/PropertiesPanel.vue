@@ -270,6 +270,155 @@
         </div>
       </div>
 
+      <!-- Audio Path Animation Section -->
+      <div class="property-section" v-if="selectedLayer">
+        <div class="section-header" @click="toggleSection('audioPathAnimation')">
+          <span class="expand-icon">{{ expandedSections.includes('audioPathAnimation') ? '▼' : '►' }}</span>
+          <span class="section-title">Audio Path Animation</span>
+        </div>
+        <div v-if="expandedSections.includes('audioPathAnimation')" class="section-content audio-path-content">
+          <!-- Enable Toggle -->
+          <div class="property-row">
+            <label>Enabled</label>
+            <input
+              type="checkbox"
+              :checked="audioPathAnimation.enabled"
+              @change="updateAudioPathEnabled"
+              class="checkbox-input"
+            />
+          </div>
+
+          <!-- SVG Path Data -->
+          <div class="property-row path-data-row" v-if="audioPathAnimation.enabled">
+            <label>Path Data</label>
+            <textarea
+              class="path-data-input"
+              :value="audioPathAnimation.pathData"
+              @input="updateAudioPathData"
+              placeholder="M 0 0 L 100 100 C 150 50 200 150 300 100"
+              rows="2"
+            />
+          </div>
+
+          <!-- Movement Mode -->
+          <div class="property-row" v-if="audioPathAnimation.enabled">
+            <label>Mode</label>
+            <select
+              class="blend-select"
+              :value="audioPathAnimation.movementMode"
+              @change="updateAudioPathMode"
+            >
+              <option value="amplitude">Amplitude (volume = position)</option>
+              <option value="accumulate">Accumulate (travel forward)</option>
+            </select>
+          </div>
+
+          <!-- Sensitivity -->
+          <div class="property-row" v-if="audioPathAnimation.enabled">
+            <label>Sensitivity</label>
+            <div class="value-group">
+              <ScrubableNumber
+                :modelValue="audioPathAnimation.sensitivity"
+                @update:modelValue="(v) => updateAudioPathConfig('sensitivity', v)"
+                :min="0.1"
+                :max="5"
+                :precision="2"
+              />
+            </div>
+          </div>
+
+          <!-- Smoothing -->
+          <div class="property-row" v-if="audioPathAnimation.enabled">
+            <label>Smoothing</label>
+            <div class="value-group">
+              <ScrubableNumber
+                :modelValue="audioPathAnimation.smoothing"
+                @update:modelValue="(v) => updateAudioPathConfig('smoothing', v)"
+                :min="0"
+                :max="1"
+                :precision="2"
+              />
+            </div>
+          </div>
+
+          <!-- Release (amplitude mode) -->
+          <div class="property-row" v-if="audioPathAnimation.enabled && audioPathAnimation.movementMode === 'amplitude'">
+            <label>Release</label>
+            <div class="value-group">
+              <ScrubableNumber
+                :modelValue="audioPathAnimation.release"
+                @update:modelValue="(v) => updateAudioPathConfig('release', v)"
+                :min="0"
+                :max="1"
+                :precision="2"
+              />
+            </div>
+          </div>
+
+          <!-- Amplitude Curve (amplitude mode) -->
+          <div class="property-row" v-if="audioPathAnimation.enabled && audioPathAnimation.movementMode === 'amplitude'">
+            <label>Curve</label>
+            <div class="value-group">
+              <ScrubableNumber
+                :modelValue="audioPathAnimation.amplitudeCurve"
+                @update:modelValue="(v) => updateAudioPathConfig('amplitudeCurve', v)"
+                :min="0.5"
+                :max="3"
+                :precision="2"
+              />
+            </div>
+          </div>
+
+          <!-- Flip on Beat (accumulate mode) -->
+          <div class="property-row" v-if="audioPathAnimation.enabled && audioPathAnimation.movementMode === 'accumulate'">
+            <label>Flip on Beat</label>
+            <input
+              type="checkbox"
+              :checked="audioPathAnimation.flipOnBeat"
+              @change="(e) => updateAudioPathConfig('flipOnBeat', (e.target as HTMLInputElement).checked)"
+              class="checkbox-input"
+            />
+          </div>
+
+          <!-- Beat Threshold (accumulate mode) -->
+          <div class="property-row" v-if="audioPathAnimation.enabled && audioPathAnimation.movementMode === 'accumulate'">
+            <label>Beat Threshold</label>
+            <div class="value-group">
+              <ScrubableNumber
+                :modelValue="audioPathAnimation.beatThreshold"
+                @update:modelValue="(v) => updateAudioPathConfig('beatThreshold', v)"
+                :min="0.01"
+                :max="0.5"
+                :precision="3"
+              />
+            </div>
+          </div>
+
+          <!-- Auto Orient -->
+          <div class="property-row" v-if="audioPathAnimation.enabled">
+            <label>Auto Orient</label>
+            <input
+              type="checkbox"
+              :checked="audioPathAnimation.autoOrient"
+              @change="(e) => updateAudioPathConfig('autoOrient', (e.target as HTMLInputElement).checked)"
+              class="checkbox-input"
+            />
+          </div>
+
+          <!-- Rotation Offset (when auto-orient enabled) -->
+          <div class="property-row" v-if="audioPathAnimation.enabled && audioPathAnimation.autoOrient">
+            <label>Rotation Offset</label>
+            <div class="value-group">
+              <ScrubableNumber
+                :modelValue="audioPathAnimation.rotationOffset"
+                @update:modelValue="(v) => updateAudioPathConfig('rotationOffset', v)"
+                suffix="°"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Property Drivers -->
       <DriverList v-if="selectedLayer" :layerId="selectedLayer.id" />
     </div>
@@ -329,6 +478,21 @@ const expandedSections = ref<string[]>(['transform']);
 const scaleLocked = ref(true);
 
 const layerName = ref('');
+
+// Audio Path Animation state
+const audioPathAnimation = ref({
+  enabled: false,
+  pathData: '',
+  movementMode: 'amplitude' as 'amplitude' | 'accumulate',
+  sensitivity: 1.0,
+  smoothing: 0.3,
+  release: 0.5,
+  amplitudeCurve: 1.0,
+  flipOnBeat: true,
+  beatThreshold: 0.05,
+  autoOrient: false,
+  rotationOffset: 0,
+});
 const transform = ref({
   position: { x: 0, y: 0, z: 0 },
   scale: { x: 100, y: 100, z: 100 },
@@ -538,7 +702,44 @@ function syncTransformFromLayer(layer: typeof selectedLayer.value) {
 // Watch selected layer for selection changes
 watch(selectedLayer, (layer) => {
   syncTransformFromLayer(layer);
+  syncAudioPathAnimationFromLayer(layer);
 }, { immediate: true });
+
+// Sync audioPathAnimation from layer
+function syncAudioPathAnimationFromLayer(layer: typeof selectedLayer.value) {
+  if (!layer) return;
+  const apa = layer.audioPathAnimation;
+  if (apa) {
+    audioPathAnimation.value = {
+      enabled: apa.enabled ?? false,
+      pathData: apa.pathData ?? '',
+      movementMode: apa.movementMode ?? 'amplitude',
+      sensitivity: apa.sensitivity ?? 1.0,
+      smoothing: apa.smoothing ?? 0.3,
+      release: apa.release ?? 0.5,
+      amplitudeCurve: apa.amplitudeCurve ?? 1.0,
+      flipOnBeat: apa.flipOnBeat ?? true,
+      beatThreshold: apa.beatThreshold ?? 0.05,
+      autoOrient: apa.autoOrient ?? false,
+      rotationOffset: apa.rotationOffset ?? 0,
+    };
+  } else {
+    // Reset to defaults
+    audioPathAnimation.value = {
+      enabled: false,
+      pathData: '',
+      movementMode: 'amplitude',
+      sensitivity: 1.0,
+      smoothing: 0.3,
+      release: 0.5,
+      amplitudeCurve: 1.0,
+      flipOnBeat: true,
+      beatThreshold: 0.05,
+      autoOrient: false,
+      rotationOffset: 0,
+    };
+  }
+}
 
 // Deep watch the layer's transform to sync when it changes from other sources (e.g. timeline panel)
 watch(
@@ -639,7 +840,7 @@ function toggle3D(event: Event) {
     if (t.scale.value.z === undefined) {
       t.scale.value.z = 100;
     }
-    if (t.anchorPoint.value.z === undefined) {
+    if (t.anchorPoint && t.anchorPoint.value.z === undefined) {
       t.anchorPoint.value.z = 0;
     }
 
@@ -657,6 +858,59 @@ function toggle3D(event: Event) {
       t.rotationZ = createAnimatableProperty('rotationZ', 0, 'number');
     }
   }
+}
+
+// ============================================================
+// AUDIO PATH ANIMATION METHODS
+// ============================================================
+
+function updateAudioPathEnabled(event: Event) {
+  if (!selectedLayer.value) return;
+  const enabled = (event.target as HTMLInputElement).checked;
+  audioPathAnimation.value.enabled = enabled;
+
+  // Initialize audioPathAnimation on layer if it doesn't exist
+  if (!selectedLayer.value.audioPathAnimation) {
+    selectedLayer.value.audioPathAnimation = {
+      enabled,
+      pathData: audioPathAnimation.value.pathData,
+      movementMode: audioPathAnimation.value.movementMode,
+      sensitivity: audioPathAnimation.value.sensitivity,
+      smoothing: audioPathAnimation.value.smoothing,
+      release: audioPathAnimation.value.release,
+      amplitudeCurve: audioPathAnimation.value.amplitudeCurve,
+      flipOnBeat: audioPathAnimation.value.flipOnBeat,
+      beatThreshold: audioPathAnimation.value.beatThreshold,
+      autoOrient: audioPathAnimation.value.autoOrient,
+      rotationOffset: audioPathAnimation.value.rotationOffset,
+    };
+  } else {
+    selectedLayer.value.audioPathAnimation.enabled = enabled;
+  }
+  onLayerUpdate();
+}
+
+function updateAudioPathData(event: Event) {
+  if (!selectedLayer.value?.audioPathAnimation) return;
+  const pathData = (event.target as HTMLTextAreaElement).value;
+  audioPathAnimation.value.pathData = pathData;
+  selectedLayer.value.audioPathAnimation.pathData = pathData;
+  onLayerUpdate();
+}
+
+function updateAudioPathMode(event: Event) {
+  if (!selectedLayer.value?.audioPathAnimation) return;
+  const mode = (event.target as HTMLSelectElement).value as 'amplitude' | 'accumulate';
+  audioPathAnimation.value.movementMode = mode;
+  selectedLayer.value.audioPathAnimation.movementMode = mode;
+  onLayerUpdate();
+}
+
+function updateAudioPathConfig(key: keyof typeof audioPathAnimation.value, value: number | boolean) {
+  if (!selectedLayer.value?.audioPathAnimation) return;
+  (audioPathAnimation.value as any)[key] = value;
+  (selectedLayer.value.audioPathAnimation as any)[key] = value;
+  onLayerUpdate();
 }
 
 function hasKeyframe(property: string): boolean {
@@ -1146,5 +1400,39 @@ function hasDriver(property: PropertyPath): boolean {
   padding: 0 !important;
   max-height: 500px;
   overflow-y: auto;
+}
+
+.audio-path-content {
+  padding: 8px 12px !important;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.path-data-row {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 4px !important;
+}
+
+.path-data-input {
+  width: 100%;
+  min-height: 50px;
+  padding: 6px 8px;
+  background: var(--lattice-surface-2, #1a1a1a);
+  border: 1px solid var(--lattice-border-default, #2a2a2a);
+  color: var(--lattice-text-primary, #E5E5E5);
+  border-radius: var(--lattice-radius-sm, 2px);
+  font-size: var(--lattice-text-sm, 11px);
+  font-family: var(--lattice-font-mono, 'JetBrains Mono', monospace);
+  resize: vertical;
+}
+
+.path-data-input:focus {
+  outline: none;
+  border-color: var(--lattice-accent, #8B5CF6);
+}
+
+.path-data-input::placeholder {
+  color: var(--lattice-text-muted, #6B7280);
 }
 </style>

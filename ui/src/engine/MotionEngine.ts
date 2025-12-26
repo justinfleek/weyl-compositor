@@ -49,6 +49,8 @@ import { particleSimulationRegistry, type ParticleSnapshot } from './ParticleSim
 import type { ParticleSystemConfig } from '@/services/particleSystem';
 // Camera enhancement imports - deterministic (seeded noise)
 import { CameraShake, getRackFocusDistance } from '@/services/cameraEnhancements';
+// Audio path animator - deterministic SVG path animation driven by audio
+import { AudioPathAnimator } from '@/services/audioPathAnimator';
 
 // ============================================================================
 // EVALUATED STATE INTERFACES
@@ -427,6 +429,15 @@ export class MotionEngine {
   private lastAudioAnalysis: AudioAnalysis | null = null;
 
   /**
+   * BUG-095 fix: Cache AudioPathAnimator instances per layer
+   * Prevents re-parsing SVG path data every frame
+   */
+  private audioPathAnimatorCache = new Map<string, {
+    animator: AudioPathAnimator;
+    pathData: string;  // Track path data to invalidate on change
+  }>();
+
+  /**
    * Invalidate the frame cache
    * Call this when project structure changes
    */
@@ -439,6 +450,8 @@ export class MotionEngine {
     }
     this.lastAudioReactiveFrame = -1;
     this.lastAudioAnalysis = null;
+    // BUG-095 fix: Clear audio path animator cache
+    this.audioPathAnimatorCache.clear();
   }
 
   /**
@@ -540,8 +553,9 @@ export class MotionEngine {
     // Get composition fps
     const fps = composition.settings?.fps ?? 30;
 
-    // Evaluate all layers
-    const evaluatedLayers = this.evaluateLayers(frame, composition.layers, audioMapper, fps);
+    // Evaluate all layers (pass audio analysis for audio path animation)
+    const audioAnalysisForLayers = audioReactive?.analysis ?? null;
+    const evaluatedLayers = this.evaluateLayers(frame, composition.layers, audioMapper, fps, audioAnalysisForLayers);
 
     // Evaluate camera (BUG-092 fix: pass audioMapper for fov/dollyZ/shake modifiers)
     const evaluatedCamera = this.evaluateCamera(
@@ -601,7 +615,8 @@ export class MotionEngine {
     frame: number,
     layers: Layer[],
     audioMapper: AudioReactiveMapper | null,
-    fps: number = 30
+    fps: number = 30,
+    audioAnalysis: AudioAnalysis | null = null
   ): EvaluatedLayer[] {
     const evaluated: EvaluatedLayer[] = [];
 
@@ -612,7 +627,78 @@ export class MotionEngine {
       const visible = layer.visible && inRange;
 
       // Evaluate transform
-      const transform = this.evaluateTransform(frame, layer.transform, layer.threeD, fps);
+      let transform = this.evaluateTransform(frame, layer.transform, layer.threeD, fps);
+
+      // BUG-095 fix: Apply audio path animation if enabled
+      // This animates the layer position along an SVG path based on audio
+      if (layer.audioPathAnimation?.enabled && layer.audioPathAnimation.pathData) {
+        const pathAnim = layer.audioPathAnimation;
+
+        // Get or create cached animator (avoids re-parsing SVG every frame)
+        let animator: AudioPathAnimator;
+        const cached = this.audioPathAnimatorCache.get(layer.id);
+        if (cached && cached.pathData === pathAnim.pathData) {
+          // Reuse cached animator, update config
+          animator = cached.animator;
+          animator.setConfig({
+            movementMode: pathAnim.movementMode,
+            sensitivity: pathAnim.sensitivity,
+            smoothing: pathAnim.smoothing,
+            release: pathAnim.release,
+            amplitudeCurve: pathAnim.amplitudeCurve,
+            flipOnBeat: pathAnim.flipOnBeat,
+            beatThreshold: pathAnim.beatThreshold,
+          });
+        } else {
+          // Create new animator and cache it
+          animator = new AudioPathAnimator(pathAnim.pathData, {
+            movementMode: pathAnim.movementMode,
+            sensitivity: pathAnim.sensitivity,
+            smoothing: pathAnim.smoothing,
+            release: pathAnim.release,
+            amplitudeCurve: pathAnim.amplitudeCurve,
+            flipOnBeat: pathAnim.flipOnBeat,
+            beatThreshold: pathAnim.beatThreshold,
+          });
+          this.audioPathAnimatorCache.set(layer.id, {
+            animator,
+            pathData: pathAnim.pathData,
+          });
+        }
+
+        // Deterministic evaluation - get audio at frame from analysis
+        const pathState = animator.evaluateAtFrame(
+          frame,
+          // getAudioAtFrame callback - uses audio analysis amplitude
+          (f: number) => {
+            if (audioAnalysis) {
+              return getFeatureAtFrame(audioAnalysis, 'amplitude', f);
+            }
+            return 0;
+          },
+          // isBeatAtFrame callback - uses onset detection
+          (f: number) => {
+            if (audioAnalysis) {
+              return getFeatureAtFrame(audioAnalysis, 'onsets', f) > 0.5;
+            }
+            return false;
+          }
+        );
+
+        // Apply path position as offset to layer transform
+        transform = {
+          ...transform,
+          position: Object.freeze({
+            x: transform.position.x + pathState.x,
+            y: transform.position.y + pathState.y,
+            z: transform.position.z,
+          }),
+          // Apply auto-orient rotation if enabled
+          rotation: pathAnim.autoOrient
+            ? transform.rotation + pathState.angle + pathAnim.rotationOffset
+            : transform.rotation,
+        };
+      }
 
       // Evaluate opacity (explicit type for TypeScript inference)
       let opacity: number = interpolateProperty(layer.opacity, frame, fps, layer.id);

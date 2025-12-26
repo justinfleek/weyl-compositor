@@ -444,6 +444,47 @@ export interface FollowPathConstraint {
 
 // createFollowPathConstraint is now in transform.ts
 
+/**
+ * Audio Path Animation - Animate layer position along SVG path based on audio
+ *
+ * Uses AudioPathAnimator service for deterministic evaluation.
+ * Position along path is driven by audio amplitude or accumulated movement.
+ */
+export interface AudioPathAnimation {
+  /** Enable/disable the audio path animation */
+  enabled: boolean;
+
+  /** SVG path data string (M, L, C, Q, Z commands) */
+  pathData: string;
+
+  /** Movement mode: 'amplitude' (direct mapping) or 'accumulate' (travel forward) */
+  movementMode: 'amplitude' | 'accumulate';
+
+  /** Sensitivity/speed multiplier */
+  sensitivity: number;
+
+  /** Smoothing factor (0-1) - for amplitude mode release envelope */
+  smoothing: number;
+
+  /** Release envelope (0-1) - how fast position returns after peak (amplitude mode) */
+  release: number;
+
+  /** Power curve for amplitude (1=linear, >1=noise gate effect) */
+  amplitudeCurve: number;
+
+  /** Reverse direction on beat detection (accumulate mode) */
+  flipOnBeat: boolean;
+
+  /** Beat detection threshold (0.02=sensitive, 0.1=only kicks) */
+  beatThreshold: number;
+
+  /** Auto-orient layer rotation to path tangent */
+  autoOrient: boolean;
+
+  /** Additional rotation offset when auto-orienting (degrees) */
+  rotationOffset: number;
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -455,6 +496,7 @@ export interface Layer {
   threeD: boolean;            // 3D Layer Switch
   autoOrient?: AutoOrientMode; // Auto-orient behavior (billboard to camera, along path, etc.)
   followPath?: FollowPathConstraint; // Constrain layer position to follow a path layer
+  audioPathAnimation?: AudioPathAnimation; // Animate position along SVG path based on audio
   motionBlur: boolean;        // Motion Blur Switch
   motionBlurSettings?: LayerMotionBlurSettings;  // Detailed motion blur configuration
   flattenTransform?: boolean; // Flatten Transform / Continuously Rasterize
@@ -1972,7 +2014,8 @@ export function createEmptyProject(width: number, height: number): LatticeProjec
     fps: 16,
     duration: 81 / 16,
     backgroundColor: '#2d2d2d',
-    autoResizeToContent: true
+    autoResizeToContent: true,
+    frameBlendingEnabled: false
   };
 
   return {
