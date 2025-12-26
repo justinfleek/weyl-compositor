@@ -29,6 +29,13 @@ export class ImageLayer extends BaseLayer {
   /** Source URL or asset ID */
   private sourceUrl: string | null = null;
 
+  /** Fit mode for image display */
+  private fit: 'none' | 'contain' | 'cover' | 'fill' = 'none';
+
+  /** Target dimensions for fit calculations (null = use native dimensions) */
+  private targetWidth: number | null = null;
+  private targetHeight: number | null = null;
+
   /** Original (unprocessed) texture for effects source */
   private originalTexture: THREE.Texture | null = null;
 
@@ -61,6 +68,9 @@ export class ImageLayer extends BaseLayer {
 
     // Load image if source is provided
     const imageData = this.extractImageData(layerData);
+    this.fit = imageData.fit;
+    this.targetWidth = imageData.targetWidth;
+    this.targetHeight = imageData.targetHeight;
     if (imageData.source) {
       this.loadImage(imageData.source);
     }
@@ -74,15 +84,17 @@ export class ImageLayer extends BaseLayer {
    */
   private extractImageData(layerData: Layer): {
     source: string | null;
-    width: number;
-    height: number;
+    targetWidth: number | null;
+    targetHeight: number | null;
+    fit: 'none' | 'contain' | 'cover' | 'fill';
   } {
     const data = layerData.data as any;
 
     return {
       source: data?.source ?? data?.url ?? data?.assetId ?? null,
-      width: data?.width ?? 100,
-      height: data?.height ?? 100,
+      targetWidth: data?.width ?? null,
+      targetHeight: data?.height ?? null,
+      fit: data?.fit ?? 'none',
     };
   }
 
@@ -170,14 +182,58 @@ export class ImageLayer extends BaseLayer {
   }
 
   /**
-   * Update mesh size to match image dimensions
+   * Update mesh size based on image dimensions and fit mode
    */
   private updateMeshSize(): void {
     // Dispose old geometry
     this.geometry.dispose();
 
-    // Create new geometry with image dimensions
-    this.geometry = new THREE.PlaneGeometry(this.imageWidth, this.imageHeight);
+    // Calculate final dimensions based on fit mode
+    let finalWidth = this.imageWidth;
+    let finalHeight = this.imageHeight;
+
+    // Only apply fit if we have target dimensions and fit is not 'none'
+    if (this.targetWidth && this.targetHeight && this.fit !== 'none') {
+      const targetAspect = this.targetWidth / this.targetHeight;
+      const imageAspect = this.imageWidth / this.imageHeight;
+
+      switch (this.fit) {
+        case 'contain':
+          // Scale to fit within target bounds, preserving aspect ratio
+          if (imageAspect > targetAspect) {
+            // Image is wider than target - fit to width
+            finalWidth = this.targetWidth;
+            finalHeight = this.targetWidth / imageAspect;
+          } else {
+            // Image is taller than target - fit to height
+            finalHeight = this.targetHeight;
+            finalWidth = this.targetHeight * imageAspect;
+          }
+          break;
+
+        case 'cover':
+          // Scale to cover target bounds, preserving aspect ratio (may crop)
+          if (imageAspect > targetAspect) {
+            // Image is wider than target - fit to height, crop width
+            finalHeight = this.targetHeight;
+            finalWidth = this.targetHeight * imageAspect;
+          } else {
+            // Image is taller than target - fit to width, crop height
+            finalWidth = this.targetWidth;
+            finalHeight = this.targetWidth / imageAspect;
+          }
+          break;
+
+        case 'fill':
+          // Stretch to fill target bounds exactly (ignores aspect ratio)
+          finalWidth = this.targetWidth;
+          finalHeight = this.targetHeight;
+          break;
+      }
+    }
+
+    // Create new geometry with calculated dimensions
+    this.geometry = new THREE.PlaneGeometry(finalWidth, finalHeight);
     this.mesh.geometry = this.geometry;
   }
 
@@ -308,6 +364,7 @@ export class ImageLayer extends BaseLayer {
 
   protected onUpdate(properties: Partial<Layer>): void {
     const data = properties.data as any;
+    let needsResize = false;
 
     // Handle source change
     if (data?.source || data?.url || data?.assetId) {
@@ -317,12 +374,22 @@ export class ImageLayer extends BaseLayer {
       }
     }
 
-    // Handle dimension change
+    // Handle fit mode change
+    if (data?.fit !== undefined && data.fit !== this.fit) {
+      this.fit = data.fit;
+      needsResize = true;
+    }
+
+    // Handle target dimension change (for fit calculations)
     if (data?.width !== undefined || data?.height !== undefined) {
-      this.setDimensions(
-        data.width ?? this.imageWidth,
-        data.height ?? this.imageHeight
-      );
+      this.targetWidth = data.width ?? this.targetWidth;
+      this.targetHeight = data.height ?? this.targetHeight;
+      needsResize = true;
+    }
+
+    // Recalculate mesh size if fit or target changed
+    if (needsResize) {
+      this.updateMeshSize();
     }
   }
 
