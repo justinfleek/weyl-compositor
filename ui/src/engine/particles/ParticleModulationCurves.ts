@@ -72,8 +72,11 @@ export class ParticleModulationCurves {
 
   /**
    * Evaluate a modulation curve at time t (0-1)
+   * @param curve - The modulation curve to evaluate
+   * @param t - Normalized time (0-1) representing particle lifetime progress
+   * @param randomOffset - BUG-070 fix: Per-particle random offset (0-1) for deterministic random curves
    */
-  evaluateCurve(curve: ModulationCurve | undefined, t: number): number {
+  evaluateCurve(curve: ModulationCurve | undefined, t: number, randomOffset?: number): number {
     if (!curve) return 1;
 
     switch (curve.type) {
@@ -121,12 +124,18 @@ export class ParticleModulationCurves {
       }
 
       case 'random':
-        return curve.min + this.rng() * (curve.max - curve.min);
+        // BUG-070 fix: Use per-particle random offset instead of calling rng() each frame
+        // This ensures deterministic behavior - same particle gets same random value throughout lifetime
+        const randVal = randomOffset !== undefined ? randomOffset : this.rng();
+        return curve.min + randVal * (curve.max - curve.min);
 
       case 'randomCurve': {
-        const min = this.evaluateCurve(curve.minCurve, t);
-        const max = this.evaluateCurve(curve.maxCurve, t);
-        return min + this.rng() * (max - min);
+        // BUG-070 fix: Pass randomOffset to nested curve evaluations
+        const min = this.evaluateCurve(curve.minCurve, t, randomOffset);
+        const max = this.evaluateCurve(curve.maxCurve, t, randomOffset);
+        // Use same random offset for interpolation between min/max curves
+        const randInterp = randomOffset !== undefined ? randomOffset : this.rng();
+        return min + randInterp * (max - min);
       }
 
       default:

@@ -323,7 +323,8 @@ export class GPUParticleSystem {
 
   // BUG-073 fix: Store initial size/opacity for lifetime modulation
   // Without this, *= modulation causes exponential decay
-  private particleInitialValues: Map<number, { size: number; opacity: number }> = new Map();
+  // BUG-070 fix: Also store random offset for deterministic random modulation
+  private particleInitialValues: Map<number, { size: number; opacity: number; randomOffset: number }> = new Map();
 
   // Trail system - extracted to ParticleTrailSystem.ts
   private trailSystem: ParticleTrailSystem | null = null;
@@ -421,11 +422,11 @@ export class GPUParticleSystem {
       throw new Error('WebGL2 context required for GPU particle system');
     }
 
-    // Create modulation textures
-    this.createModulationTextures();
-
-    // Create Three.js mesh for rendering
+    // Create Three.js mesh for rendering (creates material)
     this.createParticleMesh();
+
+    // Create modulation textures (after material exists so we can set uniforms)
+    this.createModulationTextures();
 
     // Initialize trail system if enabled
     if (this.config.render.trailLength > 0) {
@@ -468,14 +469,24 @@ export class GPUParticleSystem {
     this.sizeOverLifetimeTexture = textures.sizeOverLifetime;
     this.opacityOverLifetimeTexture = textures.opacityOverLifetime;
     this.colorOverLifetimeTexture = textures.colorOverLifetime;
+
+    // BUG-072 fix: Wire up colorOverLifetime texture to shader
+    // Check if user configured colorOverLifetime (not just default white)
+    const hasColorConfig = this.config.lifetimeModulation.colorOverLifetime &&
+                           this.config.lifetimeModulation.colorOverLifetime.length > 0;
+    if (this.material && this.colorOverLifetimeTexture) {
+      this.material.uniforms.colorOverLifetime.value = this.colorOverLifetimeTexture;
+      this.material.uniforms.hasColorOverLifetime.value = hasColorConfig ? 1 : 0;
+    }
   }
 
   /**
    * Evaluate a modulation curve at time t
    * Delegates to ParticleModulationCurves
+   * @param randomOffset - BUG-070 fix: Per-particle random offset for deterministic random curves
    */
-  private evaluateModulationCurve(curve: ModulationCurve, t: number): number {
-    return this.modulationSystem?.evaluateCurve(curve, t) ?? 1;
+  private evaluateModulationCurve(curve: ModulationCurve, t: number, randomOffset?: number): number {
+    return this.modulationSystem?.evaluateCurve(curve, t, randomOffset) ?? 1;
   }
 
   /**
@@ -1003,9 +1014,11 @@ export class GPUParticleSystem {
 
     // BUG-073 fix: Store initial size/opacity for lifetime modulation
     // This allows us to compute initialValue * modFactor instead of *= which causes exponential decay
+    // BUG-070 fix: Store random offset for deterministic random modulation curves
     this.particleInitialValues.set(index, {
       size: buffer[offset + 9],
       opacity: buffer[offset + 15],
+      randomOffset: this.rng(),  // Computed once at spawn, used throughout lifetime
     });
 
     this.state.particleCount++;
@@ -1044,18 +1057,80 @@ export class GPUParticleSystem {
       let vy = buffer[offset + 4];
       let vz = buffer[offset + 5];
       const mass = buffer[offset + 8];
+      let angularVelocity = buffer[offset + 11];
+
+      // BUG-073 fix: Get initial values for modulation to prevent exponential decay
+      // BUG-070 fix: Get randomOffset for deterministic random curves
+      const initialValues = this.particleInitialValues.get(i);
+      const initialSize = initialValues?.size ?? buffer[offset + 9];
+      const initialOpacity = initialValues?.opacity ?? buffer[offset + 15];
+      const randomOffset = initialValues?.randomOffset ?? 0.5;
+
+      // BUG-071 fix: Evaluate all lifetime modulation curves BEFORE physics
+      const lifeRatio = age / lifetime;
+      const sizeMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.sizeOverLifetime || { type: 'constant', value: 1 },
+        lifeRatio,
+        randomOffset
+      );
+      const opacityMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.opacityOverLifetime || { type: 'constant', value: 1 },
+        lifeRatio,
+        randomOffset
+      );
+      // BUG-071 fix: New lifetime modulation properties
+      const speedMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.speedOverLifetime || { type: 'constant', value: 1 },
+        lifeRatio,
+        randomOffset
+      );
+      const rotationSpeedMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.rotationSpeedOverLifetime || { type: 'constant', value: 1 },
+        lifeRatio,
+        randomOffset
+      );
+      const gravityMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.gravityModifier || { type: 'constant', value: 1 },
+        lifeRatio,
+        randomOffset
+      );
+      const dragMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.dragOverLifetime || { type: 'constant', value: 0 },
+        lifeRatio,
+        randomOffset
+      );
+      const noiseMod = this.evaluateModulationCurve(
+        this.config.lifetimeModulation.noiseAmplitudeOverLifetime || { type: 'constant', value: 1 },
+        lifeRatio,
+        randomOffset
+      );
 
       // Accumulate forces
       let fx = 0, fy = 0, fz = 0;
 
-      // Apply force fields
+      // Apply force fields with BUG-071 modifiers
       for (const field of this.forceFields.values()) {
         if (!field.enabled) continue;
 
         const force = calculateForceField(field, px, py, pz, vx, vy, vz, mass, this.state.simulationTime);
-        fx += force.x;
-        fy += force.y;
-        fz += force.z;
+
+        // BUG-071 fix: Apply gravityModifier to gravity forces
+        if (field.type === 'gravity') {
+          fx += force.x * gravityMod;
+          fy += force.y * gravityMod;
+          fz += force.z * gravityMod;
+        }
+        // BUG-071 fix: Apply noiseAmplitudeOverLifetime to turbulence forces
+        else if (field.type === 'turbulence') {
+          fx += force.x * noiseMod;
+          fy += force.y * noiseMod;
+          fz += force.z * noiseMod;
+        }
+        else {
+          fx += force.x;
+          fy += force.y;
+          fz += force.z;
+        }
       }
 
       // Apply acceleration (F = ma)
@@ -1068,30 +1143,33 @@ export class GPUParticleSystem {
       vy += ay * dt;
       vz += az * dt;
 
+      // BUG-071 fix: Apply dragOverLifetime to velocity
+      // Drag reduces velocity proportionally: v = v * (1 - drag * dt)
+      if (dragMod > 0) {
+        const dragFactor = Math.max(0, 1 - dragMod * dt);
+        vx *= dragFactor;
+        vy *= dragFactor;
+        vz *= dragFactor;
+      }
+
+      // BUG-071 fix: Apply speedOverLifetime to velocity magnitude
+      // This scales the velocity vector while preserving direction
+      if (speedMod !== 1) {
+        vx *= speedMod;
+        vy *= speedMod;
+        vz *= speedMod;
+      }
+
       // Integrate position
       px += vx * dt;
       py += vy * dt;
       pz += vz * dt;
 
-      // Apply lifetime modulation
-      const lifeRatio = age / lifetime;
-      const sizeMod = this.evaluateModulationCurve(
-        this.config.lifetimeModulation.sizeOverLifetime || { type: 'constant', value: 1 },
-        lifeRatio
-      );
-      const opacityMod = this.evaluateModulationCurve(
-        this.config.lifetimeModulation.opacityOverLifetime || { type: 'constant', value: 1 },
-        lifeRatio
-      );
+      // BUG-071 fix: Apply rotationSpeedOverLifetime to angular velocity
+      const effectiveAngularVelocity = angularVelocity * rotationSpeedMod;
 
       // Update rotation
-      const rotation = buffer[offset + 10] + buffer[offset + 11] * dt;
-
-      // BUG-073 fix: Use initial values for modulation to prevent exponential decay
-      // Without this fix, size *= 0.9 each frame would cause size to become ~0 after 60 frames
-      const initialValues = this.particleInitialValues.get(i);
-      const initialSize = initialValues?.size ?? buffer[offset + 9];
-      const initialOpacity = initialValues?.opacity ?? buffer[offset + 15];
+      const rotation = buffer[offset + 10] + effectiveAngularVelocity * dt;
 
       // Write updated state
       buffer[offset + 0] = px;
@@ -1246,6 +1324,9 @@ export class GPUParticleSystem {
       motionBlurStrength: { value: this.config.render.motionBlurStrength ?? 0.1 },
       minStretch: { value: this.config.render.minStretch ?? 1.0 },
       maxStretch: { value: this.config.render.maxStretch ?? 4.0 },
+      // BUG-072 fix: Color over lifetime texture
+      colorOverLifetime: { value: null },
+      hasColorOverLifetime: { value: 0 },
     };
   }
 

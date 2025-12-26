@@ -25,7 +25,7 @@ export interface ParticleFrameCache {
   emitterAccumulators: Map<string, number>;
   particleEmitters: Map<number, string>;  // BUG-063 fix: Track which emitter spawned each particle
   audioSmoothedValues: Map<number, number>;  // BUG-064 fix: Audio EMA filter history
-  particleInitialValues: Map<number, { size: number; opacity: number }>;  // BUG-073 fix: Initial size/opacity for modulation
+  particleInitialValues: Map<number, { size: number; opacity: number; randomOffset: number }>;  // BUG-073/070 fix: Initial values + random offset
 }
 
 export interface CacheStats {
@@ -72,7 +72,7 @@ export class ParticleFrameCacheSystem {
     emitters: Map<string, { accumulator: number }>,
     particleEmitters: Map<number, string>,  // BUG-063 fix: Track which emitter spawned each particle
     audioSmoothedValues: Map<number, number>,  // BUG-064 fix: Audio EMA filter history
-    particleInitialValues: Map<number, { size: number; opacity: number }>  // BUG-073 fix: Initial size/opacity for modulation
+    particleInitialValues: Map<number, { size: number; opacity: number; randomOffset: number }>  // BUG-073/070 fix: Initial values + random offset
   ): void {
     // Don't cache if we've exceeded max size - remove oldest
     if (this.frameCache.size >= this.maxCacheSize) {

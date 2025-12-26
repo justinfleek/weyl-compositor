@@ -11,11 +11,11 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 21 | 21 | 0 |
-| MEDIUM | 43 | 40 | 3 |
+| MEDIUM | 43 | 43 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **71** | **68** | **3** |
+| **TOTAL** | **71** | **71** | **0** |
 
-**Note:** BUG-070, BUG-071, BUG-072 are marked OPEN as they require architectural changes or are feature gaps, not simple bug fixes.
+**Note:** All bugs in Tier 5 (Particle System) have been fixed.
 
 ---
 
@@ -2934,11 +2934,11 @@ const localT = (t - p0.time) / timeDiff;
 **Severity:** MEDIUM
 **Found:** 2025-12-26
 **Session:** 4
-**Status:** OPEN (Architectural)
+**Status:** FIXED
 
 **Location:**
 - File: `ui/src/engine/particles/ParticleModulationCurves.ts`
-- Lines: 123-130
+- Lines: 126-139
 - Function: `evaluateCurve()` - 'random' and 'randomCurve' cases
 
 **Problem:**
@@ -2966,11 +2966,18 @@ Random modulation causes particles to jitter as their size/opacity flickers rand
 - Visual noise/jitter on particles using random modulation
 - Non-deterministic behavior breaks reproducibility
 
-**Why Not Fixed:**
-Requires architectural change - random offset must be computed and stored per-particle at spawn time, then retrieved during modulation. This requires:
-1. Adding random offset to particle data structure
-2. Computing offset in spawnParticle()
-3. Passing offset to evaluateCurve()
+**Fix Applied:**
+1. Added `randomOffset` field to `particleInitialValues` Map
+2. In spawnParticle(): Compute `randomOffset = this.rng()` at spawn time
+3. Updated evaluateCurve() signature to accept optional `randomOffset` parameter
+4. 'random' case uses stored offset instead of calling rng()
+5. 'randomCurve' case passes offset to nested evaluations
+6. Updated frame cache to include randomOffset for deterministic scrubbing
+
+**Files Modified:**
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 327, 1008-1012, 1085, 1089-1097
+- `ui/src/engine/particles/ParticleModulationCurves.ts` - Lines 79, 126-139
+- `ui/src/engine/particles/ParticleFrameCache.ts` - Lines 28, 75
 
 **Related Bugs:** BUG-073 (lifetime modulation architecture)
 
@@ -2983,18 +2990,16 @@ Requires architectural change - random offset must be computed and stored per-pa
 **Severity:** MEDIUM
 **Found:** 2025-12-26
 **Session:** 4
-**Status:** OPEN (Feature Gap)
+**Status:** FIXED
 
 **Location:**
-- File: `ui/src/engine/particles/types.ts`
-- Lines: 334-353 (LifetimeModulation interface)
 - File: `ui/src/engine/particles/GPUParticleSystem.ts`
-- Lines: 1071-1078 (updatePhysics)
+- Lines: 1072-1163 (updatePhysics)
 
 **Problem:**
-The LifetimeModulation interface defines 8 modulation properties, but only 3 are implemented in the physics loop:
+The LifetimeModulation interface defines 8 modulation properties, but only 3 were implemented in the physics loop:
 
-Implemented:
+Previously Implemented:
 - sizeOverLifetime ✓
 - opacityOverLifetime ✓
 - colorOverLifetime ✓ (texture only, not CPU)
@@ -3008,27 +3013,9 @@ Not Implemented:
 
 **Evidence:**
 ```typescript
-// types.ts - All 8 defined
-interface LifetimeModulation {
-  sizeOverLifetime?: ModulationCurve;
-  opacityOverLifetime?: ModulationCurve;
-  colorOverLifetime?: ColorStop[];
-  speedOverLifetime?: ModulationCurve;
-  rotationSpeedOverLifetime?: ModulationCurve;
-  gravityModifier?: ModulationCurve;
-  dragOverLifetime?: ModulationCurve;
-  noiseAmplitudeOverLifetime?: ModulationCurve;
-}
-
-// GPUParticleSystem.ts - Only 2 used
-const sizeMod = this.evaluateModulationCurve(
-  this.config.lifetimeModulation.sizeOverLifetime || { type: 'constant', value: 1 },
-  lifeRatio
-);
-const opacityMod = this.evaluateModulationCurve(
-  this.config.lifetimeModulation.opacityOverLifetime || { type: 'constant', value: 1 },
-  lifeRatio
-);
+// Only 2 were used before fix
+const sizeMod = this.evaluateModulationCurve(...);
+const opacityMod = this.evaluateModulationCurve(...);
 // speedOverLifetime, rotationSpeedOverLifetime, etc. - NOT USED
 ```
 
@@ -3036,18 +3023,24 @@ const opacityMod = this.evaluateModulationCurve(
 All 8 modulation properties should affect particles during their lifetime.
 
 **Actual Behavior:**
-5 properties are ignored - users can configure them but they have no effect.
+5 properties were ignored - users could configure them but they had no effect.
 
 **Impact:**
-Feature parity gap - documented functionality doesn't work.
+Feature parity gap - documented functionality didn't work.
 
-**Why Not Fixed:**
-Implementing all 5 properties requires significant additions to the physics loop. Each property needs:
-1. Curve evaluation
-2. Application to the relevant physics quantity
-3. Integration with both CPU and GPU paths
+**Fix Applied:**
+1. Added evaluation of all 5 missing modulation curves in updatePhysics:
+   - speedMod, rotationSpeedMod, gravityMod, dragMod, noiseMod
+2. speedOverLifetime: Multiply velocity vector by speedMod after integration
+3. rotationSpeedOverLifetime: Scale angular velocity by rotationSpeedMod
+4. gravityModifier: Apply gravityMod multiplier to gravity force fields
+5. dragOverLifetime: Apply drag factor `(1 - dragMod * dt)` to velocity
+6. noiseAmplitudeOverLifetime: Scale turbulence force fields by noiseMod
 
-**Related Bugs:** BUG-072 (colorOverLifetime not used)
+**Files Modified:**
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 1072-1163
+
+**Related Bugs:** BUG-072 (colorOverLifetime texture)
 
 ---
 
@@ -3058,53 +3051,49 @@ Implementing all 5 properties requires significant additions to the physics loop
 **Severity:** MEDIUM
 **Found:** 2025-12-26
 **Session:** 4
-**Status:** OPEN (Feature Gap)
+**Status:** FIXED
 
 **Location:**
 - File: `ui/src/engine/particles/GPUParticleSystem.ts`
-- Lines: 293-295, 468-471
-- File: `ui/src/engine/particles/ParticleModulationCurves.ts`
-- Lines: 162-178
+- Lines: 293-295, 473-480, 1318-1320
+- File: `ui/src/engine/particles/particleShaders.ts`
+- Lines: 368-370, 504-511
 
 **Problem:**
-The colorOverLifetimeTexture is created in createModulationTextures() and stored, but never passed to the shader uniforms. The shader has no uniform to receive this texture.
+The colorOverLifetimeTexture was created in createModulationTextures() and stored, but never passed to the shader uniforms. The shader had no uniform to receive this texture.
 
 **Evidence:**
 ```typescript
 // GPUParticleSystem.ts - Texture stored but not used
 private colorOverLifetimeTexture: THREE.DataTexture | null = null;
 
-// createModulationTextures() creates it:
+// createModulationTextures() created it but never set uniform
 this.colorOverLifetimeTexture = textures.colorOverLifetime;
 
-// But createUniforms() never includes it:
-private createUniforms(): Record<string, THREE.IUniform> {
-  return {
-    diffuseMap: { value: null },
-    // ... other uniforms
-    // NO colorOverLifetimeTexture uniform!
-  };
-}
-
-// particleShaders.ts - No uniform declared for color modulation
+// createUniforms() had no colorOverLifetime uniform
 ```
 
 **Expected Behavior:**
 Color should interpolate from colorStart through colorOverLifetime gradient to colorEnd during particle lifetime.
 
 **Actual Behavior:**
-colorOverLifetime config is parsed but ignored. Particles only interpolate colorStart→colorEnd based on colorVariance at spawn.
+colorOverLifetime config was parsed but ignored. Particles only interpolated colorStart→colorEnd based on colorVariance at spawn.
 
 **Impact:**
-Users cannot create gradient color animations over particle lifetime (e.g., fire particles going red→orange→yellow→white).
+Users could not create gradient color animations over particle lifetime (e.g., fire particles going red→orange→yellow→white).
 
-**Why Not Fixed:**
-Requires shader modifications to:
-1. Add colorOverLifetime uniform
-2. Sample texture based on particle life ratio
-3. Blend with or replace per-particle color
+**Fix Applied:**
+1. Added `colorOverLifetime` and `hasColorOverLifetime` uniforms to fragment shader
+2. Added uniforms to createUniforms() in GPUParticleSystem.ts
+3. In createModulationTextures(): Set uniform values after material exists
+4. In fragment shader: Sample texture at vLifeRatio and multiply with particle color
+5. Swapped initialization order so material exists before texture creation
 
-**Related Bugs:** BUG-071 (other unimplemented lifetime properties)
+**Files Modified:**
+- `ui/src/engine/particles/particleShaders.ts` - Lines 368-370 (uniforms), 504-511 (sampling)
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 425-429 (init order), 473-480 (set uniforms), 1318-1320 (create uniforms)
+
+**Related Bugs:** BUG-071 (other lifetime properties)
 
 ---
 

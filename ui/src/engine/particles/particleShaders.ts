@@ -365,6 +365,9 @@ uniform int animateSprite;
 uniform float spriteFrameRate;
 uniform float time;
 uniform int randomStartFrame;  // BUG-068 fix: Per-particle random start frame
+// BUG-072 fix: Color over lifetime texture
+uniform sampler2D colorOverLifetime;
+uniform int hasColorOverLifetime;
 
 // Procedural shape generation
 // BUG-067 fix: All 9 shapes now implemented
@@ -497,6 +500,16 @@ void main() {
   }
 
   vec4 finalColor = texColor * vColor;
+
+  // BUG-072 fix: Apply color over lifetime modulation
+  if (hasColorOverLifetime == 1) {
+    // Sample the 1D gradient texture at the particle's life ratio
+    vec4 lifetimeColor = texture2D(colorOverLifetime, vec2(vLifeRatio, 0.5));
+    // Multiply the color channels, preserving texture alpha
+    finalColor.rgb *= lifetimeColor.rgb;
+    finalColor.a *= lifetimeColor.a;
+  }
+
   if (finalColor.a < 0.01) discard;
   gl_FragColor = finalColor;
 }
