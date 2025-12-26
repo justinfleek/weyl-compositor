@@ -747,6 +747,35 @@ export class LatticeEngine {
     return { ...this.state.viewport };
   }
 
+  /**
+   * Set render resolution (for preview quality)
+   * BUG-044 FIX: Implement setResolution for ThreeCanvas resolution dropdown
+   *
+   * This changes the internal render buffer size without affecting viewport.
+   * Used for half/third/quarter resolution preview modes.
+   *
+   * @param width - Render width in pixels
+   * @param height - Render height in pixels
+   */
+  setResolution(width: number, height: number): void {
+    this.assertNotDisposed();
+
+    if (width <= 0 || height <= 0) {
+      engineLogger.warn('Invalid resolution dimensions:', width, height);
+      return;
+    }
+
+    engineLogger.debug(`[LatticeEngine] setResolution: ${width}x${height}`);
+
+    // Resize the render pipeline (affects render buffer, not viewport)
+    this.renderer.resize(width, height);
+
+    // Update spline layer resolutions for Line2 materials
+    this.updateSplineResolutions(width, height);
+
+    this.emit('resolutionChange', { width, height });
+  }
+
   // ============================================================================
   // CAMERA
   // ============================================================================
