@@ -171,6 +171,20 @@ export class ParticleAudioReactive {
   }
 
   /**
+   * Get smoothed audio values for cache save (BUG-064 fix)
+   */
+  getSmoothedAudioValues(): Map<number, number> {
+    return new Map(this.smoothedAudioValues);
+  }
+
+  /**
+   * Set smoothed audio values from cache restore (BUG-064 fix)
+   */
+  setSmoothedAudioValues(values: Map<number, number>): void {
+    this.smoothedAudioValues = new Map(values);
+  }
+
+  /**
    * Clear all audio data
    */
   clear(): void {

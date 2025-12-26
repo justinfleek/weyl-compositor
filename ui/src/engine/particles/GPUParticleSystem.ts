@@ -1322,7 +1322,8 @@ export class GPUParticleSystem {
       this.state.simulationTime,
       this.currentRngState,
       this.emitters,
-      this.particleEmitters  // BUG-063 fix: Cache particle-to-emitter tracking
+      this.particleEmitters,  // BUG-063 fix: Cache particle-to-emitter tracking
+      this.audioSystem?.getSmoothedAudioValues() ?? new Map()  // BUG-064 fix: Cache audio EMA history
     );
   }
 
@@ -1358,6 +1359,9 @@ export class GPUParticleSystem {
 
     // BUG-063 fix: Restore particle-to-emitter tracking for sub-emitter filtering
     this.particleEmitters = new Map(cached.particleEmitters);
+
+    // BUG-064 fix: Restore audio EMA smoothed values for deterministic audio reactivity
+    this.audioSystem?.setSmoothedAudioValues(cached.audioSmoothedValues);
 
     this.updateInstanceBuffers();
     return true;

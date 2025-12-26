@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-064
+**Next Bug ID:** BUG-065
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 16 | 16 | 0 |
+| HIGH | 17 | 17 | 0 |
 | MEDIUM | 37 | 37 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **60** | **60** | **0** |
+| **TOTAL** | **61** | **61** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 8 |
+| 5. Particles | 9 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2600,6 +2600,61 @@ After cache restore, `particleEmitters` map was empty, so all particles returned
 - `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 1325, 1360
 
 **Related Bugs:** BUG-059 (added particleEmitters for sub-emitter filtering, but didn't cache it)
+
+---
+
+### BUG-064: Audio Smoothed Values Not Cached in ParticleFrameCache
+
+**Feature:** Frame Cache (5.10)
+**Tier:** 5
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleAudioReactive.ts`
+- Lines: 18, 99-102 (smoothedAudioValues EMA filter)
+- File: `ui/src/engine/particles/ParticleFrameCache.ts`
+- Lines: 17-28 (interface missing audioSmoothedValues)
+- File: `ui/src/engine/particles/GPUParticleSystem.ts`
+- Lines: 1314-1328, 1333-1368 (cache save/restore)
+
+**Problem:**
+The `smoothedAudioValues` Map (Map<number, number>) stores EMA (exponential moving average) filtered audio values that persist across frames. This temporal state was NOT being saved/restored in ParticleFrameCache.
+
+**Evidence (EMA filter depends on previous frame):**
+```typescript
+// Lines 99-102 - EMA depends on previous smoothed value
+const previousSmoothed = this.smoothedAudioValues.get(i) ?? featureValue;
+const alpha = 1 - (binding.smoothing || 0);
+const smoothed = alpha * featureValue + (1 - alpha) * previousSmoothed;
+this.smoothedAudioValues.set(i, smoothed);  // Persists across frames!
+```
+
+**Expected Behavior:**
+After timeline scrubbing and cache restore, audio-reactive particle parameters should have the same smoothed values as during sequential playback.
+
+**Actual Behavior:**
+After cache restore, `smoothedAudioValues` was empty/reset, so EMA smoothing restarted from raw values. Frame 50 reached via scrubbing produced different results than frame 50 reached via sequential playback.
+
+**Impact:**
+- Audio-reactive particle parameters behave differently after scrubbing
+- Breaks determinism: same frame produces different results
+- EMA smoothing "resets" when scrubbing backwards
+
+**Fix Applied:**
+1. Added getter/setter methods to ParticleAudioReactive for cache access
+2. Added `audioSmoothedValues: Map<number, number>` to ParticleFrameCache interface
+3. Updated `cacheState()` to save audioSmoothedValues with deep copy
+4. Updated `restoreFromCache()` to restore audioSmoothedValues
+
+**Files Modified:**
+- `ui/src/engine/particles/ParticleAudioReactive.ts` - Lines 173-185 (getter/setter)
+- `ui/src/engine/particles/ParticleFrameCache.ts` - Lines 27, 73, 97
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 1326, 1364
+
+**Related Bugs:** BUG-063 (similar pattern - state not cached)
 
 ---
 
