@@ -720,10 +720,13 @@ function updatePathProperty(key: string, value: number) {
   const newPath = { ...pathFollowing.value, parameter: newParam };
   update('pathFollowing', newPath);
 
-  // Also update in layer.properties if it exists
+  // Also update in layer.properties if it exists (via store)
   const prop = getProperty('Path Position');
   if (prop) {
-    prop.value = value;
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === 'Path Position' ? { ...p, value } : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
   }
 }
 
@@ -746,17 +749,20 @@ function isAnimated(name: string): boolean {
 
 // Update animatable property
 function updateAnimatable(propName: string, value: number, dataKey: string) {
-  // Update in layer.properties
+  // Update in layer.properties (via store)
   const prop = getProperty(propName);
   if (prop) {
-    prop.value = value;
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === propName ? { ...p, value } : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
   }
 
   // Update in camera data's animated property
   const animProp = (cameraData.value as any)[dataKey] as AnimatableProperty<number> | undefined;
   if (animProp) {
-    animProp.value = value;
-    update(dataKey, animProp);
+    const updatedAnimProp = { ...animProp, value };
+    update(dataKey, updatedAnimProp);
   }
   emit('update');
 }
@@ -766,23 +772,24 @@ function updateDOFAnimatable(propName: string, value: number, dofKey: keyof Came
   const newDOF = { ...depthOfField.value, [dofKey]: value };
   update('depthOfField', newDOF);
 
-  // Also update in layer.properties
+  // Also update in layer.properties (via store)
   const prop = getProperty(propName);
   if (prop) {
-    prop.value = value;
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === propName ? { ...p, value } : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
   }
   emit('update');
 }
 
 // Ensure property exists in layer.properties
 function ensureProperty(propName: string, defaultValue: number, group: string) {
-  if (!props.layer.properties) {
-    props.layer.properties = [];
-  }
+  const existingProperties = props.layer.properties || [];
+  const existing = existingProperties.find(p => p.name === propName);
 
-  const existing = props.layer.properties.find(p => p.name === propName);
   if (!existing) {
-    props.layer.properties.push({
+    const newProperty = {
       id: `prop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       name: propName,
       type: 'number',
@@ -790,7 +797,12 @@ function ensureProperty(propName: string, defaultValue: number, group: string) {
       animated: false,
       keyframes: [],
       group,
-    } as AnimatableProperty<number>);
+    } as AnimatableProperty<number>;
+
+    // Update via store to track in history
+    store.updateLayer(props.layer.id, {
+      properties: [...existingProperties, newProperty]
+    });
   }
 }
 
@@ -803,18 +815,32 @@ function toggleKeyframe(propName: string, dataKey: string, defaultValue: number)
     const frame = store.currentFrame;
     const hasKeyframeAtFrame = prop.keyframes.some(k => k.frame === frame);
 
+    let updatedKeyframes: typeof prop.keyframes;
+    let updatedAnimated: boolean;
+
     if (hasKeyframeAtFrame) {
-      prop.keyframes = prop.keyframes.filter(k => k.frame !== frame);
-      prop.animated = prop.keyframes.length > 0;
+      updatedKeyframes = prop.keyframes.filter(k => k.frame !== frame);
+      updatedAnimated = updatedKeyframes.length > 0;
     } else {
-      prop.keyframes.push({
-        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        frame,
-        value: prop.value,
-        easing: 'linear',
-      });
-      prop.animated = true;
+      updatedKeyframes = [
+        ...prop.keyframes,
+        {
+          id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          frame,
+          value: prop.value,
+          easing: 'linear' as const,
+        },
+      ];
+      updatedAnimated = true;
     }
+
+    // Update via store to track in history
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === propName
+        ? { ...p, keyframes: updatedKeyframes, animated: updatedAnimated }
+        : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
     emit('update');
   }
 }
@@ -828,18 +854,32 @@ function togglePathKeyframe(propName: string) {
     const frame = store.currentFrame;
     const hasKeyframeAtFrame = prop.keyframes.some(k => k.frame === frame);
 
+    let updatedKeyframes: typeof prop.keyframes;
+    let updatedAnimated: boolean;
+
     if (hasKeyframeAtFrame) {
-      prop.keyframes = prop.keyframes.filter(k => k.frame !== frame);
-      prop.animated = prop.keyframes.length > 0;
+      updatedKeyframes = prop.keyframes.filter(k => k.frame !== frame);
+      updatedAnimated = updatedKeyframes.length > 0;
     } else {
-      prop.keyframes.push({
-        id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        frame,
-        value: prop.value,
-        easing: 'linear',
-      });
-      prop.animated = true;
+      updatedKeyframes = [
+        ...prop.keyframes,
+        {
+          id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          frame,
+          value: prop.value,
+          easing: 'linear' as const,
+        },
+      ];
+      updatedAnimated = true;
     }
+
+    // Update via store to track in history
+    const updatedProperties = (props.layer.properties || []).map(p =>
+      p.name === propName
+        ? { ...p, keyframes: updatedKeyframes, animated: updatedAnimated }
+        : p
+    );
+    store.updateLayer(props.layer.id, { properties: updatedProperties });
     emit('update');
   }
 }
