@@ -133,6 +133,25 @@ Step 3: Document Your Analysis
 
 ---
 
+## Fix Policy
+
+ALWAYS FIX BUGS WHEN FOUND. No exceptions.
+
+If you discover a bug while auditing Feature X that belongs to Feature Y:
+- Fix it NOW
+- Log it under the current feature
+- Note the connection in the bug description
+
+We do not:
+- "File for later"
+- "Address in a future sprint"
+- "Defer to the appropriate feature audit"
+- Put anything off
+
+If you find it, you fix it. Period.
+
+---
+
 ## AI/ML Layer Checklist
 
 For DepthLayer, NormalLayer, PoseLayer, GeneratedLayer, ProceduralMatteLayer:
