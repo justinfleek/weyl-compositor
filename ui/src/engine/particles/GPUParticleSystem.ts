@@ -321,6 +321,10 @@ export class GPUParticleSystem {
   // Track which emitter spawned each particle (for sub-emitter filtering)
   private particleEmitters: Map<number, string> = new Map();
 
+  // BUG-073 fix: Store initial size/opacity for lifetime modulation
+  // Without this, *= modulation causes exponential decay
+  private particleInitialValues: Map<number, { size: number; opacity: number }> = new Map();
+
   // Trail system - extracted to ParticleTrailSystem.ts
   private trailSystem: ParticleTrailSystem | null = null;
 
@@ -997,6 +1001,13 @@ export class GPUParticleSystem {
     buffer[offset + 14] = emitter.colorStart[2] + (emitter.colorEnd[2] - emitter.colorStart[2]) * colorT;
     buffer[offset + 15] = emitter.colorStart[3];
 
+    // BUG-073 fix: Store initial size/opacity for lifetime modulation
+    // This allows us to compute initialValue * modFactor instead of *= which causes exponential decay
+    this.particleInitialValues.set(index, {
+      size: buffer[offset + 9],
+      opacity: buffer[offset + 15],
+    });
+
     this.state.particleCount++;
     this.emit('particleBirth', { index, emitterId: emitter.id });
 
@@ -1076,6 +1087,12 @@ export class GPUParticleSystem {
       // Update rotation
       const rotation = buffer[offset + 10] + buffer[offset + 11] * dt;
 
+      // BUG-073 fix: Use initial values for modulation to prevent exponential decay
+      // Without this fix, size *= 0.9 each frame would cause size to become ~0 after 60 frames
+      const initialValues = this.particleInitialValues.get(i);
+      const initialSize = initialValues?.size ?? buffer[offset + 9];
+      const initialOpacity = initialValues?.opacity ?? buffer[offset + 15];
+
       // Write updated state
       buffer[offset + 0] = px;
       buffer[offset + 1] = py;
@@ -1084,9 +1101,9 @@ export class GPUParticleSystem {
       buffer[offset + 4] = vy;
       buffer[offset + 5] = vz;
       buffer[offset + 6] = age + dt;
-      buffer[offset + 9] *= sizeMod;
+      buffer[offset + 9] = initialSize * sizeMod;  // BUG-073 fix: multiply initial, not current
       buffer[offset + 10] = rotation;
-      buffer[offset + 15] *= opacityMod;
+      buffer[offset + 15] = initialOpacity * opacityMod;  // BUG-073 fix: multiply initial, not current
 
       // Check if particle died
       if (age + dt >= lifetime) {
@@ -1097,6 +1114,8 @@ export class GPUParticleSystem {
         }
         // Clean up emitter tracking
         this.particleEmitters.delete(i);
+        // BUG-073 fix: Clean up initial values tracking
+        this.particleInitialValues.delete(i);
         this.freeIndices.push(i);
         this.state.particleCount--;
         this.emit('particleDeath', { index: i });
@@ -1325,7 +1344,8 @@ export class GPUParticleSystem {
       this.currentRngState,
       this.emitters,
       this.particleEmitters,  // BUG-063 fix: Cache particle-to-emitter tracking
-      this.audioSystem?.getSmoothedAudioValues() ?? new Map()  // BUG-064 fix: Cache audio EMA history
+      this.audioSystem?.getSmoothedAudioValues() ?? new Map(),  // BUG-064 fix: Cache audio EMA history
+      this.particleInitialValues  // BUG-073 fix: Cache initial size/opacity for modulation
     );
   }
 
@@ -1364,6 +1384,9 @@ export class GPUParticleSystem {
 
     // BUG-064 fix: Restore audio EMA smoothed values for deterministic audio reactivity
     this.audioSystem?.setSmoothedAudioValues(cached.audioSmoothedValues);
+
+    // BUG-073 fix: Restore initial size/opacity values for lifetime modulation
+    this.particleInitialValues = new Map(cached.particleInitialValues);
 
     this.updateInstanceBuffers();
     return true;
@@ -1494,6 +1517,8 @@ export class GPUParticleSystem {
     this.state.frameCount = 0;
     // Clear particle-to-emitter tracking
     this.particleEmitters.clear();
+    // BUG-073 fix: Clear initial values tracking
+    this.particleInitialValues.clear();
     // Reset shared spatial hash
     if (this.spatialHash) {
       this.spatialHash.clear();

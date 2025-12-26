@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-069
+**Next Bug ID:** BUG-074
 
 ---
 
@@ -10,12 +10,12 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 19 | 19 | 0 |
-| MEDIUM | 40 | 40 | 0 |
+| HIGH | 21 | 21 | 0 |
+| MEDIUM | 43 | 40 | 3 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **66** | **66** | **0** |
+| **TOTAL** | **71** | **68** | **3** |
 
-**Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
+**Note:** BUG-070, BUG-071, BUG-072 are marked OPEN as they require architectural changes or are feature gaps, not simple bug fixes.
 
 ---
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 13 |
+| 5. Particles | 18 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2874,6 +2874,290 @@ Feature didn't work as documented. Sprite animations looked uniform instead of v
 - `ui/src/engine/particles/GPUParticleSystem.ts` - Line 1224
 
 **Related Bugs:** None
+
+---
+
+### BUG-069: Division by Zero in Curve Evaluation
+
+**Feature:** Modulation Curves (5.12)
+**Tier:** 5
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleModulationCurves.ts`
+- Lines: 103-110
+- Function: `evaluateCurve()`
+
+**Problem:**
+When evaluating a curve with two keyframe points at the same time value (p0.time === p1.time), the code divided by zero: `localT = (t - p0.time) / (p1.time - p0.time)`.
+
+**Evidence:**
+```typescript
+// Before fix - division by zero when timeDiff === 0
+const localT = (t - p0.time) / (p1.time - p0.time);
+```
+
+**Expected Behavior:**
+Handle edge case gracefully when two curve points share the same time.
+
+**Actual Behavior:**
+Division by zero produces NaN, corrupting particle size/opacity values.
+
+**Impact:**
+Particles became invisible or corrupted when using curve-type modulation with coincident keyframes.
+
+**Fix Applied:**
+```typescript
+// BUG-069 fix: Prevent division by zero when points have same time
+const timeDiff = p1.time - p0.time;
+if (timeDiff === 0) {
+  // Return average of the two values at the same time
+  return (p0.value + p1.value) / 2;
+}
+const localT = (t - p0.time) / timeDiff;
+```
+
+**Files Modified:**
+- `ui/src/engine/particles/ParticleModulationCurves.ts` - Lines 103-108
+
+**Related Bugs:** BUG-073 (same file, different issue)
+
+---
+
+### BUG-070: Random Curve Types Cause Non-Deterministic Jitter
+
+**Feature:** Modulation Curves (5.12)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** OPEN (Architectural)
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleModulationCurves.ts`
+- Lines: 123-130
+- Function: `evaluateCurve()` - 'random' and 'randomCurve' cases
+
+**Problem:**
+The 'random' and 'randomCurve' modulation curve types call `this.rng()` every time they're evaluated. Since modulation is evaluated each frame, particles get a new random value each frame instead of a stable per-particle random offset.
+
+**Evidence:**
+```typescript
+case 'random':
+  return curve.min + this.rng() * (curve.max - curve.min);  // Called every frame!
+
+case 'randomCurve': {
+  const min = this.evaluateCurve(curve.minCurve, t);
+  const max = this.evaluateCurve(curve.maxCurve, t);
+  return min + this.rng() * (max - min);  // Called every frame!
+}
+```
+
+**Expected Behavior:**
+Random modulation should apply a per-particle random offset at spawn time that remains constant throughout the particle's lifetime.
+
+**Actual Behavior:**
+Random modulation causes particles to jitter as their size/opacity flickers randomly each frame.
+
+**Impact:**
+- Visual noise/jitter on particles using random modulation
+- Non-deterministic behavior breaks reproducibility
+
+**Why Not Fixed:**
+Requires architectural change - random offset must be computed and stored per-particle at spawn time, then retrieved during modulation. This requires:
+1. Adding random offset to particle data structure
+2. Computing offset in spawnParticle()
+3. Passing offset to evaluateCurve()
+
+**Related Bugs:** BUG-073 (lifetime modulation architecture)
+
+---
+
+### BUG-071: 5 of 8 Lifetime Modulation Properties Not Implemented
+
+**Feature:** Modulation Curves (5.12)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** OPEN (Feature Gap)
+
+**Location:**
+- File: `ui/src/engine/particles/types.ts`
+- Lines: 334-353 (LifetimeModulation interface)
+- File: `ui/src/engine/particles/GPUParticleSystem.ts`
+- Lines: 1071-1078 (updatePhysics)
+
+**Problem:**
+The LifetimeModulation interface defines 8 modulation properties, but only 3 are implemented in the physics loop:
+
+Implemented:
+- sizeOverLifetime ✓
+- opacityOverLifetime ✓
+- colorOverLifetime ✓ (texture only, not CPU)
+
+Not Implemented:
+- speedOverLifetime ✗
+- rotationSpeedOverLifetime ✗
+- gravityModifier ✗
+- dragOverLifetime ✗
+- noiseAmplitudeOverLifetime ✗
+
+**Evidence:**
+```typescript
+// types.ts - All 8 defined
+interface LifetimeModulation {
+  sizeOverLifetime?: ModulationCurve;
+  opacityOverLifetime?: ModulationCurve;
+  colorOverLifetime?: ColorStop[];
+  speedOverLifetime?: ModulationCurve;
+  rotationSpeedOverLifetime?: ModulationCurve;
+  gravityModifier?: ModulationCurve;
+  dragOverLifetime?: ModulationCurve;
+  noiseAmplitudeOverLifetime?: ModulationCurve;
+}
+
+// GPUParticleSystem.ts - Only 2 used
+const sizeMod = this.evaluateModulationCurve(
+  this.config.lifetimeModulation.sizeOverLifetime || { type: 'constant', value: 1 },
+  lifeRatio
+);
+const opacityMod = this.evaluateModulationCurve(
+  this.config.lifetimeModulation.opacityOverLifetime || { type: 'constant', value: 1 },
+  lifeRatio
+);
+// speedOverLifetime, rotationSpeedOverLifetime, etc. - NOT USED
+```
+
+**Expected Behavior:**
+All 8 modulation properties should affect particles during their lifetime.
+
+**Actual Behavior:**
+5 properties are ignored - users can configure them but they have no effect.
+
+**Impact:**
+Feature parity gap - documented functionality doesn't work.
+
+**Why Not Fixed:**
+Implementing all 5 properties requires significant additions to the physics loop. Each property needs:
+1. Curve evaluation
+2. Application to the relevant physics quantity
+3. Integration with both CPU and GPU paths
+
+**Related Bugs:** BUG-072 (colorOverLifetime not used)
+
+---
+
+### BUG-072: colorOverLifetime Texture Created But Never Used
+
+**Feature:** Modulation Curves (5.12)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** OPEN (Feature Gap)
+
+**Location:**
+- File: `ui/src/engine/particles/GPUParticleSystem.ts`
+- Lines: 293-295, 468-471
+- File: `ui/src/engine/particles/ParticleModulationCurves.ts`
+- Lines: 162-178
+
+**Problem:**
+The colorOverLifetimeTexture is created in createModulationTextures() and stored, but never passed to the shader uniforms. The shader has no uniform to receive this texture.
+
+**Evidence:**
+```typescript
+// GPUParticleSystem.ts - Texture stored but not used
+private colorOverLifetimeTexture: THREE.DataTexture | null = null;
+
+// createModulationTextures() creates it:
+this.colorOverLifetimeTexture = textures.colorOverLifetime;
+
+// But createUniforms() never includes it:
+private createUniforms(): Record<string, THREE.IUniform> {
+  return {
+    diffuseMap: { value: null },
+    // ... other uniforms
+    // NO colorOverLifetimeTexture uniform!
+  };
+}
+
+// particleShaders.ts - No uniform declared for color modulation
+```
+
+**Expected Behavior:**
+Color should interpolate from colorStart through colorOverLifetime gradient to colorEnd during particle lifetime.
+
+**Actual Behavior:**
+colorOverLifetime config is parsed but ignored. Particles only interpolate colorStart→colorEnd based on colorVariance at spawn.
+
+**Impact:**
+Users cannot create gradient color animations over particle lifetime (e.g., fire particles going red→orange→yellow→white).
+
+**Why Not Fixed:**
+Requires shader modifications to:
+1. Add colorOverLifetime uniform
+2. Sample texture based on particle life ratio
+3. Blend with or replace per-particle color
+
+**Related Bugs:** BUG-071 (other unimplemented lifetime properties)
+
+---
+
+### BUG-073: Exponential Decay in Size/Opacity Modulation
+
+**Feature:** Modulation Curves (5.12)
+**Tier:** 5
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/GPUParticleSystem.ts`
+- Lines: 1091, 1093 (before fix)
+- Function: `updatePhysics()`
+
+**Problem:**
+Size and opacity modulation used `*=` (compound assignment) instead of storing initial values and computing `initial * modFactor`. This caused exponential decay:
+- Frame 1: size = 10 * 0.9 = 9
+- Frame 2: size = 9 * 0.9 = 8.1
+- Frame 60: size = 10 * 0.9^60 ≈ 0.018
+
+**Evidence:**
+```typescript
+// Before fix - exponential decay
+buffer[offset + 9] *= sizeMod;    // Compounds each frame!
+buffer[offset + 15] *= opacityMod; // Compounds each frame!
+```
+
+**Expected Behavior:**
+Modulation should be `currentSize = initialSize * modulationFactor(lifeRatio)`. A particle at 50% lifetime with sizeMod=0.5 should be half its initial size, not 0.5^(lifetime/2).
+
+**Actual Behavior:**
+Particles became microscopic/invisible after a few frames when using any size modulation curve below 1.0.
+
+**Impact:**
+- Particles disappear almost immediately with shrink curves
+- Opacity modulation causes particles to vanish instead of fade
+
+**Fix Applied:**
+1. Added `particleInitialValues` Map to store initial size/opacity per particle
+2. In spawnParticle(): Store initial values when particle is created
+3. In updatePhysics(): Use `initialSize * sizeMod` instead of `*= sizeMod`
+4. On particle death: Clean up Map entry
+5. On reset(): Clear Map
+6. Added to frame cache for deterministic timeline scrubbing
+
+**Files Modified:**
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 326, 1004-1009, 1090-1106, 1117-1118, 1516-1517, 1347-1349, 1388-1389
+- `ui/src/engine/particles/ParticleFrameCache.ts` - Lines 28, 75, 100
+
+**Related Bugs:** BUG-069 (same file, different issue)
 
 ---
 

@@ -100,7 +100,14 @@ export class ParticleModulationCurves {
           }
         }
 
-        const localT = (t - p0.time) / (p1.time - p0.time);
+        // BUG-069 fix: Prevent division by zero when points have same time
+        const timeDiff = p1.time - p0.time;
+        if (timeDiff === 0) {
+          // Return average of the two values at the same time
+          return (p0.value + p1.value) / 2;
+        }
+
+        const localT = (t - p0.time) / timeDiff;
         // Hermite interpolation
         const t2 = localT * localT;
         const t3 = t2 * localT;
