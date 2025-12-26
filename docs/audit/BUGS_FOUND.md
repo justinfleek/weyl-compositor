@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-049
+**Next Bug ID:** BUG-050
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 12 | 12 | 0 |
+| HIGH | 13 | 13 | 0 |
 | MEDIUM | 29 | 28 | 1 |
 | LOW | 4 | 4 | 0 |
-| **TOTAL** | **45** | **44** | **1** |
+| **TOTAL** | **46** | **45** | **1** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -24,7 +24,7 @@
 | Tier | Bug Count |
 |------|-----------|
 | 1. Foundation | 11 |
-| 2. Layer Types | 32 |
+| 2. Layer Types | 33 |
 | 3-12 | 0 (not yet audited) |
 
 ---
@@ -1685,6 +1685,79 @@ private compositionFPS: number = 16;
 - `ui/src/engine/core/LayerManager.ts`
 
 **Related Bugs:** None
+
+---
+
+### BUG-049: ShapeProperties direct mutation of layer.properties bypasses history
+
+**Feature:** ShapeLayer (2.5) - discovered in SplineLayer file
+**Tier:** 2
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/components/properties/ShapeProperties.vue`
+- Lines: 651-656, 668-684, 689-705
+- Functions: `updateAnimatable()`, `toggleKeyframe()`, `ensureProperty()`
+
+**Problem:**
+Multiple functions directly mutate `props.layer.properties` without using store methods, bypassing history tracking.
+
+**Evidence:**
+```typescript
+// Line 654-655 - updateAnimatable (BEFORE FIX)
+if (prop) {
+  prop.value = value;  // Direct mutation
+}
+
+// Lines 671-681 - toggleKeyframe (BEFORE FIX)
+prop.keyframes = prop.keyframes.filter(k => k.frame !== frame);  // Direct mutation
+prop.animated = prop.keyframes.length > 0;  // Direct mutation
+prop.keyframes.push({...});  // Direct mutation
+prop.animated = true;  // Direct mutation
+
+// Lines 689-696 - ensureProperty (BEFORE FIX)
+props.layer.properties = [];  // Direct mutation
+props.layer.properties.push({...});  // Direct mutation
+```
+
+**Expected Behavior:**
+Property changes should use store.updateLayer() to track in history.
+
+**Actual Behavior:**
+Keyframe and property changes are not tracked in history, undo/redo won't work.
+
+**Impact:**
+Users cannot undo keyframe additions/removals or property value changes on spline layers.
+
+**Fix Applied:**
+```typescript
+// updateAnimatable - now uses store
+const updatedProperties = (props.layer.properties || []).map(p =>
+  p.name === propName ? { ...p, value } : p
+);
+store.updateLayer(props.layer.id, { properties: updatedProperties });
+
+// toggleKeyframe - now uses store
+const updatedProperties = (props.layer.properties || []).map(p =>
+  p.name === propName
+    ? { ...p, keyframes: updatedKeyframes, animated: updatedAnimated }
+    : p
+);
+store.updateLayer(props.layer.id, { properties: updatedProperties });
+
+// ensureProperty - now uses store
+store.updateLayer(props.layer.id, {
+  properties: [...existingProperties, newProperty]
+});
+```
+
+**Files Modified:**
+- `ui/src/components/properties/ShapeProperties.vue`
+
+**Related Bugs:** BUG-042, BUG-043, BUG-047 (same direct mutation pattern)
+**Note:** This file is actually for SplineLayer (Feature 2.15), discovered during ShapeLayer audit
 
 ---
 
