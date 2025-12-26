@@ -112,10 +112,10 @@ export function useMenuActions(options: MenuActionsOptions) {
 
       // Edit menu
       case 'undo':
-        historyStore.undo();
+        store.undo();
         break;
       case 'redo':
-        historyStore.redo();
+        store.redo();
         break;
       case 'cut':
         store.cutSelected();
