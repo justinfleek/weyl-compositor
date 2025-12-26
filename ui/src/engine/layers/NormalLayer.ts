@@ -140,7 +140,6 @@ export class NormalLayer extends BaseLayer {
     switch (this.normalData.visualizationMode) {
       case 'rgb': return 0;
       case 'hemisphere': return 1;
-      case 'arrows': return 2;
       case 'lit': return 3;
       default: return 0;
     }

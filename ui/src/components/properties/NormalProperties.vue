@@ -9,7 +9,6 @@
         <select :value="normalData.visualizationMode" @change="updateData('visualizationMode', ($event.target as HTMLSelectElement).value)">
           <option value="rgb">RGB (Raw Normals)</option>
           <option value="hemisphere">Hemisphere</option>
-          <option value="arrows">Normal Arrows</option>
           <option value="lit">Lit Preview</option>
         </select>
       </div>
@@ -40,42 +39,6 @@
           <input type="checkbox" :checked="normalData.flipZ" @change="updateData('flipZ', !normalData.flipZ)" />
           Flip Z
         </label>
-      </div>
-    </div>
-
-    <!-- Arrow Settings (for arrows mode) -->
-    <div class="prop-section" v-if="normalData.visualizationMode === 'arrows'">
-      <div class="section-title">Arrow Display</div>
-
-      <div class="row">
-        <label>Density</label>
-        <ScrubableNumber
-          :modelValue="normalData.arrowDensity"
-          @update:modelValue="v => updateData('arrowDensity', v)"
-          :min="4"
-          :max="64"
-          :precision="0"
-        />
-      </div>
-
-      <div class="row">
-        <label>Scale</label>
-        <ScrubableNumber
-          :modelValue="normalData.arrowScale"
-          @update:modelValue="v => updateData('arrowScale', v)"
-          :min="0.1"
-          :max="5"
-          :precision="2"
-        />
-      </div>
-
-      <div class="row color-row">
-        <label>Color</label>
-        <input
-          type="color"
-          :value="normalData.arrowColor"
-          @input="updateData('arrowColor', ($event.target as HTMLInputElement).value)"
-        />
       </div>
     </div>
 
