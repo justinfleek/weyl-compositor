@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-045
+**Next Bug ID:** BUG-046
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 10 | 10 | 0 |
+| HIGH | 11 | 11 | 0 |
 | MEDIUM | 27 | 26 | 1 |
 | LOW | 4 | 4 | 0 |
-| **TOTAL** | **41** | **40** | **1** |
+| **TOTAL** | **42** | **41** | **1** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -23,7 +23,7 @@
 
 | Tier | Bug Count |
 |------|-----------|
-| 1. Foundation | 10 |
+| 1. Foundation | 11 |
 | 2. Layer Types | 29 |
 | 3-12 | 0 (not yet audited) |
 
@@ -1416,6 +1416,68 @@ setResolution(width: number, height: number): void {
 
 **Files Modified:**
 - `ui/src/engine/LatticeEngine.ts` - Added setResolution method
+
+**Related Bugs:** None
+
+---
+
+### BUG-045: Edit Menu Undo/Redo Uses Orphaned History Store
+
+**Feature:** History/Undo (1.7)
+**Tier:** 1
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 2
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/composables/useMenuActions.ts`
+- Lines: 115, 118
+- Function: `handleMenuAction()`
+
+**Problem:**
+Edit menu undo/redo operations called `historyStore.undo()` and `historyStore.redo()` instead of `store.undo()` and `store.redo()`. The `historyStore` is an orphaned standalone Pinia store that's never synchronized with `compositorStore`'s internal history system.
+
+**Evidence (before fix):**
+```typescript
+// useMenuActions.ts imports orphaned store
+import { useHistoryStore } from '@/stores/historyStore';
+const historyStore = useHistoryStore();
+
+// Lines 115, 118 - uses wrong store
+case 'undo':
+  historyStore.undo();  // WRONG - operates on empty orphaned store
+  break;
+case 'redo':
+  historyStore.redo();  // WRONG - operates on empty orphaned store
+  break;
+```
+
+**Expected Behavior:**
+Edit → Undo and Edit → Redo should undo/redo project changes tracked by compositorStore.
+
+**Actual Behavior:**
+Edit menu undo/redo did nothing because they operated on an empty orphaned history store while all actual project changes were tracked in `compositorStore.historyStack`.
+
+**Impact:**
+- Edit → Undo menu item does nothing
+- Edit → Redo menu item does nothing
+- Keyboard shortcuts (Ctrl+Z/Y) worked correctly (using compositorStore)
+- Inconsistent behavior between menu and shortcuts
+
+**Fix Applied:**
+```typescript
+// Changed to use compositorStore
+case 'undo':
+  store.undo();
+  break;
+case 'redo':
+  store.redo();
+  break;
+```
+
+**Files Modified:**
+- `ui/src/composables/useMenuActions.ts` - Changed historyStore calls to store calls
 
 **Related Bugs:** None
 
