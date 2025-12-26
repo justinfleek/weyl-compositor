@@ -620,8 +620,8 @@ export function glowRenderer(
   // Calculate color looping blend factor
   let colorBlend = 0; // 0 = Color A, 1 = Color B
   if (colorLooping !== 'none' && frame !== undefined) {
-    // Use injected FPS from context, fallback to 30
-    const fps = params._fps ?? 30;
+    // Use injected FPS from context, fallback to 16 (WAN standard)
+    const fps = params._fps ?? 16;
     const time = frame / fps;
     const cycle = (time * colorLoopingSpeed) % 1;
 

@@ -25,7 +25,7 @@ All progress reset to zero. Valid bug findings preserved in BUGS_FOUND.md.
 | 1. Foundation | 7 | 7 | 7 | 9 |
 | 2. Layer Types | 23 | 23 | 23 | 6 |
 | 3. Animation | 10 | 10 | 10 | 2 |
-| 4. Effects | 12 | 1 | 1 | 1 |
+| 4. Effects | 12 | 3 | 3 | 1 |
 | 5. Particles | 12 | 0 | 0 | 0 |
 | 6. Audio | 7 | 0 | 0 | 0 |
 | 7. 3D/Camera | 10 | 0 | 0 | 0 |
@@ -34,7 +34,7 @@ All progress reset to zero. Valid bug findings preserved in BUGS_FOUND.md.
 | 10. Export | 6 | 0 | 0 | 0 |
 | 11. AI Integration | 5 | 0 | 0 | 0 |
 | 12. Data/Templates | 4 | 0 | 0 | 0 |
-| **TOTAL** | **111** | **32** | **32** | **17** |
+| **TOTAL** | **111** | **34** | **34** | **17** |
 
 **Note:** 36 bugs from previous sessions preserved in BUGS_FOUND.md (all marked FIXED).
 
@@ -111,7 +111,7 @@ All progress reset to zero. Valid bug findings preserved in BUGS_FOUND.md.
 
 | ID | Category | Status | Bugs | Lines | Confirmed | Session |
 |----|----------|--------|------|-------|-----------|---------|
-| 4.1 | Effect Stack | [x] | 1 | 5977 | ✓ | 2025-12-26 |
+| 4.1 | Blur/Sharpen (5) | [x] | 0 | 1281 | ✓ | 2025-12-26 |
 | 4.2 | Color Correction (23) | [ ] | 0 | - | ⬜ | - |
 | 4.3 | Distort (12) | [ ] | 0 | - | ⬜ | - |
 | 4.4 | Generate (5) | [ ] | 0 | - | ⬜ | - |
@@ -121,8 +121,8 @@ All progress reset to zero. Valid bug findings preserved in BUGS_FOUND.md.
 | 4.8 | Matte (2) | [ ] | 0 | - | ⬜ | - |
 | 4.9 | Utility (7) | [ ] | 0 | - | ⬜ | - |
 | 4.10 | GLSL Shaders (25) | [ ] | 0 | - | ⬜ | - |
-| 4.11 | Effect Application | [ ] | 0 | - | ⬜ | - |
-| 4.12 | Effect Ordering | [ ] | 0 | - | ⬜ | - |
+| 4.11 | Effect Application | [x] | 1* | 3802 | ✓ | 2025-12-26 |
+| 4.12 | Effect Ordering | [x] | 0 | (4.11) | ✓ | 2025-12-26 |
 
 ---
 

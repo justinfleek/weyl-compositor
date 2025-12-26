@@ -1990,7 +1990,7 @@ const fps = params._fps ?? 16;  // WAN standard default
 
 ### BUG-054: EffectLayer.getSourceCanvas References Undefined this.currentFrame
 
-**Feature:** Effect Stack (4.1)
+**Feature:** Effect Application (4.11)
 **Tier:** 4
 **Severity:** MEDIUM
 **Found:** 2025-12-26
