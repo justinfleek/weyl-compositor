@@ -175,7 +175,8 @@ export async function parseMIDIFile(arrayBuffer: ArrayBuffer): Promise<MIDIParse
     { time: 0, numerator: 4, denominator: 4 }
   ];
   // BUG-098 fix: Track tempo changes by tick position for accurate timing
-  const tempoChangesByTick: Array<{ tick: number; bpm: number }> = [{ tick: 0, bpm: 120 }];
+  // Don't initialize with default - we'll add it after parsing if no tick 0 tempo exists
+  const tempoChangesByTick: Array<{ tick: number; bpm: number }> = [];
 
   for (let t = 0; t < numTracks; t++) {
     const trackResult = parseTrack(view, offset, ticksPerBeat, tempos, tempoChangesByTick);
@@ -193,6 +194,11 @@ export async function parseMIDIFile(arrayBuffer: ArrayBuffer): Promise<MIDIParse
 
   // Sort tempo changes by tick for correct interpolation
   tempoChangesByTick.sort((a, b) => a.tick - b.tick);
+
+  // Add default 120 BPM at tick 0 only if no tempo exists there
+  if (tempoChangesByTick.length === 0 || tempoChangesByTick[0].tick !== 0) {
+    tempoChangesByTick.unshift({ tick: 0, bpm: 120 });
+  }
 
   // Sort tempo and time signature events
   tempos.sort((a, b) => a.time - b.time);
