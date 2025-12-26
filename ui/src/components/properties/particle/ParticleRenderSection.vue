@@ -283,6 +283,24 @@
           Fade by Distance
         </label>
       </div>
+      <div v-if="connections.enabled" class="property-row checkbox-row">
+        <label title="Override connection line color instead of blending particle colors.">
+          <input
+            type="checkbox"
+            :checked="connections.color !== undefined"
+            @change="$emit('updateConnection', 'color', ($event.target as HTMLInputElement).checked ? [1, 1, 1] : undefined)"
+          />
+          Custom Color
+        </label>
+      </div>
+      <div v-if="connections.enabled && connections.color !== undefined" class="property-row">
+        <label title="Color for connection lines (RGB).">Line Color</label>
+        <input
+          type="color"
+          :value="rgbToHex(connections.color)"
+          @input="$emit('updateConnection', 'color', hexToRgb(($event.target as HTMLInputElement).value))"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -306,6 +324,21 @@ const emit = defineEmits<{
 
 function update(key: keyof ParticleRenderOptions, value: any): void {
   emit('update', key, value);
+}
+
+// Color conversion helpers (engine uses 0-1 range)
+function rgbToHex(rgb: [number, number, number]): string {
+  const r = Math.round(rgb[0] * 255).toString(16).padStart(2, '0');
+  const g = Math.round(rgb[1] * 255).toString(16).padStart(2, '0');
+  const b = Math.round(rgb[2] * 255).toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255]
+    : [1, 1, 1];
 }
 </script>
 

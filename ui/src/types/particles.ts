@@ -198,7 +198,7 @@ export interface ConnectionRenderConfig {
   lineWidth: number;          // 0.5-3
   lineOpacity: number;        // 0-1
   fadeByDistance: boolean;    // Opacity decreases with distance
-  color?: [number, number, number];  // Optional RGB color override (0-255)
+  color?: [number, number, number];  // Optional RGB color override (0-1 range)
 }
 
 // Audio-reactive particle binding

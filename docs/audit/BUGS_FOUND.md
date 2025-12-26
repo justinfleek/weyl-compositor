@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-062
+**Next Bug ID:** BUG-063
 
 ---
 
@@ -11,9 +11,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 15 | 15 | 0 |
-| MEDIUM | 36 | 36 | 0 |
+| MEDIUM | 37 | 37 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **58** | **58** | **0** |
+| **TOTAL** | **59** | **59** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 6 |
+| 5. Particles | 7 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2472,6 +2472,59 @@ if (triggerMode === 'onThreshold') {
 - `ui/src/engine/particles/ParticleAudioReactive.ts` - Lines 120-131 (implemented trigger logic)
 
 **Related Bugs:** BUG-060 (same feature, same pattern - defined but not implemented)
+
+---
+
+### BUG-062: Connection Color Override Not Exposed in UI
+
+**Feature:** Connection System (5.9)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleConnectionSystem.ts`
+- Lines: 165-169 (color used in engine)
+- File: `ui/src/components/properties/particle/ParticleRenderSection.vue`
+- Missing UI control for color property
+
+**Problem:**
+The ConnectionConfig interface defined a `color` property for overriding connection line colors, and the engine uses it (falling back to blending particle colors if undefined), but:
+1. No UI control existed to set it
+2. Project type comment incorrectly stated "0-255" when engine uses 0-1
+
+**Evidence (engine usage):**
+```typescript
+const color = this.config.color ?? [
+  (p1.color[0] + p2.color[0]) / 2,  // Blend particle colors if no override
+  (p1.color[1] + p2.color[1]) / 2,
+  (p1.color[2] + p2.color[2]) / 2,
+];
+```
+
+**Expected Behavior:**
+Users should be able to set a custom color for connection lines instead of blending particle colors.
+
+**Actual Behavior:**
+Color override was impossible - always blended particle colors.
+
+**Impact:**
+- Users cannot create consistent-colored connection networks
+- Cannot use accent colors independent of particle colors
+
+**Fix Applied:**
+1. Added "Custom Color" checkbox to enable color override
+2. Added color picker input (shown when enabled)
+3. Added rgbToHex/hexToRgb helpers converting between hex and 0-1 range
+4. Fixed project type comment from "0-255" to "0-1 range"
+
+**Files Modified:**
+- `ui/src/components/properties/particle/ParticleRenderSection.vue` - Lines 286-303 (UI), 329-342 (helpers)
+- `ui/src/types/particles.ts` - Line 201 (fixed comment)
+
+**Related Bugs:** BUG-060, BUG-061 (same pattern - defined but not exposed)
 
 ---
 
