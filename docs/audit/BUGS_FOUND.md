@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-065
+**Next Bug ID:** BUG-067
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 17 | 17 | 0 |
-| MEDIUM | 37 | 37 | 0 |
+| HIGH | 19 | 19 | 0 |
+| MEDIUM | 38 | 38 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **61** | **61** | **0** |
+| **TOTAL** | **64** | **64** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -2655,6 +2655,114 @@ After cache restore, `smoothedAudioValues` was empty/reset, so EMA smoothing res
 - `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 1326, 1364
 
 **Related Bugs:** BUG-063 (similar pattern - state not cached)
+
+---
+
+### BUG-065: Time Effect Frame Buffers Not Cleared on Timeline Seek
+
+**Feature:** Frame Cache (5.10)
+**Tier:** 5
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/services/effects/timeRenderer.ts`
+- Lines: 156, 527, 64
+- Functions: `store()`, frame buffer management
+
+**Problem:**
+Time effects (Echo, Posterize Time, Time Displacement, Freeze Frame) use module-level `frameBuffers` and `frozenFrames` Maps that persist frame history across renders. This temporal state was not cleared on timeline seek, causing different output after scrubbing vs sequential playback.
+
+Additionally, the buffer used `Date.now()` for timestamps which is non-deterministic.
+
+**Evidence:**
+```typescript
+// Line 156 - Global mutable state
+const frameBuffers = new Map<string, TimeEffectFrameBuffer>();
+
+// Line 527 - Global mutable state
+const frozenFrames = new Map<string, { frame: number; imageData: ImageData }>();
+
+// Line 64 - Non-deterministic timestamp (was using Date.now())
+timestamp: Date.now(),
+```
+
+**Expected Behavior:**
+After timeline scrubbing, time effects should either:
+1. Have their buffers cleared (known limitation: effects won't have history)
+2. Produce deterministic results via proper cache integration
+
+**Actual Behavior:**
+- Echo effect after scrubbing had stale/wrong frames in buffer
+- Freeze frame could reference wrong cached frame
+- Buffer cleanup used wall clock time, violating determinism
+
+**Impact:**
+- Time effects produce different output after scrubbing
+- Echo trails appear/disappear incorrectly
+- Violates determinism rule: same frame should produce same output
+
+**Fix Applied:**
+1. Changed `timestamp: Date.now()` to `storedAtFrame: frame` for frame-based timestamps
+2. Updated `cleanup()` to use frame distance instead of wall clock time
+3. Added `clearTimeEffectStateOnSeek()` export function
+4. Integrated clear call into `compositorStore.setFrame()`, `goToStart()`, `goToEnd()`, `jumpFrames()`
+
+**Files Modified:**
+- `ui/src/services/effects/timeRenderer.ts` - Lines 25, 50-72, 132-140, 607-622, 953
+- `ui/src/stores/compositorStore.ts` - Lines 85-87, 1034-1055, 1079-1092, 1094-1109, 1111-1126
+
+**Related Bugs:** BUG-063, BUG-064, BUG-066 (all temporal state caching issues)
+
+---
+
+### BUG-066: Mask Previous Path Cache Not Cleared on Timeline Seek
+
+**Feature:** Frame Cache (5.10)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/services/effects/maskRenderer.ts`
+- Line: 337
+- Functions: `getPreviousPath()`, `cachePath()`
+
+**Problem:**
+Motion-aware mask feathering stores previous frame mask paths in a module-level `previousPathCache` Map for motion blur calculation. This temporal state was not cleared on timeline seek.
+
+**Evidence:**
+```typescript
+// Line 337 - Global mutable state
+const previousPathCache = new Map<string, { frame: number; path: MaskPath }>();
+```
+
+**Expected Behavior:**
+After timeline scrubbing, motion-aware feathering should either:
+1. Have the cache cleared (will use static feathering until next sequential frame)
+2. Produce deterministic results
+
+**Actual Behavior:**
+After scrubbing, the cache might contain paths from unrelated frames, causing incorrect motion blur direction/amount.
+
+**Impact:**
+- Motion-aware mask feathering produces different blur after scrubbing
+- Mask edges may have incorrect feather direction
+- Medium severity: only affects motion-aware feathering, static feathering unaffected
+
+**Fix Applied:**
+1. Added `clearMaskPathCacheOnSeek()` export function
+2. Integrated clear call into `compositorStore.setFrame()`, `goToStart()`, `goToEnd()`, `jumpFrames()`
+
+**Files Modified:**
+- `ui/src/services/effects/maskRenderer.ts` - Lines 358-372, 679
+- `ui/src/stores/compositorStore.ts` - Lines 85-87, 1050-1051, 1088-1089, 1104-1105, 1122-1123
+
+**Related Bugs:** BUG-065 (same pattern - temporal state not cleared on seek)
 
 ---
 

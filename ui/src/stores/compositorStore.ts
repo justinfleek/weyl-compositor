@@ -82,6 +82,9 @@ import {
 } from '@/services/timelineSnap';
 import { type SegmentationPoint } from '@/services/segmentation';
 import { type CacheStats } from '@/services/frameCache';
+// BUG-065/066 fix: Import clear functions for timeline seek
+import { clearTimeEffectStateOnSeek } from '@/services/effects/timeRenderer';
+import { clearMaskPathCacheOnSeek } from '@/services/effects/maskRenderer';
 
 // Extracted action modules
 import * as layerActions from './actions/layerActions';
@@ -1031,11 +1034,24 @@ export const useCompositorStore = defineStore('compositor', {
     /**
      * Set current frame (UI state only)
      * Components watching currentFrame should call getFrameState() to evaluate.
+     *
+     * BUG-065/066 fix: Clears temporal effect state when frame changes non-sequentially.
+     * This ensures deterministic playback for time effects (Echo, Posterize Time, etc.)
+     * and motion-aware mask feathering after timeline scrubbing.
      */
     setFrame(frame: number): void {
       const comp = this.getActiveComp();
       if (!comp) return;
-      comp.currentFrame = Math.max(0, Math.min(frame, comp.settings.frameCount - 1));
+      const newFrame = Math.max(0, Math.min(frame, comp.settings.frameCount - 1));
+
+      // BUG-065/066 fix: Clear temporal state if frame changes by more than 1 (non-sequential)
+      const frameDelta = Math.abs(newFrame - comp.currentFrame);
+      if (frameDelta > 1) {
+        clearTimeEffectStateOnSeek();
+        clearMaskPathCacheOnSeek();
+      }
+
+      comp.currentFrame = newFrame;
     },
 
     /**
@@ -1062,31 +1078,51 @@ export const useCompositorStore = defineStore('compositor', {
 
     /**
      * Jump to first frame (UI state only)
+     * BUG-065/066 fix: Clears temporal effect state on jump.
      */
     goToStart(): void {
       const comp = this.getActiveComp();
-      if (comp) comp.currentFrame = 0;
+      if (!comp) return;
+      // BUG-065/066 fix: Clear temporal state on jump
+      if (comp.currentFrame !== 0) {
+        clearTimeEffectStateOnSeek();
+        clearMaskPathCacheOnSeek();
+      }
+      comp.currentFrame = 0;
     },
 
     /**
      * Jump to last frame (UI state only)
+     * BUG-065/066 fix: Clears temporal effect state on jump.
      */
     goToEnd(): void {
       const comp = this.getActiveComp();
       if (!comp) return;
+      const lastFrame = comp.settings.frameCount - 1;
+      // BUG-065/066 fix: Clear temporal state on jump
+      if (comp.currentFrame !== lastFrame) {
+        clearTimeEffectStateOnSeek();
+        clearMaskPathCacheOnSeek();
+      }
       // Frame indices are 0-based, so last frame is frameCount - 1
-      comp.currentFrame = comp.settings.frameCount - 1;
+      comp.currentFrame = lastFrame;
     },
 
     /**
      * Jump forward or backward by N frames (Shift+Page Down/Up behavior)
      * @param n Number of frames to jump (positive = forward, negative = backward)
+     * BUG-065/066 fix: Clears temporal effect state on jump.
      */
     jumpFrames(n: number): void {
       const comp = this.getActiveComp();
       if (!comp) return;
-      const newFrame = comp.currentFrame + n;
-      comp.currentFrame = Math.max(0, Math.min(newFrame, comp.settings.frameCount - 1));
+      const newFrame = Math.max(0, Math.min(comp.currentFrame + n, comp.settings.frameCount - 1));
+      // BUG-065/066 fix: Clear temporal state if jumping more than 1 frame
+      if (Math.abs(n) > 1) {
+        clearTimeEffectStateOnSeek();
+        clearMaskPathCacheOnSeek();
+      }
+      comp.currentFrame = newFrame;
     },
 
     /**

@@ -22,7 +22,7 @@ import {
 interface FrameBufferEntry {
   imageData: ImageData;
   frame: number;
-  timestamp: number;
+  storedAtFrame: number;  // BUG-065 fix: Use frame number instead of wall-clock time for determinism
 }
 
 /**
@@ -47,6 +47,7 @@ class TimeEffectFrameBuffer {
 
   /**
    * Store a frame in the buffer
+   * BUG-065 fix: Uses frame number for timestamp instead of Date.now() for determinism
    */
   store(frame: number, canvas: HTMLCanvasElement): void {
     const ctx = canvas.getContext('2d');
@@ -57,11 +58,11 @@ class TimeEffectFrameBuffer {
     // Remove existing entry for this frame
     this.buffer = this.buffer.filter(e => e.frame !== frame);
 
-    // Add new entry
+    // Add new entry - use frame number as timestamp for deterministic cleanup
     this.buffer.push({
       imageData,
       frame,
-      timestamp: Date.now()
+      storedAtFrame: frame  // BUG-065 fix: Frame-based timestamp
     });
 
     // Trim to max size (keep most recent)
@@ -129,11 +130,13 @@ class TimeEffectFrameBuffer {
   }
 
   /**
-   * Remove old entries
+   * Remove old entries based on frame distance
+   * BUG-065 fix: Uses frame-based cleanup instead of wall-clock time for determinism
    */
-  cleanup(): void {
-    const now = Date.now();
-    this.buffer = this.buffer.filter(e => (now - e.timestamp) < this.maxAge);
+  cleanup(currentFrame: number): void {
+    // Keep frames within maxFrames distance of current frame
+    const maxFrameDistance = this.maxFrames * 2;  // Allow some buffer for echo effects
+    this.buffer = this.buffer.filter(e => Math.abs(currentFrame - e.storedAtFrame) < maxFrameDistance);
   }
 
   /**
@@ -601,6 +604,23 @@ export function clearAllFrozenFrames(): void {
   frozenFrames.clear();
 }
 
+/**
+ * BUG-065 fix: Clear all time effect temporal state on timeline seek
+ *
+ * This function MUST be called when the timeline seeks to ensure deterministic
+ * playback. Time effects (Echo, Posterize Time, Time Displacement, Freeze Frame)
+ * depend on accumulated frame history that becomes invalid after seeking.
+ *
+ * Call this from:
+ * - Timeline scrubbing handler
+ * - Playhead jump operations
+ * - Project load/reset
+ */
+export function clearTimeEffectStateOnSeek(): void {
+  clearAllFrameBuffers();
+  clearAllFrozenFrames();
+}
+
 // ============================================================================
 // TIMEWARP FRAME BLENDING
 // Frame interpolation methods for Timewarp layer property
@@ -930,5 +950,6 @@ export default {
   clearAllFrameBuffers,
   clearAllFrozenFrames,
   clearFrozenFrame,
+  clearTimeEffectStateOnSeek,  // BUG-065 fix: Unified clear for timeline seek
   getFrameBuffer
 };
