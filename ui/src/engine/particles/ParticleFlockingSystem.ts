@@ -89,6 +89,17 @@ export class ParticleFlockingSystem {
       let alignmentCount = 0;
       let cohesionCount = 0;
 
+      // Get particle velocity for perception angle check
+      const vx = particleBuffer[offset + 3];
+      const vy = particleBuffer[offset + 4];
+      const vz = particleBuffer[offset + 5];
+      const speed = Math.sqrt(vx * vx + vy * vy + vz * vz);
+
+      // Precompute perception angle cosine threshold (360° means all neighbors visible)
+      const perceptionCos = this.config.perceptionAngle >= 360
+        ? -1.0  // -1 means all angles pass
+        : Math.cos((this.config.perceptionAngle / 2) * Math.PI / 180);
+
       // Use shared spatial hash for neighbor queries
       for (const j of this.spatialHash.getNeighbors(px, py, pz)) {
         if (j === i) continue;
@@ -102,6 +113,21 @@ export class ParticleFlockingSystem {
         const dy = py - jy;
         const dz = pz - jz;
         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        // Check perception angle: is neighbor within field of view?
+        // Skip if particle is stationary (can't determine facing direction)
+        if (speed > 0.001 && perceptionCos > -1.0) {
+          // Direction TO neighbor (opposite of dx, dy, dz which is FROM neighbor)
+          const toNeighborX = -dx / dist;
+          const toNeighborY = -dy / dist;
+          const toNeighborZ = -dz / dist;
+
+          // Dot product with normalized velocity (facing direction)
+          const dot = (vx / speed) * toNeighborX + (vy / speed) * toNeighborY + (vz / speed) * toNeighborZ;
+
+          // If dot < perceptionCos, neighbor is outside field of view
+          if (dot < perceptionCos) continue;
+        }
 
         // Separation - steer away from nearby neighbors
         if (dist < this.config.separationRadius && dist > 0) {

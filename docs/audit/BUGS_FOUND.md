@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-057
+**Next Bug ID:** BUG-058
 
 ---
 
@@ -11,9 +11,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 15 | 15 | 0 |
-| MEDIUM | 31 | 31 | 0 |
+| MEDIUM | 32 | 32 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **53** | **53** | **0** |
+| **TOTAL** | **54** | **54** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 1 |
+| 5. Particles | 2 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2140,6 +2140,76 @@ this.rng = this.createSeededRandom(this.initialRngSeed);
 - `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 373, 1498
 
 **Related Bugs:** None - first particle system determinism bug
+
+---
+
+### BUG-057: perceptionAngle Config Not Implemented in Flocking System
+
+**Feature:** Flocking/Boids (5.5)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleFlockingSystem.ts`
+- Lines: 72-127 (applyFlocking method)
+- Function: `applyFlocking()`
+
+**Problem:**
+The `perceptionAngle` property in FlockingConfig is exposed in the UI but never used in calculations. Particles consider ALL neighbors in the spatial hash regardless of viewing direction.
+
+**Evidence (before fix):**
+```typescript
+// applyFlocking() iterates neighbors without any angle check
+for (const j of this.spatialHash.getNeighbors(px, py, pz)) {
+  if (j === i) continue;
+  // ... calculates dx, dy, dz, dist ...
+  // NO check if neighbor is within perceptionAngle field of view
+  // Separation - steer away from nearby neighbors
+  if (dist < this.config.separationRadius && dist > 0) {
+    // ...
+```
+
+**Expected Behavior:**
+With perceptionAngle=180°, particles should only perceive neighbors in front of them (hemisphere). A particle moving forward should not be influenced by particles directly behind it.
+
+**Actual Behavior:**
+perceptionAngle slider has no effect. Particles have 360° perception regardless of setting.
+
+**Impact:**
+- Users cannot limit particle awareness for realistic boid behavior
+- Unable to create forward-only perception patterns
+- UI control does nothing
+
+**Fix Applied:**
+```typescript
+// Get particle velocity for perception angle check
+const vx = particleBuffer[offset + 3];
+const vy = particleBuffer[offset + 4];
+const vz = particleBuffer[offset + 5];
+const speed = Math.sqrt(vx * vx + vy * vy + vz * vz);
+
+// Precompute perception angle cosine threshold (360° means all neighbors visible)
+const perceptionCos = this.config.perceptionAngle >= 360
+  ? -1.0  // -1 means all angles pass
+  : Math.cos((this.config.perceptionAngle / 2) * Math.PI / 180);
+
+// In neighbor loop, after calculating distance:
+if (speed > 0.001 && perceptionCos > -1.0) {
+  const toNeighborX = -dx / dist;
+  const toNeighborY = -dy / dist;
+  const toNeighborZ = -dz / dist;
+  const dot = (vx / speed) * toNeighborX + (vy / speed) * toNeighborY + (vz / speed) * toNeighborZ;
+  if (dot < perceptionCos) continue; // Skip neighbors outside FOV
+}
+```
+
+**Files Modified:**
+- `ui/src/engine/particles/ParticleFlockingSystem.ts` - Lines 92-130 (added perception angle check)
+
+**Related Bugs:** BUG-056 (same tier, particle determinism)
 
 ---
 
