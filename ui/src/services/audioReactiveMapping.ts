@@ -657,7 +657,8 @@ export function getIPAdapterWeightsAtFrame(
  * Get human-readable name for a feature
  */
 export function getFeatureDisplayName(feature: AudioFeature): string {
-  const names: Record<AudioFeature, string> = {
+  // Partial because not all features need display names - fallback returns raw feature name
+  const names: Partial<Record<AudioFeature, string>> = {
     // Core
     amplitude: 'Amplitude',
     rms: 'RMS Energy',
