@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-063
+**Next Bug ID:** BUG-064
 
 ---
 
@@ -10,10 +10,10 @@
 | Severity | Total | Fixed | Open |
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
-| HIGH | 15 | 15 | 0 |
+| HIGH | 16 | 16 | 0 |
 | MEDIUM | 37 | 37 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **59** | **59** | **0** |
+| **TOTAL** | **60** | **60** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 7 |
+| 5. Particles | 8 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2525,6 +2525,81 @@ Color override was impossible - always blended particle colors.
 - `ui/src/types/particles.ts` - Line 201 (fixed comment)
 
 **Related Bugs:** BUG-060, BUG-061 (same pattern - defined but not exposed)
+
+---
+
+### BUG-063: particleEmitters Map Not Cached in Frame Cache
+
+**Feature:** Frame Cache (5.10)
+**Tier:** 5
+**Severity:** HIGH
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleFrameCache.ts`
+- Lines: 17-27 (interface missing particleEmitters)
+- Lines: 63-96 (cacheState not saving particleEmitters)
+- File: `ui/src/engine/particles/GPUParticleSystem.ts`
+- Lines: 1332-1364 (restoreFromCache not restoring particleEmitters)
+
+**Problem:**
+The `particleEmitters` Map (Map<number, string>) tracks which emitter spawned each particle. This data is critical for sub-emitter death event filtering by `parentEmitterId`. However:
+1. The `ParticleFrameCache` interface didn't include the map
+2. `cacheState()` didn't save it
+3. `restoreFromCache()` didn't restore it
+
+**Evidence (particleEmitters usage):**
+```typescript
+// Line 322 - Declaration
+private particleEmitters: Map<number, string> = new Map();
+
+// Line 962 - Set on spawn
+this.particleEmitters.set(index, emitter.id);
+
+// Line 1094 - Used for sub-emitter death events
+const emitterId = this.particleEmitters.get(i);
+this.subEmitterSystem.queueDeathEvent({ index: i, emitterId });
+```
+
+**Evidence (missing from cache interface):**
+```typescript
+export interface ParticleFrameCache {
+  frame: number;
+  version: number;
+  particleBuffer: Float32Array;
+  freeIndices: number[];
+  particleCount: number;
+  simulationTime: number;
+  rngState: number;
+  emitterAccumulators: Map<string, number>;
+  // particleEmitters was MISSING
+}
+```
+
+**Expected Behavior:**
+After timeline scrubbing and cache restore, sub-emitter death events should correctly filter by parentEmitterId.
+
+**Actual Behavior:**
+After cache restore, `particleEmitters` map was empty, so all particles returned `undefined` for emitterId, breaking parentEmitterId filtering.
+
+**Impact:**
+- Sub-emitter parentEmitterId filtering broken after timeline scrubbing
+- Non-deterministic sub-emitter behavior
+- Death events routed to wrong sub-emitters
+
+**Fix Applied:**
+1. Added `particleEmitters: Map<number, string>` to ParticleFrameCache interface
+2. Updated `cacheState()` to accept and save particleEmitters with deep copy
+3. Updated `cacheCurrentState()` in GPUParticleSystem to pass particleEmitters
+4. Updated `restoreFromCache()` to restore particleEmitters with deep copy
+
+**Files Modified:**
+- `ui/src/engine/particles/ParticleFrameCache.ts` - Lines 26, 71, 94
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Lines 1325, 1360
+
+**Related Bugs:** BUG-059 (added particleEmitters for sub-emitter filtering, but didn't cache it)
 
 ---
 

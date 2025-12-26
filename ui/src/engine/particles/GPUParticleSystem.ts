@@ -1321,7 +1321,8 @@ export class GPUParticleSystem {
       this.state.particleCount,
       this.state.simulationTime,
       this.currentRngState,
-      this.emitters
+      this.emitters,
+      this.particleEmitters  // BUG-063 fix: Cache particle-to-emitter tracking
     );
   }
 
@@ -1354,6 +1355,9 @@ export class GPUParticleSystem {
         emitter.accumulator = accumulator;
       }
     }
+
+    // BUG-063 fix: Restore particle-to-emitter tracking for sub-emitter filtering
+    this.particleEmitters = new Map(cached.particleEmitters);
 
     this.updateInstanceBuffers();
     return true;

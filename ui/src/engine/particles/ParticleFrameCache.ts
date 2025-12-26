@@ -23,6 +23,7 @@ export interface ParticleFrameCache {
   simulationTime: number;
   rngState: number;
   emitterAccumulators: Map<string, number>;
+  particleEmitters: Map<number, string>;  // BUG-063 fix: Track which emitter spawned each particle
 }
 
 export interface CacheStats {
@@ -66,7 +67,8 @@ export class ParticleFrameCacheSystem {
     particleCount: number,
     simulationTime: number,
     rngState: number,
-    emitters: Map<string, { accumulator: number }>
+    emitters: Map<string, { accumulator: number }>,
+    particleEmitters: Map<number, string>  // BUG-063 fix: Track which emitter spawned each particle
   ): void {
     // Don't cache if we've exceeded max size - remove oldest
     if (this.frameCache.size >= this.maxCacheSize) {
@@ -89,6 +91,7 @@ export class ParticleFrameCacheSystem {
       simulationTime,
       rngState,
       emitterAccumulators,
+      particleEmitters: new Map(particleEmitters),  // BUG-063 fix: Deep copy the map
     });
   }
 
