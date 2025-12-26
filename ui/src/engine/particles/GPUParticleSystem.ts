@@ -318,6 +318,9 @@ export class GPUParticleSystem {
   private freeIndices: number[] = [];
   private nextParticleIndex = 0;
 
+  // Track which emitter spawned each particle (for sub-emitter filtering)
+  private particleEmitters: Map<number, string> = new Map();
+
   // Trail system - extracted to ParticleTrailSystem.ts
   private trailSystem: ParticleTrailSystem | null = null;
 
@@ -955,6 +958,9 @@ export class GPUParticleSystem {
     const buffer = this.currentBuffer === 'A' ? this.particleBufferA : this.particleBufferB;
     const offset = index * PARTICLE_STRIDE;
 
+    // Track which emitter spawned this particle (for sub-emitter filtering)
+    this.particleEmitters.set(index, emitter.id);
+
     // Calculate spawn position based on emitter shape (using extracted module)
     const pos = getEmitterPosition(emitter, this.rng, this.splineProvider);
 
@@ -1085,8 +1091,11 @@ export class GPUParticleSystem {
       if (age + dt >= lifetime) {
         // Queue for sub-emitter processing before freeing index
         if (this.subEmitterSystem) {
-          this.subEmitterSystem.queueDeathEvent({ index: i });
+          const emitterId = this.particleEmitters.get(i);
+          this.subEmitterSystem.queueDeathEvent({ index: i, emitterId });
         }
+        // Clean up emitter tracking
+        this.particleEmitters.delete(i);
         this.freeIndices.push(i);
         this.state.particleCount--;
         this.emit('particleDeath', { index: i });
@@ -1473,6 +1482,8 @@ export class GPUParticleSystem {
     this.state.particleCount = 0;
     this.state.simulationTime = 0;
     this.state.frameCount = 0;
+    // Clear particle-to-emitter tracking
+    this.particleEmitters.clear();
     // Reset shared spatial hash
     if (this.spatialHash) {
       this.spatialHash.clear();

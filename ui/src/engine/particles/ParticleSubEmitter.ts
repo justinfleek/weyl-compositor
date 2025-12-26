@@ -107,6 +107,14 @@ export class ParticleSubEmitter {
         if (subEmitter.trigger !== 'death') continue;
         if (!subEmitter.parentEmitterId) continue;
 
+        // Check parent emitter filter
+        // '*' means trigger on any emitter's particles
+        // Specific ID means only trigger on that emitter's particles
+        // Note: death.emitterId may be undefined if particle tracking not implemented
+        if (subEmitter.parentEmitterId !== '*' && death.emitterId !== undefined) {
+          if (death.emitterId !== subEmitter.parentEmitterId) continue;
+        }
+
         // Check trigger probability
         if (this.rng() > subEmitter.triggerProbability) continue;
 

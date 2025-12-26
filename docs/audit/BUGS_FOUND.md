@@ -1,7 +1,7 @@
 # LATTICE COMPOSITOR - BUGS FOUND
 
 **Last Updated:** 2025-12-26
-**Next Bug ID:** BUG-059
+**Next Bug ID:** BUG-060
 
 ---
 
@@ -11,9 +11,9 @@
 |----------|-------|-------|------|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 15 | 15 | 0 |
-| MEDIUM | 33 | 33 | 0 |
+| MEDIUM | 34 | 34 | 0 |
 | LOW | 7 | 7 | 0 |
-| **TOTAL** | **55** | **55** | **0** |
+| **TOTAL** | **56** | **56** | **0** |
 
 **Note:** These 36 bugs were found in previous audit sessions and are preserved here. All have been fixed. New bugs should start at BUG-037.
 
@@ -27,7 +27,7 @@
 | 2. Layer Types | 35 |
 | 3. Animation | 2 |
 | 4. Effects | 2 |
-| 5. Particles | 3 |
+| 5. Particles | 4 |
 | 6-12 | 0 (not yet audited) |
 
 ---
@@ -2263,6 +2263,73 @@ if (fadeMode === 'alpha' || fadeMode === 'both') {
 - `ui/src/engine/particles/ParticleTrailSystem.ts` - Lines 181-185 (added endAlpha interpolation)
 
 **Related Bugs:** BUG-057 (same pattern - UI control not implemented)
+
+---
+
+### BUG-059: parentEmitterId Filter Not Implemented in Sub-Emitters
+
+**Feature:** Sub-Emitters (5.7)
+**Tier:** 5
+**Severity:** MEDIUM
+**Found:** 2025-12-26
+**Session:** 4
+**Status:** FIXED
+
+**Location:**
+- File: `ui/src/engine/particles/ParticleSubEmitter.ts`
+- Lines: 104-108 (death event processing)
+- Function: `processDeathEvents()`
+
+**Problem:**
+The `parentEmitterId` config property allows users to select which emitter's particles should trigger this sub-emitter. However, the engine only checked if parentEmitterId existed, not whether it matched the dying particle's emitter.
+
+**Evidence (before fix):**
+```typescript
+for (const death of deathQueue) {
+  for (const subEmitter of this.subEmitters.values()) {
+    if (subEmitter.trigger !== 'death') continue;
+    if (!subEmitter.parentEmitterId) continue;  // Only checks existence!
+    // Never compares subEmitter.parentEmitterId to death.emitterId
+```
+
+**Expected Behavior:**
+- parentEmitterId='*' → trigger on any particle death
+- parentEmitterId='emitter-1' → only trigger on emitter-1's particles
+
+**Actual Behavior:**
+All sub-emitters triggered on ALL particle deaths regardless of parentEmitterId setting.
+
+**Impact:**
+- Users cannot target sub-emitters to specific emitters
+- Selecting a specific parent emitter in UI had no effect
+
+**Fix Applied:**
+
+1. Added `particleEmitters: Map<number, string>` to GPUParticleSystem to track emitter per particle
+2. In `spawnParticle()`: Store emitter ID when particle is created
+3. In death detection: Look up emitterId and pass to `queueDeathEvent()`
+4. In `reset()`: Clear the tracking map
+5. In ParticleSubEmitter: Filter based on parentEmitterId vs death.emitterId
+
+```typescript
+// GPUParticleSystem.ts - Track which emitter spawned each particle
+this.particleEmitters.set(index, emitter.id);
+
+// On death - pass emitterId to sub-emitter system
+const emitterId = this.particleEmitters.get(i);
+this.subEmitterSystem.queueDeathEvent({ index: i, emitterId });
+
+// ParticleSubEmitter.ts - Filter by parent emitter
+if (subEmitter.parentEmitterId !== '*' && death.emitterId !== undefined) {
+  if (death.emitterId !== subEmitter.parentEmitterId) continue;
+}
+```
+
+**Files Modified:**
+- `ui/src/engine/particles/GPUParticleSystem.ts` - Added particleEmitters Map, tracking in spawnParticle(), lookup in death detection, clear in reset()
+- `ui/src/engine/particles/ParticleSubEmitter.ts` - Lines 110-116 (added parent emitter filter)
+
+**Related Bugs:** BUG-057, BUG-058 (same pattern - config not used)
 
 ---
 
