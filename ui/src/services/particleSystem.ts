@@ -1017,6 +1017,46 @@ export class ParticleSystem {
         return this.getMaskEmitPosition(emitter);
       }
 
+      case 'cone': {
+        // Emit from cone volume
+        // Cone opens along Y axis from emitter position
+        const coneAngle = ((emitter as any).coneAngle ?? 45) * Math.PI / 180;
+        const coneRadius = ((emitter as any).coneRadius ?? 0.1);
+        const coneLength = ((emitter as any).coneLength ?? 0.2);
+
+        // Random point in cone
+        const t = this.rng.next(); // 0-1 along cone length
+        const theta = this.rng.next() * Math.PI * 2; // Random angle around cone axis
+
+        // Radius at this point along cone (grows with t)
+        const radiusAtT = t * coneRadius * Math.tan(coneAngle);
+
+        // Position in cone's local space
+        const localX = Math.cos(theta) * radiusAtT;
+        const localY = t * coneLength; // Height along cone
+        // localZ would be Math.sin(theta) * radiusAtT but we're 2D
+
+        // Apply emitter direction to orient the cone
+        const dirRad = (emitter.direction * Math.PI) / 180;
+        const cosDir = Math.cos(dirRad);
+        const sinDir = Math.sin(dirRad);
+
+        return {
+          x: emitter.x + localX * cosDir - localY * sinDir,
+          y: emitter.y + localX * sinDir + localY * cosDir
+        };
+      }
+
+      case 'image': {
+        // Emit from non-transparent pixels of a layer
+        return this.getImageEmitPosition(emitter);
+      }
+
+      case 'depthEdge': {
+        // Emit from depth discontinuities (silhouette edges)
+        return this.getDepthEdgeEmitPosition(emitter);
+      }
+
       default:
         return { x: emitter.x, y: emitter.y };
     }
@@ -1340,6 +1380,175 @@ export class ParticleSystem {
    */
   clearEmissionCache(): void {
     this.imageEmissionCache.clear();
+  }
+
+  /**
+   * Get emission position from image layer (non-transparent pixels)
+   * Uses imageSourceLayerId and emissionThreshold from emitter config
+   */
+  private getImageEmitPosition(emitter: EmitterConfig): { x: number; y: number } {
+    const sourceLayerId = (emitter as any).imageSourceLayerId;
+    const threshold = (emitter as any).emissionThreshold ?? 0.1;
+
+    // Fall back to point emission if no source layer configured
+    if (!sourceLayerId) {
+      return { x: emitter.x, y: emitter.y };
+    }
+
+    // Check for cached emission points
+    const cacheKey = `image_${sourceLayerId}_${threshold}`;
+    let emissionPoints = this.imageEmissionCache.get(cacheKey);
+
+    // If no cache, regenerate points
+    if (!emissionPoints) {
+      emissionPoints = this.sampleImageEmissionPoints(sourceLayerId, threshold);
+      this.imageEmissionCache.set(cacheKey, emissionPoints);
+    }
+
+    // If no valid emission points, fall back to emitter position
+    if (emissionPoints.length === 0) {
+      return { x: emitter.x, y: emitter.y };
+    }
+
+    // Select a random emission point (using seeded RNG)
+    const idx = this.rng.int(0, emissionPoints.length - 1);
+    const point = emissionPoints[idx];
+
+    return { x: point.x + emitter.x, y: point.y + emitter.y };
+  }
+
+  /**
+   * Sample valid emission points from an image layer (non-transparent pixels)
+   */
+  private sampleImageEmissionPoints(
+    sourceLayerId: string,
+    threshold: number
+  ): Array<{ x: number; y: number }> {
+    const points: Array<{ x: number; y: number }> = [];
+
+    // Try to get the image data from the mask provider (reuses same provider)
+    if (!this.maskProvider) {
+      return points;
+    }
+
+    // Get actual image data
+    const imageData = this.maskProvider(sourceLayerId, this.currentFrame);
+    if (!imageData) {
+      return points;
+    }
+
+    // Sample every Nth pixel for performance (adjust based on image size)
+    const sampleRate = Math.max(1, Math.floor(Math.sqrt(imageData.width * imageData.height) / 100));
+
+    for (let y = 0; y < imageData.height; y += sampleRate) {
+      for (let x = 0; x < imageData.width; x += sampleRate) {
+        const idx = (y * imageData.width + x) * 4;
+        const alpha = imageData.data[idx + 3] / 255;
+
+        // Check if pixel is above threshold
+        if (alpha > threshold) {
+          points.push({
+            x: (x / imageData.width - 0.5),  // Normalize to -0.5 to 0.5
+            y: (y / imageData.height - 0.5)
+          });
+        }
+      }
+    }
+
+    return points;
+  }
+
+  /**
+   * Get emission position from depth edges (silhouette/discontinuity detection)
+   * Uses depthSourceLayerId, depthEdgeThreshold, depthScale from emitter config
+   */
+  private getDepthEdgeEmitPosition(emitter: EmitterConfig): { x: number; y: number } {
+    const sourceLayerId = (emitter as any).depthSourceLayerId;
+    const threshold = (emitter as any).depthEdgeThreshold ?? 0.05;
+
+    // Fall back to point emission if no source layer configured
+    if (!sourceLayerId) {
+      return { x: emitter.x, y: emitter.y };
+    }
+
+    // Check for cached emission points
+    const cacheKey = `depthEdge_${sourceLayerId}_${threshold}`;
+    let emissionPoints = this.imageEmissionCache.get(cacheKey);
+
+    // If no cache, regenerate points
+    if (!emissionPoints) {
+      emissionPoints = this.sampleDepthEdgeEmissionPoints(sourceLayerId, threshold);
+      this.imageEmissionCache.set(cacheKey, emissionPoints);
+    }
+
+    // If no valid emission points, fall back to emitter position
+    if (emissionPoints.length === 0) {
+      return { x: emitter.x, y: emitter.y };
+    }
+
+    // Select a random emission point (using seeded RNG)
+    const idx = this.rng.int(0, emissionPoints.length - 1);
+    const point = emissionPoints[idx];
+
+    return { x: point.x + emitter.x, y: point.y + emitter.y };
+  }
+
+  /**
+   * Sample valid emission points from depth edges (silhouette detection)
+   * Finds pixels where depth gradient exceeds threshold
+   */
+  private sampleDepthEdgeEmissionPoints(
+    sourceLayerId: string,
+    threshold: number
+  ): Array<{ x: number; y: number; depth?: number }> {
+    const points: Array<{ x: number; y: number; depth?: number }> = [];
+
+    // Try to get the depth map data
+    if (!this.depthMapProvider) {
+      return points;
+    }
+
+    // Get actual depth data
+    const depthData = this.depthMapProvider(sourceLayerId, this.currentFrame);
+    if (!depthData) {
+      return points;
+    }
+
+    const width = depthData.width;
+    const height = depthData.height;
+
+    // Sample rate for performance
+    const sampleRate = Math.max(1, Math.floor(Math.sqrt(width * height) / 100));
+
+    // Need at least 1 pixel border for gradient calculation
+    for (let y = 1; y < height - 1; y += sampleRate) {
+      for (let x = 1; x < width - 1; x += sampleRate) {
+        const idx = (y * width + x) * 4;
+
+        // Get depth value (use red channel, normalized)
+        const d = depthData.data[idx] / 255;
+        const dLeft = depthData.data[idx - 4] / 255;
+        const dRight = depthData.data[idx + 4] / 255;
+        const dUp = depthData.data[idx - width * 4] / 255;
+        const dDown = depthData.data[idx + width * 4] / 255;
+
+        // Calculate depth gradient magnitude (Sobel-like)
+        const gradX = Math.abs(dRight - dLeft);
+        const gradY = Math.abs(dDown - dUp);
+        const gradient = Math.sqrt(gradX * gradX + gradY * gradY);
+
+        // Check if gradient exceeds threshold (edge detected)
+        if (gradient > threshold) {
+          points.push({
+            x: (x / width - 0.5),   // Normalize to -0.5 to 0.5
+            y: (y / height - 0.5),
+            depth: d               // Store depth for potential Z-axis use
+          });
+        }
+      }
+    }
+
+    return points;
   }
 
   private handleBoundaryCollision(p: Particle): void {

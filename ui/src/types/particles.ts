@@ -148,6 +148,9 @@ export interface TurbulenceFieldConfig {
   scale: number;              // Noise frequency, 0.001-0.01 (smaller = larger swirls)
   strength: number;           // Force magnitude, 0-500
   evolutionSpeed: number;     // How fast noise changes over time, 0-1
+  octaves?: number;           // Number of noise octaves for detail (default: 1)
+  persistence?: number;       // Amplitude multiplier per octave (default: 0.5)
+  animationSpeed?: number;    // Speed of noise evolution animation
 }
 
 // Flocking (boids) behavior configuration
@@ -241,7 +244,19 @@ export interface SubEmitterConfig {
   enabled: boolean;
 }
 
-export type EmitterShape = 'point' | 'line' | 'circle' | 'box' | 'sphere' | 'ring' | 'spline' | 'depth-map' | 'mask';
+export type EmitterShape =
+  | 'point'
+  | 'line'
+  | 'circle'
+  | 'box'
+  | 'sphere'
+  | 'ring'
+  | 'spline'
+  | 'depth-map'
+  | 'mask'
+  | 'cone'       // Cone-shaped emission volume
+  | 'image'      // Emit from non-transparent pixels of an image/layer
+  | 'depthEdge'; // Emit from depth discontinuities (silhouette edges)
 
 // Depth map emission configuration
 export interface DepthMapEmission {
@@ -340,6 +355,58 @@ export interface ParticleEmitterConfig {
   maskEmission?: MaskEmission;
   // Sprite configuration
   sprite: SpriteConfig;
+
+  // ============================================================
+  // CONE SHAPE PROPERTIES (when shape = 'cone')
+  // ============================================================
+  /** Cone opening angle in degrees (0-180) */
+  coneAngle?: number;
+  /** Cone base radius */
+  coneRadius?: number;
+  /** Cone length/height */
+  coneLength?: number;
+
+  // ============================================================
+  // IMAGE SHAPE PROPERTIES (when shape = 'image')
+  // Emit from non-transparent pixels of a layer
+  // ============================================================
+  /** Layer ID to use as emission source */
+  imageSourceLayerId?: string;
+  /** Minimum alpha threshold for emission (0-1) */
+  emissionThreshold?: number;
+  /** Emit from edges of the mask only */
+  emitFromMaskEdge?: boolean;
+
+  // ============================================================
+  // DEPTH EDGE SHAPE PROPERTIES (when shape = 'depthEdge')
+  // Emit from depth discontinuities (silhouette edges)
+  // ============================================================
+  /** Layer ID containing the depth map */
+  depthSourceLayerId?: string;
+  /** Depth gradient threshold for edge detection */
+  depthEdgeThreshold?: number;
+  /** Scale factor for Z position from depth */
+  depthScale?: number;
+
+  // ============================================================
+  // ALTERNATIVE PROPERTY NAMES (for preset compatibility)
+  // ============================================================
+  /** Alias for particleLifetime (seconds instead of frames) */
+  lifespan?: number;
+  /** Initial particle size (alias for size) */
+  startSize?: number;
+  /** Final particle size at end of life */
+  endSize?: number;
+  /** Initial particle color (hex string) */
+  startColor?: string;
+  /** Final particle color at end of life (hex string) */
+  endColor?: string;
+  /** Initial particle opacity (0-1) */
+  startOpacity?: number;
+  /** Final particle opacity at end of life (0-1) */
+  endOpacity?: number;
+  /** Velocity spread/variance */
+  velocitySpread?: number;
 }
 
 export interface GravityWellConfig {

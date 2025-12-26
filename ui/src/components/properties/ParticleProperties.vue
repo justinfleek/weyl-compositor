@@ -738,7 +738,7 @@ const imageLayers = computed(() =>
 const depthLayers = computed(() =>
   compositorStore.layers.filter(l =>
     l.type === 'image' &&
-    (l.name.toLowerCase().includes('depth') || l.data?.isDepthMap)
+    (l.name.toLowerCase().includes('depth') || (l.data && 'isDepthMap' in l.data && l.data.isDepthMap))
   )
 );
 
@@ -989,10 +989,14 @@ function applySelectedPreset(): void {
   }
 
   // Apply gravity if specified
-  if (config.gravity) {
+  if (config.gravity !== undefined) {
+    // Handle gravity as either a number or an object with y property
+    const gravityValue = typeof config.gravity === 'number'
+      ? config.gravity
+      : (config.gravity as { y?: number })?.y ?? 0;
     updates.systemConfig = {
       ...(updates.systemConfig || systemConfig.value),
-      gravity: config.gravity.y || 0,
+      gravity: gravityValue,
     };
   }
 
@@ -1018,6 +1022,7 @@ function applySelectedPreset(): void {
       enabled: true,
       strength: config.turbulenceStrength,
       scale: 0.01,
+      evolutionSpeed: 1,  // Required field
       octaves: 3,
       persistence: 0.5,
       animationSpeed: 1,
@@ -1030,15 +1035,51 @@ function applySelectedPreset(): void {
 function createDefaultEmitter(): ParticleEmitterConfig {
   return {
     id: `emitter_${Date.now()}`,
-    enabled: true,
-    emissionMode: 'point',
-    emissionRate: 50,
-    emissionBurstSize: 10,
-    emissionBurstInterval: 0,
-    position: { x: 0, y: 0, z: 0 },
-    direction: { x: 0, y: -1, z: 0 },
+    name: 'New Emitter',
+    x: 0.5,
+    y: 0.5,
+    direction: 270,  // degrees, upward
     spread: 30,
-    velocity: { min: 50, max: 150 },
+    speed: 100,
+    speedVariance: 30,
+    size: 10,
+    sizeVariance: 2,
+    color: [255, 255, 255],
+    emissionRate: 50,
+    initialBurst: 0,
+    particleLifetime: 60,
+    lifetimeVariance: 10,
+    enabled: true,
+    burstOnBeat: false,
+    burstCount: 10,
+    // Shape properties
+    shape: 'point',
+    shapeRadius: 0,
+    shapeWidth: 0,
+    shapeHeight: 0,
+    shapeDepth: 0,
+    shapeInnerRadius: 0,
+    emitFromEdge: false,
+    emitFromVolume: false,
+    splinePath: null,
+    // Sprite config
+    sprite: {
+      enabled: false,
+      imageUrl: null,
+      imageData: null,
+      isSheet: false,
+      columns: 1,
+      rows: 1,
+      totalFrames: 1,
+      frameRate: 30,
+      playMode: 'loop',
+      billboard: false,
+      rotationEnabled: false,
+      rotationSpeed: 0,
+      rotationSpeedVariance: 0,
+      alignToVelocity: false,
+    },
+    // Alternative property names for preset compatibility
     lifespan: 2,
     startSize: 10,
     endSize: 2,
@@ -1046,8 +1087,6 @@ function createDefaultEmitter(): ParticleEmitterConfig {
     endColor: '#ffffff',
     startOpacity: 1,
     endOpacity: 0,
-    rotation: { min: 0, max: 360 },
-    rotationSpeed: { min: 0, max: 0 },
     velocitySpread: 30,
   };
 }
@@ -1074,7 +1113,7 @@ function saveCurrentAsPreset(): void {
       endSize: emitter?.endSize,
       startColor: emitter?.startColor,
       endColor: emitter?.endColor,
-      gravity: { x: 0, y: systemConfig.value.gravity, z: 0 },
+      gravity: systemConfig.value.gravity,
       turbulenceStrength: turbulence?.strength,
       velocitySpread: emitter?.velocitySpread,
     },
@@ -1138,7 +1177,34 @@ function addEmitter(): void {
     lifetimeVariance: 10,
     enabled: true,
     burstOnBeat: false,
-    burstCount: 20
+    burstCount: 20,
+    // Shape properties
+    shape: 'point',
+    shapeRadius: 0,
+    shapeWidth: 0,
+    shapeHeight: 0,
+    shapeDepth: 0,
+    shapeInnerRadius: 0,
+    emitFromEdge: false,
+    emitFromVolume: false,
+    splinePath: null,
+    // Sprite config
+    sprite: {
+      enabled: false,
+      imageUrl: null,
+      imageData: null,
+      isSheet: false,
+      columns: 1,
+      rows: 1,
+      totalFrames: 1,
+      frameRate: 30,
+      playMode: 'loop',
+      billboard: false,
+      rotationEnabled: false,
+      rotationSpeed: 0,
+      rotationSpeedVariance: 0,
+      alignToVelocity: false,
+    },
   };
   emit('update', { emitters: [...emitters.value, newEmitter] });
   expandedEmitters.value.add(newEmitter.id);

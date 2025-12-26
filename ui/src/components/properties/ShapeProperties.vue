@@ -83,7 +83,7 @@
         <div class="property-row" v-if="hasDashes">
           <label>Dash Offset</label>
           <ScrubableNumber
-            :modelValue="getPropertyValue('Dash Offset') ?? shapeData.strokeDashOffset ?? 0"
+            :modelValue="getPropertyValue('Dash Offset') ?? getNumericValue(shapeData.strokeDashOffset, 0)"
             @update:modelValue="v => updateAnimatable('Dash Offset', v, 'strokeDashOffset')"
           />
           <button class="keyframe-btn" :class="{ active: isAnimated('Dash Offset') }" @click="toggleKeyframe('Dash Offset', 'strokeDashOffset')">◆</button>
@@ -142,7 +142,7 @@
         <div class="property-row">
           <label>Start</label>
           <ScrubableNumber
-            :modelValue="getPropertyValue('Trim Start') ?? shapeData.trimStart ?? 0"
+            :modelValue="getPropertyValue('Trim Start') ?? getNumericValue(shapeData.trimStart, 0)"
             @update:modelValue="v => updateAnimatable('Trim Start', v, 'trimStart')"
             :min="0"
             :max="100"
@@ -154,7 +154,7 @@
         <div class="property-row">
           <label>End</label>
           <ScrubableNumber
-            :modelValue="getPropertyValue('Trim End') ?? shapeData.trimEnd ?? 100"
+            :modelValue="getPropertyValue('Trim End') ?? getNumericValue(shapeData.trimEnd, 100)"
             @update:modelValue="v => updateAnimatable('Trim End', v, 'trimEnd')"
             :min="0"
             :max="100"
@@ -166,7 +166,7 @@
         <div class="property-row">
           <label>Offset</label>
           <ScrubableNumber
-            :modelValue="getPropertyValue('Trim Offset') ?? shapeData.trimOffset ?? 0"
+            :modelValue="getPropertyValue('Trim Offset') ?? getNumericValue(shapeData.trimOffset, 0)"
             @update:modelValue="v => updateAnimatable('Trim Offset', v, 'trimOffset')"
             :min="-360"
             :max="360"
@@ -470,6 +470,7 @@ import type {
   SplineData,
   AnimatableProperty,
   SplinePathEffect,
+  SplinePathEffectInstance,
   SplinePathEffectType,
   OffsetPathEffect,
   RoughenEffect,
@@ -509,10 +510,20 @@ const hasFill = computed(() => !!shapeData.value.fill && shapeData.value.fill !=
 const hasStroke = computed(() => !!shapeData.value.stroke && (shapeData.value.strokeWidth ?? 0) > 0);
 const strokeLineCap = computed(() => shapeData.value.strokeLineCap || 'round');
 const strokeLineJoin = computed(() => shapeData.value.strokeLineJoin || 'round');
-const hasDashes = computed(() => (shapeData.value.strokeDashArray?.length ?? 0) > 0);
+
+// Helper to get dash array value from number[] | AnimatableProperty<number[]>
+function getDashArray(): number[] {
+  const dashArray = shapeData.value.strokeDashArray;
+  if (!dashArray) return [];
+  if (Array.isArray(dashArray)) return dashArray;
+  // It's an AnimatableProperty<number[]>
+  return dashArray.value ?? [];
+}
+
+const hasDashes = computed(() => getDashArray().length > 0);
 
 const dashArrayString = computed(() => {
-  return shapeData.value.strokeDashArray?.join(', ') || '';
+  return getDashArray().join(', ') || '';
 });
 
 // Toggle section visibility
@@ -632,6 +643,14 @@ function getProperty(name: string): AnimatableProperty<number> | undefined {
   return props.layer.properties?.find(p => p.name === name) as AnimatableProperty<number> | undefined;
 }
 
+// Extract numeric value from number or AnimatableProperty
+function getNumericValue(value: number | AnimatableProperty<number> | undefined, fallback: number): number {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value === 'number') return value;
+  // It's an AnimatableProperty, extract the value
+  return value.value ?? fallback;
+}
+
 // Get property value (from animated property or direct data)
 function getPropertyValue(name: string): number | undefined {
   const prop = getProperty(name);
@@ -684,7 +703,10 @@ function toggleKeyframe(propName: string, dataKey: string) {
           id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
           frame,
           value: prop.value,
-          easing: 'linear' as const,
+          interpolation: 'linear' as const,
+          inHandle: { frame: -5, value: 0, enabled: false },
+          outHandle: { frame: 5, value: 0, enabled: false },
+          controlMode: 'corner' as const,
         },
       ];
       updatedAnimated = true;
@@ -729,8 +751,8 @@ function ensureProperty(propName: string, dataKey: string) {
 // PATH EFFECTS
 // ============================================================================
 
-const pathEffects = computed<SplinePathEffect[]>(() => {
-  return (shapeData.value.pathEffects || []).sort((a, b) => a.order - b.order);
+const pathEffects = computed<SplinePathEffectInstance[]>(() => {
+  return ((shapeData.value.pathEffects || []) as SplinePathEffectInstance[]).sort((a, b) => a.order - b.order);
 });
 
 function getEffectDisplayName(type: SplinePathEffectType): string {
@@ -919,7 +941,10 @@ function toggleEffectKeyframe(effectId: string, propName: string) {
       id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       frame,
       value: prop.value,
-      easing: 'linear',
+      interpolation: 'linear' as const,
+      inHandle: { frame: -5, value: 0, enabled: false },
+      outHandle: { frame: 5, value: 0, enabled: false },
+      controlMode: 'corner' as const,
     });
     prop.animated = true;
   }
