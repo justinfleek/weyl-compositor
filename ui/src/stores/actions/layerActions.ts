@@ -43,6 +43,9 @@ import { textToVectorFromUrl, type TextToVectorResult, type CharacterVectorGroup
 import type { BezierPath, BezierVertex } from '@/types/shapes';
 import { getDefaultLayerData } from './layer/layerDefaults';
 
+// Re-export from sub-modules for backwards compatibility
+export * from './layers/layerTimeActions';
+
 // ============================================================================
 // STORE INTERFACE
 // ============================================================================
@@ -168,6 +171,101 @@ export function createLayer(
   store.pushHistory();
 
   return layer;
+}
+
+/**
+ * Create a text layer with proper data structure and AE-compatible properties
+ */
+export function createTextLayer(store: LayerStore, text: string = 'Text'): Layer {
+  const layer = createLayer(store, 'text', text.substring(0, 20));
+
+  // Set up text data with full AE parity
+  const textData = {
+    text,
+    fontFamily: 'Arial',
+    fontSize: 72,
+    fontWeight: '400' as const,
+    fontStyle: 'normal' as const,
+    fill: '#ffffff',
+    stroke: '',
+    strokeWidth: 0,
+    // Character Properties (AE Animator defaults)
+    tracking: 0,
+    lineSpacing: 0,
+    lineAnchor: 0,
+    characterOffset: 0,
+    characterValue: 0,
+    blur: { x: 0, y: 0 },
+    // Paragraph (legacy aliases)
+    letterSpacing: 0,
+    lineHeight: 1.2,
+    textAlign: 'left' as const,
+    // Path Options (Full AE Parity)
+    pathLayerId: null,
+    pathReversed: false,
+    pathPerpendicularToPath: true,
+    pathForceAlignment: false,
+    pathFirstMargin: 0,
+    pathLastMargin: 0,
+    pathOffset: 0,
+    pathAlign: 'left' as const,
+    // More Options (AE Advanced)
+    anchorPointGrouping: 'character' as const,
+    groupingAlignment: { x: 0, y: 0 },
+    fillAndStroke: 'fill-over-stroke' as const,
+    interCharacterBlending: 'normal' as const,
+    // 3D Text
+    perCharacter3D: false
+  };
+
+  layer.data = textData;
+
+  // Text Properties for timeline
+  layer.properties.push(createAnimatableProperty('Font Size', 72, 'number', 'Text'));
+  layer.properties.push(createAnimatableProperty('Fill Color', '#ffffff', 'color', 'Text'));
+  layer.properties.push(createAnimatableProperty('Stroke Color', '#000000', 'color', 'Text'));
+  layer.properties.push(createAnimatableProperty('Stroke Width', 0, 'number', 'Text'));
+  // Path Options
+  layer.properties.push(createAnimatableProperty('Path Offset', 0, 'number', 'Path Options'));
+  layer.properties.push(createAnimatableProperty('First Margin', 0, 'number', 'Path Options'));
+  layer.properties.push(createAnimatableProperty('Last Margin', 0, 'number', 'Path Options'));
+  // More Options
+  layer.properties.push(createAnimatableProperty('Grouping Alignment', { x: 0, y: 0 }, 'position', 'More Options'));
+  // Advanced / Animators
+  layer.properties.push(createAnimatableProperty('Tracking', 0, 'number', 'Advanced'));
+  layer.properties.push(createAnimatableProperty('Line Spacing', 0, 'number', 'Advanced'));
+  layer.properties.push(createAnimatableProperty('Character Offset', 0, 'number', 'Advanced'));
+  layer.properties.push(createAnimatableProperty('Character Value', 0, 'number', 'Advanced'));
+  layer.properties.push(createAnimatableProperty('Blur', { x: 0, y: 0 }, 'position', 'Advanced'));
+
+  return layer;
+}
+
+/**
+ * Create a spline layer with proper data structure
+ */
+export function createSplineLayer(store: LayerStore): Layer {
+  const layer = createLayer(store, 'spline');
+
+  const splineData: SplineData = {
+    pathData: '',
+    controlPoints: [],
+    closed: false,
+    stroke: '#00ff00',
+    strokeWidth: 2,
+    fill: ''
+  };
+
+  layer.data = splineData;
+
+  return layer;
+}
+
+/**
+ * Create a shape layer with proper data structure
+ */
+export function createShapeLayer(store: LayerStore, name: string = 'Shape Layer'): Layer {
+  return createLayer(store, 'shape', name);
 }
 
 // ============================================================================
@@ -1360,390 +1458,8 @@ function evaluateCubicBezierDerivative(
   return { x: dx / len, y: dy / len };
 }
 
-// ============================================================================
-// TIME MANIPULATION ACTIONS
-// ============================================================================
-
-export interface TimeStretchOptions {
-  stretchFactor: number;           // 100% = normal, 200% = half speed, 50% = double speed
-  holdInPlace: 'in-point' | 'current-frame' | 'out-point';
-  reverse: boolean;
-  newStartFrame: number;
-  newEndFrame: number;
-  speed: number;                   // Computed speed value (100 / stretchFactor)
-}
-
-/**
- * Apply time stretch to a video or nested comp layer
- * Adjusts layer timing based on stretch factor and hold-in-place pivot
- */
-export function timeStretchLayer(
-  store: LayerStore,
-  layerId: string,
-  options: TimeStretchOptions
-): void {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer) {
-    storeLogger.warn('Layer not found for time stretch:', layerId);
-    return;
-  }
-
-  // Only works for video and nested comp layers
-  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
-    storeLogger.warn('Time stretch only works on video/nestedComp layers');
-    return;
-  }
-
-  store.pushHistory();
-
-  // Update layer timing
-  layer.startFrame = options.newStartFrame;
-  layer.endFrame = options.newEndFrame;
-
-  // Update speed in layer data - only VideoData has a direct speed property
-  if (isLayerOfType(layer, 'video') && layer.data) {
-    layer.data.speed = options.speed;
-  } else if (layer.type === 'nestedComp' && layer.data) {
-    // NestedCompData uses speedMap/timewarp, not a simple speed property
-    // Set speed via timewarp if enabled, otherwise this is a no-op
-    const nestedData = layer.data as NestedCompData;
-    if (nestedData.timewarpEnabled && nestedData.timewarpSpeed) {
-      nestedData.timewarpSpeed.value = options.speed * 100; // Convert to percentage
-    }
-  }
-
-  markLayerDirty(layerId);
-  store.project.meta.modified = new Date().toISOString();
-
-  storeLogger.debug(
-    `Time stretched layer ${layer.name}: ${options.stretchFactor}% ` +
-    `(speed: ${options.speed.toFixed(2)}, hold: ${options.holdInPlace})`
-  );
-}
-
-/**
- * Reverse layer playback
- * Toggles the speed sign for video/nested comp layers
- */
-export function reverseLayer(store: LayerStore, layerId: string): void {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer) {
-    storeLogger.warn('Layer not found for reverse:', layerId);
-    return;
-  }
-
-  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
-    storeLogger.warn('Reverse only works on video/nestedComp layers');
-    return;
-  }
-
-  store.pushHistory();
-
-  // Negate speed to reverse - only VideoData has a direct speed property
-  if (isLayerOfType(layer, 'video') && layer.data) {
-    layer.data.speed = -(layer.data.speed ?? 1);
-  } else if (layer.type === 'nestedComp' && layer.data) {
-    // NestedCompData uses speedMap/timewarp, not a simple speed property
-    const nestedData = layer.data as NestedCompData;
-    if (nestedData.timewarpEnabled && nestedData.timewarpSpeed) {
-      nestedData.timewarpSpeed.value = -nestedData.timewarpSpeed.value;
-    }
-  }
-
-  markLayerDirty(layerId);
-  store.project.meta.modified = new Date().toISOString();
-
-  storeLogger.debug(`Reversed layer: ${layer.name}`);
-}
-
-/**
- * Create a freeze frame at the current playhead position
- * Uses speedMap with hold keyframes to freeze at a specific source time
- */
-export function freezeFrameAtPlayhead(
-  store: LayerStore & { currentFrame: number; fps: number },
-  layerId: string
-): void {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer) {
-    storeLogger.warn('Layer not found for freeze frame:', layerId);
-    return;
-  }
-
-  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
-    storeLogger.warn('Freeze frame only works on video/nestedComp layers');
-    return;
-  }
-
-  store.pushHistory();
-
-  const currentFrame = store.currentFrame ?? 0;
-  const fps = store.fps ?? 16;
-  const sourceTime = currentFrame / fps;
-
-  // Both VideoData and NestedCompData have speedMapEnabled and speedMap properties
-  // Use type assertion for common properties
-  type SpeedMappableData = { speedMapEnabled: boolean; speedMap?: AnimatableProperty<number> };
-
-  if (layer.data) {
-    const data = layer.data as SpeedMappableData;
-
-    // Enable speed map if not already
-    data.speedMapEnabled = true;
-
-    // Create or update speed map with freeze frame
-    if (!data.speedMap) {
-      data.speedMap = createAnimatableProperty('Speed Map', sourceTime, 'number');
-    }
-
-    // Clear existing keyframes and add freeze frame keyframes
-    data.speedMap.keyframes = [
-      {
-        id: `kf_freeze_start_${Date.now()}`,
-        frame: currentFrame,
-        value: sourceTime,
-        interpolation: 'hold' as const,
-        controlMode: 'smooth' as const,
-        inHandle: { frame: -5, value: 0, enabled: true },
-        outHandle: { frame: 5, value: 0, enabled: true }
-      },
-      {
-        id: `kf_freeze_end_${Date.now() + 1}`,
-        frame: (layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81) - 1,
-        value: sourceTime,
-        interpolation: 'hold' as const,
-        controlMode: 'smooth' as const,
-        inHandle: { frame: -5, value: 0, enabled: true },
-        outHandle: { frame: 5, value: 0, enabled: true }
-      }
-    ];
-
-    data.speedMap.value = sourceTime;
-  }
-
-  markLayerDirty(layerId);
-  store.project.meta.modified = new Date().toISOString();
-
-  storeLogger.debug(`Created freeze frame on ${layer.name} at frame ${currentFrame}`);
-}
-
-/**
- * Split layer at the current playhead position
- * Creates two layers: one ending at playhead, one starting at playhead
- */
-export function splitLayerAtPlayhead(
-  store: LayerStore & { currentFrame: number; fps: number },
-  layerId: string
-): Layer | null {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer) {
-    storeLogger.warn('Layer not found for split:', layerId);
-    return null;
-  }
-
-  const currentFrame = store.currentFrame ?? 0;
-  const startFrame = layer.startFrame ?? 0;
-  const endFrame = layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81;
-
-  // Can't split outside layer bounds
-  if (currentFrame <= startFrame || currentFrame >= endFrame) {
-    storeLogger.warn('Split point must be within layer bounds');
-    return null;
-  }
-
-  store.pushHistory();
-
-  // Create new layer as copy of original
-  const newLayerId = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-  const newLayer: Layer = {
-    ...JSON.parse(JSON.stringify(layer)),
-    id: newLayerId,
-    name: `${layer.name} (split)`
-  };
-
-  // Original layer ends at playhead
-  layer.endFrame = currentFrame;
-
-  // New layer starts at playhead
-  newLayer.startFrame = currentFrame;
-  newLayer.endFrame = endFrame;
-
-  // Adjust source time for video layers (VideoData has startTime and speed properties)
-  if (isLayerOfType(newLayer, 'video') && newLayer.data) {
-    const fps = store.fps ?? 16; // Use composition fps with fallback
-    const originalStartTime = newLayer.data.startTime ?? 0;
-    const speed = newLayer.data.speed ?? 1;
-
-    // Calculate new source start time based on split point
-    const frameOffset = currentFrame - startFrame;
-    const timeOffset = (frameOffset / fps) * speed;
-    newLayer.data.startTime = originalStartTime + timeOffset;
-  }
-  // NestedCompData doesn't have startTime - uses speedMap for time manipulation instead
-
-  // Add new layer after original
-  const layers = store.getActiveCompLayers();
-  const originalIndex = layers.findIndex(l => l.id === layerId);
-  layers.splice(originalIndex + 1, 0, newLayer);
-
-  markLayerDirty(layerId);
-  markLayerDirty(newLayerId);
-  store.project.meta.modified = new Date().toISOString();
-
-  storeLogger.debug(`Split layer ${layer.name} at frame ${currentFrame}`);
-
-  return newLayer;
-}
-
-/**
- * Enable SpeedMap (time remapping) on a video or nested comp layer
- * Auto-creates default 1:1 keyframes when enabling
- *
- * @param store - The layer store
- * @param layerId - Layer to enable SpeedMap on
- * @param fps - Composition FPS (for time calculations)
- */
-export function enableSpeedMap(
-  store: LayerStore & { fps?: number },
-  layerId: string,
-  fps?: number
-): void {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer) {
-    storeLogger.warn('Layer not found for enableSpeedMap:', layerId);
-    return;
-  }
-
-  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
-    storeLogger.warn('SpeedMap only works on video/nestedComp layers');
-    return;
-  }
-
-  store.pushHistory();
-
-  const compositionFps = fps ?? store.fps ?? 30;
-  const layerStartFrame = layer.startFrame ?? 0;
-  const layerEndFrame = layer.endFrame ?? store.getActiveComp()?.settings.frameCount ?? 81;
-
-  // Both VideoData and NestedCompData have speedMapEnabled and speedMap properties
-  type SpeedMappableData = {
-    speedMapEnabled: boolean;
-    speedMap?: AnimatableProperty<number>;
-    timeRemapEnabled?: boolean;
-    timeRemap?: AnimatableProperty<number>;
-  };
-
-  if (layer.data) {
-    const data = layer.data as SpeedMappableData;
-
-    // Enable speed map
-    data.speedMapEnabled = true;
-    data.timeRemapEnabled = true; // Backwards compatibility
-
-    // Auto-create keyframes if speedMap doesn't exist or has no keyframes
-    if (!data.speedMap || data.speedMap.keyframes.length === 0) {
-      // Calculate source time at layer start and end
-      // Default: 1:1 mapping (frame 0 maps to 0 seconds, etc.)
-      const startSourceTime = 0;
-      const layerDuration = layerEndFrame - layerStartFrame;
-      const endSourceTime = layerDuration / compositionFps;
-
-      data.speedMap = createAnimatableProperty('Speed Map', startSourceTime, 'number');
-      data.speedMap.animated = true;
-      data.speedMap.keyframes = [
-        {
-          id: `kf_speedmap_start_${Date.now()}`,
-          frame: layerStartFrame,
-          value: startSourceTime,
-          interpolation: 'linear' as const,
-          controlMode: 'smooth' as const,
-          inHandle: { frame: -5, value: 0, enabled: true },
-          outHandle: { frame: 5, value: 0, enabled: true }
-        },
-        {
-          id: `kf_speedmap_end_${Date.now() + 1}`,
-          frame: layerEndFrame,
-          value: endSourceTime,
-          interpolation: 'linear' as const,
-          controlMode: 'smooth' as const,
-          inHandle: { frame: -5, value: 0, enabled: true },
-          outHandle: { frame: 5, value: 0, enabled: true }
-        }
-      ];
-
-      // Backwards compatibility
-      data.timeRemap = data.speedMap;
-    }
-  }
-
-  markLayerDirty(layerId);
-  store.project.meta.modified = new Date().toISOString();
-
-  storeLogger.debug(`Enabled SpeedMap on layer: ${layer.name}`);
-}
-
-/**
- * Disable SpeedMap (time remapping) on a video or nested comp layer
- * Preserves the speedMap data but disables its effect
- */
-export function disableSpeedMap(
-  store: LayerStore,
-  layerId: string
-): void {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer) {
-    storeLogger.warn('Layer not found for disableSpeedMap:', layerId);
-    return;
-  }
-
-  if (layer.type !== 'video' && layer.type !== 'nestedComp') {
-    return;
-  }
-
-  store.pushHistory();
-
-  type SpeedMappableData = {
-    speedMapEnabled: boolean;
-    timeRemapEnabled?: boolean;
-  };
-
-  if (layer.data) {
-    const data = layer.data as SpeedMappableData;
-    data.speedMapEnabled = false;
-    data.timeRemapEnabled = false; // Backwards compatibility
-  }
-
-  markLayerDirty(layerId);
-  store.project.meta.modified = new Date().toISOString();
-
-  storeLogger.debug(`Disabled SpeedMap on layer: ${layer.name}`);
-}
-
-/**
- * Toggle SpeedMap on/off for a layer
- */
-export function toggleSpeedMap(
-  store: LayerStore & { fps?: number },
-  layerId: string,
-  fps?: number
-): boolean {
-  const layer = store.getActiveCompLayers().find(l => l.id === layerId);
-  if (!layer || (layer.type !== 'video' && layer.type !== 'nestedComp')) {
-    return false;
-  }
-
-  type SpeedMappableData = { speedMapEnabled?: boolean };
-  const data = layer.data as SpeedMappableData | null;
-  const isCurrentlyEnabled = data?.speedMapEnabled ?? false;
-
-  if (isCurrentlyEnabled) {
-    disableSpeedMap(store, layerId);
-    return false;
-  } else {
-    enableSpeedMap(store, layerId, fps);
-    return true;
-  }
-}
+// Time manipulation actions moved to ./layers/layerTimeActions.ts
+// Re-exported at top of file for backwards compatibility
 
 // ============================================================================
 // SEQUENCE LAYERS

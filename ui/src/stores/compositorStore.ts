@@ -82,12 +82,9 @@ import {
 } from '@/services/timelineSnap';
 import { type SegmentationPoint } from '@/services/segmentation';
 import { type CacheStats } from '@/services/frameCache';
-// BUG-065/066 fix: Import clear functions for timeline seek
-import { clearTimeEffectStateOnSeek } from '@/services/effects/timeRenderer';
-import { clearMaskPathCacheOnSeek } from '@/services/effects/maskRenderer';
-
 // Extracted action modules
 import * as layerActions from './actions/layerActions';
+import * as playbackActions from './actions/playbackActions';
 import type { LayerSourceReplacement } from './actions/layerActions';
 import * as keyframeActions from './actions/keyframeActions';
 import * as projectActions from './actions/projectActions';
@@ -985,146 +982,43 @@ export const useCompositorStore = defineStore('compositor', {
     },
 
     // ============================================================
-    // PLAYBACK CONTROLS
+    // PLAYBACK CONTROLS (delegated to playbackActions)
     // ============================================================
 
-    /**
-     * Start playback
-     * NOTE: This only updates UI state (currentFrame).
-     * Actual frame evaluation happens via getFrameState().
-     */
     play(): void {
-      const playback = usePlaybackStore();
-      if (playback.isPlaying) return;
-
-      const comp = this.getActiveComp();
-      if (!comp) return;
-
-      // Delegate to playbackStore with callback to update frame
-      playback.play(
-        comp.settings.fps,
-        comp.settings.frameCount,
-        comp.currentFrame,
-        (frame: number) => { comp.currentFrame = frame; }
-      );
-
-      // Sync state for backwards compatibility
-      this.isPlaying = true;
+      playbackActions.play(this);
     },
 
-    /**
-     * Pause playback
-     */
     pause(): void {
-      const playback = usePlaybackStore();
-      playback.stop();
-      this.isPlaying = false;
+      playbackActions.pause(this);
     },
 
-    /**
-     * Toggle playback state
-     */
     togglePlayback(): void {
-      const playback = usePlaybackStore();
-      if (playback.isPlaying) {
-        this.pause();
-      } else {
-        this.play();
-      }
+      playbackActions.togglePlayback(this);
     },
 
-    /**
-     * Set current frame (UI state only)
-     * Components watching currentFrame should call getFrameState() to evaluate.
-     *
-     * BUG-065/066 fix: Clears temporal effect state when frame changes non-sequentially.
-     * This ensures deterministic playback for time effects (Echo, Posterize Time, etc.)
-     * and motion-aware mask feathering after timeline scrubbing.
-     */
     setFrame(frame: number): void {
-      const comp = this.getActiveComp();
-      if (!comp) return;
-      const newFrame = Math.max(0, Math.min(frame, comp.settings.frameCount - 1));
-
-      // BUG-065/066 fix: Clear temporal state if frame changes by more than 1 (non-sequential)
-      const frameDelta = Math.abs(newFrame - comp.currentFrame);
-      if (frameDelta > 1) {
-        clearTimeEffectStateOnSeek();
-        clearMaskPathCacheOnSeek();
-      }
-
-      comp.currentFrame = newFrame;
+      playbackActions.setFrame(this, frame);
     },
 
-    /**
-     * Advance to next frame (UI state only)
-     */
     nextFrame(): void {
-      const comp = this.getActiveComp();
-      if (!comp) return;
-      if (comp.currentFrame < comp.settings.frameCount - 1) {
-        comp.currentFrame++;
-      }
+      playbackActions.nextFrame(this);
     },
 
-    /**
-     * Go to previous frame (UI state only)
-     */
     prevFrame(): void {
-      const comp = this.getActiveComp();
-      if (!comp) return;
-      if (comp.currentFrame > 0) {
-        comp.currentFrame--;
-      }
+      playbackActions.prevFrame(this);
     },
 
-    /**
-     * Jump to first frame (UI state only)
-     * BUG-065/066 fix: Clears temporal effect state on jump.
-     */
     goToStart(): void {
-      const comp = this.getActiveComp();
-      if (!comp) return;
-      // BUG-065/066 fix: Clear temporal state on jump
-      if (comp.currentFrame !== 0) {
-        clearTimeEffectStateOnSeek();
-        clearMaskPathCacheOnSeek();
-      }
-      comp.currentFrame = 0;
+      playbackActions.goToStart(this);
     },
 
-    /**
-     * Jump to last frame (UI state only)
-     * BUG-065/066 fix: Clears temporal effect state on jump.
-     */
     goToEnd(): void {
-      const comp = this.getActiveComp();
-      if (!comp) return;
-      const lastFrame = comp.settings.frameCount - 1;
-      // BUG-065/066 fix: Clear temporal state on jump
-      if (comp.currentFrame !== lastFrame) {
-        clearTimeEffectStateOnSeek();
-        clearMaskPathCacheOnSeek();
-      }
-      // Frame indices are 0-based, so last frame is frameCount - 1
-      comp.currentFrame = lastFrame;
+      playbackActions.goToEnd(this);
     },
 
-    /**
-     * Jump forward or backward by N frames (Shift+Page Down/Up behavior)
-     * @param n Number of frames to jump (positive = forward, negative = backward)
-     * BUG-065/066 fix: Clears temporal effect state on jump.
-     */
     jumpFrames(n: number): void {
-      const comp = this.getActiveComp();
-      if (!comp) return;
-      const newFrame = Math.max(0, Math.min(comp.currentFrame + n, comp.settings.frameCount - 1));
-      // BUG-065/066 fix: Clear temporal state if jumping more than 1 frame
-      if (Math.abs(n) > 1) {
-        clearTimeEffectStateOnSeek();
-        clearMaskPathCacheOnSeek();
-      }
-      comp.currentFrame = newFrame;
+      playbackActions.jumpFrames(this, n);
     },
 
     /**
@@ -1601,112 +1495,21 @@ export const useCompositorStore = defineStore('compositor', {
      * Create a text layer with proper data structure
      */
     createTextLayer(text: string = 'Text'): Layer {
-      const layer = this.createLayer('text', text.substring(0, 20));
-
-      // Set up text data with full AE parity
-      const textData: TextData = {
-        text,
-        fontFamily: 'Arial',
-        fontSize: 72,
-        fontWeight: '400',
-        fontStyle: 'normal',
-        fill: '#ffffff',
-        stroke: '',
-        strokeWidth: 0,
-
-        // Character Properties (AE Animator defaults)
-        tracking: 0,
-        lineSpacing: 0,
-        lineAnchor: 0,
-        characterOffset: 0,
-        characterValue: 0,
-        blur: { x: 0, y: 0 },
-
-        // Paragraph (legacy aliases)
-        letterSpacing: 0,
-        lineHeight: 1.2,
-        textAlign: 'left',
-
-        // Path Options (Full AE Parity)
-        pathLayerId: null,
-        pathReversed: false,
-        pathPerpendicularToPath: true,
-        pathForceAlignment: false,
-        pathFirstMargin: 0,
-        pathLastMargin: 0,
-        pathOffset: 0,
-        pathAlign: 'left',
-
-        // More Options (AE Advanced)
-        anchorPointGrouping: 'character',
-        groupingAlignment: { x: 0, y: 0 },
-        fillAndStroke: 'fill-over-stroke',
-        interCharacterBlending: 'normal',
-
-        // 3D Text
-        perCharacter3D: false
-      };
-
-      layer.data = textData;
-
-      // --- TEXT PROPERTIES (Timeline) ---
-
-      // Text Section
-      layer.properties.push(createAnimatableProperty('Font Size', 72, 'number', 'Text'));
-      layer.properties.push(createAnimatableProperty('Fill Color', '#ffffff', 'color', 'Text'));
-      layer.properties.push(createAnimatableProperty('Stroke Color', '#000000', 'color', 'Text'));
-      layer.properties.push(createAnimatableProperty('Stroke Width', 0, 'number', 'Text'));
-
-      // Path Options (Full AE Parity)
-      layer.properties.push(createAnimatableProperty('Path Offset', 0, 'number', 'Path Options'));
-      layer.properties.push(createAnimatableProperty('First Margin', 0, 'number', 'Path Options'));
-      layer.properties.push(createAnimatableProperty('Last Margin', 0, 'number', 'Path Options'));
-
-      // More Options
-      // Grouping Alignment must be 'position' type for X/Y
-      layer.properties.push(createAnimatableProperty('Grouping Alignment', { x: 0, y: 0 }, 'position', 'More Options'));
-
-      // Advanced / Animators
-      layer.properties.push(createAnimatableProperty('Tracking', 0, 'number', 'Advanced'));
-      layer.properties.push(createAnimatableProperty('Line Spacing', 0, 'number', 'Advanced'));
-      layer.properties.push(createAnimatableProperty('Character Offset', 0, 'number', 'Advanced'));
-      layer.properties.push(createAnimatableProperty('Character Value', 0, 'number', 'Advanced'));
-      layer.properties.push(createAnimatableProperty('Blur', { x: 0, y: 0 }, 'position', 'Advanced')); // 2D Blur
-
-      return layer;
+      return layerActions.createTextLayer(this, text);
     },
 
     /**
      * Create a spline layer with proper data structure
      */
     createSplineLayer(): Layer {
-      const layer = this.createLayer('spline');
-
-      // Set up spline data
-      const splineData: SplineData = {
-        pathData: '',
-        controlPoints: [],
-        closed: false,
-        stroke: '#00ff00',
-        strokeWidth: 2,
-        fill: ''
-      };
-
-      layer.data = splineData;
-
-      return layer;
+      return layerActions.createSplineLayer(this);
     },
 
     /**
      * Create a shape layer with proper data structure
      */
     createShapeLayer(name: string = 'Shape Layer'): Layer {
-      const layer = this.createLayer('shape', name);
-
-      // Shape layer data is already set by createLayer switch
-      // Add any additional default properties here if needed
-
-      return layer;
+      return layerActions.createShapeLayer(this, name);
     },
 
     /**
@@ -2556,32 +2359,13 @@ export const useCompositorStore = defineStore('compositor', {
      * @param layerId Optional layer ID. If not provided, uses selected layers or all layers.
      */
     jumpToNextKeyframe(layerId?: string): void {
-      const currentFrame = this.currentFrame;
-      let allFrames: number[] = [];
-
-      if (layerId) {
-        // Single layer
-        allFrames = this.getAllKeyframeFrames(layerId);
-      } else {
-        // Use selected layers, or all layers if none selected
-        const selectionStore = useSelectionStore();
-        const layerIds = selectionStore.selectedLayerIds.length > 0
-          ? selectionStore.selectedLayerIds
-          : this.getActiveCompLayers().map(l => l.id);
-
-        // Collect all keyframe frames from all relevant layers
-        const frameSet = new Set<number>();
-        for (const lid of layerIds) {
-          for (const frame of this.getAllKeyframeFrames(lid)) {
-            frameSet.add(frame);
-          }
-        }
-        allFrames = Array.from(frameSet).sort((a, b) => a - b);
-      }
-
-      // Find the next frame after current
-      const nextFrame = allFrames.find(f => f > currentFrame);
-      if (nextFrame !== undefined) {
+      const layerIds = layerId
+        ? [layerId]
+        : useSelectionStore().selectedLayerIds.length > 0
+          ? useSelectionStore().selectedLayerIds
+          : [];
+      const nextFrame = keyframeActions.findNextKeyframeFrame(this, this.currentFrame, layerIds);
+      if (nextFrame !== null) {
         this.setFrame(nextFrame);
       }
     },
@@ -2591,33 +2375,14 @@ export const useCompositorStore = defineStore('compositor', {
      * @param layerId Optional layer ID. If not provided, uses selected layers or all layers.
      */
     jumpToPrevKeyframe(layerId?: string): void {
-      const currentFrame = this.currentFrame;
-      let allFrames: number[] = [];
-
-      if (layerId) {
-        // Single layer
-        allFrames = this.getAllKeyframeFrames(layerId);
-      } else {
-        // Use selected layers, or all layers if none selected
-        const selectionStore = useSelectionStore();
-        const layerIds = selectionStore.selectedLayerIds.length > 0
-          ? selectionStore.selectedLayerIds
-          : this.getActiveCompLayers().map(l => l.id);
-
-        // Collect all keyframe frames from all relevant layers
-        const frameSet = new Set<number>();
-        for (const lid of layerIds) {
-          for (const frame of this.getAllKeyframeFrames(lid)) {
-            frameSet.add(frame);
-          }
-        }
-        allFrames = Array.from(frameSet).sort((a, b) => a - b);
-      }
-
-      // Find the previous frame before current
-      const prevFrames = allFrames.filter(f => f < currentFrame);
-      if (prevFrames.length > 0) {
-        this.setFrame(prevFrames[prevFrames.length - 1]);
+      const layerIds = layerId
+        ? [layerId]
+        : useSelectionStore().selectedLayerIds.length > 0
+          ? useSelectionStore().selectedLayerIds
+          : [];
+      const prevFrame = keyframeActions.findPrevKeyframeFrame(this, this.currentFrame, layerIds);
+      if (prevFrame !== null) {
+        this.setFrame(prevFrame);
       }
     },
 
