@@ -187,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, watch, type CSSProperties } from 'vue';
 import {
   onionSkinning,
   DEFAULT_ONION_SKIN_CONFIG,
@@ -209,7 +209,8 @@ const selectedPreset = ref('');
 const config = reactive<OnionSkinConfig>({ ...DEFAULT_ONION_SKIN_CONFIG });
 
 // Dropdown position
-const dropdownStyle = computed(() => {
+// Explicitly typed to satisfy Vue's style binding requirements
+const dropdownStyle = computed((): CSSProperties => {
   if (!containerRef.value) return {};
 
   const rect = containerRef.value.getBoundingClientRect();

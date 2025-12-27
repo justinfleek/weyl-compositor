@@ -6,7 +6,7 @@
 
       <div class="row">
         <label>Mode</label>
-        <select :value="normalData.visualizationMode" @change="updateData('visualizationMode', ($event.target as HTMLSelectElement).value)">
+        <select :value="normalData.visualizationMode" @change="updateData('visualizationMode', ($event.target as HTMLSelectElement).value as NormalLayerData['visualizationMode'])">
           <option value="rgb">RGB (Raw Normals)</option>
           <option value="hemisphere">Hemisphere</option>
           <option value="lit">Lit Preview</option>
@@ -15,7 +15,7 @@
 
       <div class="row">
         <label>Format</label>
-        <select :value="normalData.format" @change="updateData('format', ($event.target as HTMLSelectElement).value)">
+        <select :value="normalData.format" @change="updateData('format', ($event.target as HTMLSelectElement).value as NormalLayerData['format'])">
           <option value="opengl">OpenGL (Y-up)</option>
           <option value="directx">DirectX (Y-down)</option>
         </select>

@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Blend Mode</label>
-      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import type { SatinStyle, SatinUpdate, RGBA } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 defineProps<{
   style: SatinStyle;
@@ -62,7 +63,9 @@ const emit = defineEmits<{
   (e: 'update', updates: SatinUpdate): void;
 }>();
 
-const blendModes = ['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'hard-light', 'linear-burn'];
+// Typed array ensures only valid BlendMode values can be added here
+// The cast in the template is safe because dropdown options come from this validated array
+const blendModes: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'hard-light', 'linear-burn'];
 
 function formatMode(mode: string): string {
   return mode.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

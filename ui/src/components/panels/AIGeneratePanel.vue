@@ -59,7 +59,7 @@
             @change="handleFileSelect"
             style="display: none"
           />
-          <button class="upload-btn" @click="$refs.fileInput?.click()">
+          <button class="upload-btn" @click="fileInput?.click()">
             Select Image...
           </button>
           <span v-if="uploadedFileName" class="file-name">{{ uploadedFileName }}</span>
@@ -218,6 +218,7 @@ const selectionStore = useSelectionStore();
 const sourceType = ref<'layer' | 'canvas' | 'file'>('layer');
 const uploadedFile = ref<File | null>(null);
 const uploadedFileName = ref<string>('');
+const fileInput = ref<HTMLInputElement | null>(null);
 
 // Generation type
 const selectedType = ref<'depth' | 'normal' | 'segment'>('depth');
@@ -253,7 +254,7 @@ const generationTypes = [
   { id: 'depth', label: 'Depth', icon: '⬛', description: 'Estimate depth from image' },
   { id: 'normal', label: 'Normal', icon: '🔮', description: 'Generate normal map' },
   { id: 'segment', label: 'Segment', icon: '✂️', description: 'Segment objects' }
-];
+] as const;
 
 // Computed
 const selectedLayerName = computed(() => {
@@ -372,7 +373,7 @@ async function generate() {
         });
         break;
       case 'segment':
-        result = await aiGeneration.segmentImage(sourceImage, {
+        result = await aiGeneration.segment(sourceImage, {
           model: selectedModel.value as 'segment-anything' | 'segment-anything-2'
         });
         break;

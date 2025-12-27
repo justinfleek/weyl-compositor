@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Blend Mode</label>
-      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -24,17 +24,18 @@
 </template>
 
 <script setup lang="ts">
-import type { ColorOverlayStyle, RGBA } from '@/types/layerStyles';
+import type { ColorOverlayStyle, ColorOverlayUpdate, RGBA } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 defineProps<{
   style: ColorOverlayStyle;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update', updates: Partial<ColorOverlayStyle>): void;
+  (e: 'update', updates: ColorOverlayUpdate): void;
 }>();
 
-const blendModes = [
+const blendModes: BlendMode[] = [
   'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
   'color-dodge', 'color-burn', 'hard-light', 'soft-light',
   'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity'

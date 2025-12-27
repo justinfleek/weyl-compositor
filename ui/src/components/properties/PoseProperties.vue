@@ -9,10 +9,8 @@
       <div v-if="expandedSections.has('skeleton')" class="section-content">
         <div class="property-row">
           <label>Format</label>
-          <select :value="poseData.format" @change="updatePoseData('format', ($event.target as HTMLSelectElement).value)">
-            <option value="coco18">COCO 18-point</option>
-            <option value="body25">Body 25-point</option>
-            <option value="custom">Custom</option>
+          <select :value="poseData.format" @change="updatePoseData('format', ($event.target as HTMLSelectElement).value as PoseFormat)">
+            <option v-for="fmt in poseFormats" :key="fmt" :value="fmt">{{ formatPoseFormat(fmt) }}</option>
           </select>
         </div>
         <div class="property-row">
@@ -240,7 +238,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
-import type { PoseLayerData, PoseKeypoint } from '@/types/project';
+import type { PoseLayerData, PoseKeypoint, PoseFormat } from '@/types/project';
 
 const props = defineProps<{
   layerId: string;
@@ -261,6 +259,9 @@ const keypointNames = [
   'L.Hip', 'L.Knee', 'L.Ankle',
   'R.Eye', 'L.Eye', 'R.Ear', 'L.Ear'
 ];
+
+// Typed array validates pose formats at compile time
+const poseFormats: PoseFormat[] = ['coco18', 'body25', 'custom'];
 
 // Expanded sections
 const expandedSections = reactive(new Set<string>(['skeleton', 'display', 'colors']));
@@ -306,6 +307,17 @@ const selectedKeypoint = computed(() => {
 function updatePoseData<K extends keyof PoseLayerData>(key: K, value: PoseLayerData[K]) {
   store.updateLayerData(props.layerId, { [key]: value });
   emit('update', { [key]: value });
+}
+
+// Format pose format for display
+const poseFormatLabels: Record<PoseFormat, string> = {
+  coco18: 'COCO 18-point',
+  body25: 'Body 25-point',
+  custom: 'Custom'
+};
+
+function formatPoseFormat(fmt: PoseFormat): string {
+  return poseFormatLabels[fmt];
 }
 
 // Update selected keypoint position

@@ -355,7 +355,7 @@
           <label v-for="g in [1,2,3,4]" :key="g">
             <input
               type="checkbox"
-              :checked="collision.mask & (1 << (g-1))"
+              :checked="!!(collision.mask & (1 << (g-1)))"
               @change="toggleCollisionMask(g)"
             />
             Group {{ g }}

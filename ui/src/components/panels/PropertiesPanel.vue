@@ -17,7 +17,7 @@
         <div v-if="expandedSections.includes('transform')" class="section-content">
           <!-- Solo Mode Indicator -->
           <div v-if="soloModeActive" class="solo-indicator">
-            Showing: {{ soloedProperty === 'animated' ? 'Animated Properties' : soloedProperty?.charAt(0).toUpperCase() + soloedProperty?.slice(1) }}
+            Showing: {{ soloedProperty === 'animated' ? 'Animated Properties' : (soloedProperty ? soloedProperty.charAt(0).toUpperCase() + soloedProperty.slice(1) : '') }}
             <span class="solo-hint">(Press same key to show all)</span>
           </div>
 

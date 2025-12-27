@@ -29,7 +29,7 @@ import type {
   PhysicsLayerData,
   PhysicsVec2,
 } from '@/types/physics';
-import type { Layer } from '@/types/project';
+import type { Layer, Keyframe } from '@/types/project';
 
 // ============================================================================
 // STORE INTERFACE
@@ -54,9 +54,10 @@ export interface PhysicsStore {
   };
 
   // Layer access
-  getLayerById(id: string): Layer | undefined;
+  getLayerById(id: string): Layer | null | undefined;
   updateLayerData(layerId: string, data: Record<string, any>): void;
-  addKeyframe<T>(layerId: string, property: string, frame: number, value: T): void;
+  // Signature must match compositorStore.addKeyframe
+  addKeyframe<T>(layerId: string, propertyName: string, value: T, atFrame?: number): Keyframe<T> | null;
 }
 
 // ============================================================================
@@ -485,11 +486,11 @@ export async function bakePhysicsToKeyframes(
 
   // Apply keyframes to layer (store should handle the Keyframe type conversion)
   for (const kf of positionKeyframes) {
-    store.addKeyframe(layerId, 'transform.position', kf.frame, kf.value);
+    store.addKeyframe(layerId, 'transform.position', kf.value, kf.frame);
   }
 
   for (const kf of rotationKeyframes) {
-    store.addKeyframe(layerId, 'transform.rotation', kf.frame, kf.value);
+    store.addKeyframe(layerId, 'transform.rotation', kf.value, kf.frame);
   }
 
   // Disable physics after baking

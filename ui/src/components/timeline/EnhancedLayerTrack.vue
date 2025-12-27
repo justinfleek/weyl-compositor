@@ -739,7 +739,7 @@ async function convertToSplines() {
     const result = await convertTextLayerToSplines(store, props.layer.id, {
       perCharacter: true,
       groupCharacters: true,
-      deleteOriginal: false,
+      keepOriginal: true,
     });
 
     if (result) {

@@ -14,7 +14,7 @@ import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 /** Environment map configuration */
 export interface EnvironmentMapConfig {
   enabled: boolean;
-  url?: string;
+  url?: string | null;       // null when cleared, undefined when not set
   intensity: number;
   rotation: number;          // Y-axis rotation in degrees
   backgroundBlur: number;    // 0-1, blur for background

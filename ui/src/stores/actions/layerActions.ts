@@ -215,10 +215,10 @@ export function deleteLayer(
       layer.matteType = undefined;
     }
 
-    // Clear followPath reference
+    // Clear followPath reference but preserve constraint settings (keyframes, offset, etc.)
     if (layer.followPath?.pathLayerId === layerId) {
       layer.followPath.enabled = false;
-      layer.followPath.pathLayerId = undefined;
+      layer.followPath.pathLayerId = '';
     }
 
     // Clear text layer path reference

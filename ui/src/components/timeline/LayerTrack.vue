@@ -94,10 +94,10 @@ const trackAreaRef = ref<HTMLDivElement | null>(null);
 const isSelected = computed(() => store.selectedLayerIds.includes(props.layer.id));
 const selectedKeyframeIds = computed(() => store.selectedKeyframeIds);
 
-// Calculate duration bar style
+// Calculate duration bar style using startFrame/endFrame (primary properties)
 const durationBarStyle = computed(() => {
-  const inPercent = (props.layer.inPoint / props.frameCount) * 100;
-  const outPercent = ((props.layer.outPoint + 1) / props.frameCount) * 100;
+  const inPercent = (props.layer.startFrame / props.frameCount) * 100;
+  const outPercent = ((props.layer.endFrame + 1) / props.frameCount) * 100;
   const width = outPercent - inPercent;
 
   return {
@@ -197,11 +197,12 @@ function handleTrim(event: MouseEvent) {
   const frame = Math.round(progress * props.frameCount);
 
   if (trimType === 'in') {
-    const newInPoint = Math.min(frame, props.layer.outPoint - 1);
-    emit('updateLayer', props.layer.id, { inPoint: Math.max(0, newInPoint) });
+    // Use startFrame/endFrame (primary properties)
+    const newStartFrame = Math.min(frame, props.layer.endFrame - 1);
+    emit('updateLayer', props.layer.id, { startFrame: Math.max(0, newStartFrame) });
   } else {
-    const newOutPoint = Math.max(frame, props.layer.inPoint + 1);
-    emit('updateLayer', props.layer.id, { outPoint: Math.min(props.frameCount - 1, newOutPoint) });
+    const newEndFrame = Math.max(frame, props.layer.startFrame + 1);
+    emit('updateLayer', props.layer.id, { endFrame: Math.min(props.frameCount - 1, newEndFrame) });
   }
 }
 

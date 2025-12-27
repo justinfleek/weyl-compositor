@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Blend Mode</label>
-      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -22,7 +22,7 @@
 
     <div class="property-row">
       <label>Technique</label>
-      <select :value="style.technique" @change="emit('update', { technique: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.technique" @change="emit('update', { technique: ($event.target as HTMLSelectElement).value as GlowTechnique })">
         <option value="softer">Softer</option>
         <option value="precise">Precise</option>
       </select>
@@ -66,7 +66,8 @@
 </template>
 
 <script setup lang="ts">
-import type { OuterGlowStyle, OuterGlowUpdate, RGBA } from '@/types/layerStyles';
+import type { OuterGlowStyle, OuterGlowUpdate, RGBA, GlowTechnique } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 defineProps<{
   style: OuterGlowStyle;
@@ -76,7 +77,7 @@ const emit = defineEmits<{
   (e: 'update', updates: OuterGlowUpdate): void;
 }>();
 
-const blendModes = ['normal', 'screen', 'lighten', 'color-dodge', 'linear-dodge', 'overlay'];
+const blendModes: BlendMode[] = ['normal', 'screen', 'lighten', 'color-dodge', 'linear-dodge', 'overlay'];
 
 function formatMode(mode: string): string {
   return mode.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

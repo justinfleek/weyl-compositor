@@ -216,28 +216,92 @@
 
         <!-- Sprite Import Dialog -->
         <div v-if="showSpriteImport" class="sprite-import-dialog">
-          <h4>Import Sprite Sheet</h4>
+          <h4>Import Sprite / Sprite Sheet</h4>
+
+          <!-- Import Mode Toggle -->
+          <div class="import-mode-toggle">
+            <button
+              :class="{ active: spriteImportMode === 'sprite' }"
+              @click="spriteImportMode = 'sprite'"
+            >
+              Single Sprite
+            </button>
+            <button
+              :class="{ active: spriteImportMode === 'spritesheet' }"
+              @click="spriteImportMode = 'spritesheet'"
+            >
+              Sprite Sheet
+            </button>
+          </div>
+
           <AssetUploader
             accept="image/*"
-            asset-type="sprite"
+            :asset-type="spriteImportMode"
             @upload="onSpriteFileSelect"
             button-text="Select Image"
           />
+
           <div v-if="pendingSpriteFile" class="sprite-config">
-            <label>
-              Columns
-              <input v-model.number="spriteColumns" type="number" min="1" />
-            </label>
-            <label>
-              Rows
-              <input v-model.number="spriteRows" type="number" min="1" />
-            </label>
-            <label>
-              Frame Rate
-              <input v-model.number="spriteFrameRate" type="number" min="1" />
-            </label>
+            <!-- Image Preview -->
+            <div class="sprite-preview-container">
+              <img v-if="spritePreview" :src="spritePreview" class="sprite-preview-image" />
+              <div v-if="spriteImageDimensions" class="sprite-dimensions">
+                {{ spriteImageDimensions.width }} x {{ spriteImageDimensions.height }}px
+              </div>
+            </div>
+
+            <!-- Grid Settings (spritesheet mode only) -->
+            <div v-if="spriteImportMode === 'spritesheet'" class="grid-settings">
+              <label>
+                Columns
+                <input v-model.number="spriteColumns" type="number" min="1" />
+              </label>
+              <label>
+                Rows
+                <input v-model.number="spriteRows" type="number" min="1" />
+              </label>
+              <label>
+                Frame Rate
+                <input v-model.number="spriteFrameRate" type="number" min="1" />
+              </label>
+            </div>
+
+            <!-- Frame Preview Info (spritesheet mode only) -->
+            <div v-if="spriteImportMode === 'spritesheet' && framePreviewInfo" class="frame-preview-info">
+              <div class="frame-info-row">
+                <span class="label">Frame Size:</span>
+                <span class="value">{{ framePreviewInfo.frameWidth }} x {{ framePreviewInfo.frameHeight }}px</span>
+              </div>
+              <div class="frame-info-row">
+                <span class="label">Total Frames:</span>
+                <span class="value">{{ framePreviewInfo.totalFrames }}</span>
+              </div>
+              <div v-if="!framePreviewInfo.framesAlign" class="frame-warning">
+                Image doesn't divide evenly into grid
+              </div>
+            </div>
+
+            <!-- Validation Issues -->
+            <div v-if="validationIssues.length > 0" class="validation-issues">
+              <div
+                v-for="(issue, i) in validationIssues"
+                :key="i"
+                :class="['validation-issue', issue.severity]"
+              >
+                <span class="issue-icon">{{ issue.severity === 'error' ? '✕' : '⚠' }}</span>
+                <span class="issue-message">{{ issue.message }}</span>
+              </div>
+            </div>
+
             <div class="dialog-actions">
-              <button @click="importSpriteSheet" class="confirm-btn">Import</button>
+              <button
+                @click="performImport"
+                class="confirm-btn"
+                :disabled="hasBlockingErrors"
+                :title="hasBlockingErrors ? 'Fix errors before importing' : ''"
+              >
+                Import
+              </button>
               <button @click="cancelSpriteImport" class="cancel-btn">Cancel</button>
             </div>
           </div>
@@ -276,6 +340,15 @@ import MaterialEditor from '@/components/materials/MaterialEditor.vue';
 import AssetUploader from '@/components/materials/AssetUploader.vue';
 import EnvironmentSettings from '@/components/materials/EnvironmentSettings.vue';
 import type { PBRMaterialConfig } from '@/services/materialSystem';
+import {
+  validateLoadedSprite,
+  validateLoadedSpritesheet,
+  loadImageFromFile,
+  type SpriteValidationIssue,
+  type SpriteMetadata,
+  type SpritesheetMetadata,
+} from '@/services/spriteValidation';
+import type { AssetType } from '@/types/assets';
 
 const assetStore = useAssetStore();
 const compositorStore = useCompositorStore();
@@ -321,6 +394,20 @@ const spriteColumns = ref(4);
 const spriteRows = ref(4);
 const spriteFrameRate = ref(24);
 
+// Enhanced sprite import state
+const spriteImportMode = ref<AssetType>('spritesheet');
+const spritePreview = ref<string | null>(null);
+const spriteImage = ref<HTMLImageElement | null>(null);
+const spriteImageDimensions = ref<{ width: number; height: number } | null>(null);
+const framePreviewInfo = ref<{
+  frameWidth: number;
+  frameHeight: number;
+  totalFrames: number;
+  framesAlign: boolean;
+} | null>(null);
+const validationIssues = ref<SpriteValidationIssue[]>([]);
+const hasBlockingErrors = ref(false);
+
 // ========================================================================
 // MATERIALS
 // ========================================================================
@@ -359,7 +446,7 @@ function onTextureUpload(textureType: string, file: File) {
 function getMaterialPreviewStyle(mat: typeof materials.value[0]) {
   return {
     backgroundColor: mat.config.color || '#808080',
-    backgroundImage: mat.config.albedoMap ? `url(${mat.config.albedoMap})` : 'none',
+    backgroundImage: mat.config.maps?.albedo ? `url(${mat.config.maps.albedo})` : 'none',
     backgroundSize: 'cover',
   };
 }
@@ -439,26 +526,144 @@ function useAsEmitterShape() {
 // SPRITE SHEETS
 // ========================================================================
 
-function onSpriteFileSelect(file: File) {
+async function onSpriteFileSelect(file: File) {
   pendingSpriteFile.value = file;
+
+  // Create preview URL
+  if (spritePreview.value) {
+    URL.revokeObjectURL(spritePreview.value);
+  }
+  spritePreview.value = URL.createObjectURL(file);
+
+  // Load the image to get dimensions
+  try {
+    const img = await loadImageFromFile(file);
+    spriteImage.value = img;
+    spriteImageDimensions.value = { width: img.width, height: img.height };
+
+    // Run initial validation
+    runValidation();
+  } catch (error) {
+    console.error('Failed to load sprite image:', error);
+    validationIssues.value = [{
+      severity: 'error',
+      code: 'LOAD_ERROR',
+      message: 'Failed to load image file',
+    }];
+    hasBlockingErrors.value = true;
+  }
+}
+
+function runValidation() {
+  if (!spriteImage.value || !pendingSpriteFile.value) return;
+
+  const filename = pendingSpriteFile.value.name;
+
+  if (spriteImportMode.value === 'sprite') {
+    // Single sprite validation (1x1 grid)
+    const result = validateLoadedSprite(spriteImage.value, filename);
+    validationIssues.value = result.issues;
+    hasBlockingErrors.value = !result.canImport;
+    framePreviewInfo.value = null;
+  } else {
+    // Spritesheet validation
+    const result = validateLoadedSpritesheet(
+      spriteImage.value,
+      filename,
+      spriteColumns.value,
+      spriteRows.value
+    );
+    validationIssues.value = result.issues;
+    hasBlockingErrors.value = !result.canImport;
+
+    if (result.metadata) {
+      framePreviewInfo.value = {
+        frameWidth: result.metadata.frameWidth,
+        frameHeight: result.metadata.frameHeight,
+        totalFrames: result.metadata.totalFrames,
+        framesAlign: result.metadata.framesAlign,
+      };
+    }
+  }
+}
+
+function updateFramePreview() {
+  if (!spriteImageDimensions.value) return;
+
+  const cols = spriteColumns.value || 1;
+  const rows = spriteRows.value || 1;
+  const frameWidth = spriteImageDimensions.value.width / cols;
+  const frameHeight = spriteImageDimensions.value.height / rows;
+  const framesAlign = Number.isInteger(frameWidth) && Number.isInteger(frameHeight);
+
+  framePreviewInfo.value = {
+    frameWidth: Math.floor(frameWidth),
+    frameHeight: Math.floor(frameHeight),
+    totalFrames: cols * rows,
+    framesAlign,
+  };
+
+  // Re-run validation when grid changes
+  runValidation();
+}
+
+// Watch for grid changes to update preview
+watch([spriteColumns, spriteRows], () => {
+  if (spriteImportMode.value === 'spritesheet' && spriteImage.value) {
+    updateFramePreview();
+  }
+});
+
+// Watch for mode changes to re-run validation
+watch(spriteImportMode, () => {
+  if (spriteImage.value) {
+    runValidation();
+  }
+});
+
+async function performImport() {
+  if (!pendingSpriteFile.value || hasBlockingErrors.value) return;
+
+  if (spriteImportMode.value === 'sprite') {
+    // Import as single sprite
+    await assetStore.importSprite(pendingSpriteFile.value, {
+      name: pendingSpriteFile.value.name.replace(/\.[^.]+$/, ''),
+    });
+  } else {
+    // Import as spritesheet with validation
+    await assetStore.importSpriteSheetValidated(
+      pendingSpriteFile.value,
+      spriteColumns.value,
+      spriteRows.value,
+      { frameRate: spriteFrameRate.value }
+    );
+  }
+
+  cancelSpriteImport();
 }
 
 async function importSpriteSheet() {
-  if (!pendingSpriteFile.value) return;
-
-  await assetStore.importSpriteSheet(
-    pendingSpriteFile.value,
-    spriteColumns.value,
-    spriteRows.value,
-    { frameRate: spriteFrameRate.value }
-  );
-
-  cancelSpriteImport();
+  // Legacy function - redirect to performImport
+  await performImport();
 }
 
 function cancelSpriteImport() {
   showSpriteImport.value = false;
   pendingSpriteFile.value = null;
+
+  // Cleanup preview URL
+  if (spritePreview.value) {
+    URL.revokeObjectURL(spritePreview.value);
+    spritePreview.value = null;
+  }
+
+  // Reset state
+  spriteImage.value = null;
+  spriteImageDimensions.value = null;
+  framePreviewInfo.value = null;
+  validationIssues.value = [];
+  hasBlockingErrors.value = false;
+  spriteImportMode.value = 'spritesheet';
   spriteColumns.value = 4;
   spriteRows.value = 4;
   spriteFrameRate.value = 24;
@@ -905,6 +1110,144 @@ const emit = defineEmits<{
   color: #e0e0e0;
   border-radius: 4px;
   cursor: pointer;
+}
+
+/* Import Mode Toggle */
+.import-mode-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.import-mode-toggle button {
+  flex: 1;
+  padding: 8px;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #888;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.import-mode-toggle button:hover {
+  background: #333;
+  color: #e0e0e0;
+}
+
+.import-mode-toggle button.active {
+  background: #4a90d9;
+  border-color: #4a90d9;
+  color: white;
+}
+
+/* Sprite Preview */
+.sprite-preview-container {
+  margin: 12px 0;
+  text-align: center;
+}
+
+.sprite-preview-image {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.sprite-dimensions {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #888;
+}
+
+/* Grid Settings */
+.grid-settings {
+  display: flex;
+  gap: 8px;
+}
+
+.grid-settings label {
+  flex: 1;
+}
+
+/* Frame Preview Info */
+.frame-preview-info {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 12px 0;
+}
+
+.frame-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.frame-info-row .label {
+  color: #888;
+  font-size: 12px;
+}
+
+.frame-info-row .value {
+  color: #e0e0e0;
+  font-size: 12px;
+}
+
+.frame-warning {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 170, 0, 0.15);
+  border: 1px solid #996600;
+  border-radius: 3px;
+  color: #ffaa00;
+  font-size: 11px;
+}
+
+/* Validation Issues */
+.validation-issues {
+  margin: 12px 0;
+}
+
+.validation-issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.validation-issue.error {
+  background: rgba(220, 53, 69, 0.15);
+  border: 1px solid #dc3545;
+  color: #ff6b6b;
+}
+
+.validation-issue.warning {
+  background: rgba(255, 170, 0, 0.15);
+  border: 1px solid #996600;
+  color: #ffaa00;
+}
+
+.issue-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.issue-message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.confirm-btn:disabled {
+  background: #555;
+  color: #888;
+  cursor: not-allowed;
 }
 
 /* Loading Overlay */

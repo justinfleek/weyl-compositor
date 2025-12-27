@@ -165,7 +165,14 @@ export interface TextExpressionSelector {
   basedOn: 'characters' | 'characters_excluding_spaces' | 'words' | 'lines';
 }
 
+// Union type for text animator property values
+type TextAnimatorValue = number | string | { x: number; y: number };
+
 export interface TextAnimatorProperties {
+  // Index signature for dynamic property access
+  // Uses union type instead of 'any' for better type safety
+  [key: string]: AnimatableProperty<TextAnimatorValue> | undefined;
+
   // Transform properties
   position?: AnimatableProperty<{ x: number; y: number }>;
   anchorPoint?: AnimatableProperty<{ x: number; y: number }>;

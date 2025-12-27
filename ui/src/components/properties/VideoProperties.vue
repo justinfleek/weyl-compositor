@@ -356,6 +356,8 @@ function toggleTimewarp(e: Event) {
   // Initialize timewarpSpeed property if enabling and not set
   if (target.checked && !videoData.value.timewarpSpeed) {
     updates.timewarpSpeed = {
+      id: `timewarpSpeed_${Date.now()}`,
+      name: 'Timewarp Speed',
       value: 100,
       type: 'number',
       animated: false,

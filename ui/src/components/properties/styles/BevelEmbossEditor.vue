@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Style</label>
-      <select :value="style.style" @change="emit('update', { style: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.style" @change="emit('update', { style: ($event.target as HTMLSelectElement).value as BevelStyle })">
         <option value="outer-bevel">Outer Bevel</option>
         <option value="inner-bevel">Inner Bevel</option>
         <option value="emboss">Emboss</option>
@@ -13,7 +13,7 @@
 
     <div class="property-row">
       <label>Technique</label>
-      <select :value="style.technique" @change="emit('update', { technique: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.technique" @change="emit('update', { technique: ($event.target as HTMLSelectElement).value as BevelTechnique })">
         <option value="smooth">Smooth</option>
         <option value="chisel-hard">Chisel Hard</option>
         <option value="chisel-soft">Chisel Soft</option>
@@ -29,7 +29,7 @@
 
     <div class="property-row">
       <label>Direction</label>
-      <select :value="style.direction" @change="emit('update', { direction: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.direction" @change="emit('update', { direction: ($event.target as HTMLSelectElement).value as BevelDirection })">
         <option value="up">Up</option>
         <option value="down">Down</option>
       </select>
@@ -77,7 +77,7 @@
 
     <div class="property-row">
       <label>Mode</label>
-      <select :value="style.highlightMode" @change="emit('update', { highlightMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.highlightMode" @change="emit('update', { highlightMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -99,7 +99,7 @@
 
     <div class="property-row">
       <label>Mode</label>
-      <select :value="style.shadowMode" @change="emit('update', { shadowMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.shadowMode" @change="emit('update', { shadowMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -120,7 +120,8 @@
 </template>
 
 <script setup lang="ts">
-import type { BevelEmbossStyle, BevelEmbossUpdate, RGBA } from '@/types/layerStyles';
+import type { BevelEmbossStyle, BevelEmbossUpdate, RGBA, BevelStyle, BevelTechnique, BevelDirection, GlowTechnique } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 defineProps<{
   style: BevelEmbossStyle;
@@ -130,7 +131,7 @@ const emit = defineEmits<{
   (e: 'update', updates: BevelEmbossUpdate): void;
 }>();
 
-const blendModes = ['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'hard-light'];
+const blendModes: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'hard-light'];
 
 function formatMode(mode: string): string {
   return mode.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

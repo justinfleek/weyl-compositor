@@ -38,14 +38,14 @@
         <label>Repeat</label>
         <div class="repeat-inputs">
           <ScrubableNumber
-            :modelValue="repeatX"
+            :modelValue="repeatX ?? 1"
             @update:modelValue="$emit('update:repeatX', $event)"
             :min="0.01"
             :step="0.1"
           />
           <span class="separator">x</span>
           <ScrubableNumber
-            :modelValue="repeatY"
+            :modelValue="repeatY ?? 1"
             @update:modelValue="$emit('update:repeatY', $event)"
             :min="0.01"
             :step="0.1"
@@ -57,13 +57,13 @@
         <label>Offset</label>
         <div class="offset-inputs">
           <ScrubableNumber
-            :modelValue="offsetX"
+            :modelValue="offsetX ?? 0"
             @update:modelValue="$emit('update:offsetX', $event)"
             :step="0.01"
           />
           <span class="separator">,</span>
           <ScrubableNumber
-            :modelValue="offsetY"
+            :modelValue="offsetY ?? 0"
             @update:modelValue="$emit('update:offsetY', $event)"
             :step="0.01"
           />
@@ -73,7 +73,7 @@
       <div class="setting-row" v-if="mapType === 'normal'">
         <label>Strength</label>
         <SliderInput
-          :modelValue="normalScale"
+          :modelValue="normalScale ?? 1"
           @update:modelValue="$emit('update:normalScale', $event)"
           :min="0"
           :max="2"

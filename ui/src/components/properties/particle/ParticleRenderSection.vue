@@ -74,7 +74,7 @@
           @change="update('spriteRows', Number(($event.target as HTMLInputElement).value))"
         />
       </div>
-      <div v-if="renderOptions.spriteEnabled && (renderOptions.spriteColumns > 1 || renderOptions.spriteRows > 1)" class="property-row checkbox-row">
+      <div v-if="renderOptions.spriteEnabled && ((renderOptions.spriteColumns ?? 1) > 1 || (renderOptions.spriteRows ?? 1) > 1)" class="property-row checkbox-row">
         <label title="Animate through sprite sheet frames over time.">
           <input
             type="checkbox"
@@ -96,7 +96,7 @@
         />
         <span class="value-display">{{ renderOptions.spriteFrameRate }} fps</span>
       </div>
-      <div v-if="renderOptions.spriteEnabled && (renderOptions.spriteColumns > 1 || renderOptions.spriteRows > 1)" class="property-row checkbox-row">
+      <div v-if="renderOptions.spriteEnabled && ((renderOptions.spriteColumns ?? 1) > 1 || (renderOptions.spriteRows ?? 1) > 1)" class="property-row checkbox-row">
         <label title="Each particle starts at a random frame in the sprite sheet.">
           <input
             type="checkbox"

@@ -17,7 +17,7 @@
 
       <div class="row">
         <label>Icon Shape</label>
-        <select :value="controlData.iconShape" @change="updateData('iconShape', ($event.target as HTMLSelectElement).value)">
+        <select :value="controlData.iconShape" @change="updateData('iconShape', ($event.target as HTMLSelectElement).value as ControlLayerData['iconShape'])">
           <option value="crosshair">Crosshair</option>
           <option value="diamond">Diamond</option>
           <option value="circle">Circle</option>

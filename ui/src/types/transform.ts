@@ -139,7 +139,7 @@ export interface FollowPathConstraint {
   /** Enable/disable the constraint */
   enabled: boolean;
 
-  /** ID of the path or spline layer to follow */
+  /** ID of the path or spline layer to follow (empty string if no target) */
   pathLayerId: string;
 
   /** Progress along the path (0 = start, 1 = end) - ANIMATABLE */

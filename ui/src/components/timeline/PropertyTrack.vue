@@ -422,10 +422,10 @@ function startKeyframeDrag(e: MouseEvent, kf: Keyframe<any>) {
   const startFrame = kf.frame;
 
   // For scale mode, capture original keyframe positions
-  const originalKeyframes = isScaleMode
-    ? (props.property?.keyframes?.map(k => ({ id: k.id, frame: k.frame })) || [])
+  const originalKeyframes: { id: string; frame: number }[] = isScaleMode
+    ? (props.property?.keyframes?.map((k: { id: string; frame: number }) => ({ id: k.id, frame: k.frame })) || [])
     : [];
-  const anchorFrame = isScaleMode ? Math.min(...originalKeyframes.map(k => k.frame)) : 0;
+  const anchorFrame = isScaleMode ? Math.min(...originalKeyframes.map((k: { id: string; frame: number }) => k.frame)) : 0;
 
   const onMove = (ev: MouseEvent) => {
     const dx = ev.clientX - startX;
@@ -433,7 +433,7 @@ function startKeyframeDrag(e: MouseEvent, kf: Keyframe<any>) {
     // Ctrl+Alt+Drag = Scale keyframes (maintain spacing proportions)
     if (isScaleMode && originalKeyframes.length > 1) {
       // Calculate scale factor: how much the drag represents relative to original span
-      const maxFrame = Math.max(...originalKeyframes.map(k => k.frame));
+      const maxFrame = Math.max(...originalKeyframes.map((k: { id: string; frame: number }) => k.frame));
       const originalSpan = maxFrame - anchorFrame;
       if (originalSpan > 0) {
         // Pixel drag converts to scale factor (100px = 0.5x scale adjustment)
@@ -446,7 +446,7 @@ function startKeyframeDrag(e: MouseEvent, kf: Keyframe<any>) {
           const newFrame = Math.max(0, Math.round(anchorFrame + relativePos * scaleFactor));
           if (newFrame !== orig.frame) {
             // Find current keyframe position and update
-            const currentKf = props.property?.keyframes?.find(k => k.id === orig.id);
+            const currentKf = props.property?.keyframes?.find((k: { id: string }) => k.id === orig.id);
             if (currentKf && currentKf.frame !== newFrame) {
               store.moveKeyframe(props.layerId, props.propertyPath, orig.id, newFrame);
             }

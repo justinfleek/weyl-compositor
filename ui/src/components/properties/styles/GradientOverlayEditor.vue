@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Blend Mode</label>
-      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -16,7 +16,7 @@
 
     <div class="property-row">
       <label>Style</label>
-      <select :value="style.style" @change="emit('update', { style: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.style" @change="emit('update', { style: ($event.target as HTMLSelectElement).value as GradientOverlayType })">
         <option value="linear">Linear</option>
         <option value="radial">Radial</option>
         <option value="angle">Angle</option>
@@ -61,7 +61,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { GradientOverlayStyle, GradientOverlayUpdate } from '@/types/layerStyles';
+import type { GradientOverlayStyle, GradientOverlayUpdate, GradientOverlayType } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 const props = defineProps<{
   style: GradientOverlayStyle;
@@ -71,7 +72,7 @@ const emit = defineEmits<{
   (e: 'update', updates: GradientOverlayUpdate): void;
 }>();
 
-const blendModes = [
+const blendModes: BlendMode[] = [
   'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
   'color-dodge', 'color-burn', 'hard-light', 'soft-light'
 ];

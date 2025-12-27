@@ -20,7 +20,8 @@ export type AssetType =
   | 'material'      // Material definition (with texture refs)
   | 'hdri'          // Environment map (HDR, EXR)
   | 'svg'           // Vector graphic (for extrusion)
-  | 'spritesheet'   // Sprite sheet for particles
+  | 'sprite'        // Single image for particles (no grid)
+  | 'spritesheet'   // Sprite sheet for particles (grid of frames)
   | 'lut';          // Color lookup table
 
 /** PBR texture map types */
@@ -60,7 +61,7 @@ export interface AssetReference {
   nodeId?: string;
   width: number;
   height: number;
-  data?: string;      // Base64 or URL
+  data: string;       // Base64 or URL - always required for valid assets
   filename?: string;  // Original filename
 
   // Video/Audio specific metadata
@@ -111,6 +112,14 @@ export interface AssetReference {
   spriteRows?: number;
   spriteCount?: number;
   spriteFrameRate?: number;
+
+  // Sprite validation metadata (stored from import validation)
+  spriteValidation?: {
+    isPowerOfTwo: boolean;
+    hasAlpha: boolean;
+    originalFormat: string;
+    warnings?: string[];
+  };
 }
 
 // ============================================================

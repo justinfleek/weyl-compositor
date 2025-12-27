@@ -321,6 +321,25 @@ export interface GradientOverlayStyle extends BaseLayerStyle {
 }
 
 // ============================================================
+// PATTERN OVERLAY
+// ============================================================
+
+export interface PatternOverlayStyle extends BaseLayerStyle {
+  /** Pattern asset ID or URL */
+  pattern: string;
+  /** Scale of pattern (1-1000%) */
+  scale: AnimatableProperty<number>;
+  /** Angle of pattern rotation (degrees) */
+  angle: AnimatableProperty<number>;
+  /** Link pattern with layer transforms */
+  linkWithLayer: boolean;
+  /** Snap pattern origin to layer origin */
+  snapToOrigin: boolean;
+  /** Pattern offset from origin */
+  offset: AnimatableProperty<{ x: number; y: number }>;
+}
+
+// ============================================================
 // STROKE
 // ============================================================
 
@@ -686,3 +705,4 @@ export type ColorOverlayUpdate = StyleUpdate<ColorOverlayStyle>;
 export type GradientOverlayUpdate = StyleUpdate<GradientOverlayStyle>;
 export type PatternOverlayUpdate = StyleUpdate<PatternOverlayStyle>;
 export type StrokeStyleUpdate = StyleUpdate<StrokeStyle>;
+export type StyleBlendingOptionsUpdate = StyleUpdate<StyleBlendingOptions>;

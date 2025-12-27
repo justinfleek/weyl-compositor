@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Blend Mode</label>
-      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -23,18 +23,15 @@
 
     <div class="property-row">
       <label>Position</label>
-      <select :value="style.position" @change="emit('update', { position: ($event.target as HTMLSelectElement).value })">
-        <option value="outside">Outside</option>
-        <option value="inside">Inside</option>
-        <option value="center">Center</option>
+      <select :value="style.position" @change="emit('update', { position: ($event.target as HTMLSelectElement).value as StrokePosition })">
+        <option v-for="pos in strokePositions" :key="pos" :value="pos">{{ formatMode(pos) }}</option>
       </select>
     </div>
 
     <div class="property-row">
       <label>Fill Type</label>
-      <select :value="style.fillType" @change="emit('update', { fillType: ($event.target as HTMLSelectElement).value })">
-        <option value="color">Color</option>
-        <option value="gradient">Gradient</option>
+      <select :value="style.fillType" @change="emit('update', { fillType: ($event.target as HTMLSelectElement).value as StrokeFillType })">
+        <option v-for="ft in strokeFillTypes" :key="ft" :value="ft">{{ formatMode(ft) }}</option>
       </select>
     </div>
 
@@ -48,7 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import type { StrokeStyle, StrokeStyleUpdate, RGBA } from '@/types/layerStyles';
+import type { StrokeStyle, StrokeStyleUpdate, StrokePosition, StrokeFillType, RGBA } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 defineProps<{
   style: StrokeStyle;
@@ -58,7 +56,12 @@ const emit = defineEmits<{
   (e: 'update', updates: StrokeStyleUpdate): void;
 }>();
 
-const blendModes = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten'];
+// Typed array validates these are valid BlendMode values at compile time
+const blendModes: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten'];
+
+// Typed arrays for other selects - validates options match type definitions
+const strokePositions: StrokePosition[] = ['outside', 'inside', 'center'];
+const strokeFillTypes: StrokeFillType[] = ['color', 'gradient'];
 
 function formatMode(mode: string): string {
   return mode.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

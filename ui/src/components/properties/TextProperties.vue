@@ -973,12 +973,15 @@ function updateAnimatorProperty(animatorId: string, propKey: string, value: any)
       updated.properties = rest;
     } else {
       // Add or update property
+      // Use 'position' for object types like {x, y} vectors, 'number' for scalars
+      const propType = typeof value === 'number' ? 'number'
+        : (typeof value === 'string' ? 'color' : 'position');
       updated.properties = {
         ...updated.properties,
         [propKey]: {
           id: `prop_${Date.now()}`,
           name: propKey.charAt(0).toUpperCase() + propKey.slice(1),
-          type: typeof value === 'number' ? 'number' : 'object',
+          type: propType,
           value,
           animated: false,
           keyframes: []

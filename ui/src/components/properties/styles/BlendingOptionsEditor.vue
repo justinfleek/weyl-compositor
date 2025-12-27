@@ -50,14 +50,14 @@
 </template>
 
 <script setup lang="ts">
-import type { StyleBlendingOptions } from '@/types/layerStyles';
+import type { StyleBlendingOptions, StyleBlendingOptionsUpdate } from '@/types/layerStyles';
 
 defineProps<{
   options: StyleBlendingOptions;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update', updates: Partial<StyleBlendingOptions>): void;
+  (e: 'update', updates: StyleBlendingOptionsUpdate): void;
 }>();
 </script>
 

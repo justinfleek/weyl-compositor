@@ -2,7 +2,7 @@
   <div class="style-editor">
     <div class="property-row">
       <label>Blend Mode</label>
-      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value })">
+      <select :value="style.blendMode" @change="emit('update', { blendMode: ($event.target as HTMLSelectElement).value as BlendMode })">
         <option v-for="mode in blendModes" :key="mode" :value="mode">{{ formatMode(mode) }}</option>
       </select>
     </div>
@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import type { InnerShadowStyle, InnerShadowUpdate, RGBA } from '@/types/layerStyles';
+import type { BlendMode } from '@/types/project';
 
 defineProps<{
   style: InnerShadowStyle;
@@ -76,7 +77,7 @@ const emit = defineEmits<{
   (e: 'update', updates: InnerShadowUpdate): void;
 }>();
 
-const blendModes = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn'];
+const blendModes: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn'];
 
 function formatMode(mode: string): string {
   return mode.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

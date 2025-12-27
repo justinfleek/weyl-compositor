@@ -68,11 +68,11 @@
     <div class="toolbar-group">
       <select
         :value="viewOptions.cameraWireframes"
-        @change="setCameraWireframes(($event.target as HTMLSelectElement).value as 'never' | 'selected' | 'always')"
+        @change="setCameraWireframes(($event.target as HTMLSelectElement).value as WireframeVisibility)"
         title="Camera Wireframe Display"
         class="wireframe-select"
       >
-        <option value="never">No Cam Wire</option>
+        <option value="off">No Cam Wire</option>
         <option value="selected">Selected Cam</option>
         <option value="always">All Cameras</option>
       </select>
@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
-import type { ViewType, ViewOptions } from '@/types/camera';
+import type { ViewType, ViewOptions, WireframeVisibility } from '@/types/camera';
 
 const store = useCompositorStore();
 
@@ -133,7 +133,7 @@ function toggleOption(key: ViewOptionKey) {
   }
 }
 
-function setCameraWireframes(value: 'never' | 'selected' | 'always') {
+function setCameraWireframes(value: WireframeVisibility) {
   store.updateViewOptions({ cameraWireframes: value });
 }
 

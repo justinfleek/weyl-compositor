@@ -16,7 +16,7 @@
 
       <div class="row">
         <label>Extract From</label>
-        <select :value="matteData.matteType" @change="updateData('matteType', ($event.target as HTMLSelectElement).value)">
+        <select :value="matteData.matteType" @change="updateData('matteType', ($event.target as HTMLSelectElement).value as MatteLayerData['matteType'])">
           <option value="luminance">Luminance</option>
           <option value="alpha">Alpha Channel</option>
           <option value="red">Red Channel</option>

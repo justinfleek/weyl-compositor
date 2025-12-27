@@ -127,6 +127,7 @@ export interface ViewOptions {
   cameraWireframes: WireframeVisibility;
   lightWireframes: WireframeVisibility;
   showMotionPaths: boolean;
+  showLayerPaths: boolean;              // Shape/mask path visibility
   showLayerHandles: boolean;
   showSafeZones: boolean;
   showGrid: boolean;
@@ -267,6 +268,7 @@ export function createDefaultViewOptions(): ViewOptions {
     cameraWireframes: 'selected',
     lightWireframes: 'selected',
     showMotionPaths: true,
+    showLayerPaths: true,
     showLayerHandles: true,
     showSafeZones: false,
     showGrid: false,

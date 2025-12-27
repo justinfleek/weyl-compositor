@@ -38,6 +38,14 @@ import {
   type PBRMaterialConfig,
   type MaterialPreset,
 } from '@/services/materialSystem';
+import {
+  loadAndValidateSprite,
+  loadAndValidateSpritesheet,
+  type SpriteValidationResult,
+  type SpritesheetValidationResult,
+  type SpriteValidationIssue,
+} from '@/services/spriteValidation';
+import { useToastStore } from './toastStore';
 import { storeLogger } from '@/utils/logger';
 
 // ============================================================================
@@ -636,6 +644,98 @@ export const useAssetStore = defineStore('assets', {
         return { success: false, error: message };
       } finally {
         this.isLoadingSpriteSheet = false;
+      }
+    },
+
+    /**
+     * Import a single sprite (1x1 grid) with validation
+     */
+    async importSprite(
+      file: File,
+      options?: { name?: string; showWarnings?: boolean }
+    ): Promise<AssetImportResult & { validation?: SpriteValidationResult }> {
+      const toastStore = useToastStore();
+      const showWarnings = options?.showWarnings ?? true;
+
+      // Validate first
+      const validation = await loadAndValidateSprite(file);
+
+      if (!validation.canImport) {
+        // Handle blocking errors
+        this.handleValidationIssues(validation.issues, toastStore, true);
+        this.lastError = validation.issues.find(i => i.severity === 'error')?.message || 'Validation failed';
+        return { success: false, error: this.lastError, validation };
+      }
+
+      // Show warnings if enabled
+      if (showWarnings) {
+        this.handleValidationIssues(validation.issues, toastStore, false);
+      }
+
+      // Import as 1x1 spritesheet
+      const result = await this.importSpriteSheet(file, 1, 1, options);
+
+      if (result.success) {
+        toastStore.success(`Sprite "${options?.name || file.name}" imported successfully`);
+      }
+
+      return { ...result, validation };
+    },
+
+    /**
+     * Import sprite sheet with full validation
+     */
+    async importSpriteSheetValidated(
+      file: File,
+      columns: number,
+      rows: number,
+      options?: { name?: string; frameRate?: number; showWarnings?: boolean }
+    ): Promise<AssetImportResult & { validation?: SpritesheetValidationResult }> {
+      const toastStore = useToastStore();
+      const showWarnings = options?.showWarnings ?? true;
+
+      // Validate first
+      const validation = await loadAndValidateSpritesheet(file, columns, rows);
+
+      if (!validation.canImport) {
+        // Handle blocking errors
+        this.handleValidationIssues(validation.issues, toastStore, true);
+        this.lastError = validation.issues.find(i => i.severity === 'error')?.message || 'Validation failed';
+        return { success: false, error: this.lastError, validation };
+      }
+
+      // Show warnings if enabled
+      if (showWarnings) {
+        this.handleValidationIssues(validation.issues, toastStore, false);
+      }
+
+      // Import the spritesheet
+      const result = await this.importSpriteSheet(file, columns, rows, options);
+
+      if (result.success && validation.metadata) {
+        const meta = validation.metadata;
+        toastStore.success(
+          `Sprite sheet "${options?.name || file.name}" imported: ${meta.totalFrames} frames (${meta.frameWidth}x${meta.frameHeight}px each)`
+        );
+      }
+
+      return { ...result, validation };
+    },
+
+    /**
+     * Display validation issues as toast notifications
+     */
+    handleValidationIssues(
+      issues: SpriteValidationIssue[],
+      toastStore: ReturnType<typeof useToastStore>,
+      errorsOnly: boolean = false
+    ): void {
+      for (const issue of issues) {
+        if (issue.severity === 'error') {
+          toastStore.error(issue.message);
+        } else if (!errorsOnly && issue.severity === 'warning') {
+          toastStore.warning(issue.message);
+        }
       }
     },
 

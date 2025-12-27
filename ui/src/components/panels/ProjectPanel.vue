@@ -86,12 +86,12 @@
       <div class="preview-thumbnail">
         <img
           v-if="selectedPreview.type === 'image'"
-          :src="selectedPreview.url"
+          :src="selectedPreview.url ?? undefined"
           :alt="selectedPreview.name"
         />
         <video
           v-else-if="selectedPreview.type === 'video'"
-          :src="selectedPreview.url"
+          :src="selectedPreview.url ?? undefined"
           muted
           loop
           autoplay

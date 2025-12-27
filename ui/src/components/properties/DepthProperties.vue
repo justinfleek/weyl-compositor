@@ -6,7 +6,7 @@
 
       <div class="row">
         <label>Mode</label>
-        <select :value="depthData.visualizationMode" @change="updateData('visualizationMode', ($event.target as HTMLSelectElement).value)">
+        <select :value="depthData.visualizationMode" @change="updateData('visualizationMode', ($event.target as HTMLSelectElement).value as DepthLayerData['visualizationMode'])">
           <option value="grayscale">Grayscale</option>
           <option value="colormap">Colormap</option>
           <option value="contour">Contour Lines</option>
@@ -16,7 +16,7 @@
 
       <div class="row" v-if="depthData.visualizationMode === 'colormap' || depthData.visualizationMode === 'contour'">
         <label>Color Map</label>
-        <select :value="depthData.colorMap" @change="updateData('colorMap', ($event.target as HTMLSelectElement).value)">
+        <select :value="depthData.colorMap" @change="updateData('colorMap', ($event.target as HTMLSelectElement).value as DepthLayerData['colorMap'])">
           <option value="turbo">Turbo (Rainbow)</option>
           <option value="viridis">Viridis (Blue-Green-Yellow)</option>
           <option value="plasma">Plasma (Purple-Orange)</option>

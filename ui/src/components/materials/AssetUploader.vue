@@ -133,6 +133,11 @@ const assetConfigs: Record<AssetType, {
     icon: 'pi-star',
     hint: 'Drop SVG file',
   },
+  sprite: {
+    formats: ['.png', '.jpg', '.webp', '.gif'],
+    icon: 'pi-image',
+    hint: 'Drop sprite image',
+  },
   spritesheet: {
     formats: ['.png', '.jpg', '.webp', '.json'],
     icon: 'pi-th-large',

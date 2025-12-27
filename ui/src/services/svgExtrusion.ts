@@ -33,6 +33,10 @@ export interface ParsedSVGPath {
   fillOpacity: number;
   strokeColor: THREE.Color | null;
   strokeWidth: number;
+  /** CSS-compatible fill color string */
+  fill?: string;
+  /** CSS-compatible stroke color string */
+  stroke?: string;
   bounds: {
     minX: number;
     minY: number;
@@ -370,6 +374,10 @@ export class SVGExtrusionService {
       maxX = Math.max(maxX, pathBounds.maxX);
       maxY = Math.max(maxY, pathBounds.maxY);
 
+      const strokeColorObj = strokeColor && strokeColor !== 'none'
+        ? new THREE.Color(strokeColor)
+        : null;
+
       paths.push({
         id: `${id}_path_${index}`,
         name: `Path ${index + 1}`,
@@ -377,10 +385,11 @@ export class SVGExtrusionService {
         shapes,
         color,
         fillOpacity,
-        strokeColor: strokeColor && strokeColor !== 'none'
-          ? new THREE.Color(strokeColor)
-          : null,
+        strokeColor: strokeColorObj,
         strokeWidth,
+        // CSS-compatible color strings for UI display
+        fill: `#${color.getHexString()}`,
+        stroke: strokeColorObj ? `#${strokeColorObj.getHexString()}` : undefined,
         bounds: pathBounds,
         originalTransform: new THREE.Matrix4(),
       });

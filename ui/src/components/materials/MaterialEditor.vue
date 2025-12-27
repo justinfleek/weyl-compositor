@@ -239,7 +239,7 @@
           <label>Side</label>
           <select
             :value="material.side"
-            @change="updateMaterial('side', ($event.target as HTMLSelectElement).value)"
+            @change="updateMaterial('side', ($event.target as HTMLSelectElement).value as 'front' | 'back' | 'double')"
             class="type-select"
           >
             <option value="front">Front</option>

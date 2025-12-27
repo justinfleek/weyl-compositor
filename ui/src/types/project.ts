@@ -217,6 +217,21 @@ export interface ProjectMeta {
 // COMPOSITION - Independent timeline with its own layers
 // ============================================================
 
+/**
+ * Timeline Marker
+ * Visual indicator on the timeline for navigation, beat sync, and annotation
+ */
+export interface Marker {
+  id: string;
+  frame: number;
+  label: string;
+  color: string;
+  duration?: number;   // Optional marker duration (for range markers)
+  comment?: string;    // Optional comment/note
+}
+
+// ============================================================
+
 export interface Composition {
   id: string;
   name: string;
@@ -240,6 +255,9 @@ export interface Composition {
   // Global Light settings for Layer Styles
   // Styles with useGlobalLight=true share this angle/altitude
   globalLight?: GlobalLightSettings;
+
+  // Timeline markers for navigation and annotation
+  markers?: Marker[];
 }
 
 export type ColorSpace =
@@ -318,7 +336,8 @@ export type AssetType =
   | 'material'      // Material definition (with texture refs)
   | 'hdri'          // Environment map (HDR, EXR)
   | 'svg'           // Vector graphic (for extrusion)
-  | 'spritesheet'   // Sprite sheet for particles
+  | 'sprite'        // Single image for particles (no grid)
+  | 'spritesheet'   // Sprite sheet for particles (grid of frames)
   | 'lut';          // Color lookup table
 
 /** PBR texture map types */
@@ -340,7 +359,7 @@ export interface AssetReference {
   nodeId?: string;
   width: number;
   height: number;
-  data?: string;      // Base64 or URL
+  data: string;       // Base64 or URL - always required for valid assets
   filename?: string;  // Original filename
 
   // Video/Audio specific metadata
@@ -417,7 +436,7 @@ export interface FollowPathConstraint {
   /** Enable/disable the constraint */
   enabled: boolean;
 
-  /** ID of the path or spline layer to follow */
+  /** ID of the path or spline layer to follow (empty string if no target) */
   pathLayerId: string;
 
   /** Progress along the path (0 = start, 1 = end) - ANIMATABLE */
@@ -563,7 +582,17 @@ export interface Layer {
   // Renders BEFORE effects in fixed order: shadow → glow → bevel → overlay → stroke
   layerStyles?: LayerStyles;
 
-  data: SplineData | PathLayerData | TextData | ParticleData | ParticleLayerData | DepthflowLayerData | GeneratedMapData | CameraLayerData | ImageLayerData | VideoData | NestedCompData | ProceduralMatteData | ShapeLayerData | ModelLayerData | PointCloudLayerData | null;
+  // All layer data types - must include every type from LayerDataMap
+  data: SplineData | PathLayerData | TextData | ParticleData | ParticleLayerData |
+        DepthflowLayerData | GeneratedMapData | CameraLayerData | ImageLayerData |
+        VideoData | NestedCompData | ProceduralMatteData | ShapeLayerData |
+        ModelLayerData | PointCloudLayerData |
+        // Previously missing - now matches LayerDataMap
+        DepthLayerData | NormalLayerData | AudioLayerData | ControlLayerData |
+        PoseLayerData | LightLayerData | SolidLayerData | NullLayerData |
+        GroupLayerData | EffectLayerData |
+        // Additional types used by Properties components
+        GeneratedLayerData | MatteLayerData | null;
 }
 
 export type LayerType =

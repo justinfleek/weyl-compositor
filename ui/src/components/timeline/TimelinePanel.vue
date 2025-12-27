@@ -217,8 +217,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject, type Ref } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject, type Ref, type CSSProperties } from 'vue';
 import { useCompositorStore } from '@/stores/compositorStore';
+import type { Layer } from '@/types/project';
 import { useAudioStore } from '@/stores/audioStore';
 import { usePlaybackStore } from '@/stores/playbackStore';
 import EnhancedLayerTrack from './EnhancedLayerTrack.vue';
@@ -321,7 +322,7 @@ const sidebarGridStyle = computed(() => ({
 function toggleAddLayerMenu() { showAddLayerMenu.value = !showAddLayerMenu.value; }
 
 // Compute position for fixed dropdown menu
-const addLayerMenuStyle = computed(() => {
+const addLayerMenuStyle = computed((): CSSProperties => {
   if (!showAddLayerMenu.value || !addLayerContainer.value) {
     return {};
   }
@@ -334,11 +335,14 @@ const addLayerMenuStyle = computed(() => {
 });
 
 function addLayer(type: string) {
-  let newLayer;
+  let newLayer: Layer | undefined;
 
   if (type === 'text') newLayer = store.createTextLayer();
   else if (type === 'video') newLayer = store.createLayer('video');
-  else if (type === 'camera') newLayer = store.createCameraLayer();
+  else if (type === 'camera') {
+    const result = store.createCameraLayer();
+    newLayer = result.layer;
+  }
   else if (type === 'particles') newLayer = store.createParticleLayer();
   else newLayer = store.createLayer(type as any);
 
@@ -407,8 +411,8 @@ function onDrop(event: DragEvent) {
 
     // Handle different item types
     if (item.type === 'composition') {
-      // Create a precomp layer
-      const layer = store.createLayer('precomp', item.name);
+      // Create a nested composition layer
+      const layer = store.createLayer('nestedComp', item.name);
       if (layer) {
         (layer.data as any).compositionId = item.id;
         store.selectLayer(layer.id);
@@ -764,7 +768,7 @@ function handleKeydown(e: KeyboardEvent) {
   // Select All
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA') {
     e.preventDefault();
-    store.selectedLayerIds = store.layers.map(l => l.id);
+    store.selectAllLayers();
   }
 
   // Duplicate (Ctrl+D)
